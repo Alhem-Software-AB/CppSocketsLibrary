@@ -161,19 +161,6 @@ public:
 		the ssl context for an incoming connection. */
 	virtual void InitSSLServer();
 
-	/** Define number of connection retries.
-	    n = 0 - no retry
-	    n > 0 - number of retries
-	    n = -1 - unlimited retries */
-	void SetConnectionRetry(int n);
-	/** Get number of maximum connection retries. */
-	int GetConnectionRetry();
-	/** Increase number of actual connection retries */
-	void IncreaseConnectionRetries();
-	/** Get number of actual connection retries. */
-	int GetConnectionRetries();
-	/** Reset actual connection retries. */
-	void ResetConnectionRetries();
 	/** Flag that says a broken connection will try to reconnect. */
 	void SetReconnect(bool = true);
 	/** Check reconnect on lost connection flag status. */
@@ -187,6 +174,8 @@ public:
 	/** Get ssl password */
 	const std::string& GetPassword();
 #endif
+	/** Get timeout value for sending of all data before closing. */
+	long CheckSendTimeoutCount();
 
 protected:
 	TcpSocket(const TcpSocket& s);
@@ -234,10 +223,10 @@ static	BIO *bio_err; ///< ssl bio err
 	std::string m_password; ///< ssl password
 #endif
 	// state flags
-	int m_connection_retry; ///< Maximum connection retries
-	int m_retries; ///< Actual number of connection retries
 	bool m_b_reconnect; ///< Reconnect on lost connection flag
 	bool m_b_is_reconnect; ///< Trying to reconnect
+	long m_send_timeout_count; ///< Max timer to wait for send all data
+	size_t m_last_output_buffer_size; ///< Remember buffer size to reset timeout count if changed
 };
 
 

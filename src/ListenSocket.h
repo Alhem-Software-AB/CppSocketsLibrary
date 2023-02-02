@@ -255,14 +255,12 @@ DEB(printf("ListenSocket<%d>::OnRead()\n", GetPort());)
 		}
 DEB(printf("  ListenSocket<%d> new file descriptor = %d\n", GetPort(), a_s);)
 		Socket *tmp = m_bHasCreate ? m_creator -> Create() : new X(Handler());
-		TcpSocket *tcp = dynamic_cast<TcpSocket *>(tmp);
 		tmp -> SetIpv6( IsIpv6() );
 		tmp -> SetParent(this);
 		tmp -> Attach(a_s);
 		tmp -> SetNonblocking(true);
 		tmp -> SetRemoteAddress( &sa, sa_len);
-		if (tcp)
-			tcp -> SetConnected(true);
+		tmp -> SetConnected(true);
 		tmp -> Init();
 		Handler().Add(tmp);
 		tmp -> SetDeleteByHandler(true);

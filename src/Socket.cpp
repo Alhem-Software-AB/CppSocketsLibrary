@@ -98,6 +98,8 @@ Socket::Socket(SocketHandler& h)
 ,m_b_retry_connect(false)
 ,m_connected(false)
 ,m_flush_before_close(true)
+,m_connection_retry(0)
+,m_retries(0)
 {
 }
 
@@ -137,13 +139,12 @@ void Socket::OnException()
 #ifdef _WIN32
 	if (Connecting())
 	{
-		TcpSocket *tcp = dynamic_cast<TcpSocket *>(this);
 		if (Socks4())
 			OnSocks4ConnectFailed();
 		else
-		if (tcp && (tcp -> GetConnectionRetry() == -1 ||
-			(tcp -> GetConnectionRetry() &&
-			 tcp -> GetConnectionRetries() < tcp -> GetConnectionRetry() )))
+		if (GetConnectionRetry() == -1 ||
+			(GetConnectionRetry() &&
+			 GetConnectionRetries() < GetConnectionRetry() ))
 		{
 			// even though the connection failed at once, only retry after
 			// the connection timeout
@@ -1354,6 +1355,41 @@ void Socket::OnSSLConnectFailed()
 
 
 void Socket::OnSSLAcceptFailed()
+{
+}
+
+
+int Socket::GetConnectionRetry()
+{
+	return m_connection_retry;
+}
+
+
+void Socket::SetConnectionRetry(int x)
+{
+	m_connection_retry = x;
+}
+
+
+int Socket::GetConnectionRetries()
+{
+	return m_retries;
+}
+
+
+void Socket::IncreaseConnectionRetries()
+{
+	m_retries++;
+}
+
+
+void Socket::ResetConnectionRetries()
+{
+	m_retries = 0;
+}
+
+
+void Socket::OnDisconnect()
 {
 }
 

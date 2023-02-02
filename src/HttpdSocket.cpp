@@ -390,7 +390,6 @@ void HttpdSocket::OnData(const char *p,size_t l)
 void HttpdSocket::Send64(const std::string& str64, const std::string& type)
 {
 	Base64 bb;
-	char slask[100];
 
 	if (!strcasecmp(m_start.c_str(), m_if_modified_since.c_str()))
 	{
@@ -406,9 +405,8 @@ void HttpdSocket::Send64(const std::string& str64, const std::string& type)
 		SetStatus("200");
 		SetStatusText("OK");
 
-		sprintf(slask,"%d",len);
-		AddResponseHeader("Content-length", slask );
-		AddResponseHeader("Content-type", type.c_str() );
+		AddResponseHeader("Content-length", Utility::l2string( (long)len) );
+		AddResponseHeader("Content-type", type );
 		AddResponseHeader("Last-modified", m_start);
 		SendResponse();
 

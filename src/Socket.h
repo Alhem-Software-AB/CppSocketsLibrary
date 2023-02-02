@@ -135,6 +135,8 @@ public:
 	virtual void OnSSLConnectFailed();
 	/** SSL negotiation failed for server accept. */
 	virtual void OnSSLAcceptFailed();
+	/** When a socket is set to reconnect, and a disconnect has been detected. */
+	virtual void OnDisconnect();
 
 	/** Check whether a connection has been established. */
 	virtual bool CheckConnect();
@@ -406,6 +408,20 @@ public:
 		\return true if the socket should send all data before closing */
 	bool GetFlushBeforeClose();
 
+	/** Define number of connection retries (tcp only).
+	    n = 0 - no retry
+	    n > 0 - number of retries
+	    n = -1 - unlimited retries */
+	void SetConnectionRetry(int n);
+	/** Get number of maximum connection retries (tcp only). */
+	int GetConnectionRetry();
+	/** Increase number of actual connection retries (tcp only). */
+	void IncreaseConnectionRetries();
+	/** Get number of actual connection retries (tcp only). */
+	int GetConnectionRetries();
+	/** Reset actual connection retries (tcp only). */
+	void ResetConnectionRetries();
+
 protected:
 	Socket(const Socket& ); ///< do not allow use of copy constructor
 	/** Create new thread for this socket to run detached in. */
@@ -467,6 +483,8 @@ static	WSAInitializer m_winsock_init; ///< Winsock initialization singleton clas
 #endif
 	bool m_connected; ///< Socket is connected (tcp/udp)
 	bool m_flush_before_close; ///< Send all data before closing (default true)
+	int m_connection_retry; ///< Maximum connection retries (tcp)
+	int m_retries; ///< Actual number of connection retries (tcp)
 };
 
 #ifdef SOCKETS_NAMESPACE

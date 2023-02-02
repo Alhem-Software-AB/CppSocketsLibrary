@@ -44,6 +44,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "TcpSocket.h"
 #include "PoolSocket.h"
+#include "Utility.h"
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
@@ -76,10 +77,10 @@ TcpSocket::TcpSocket(SocketHandler& h) : Socket(h)
 ,m_ssl(NULL)
 ,m_sbio(NULL)
 #endif
-,m_connection_retry(0)
-,m_retries(0)
 ,m_b_reconnect(false)
 ,m_b_is_reconnect(false)
+,m_send_timeout_count(0)
+,m_last_output_buffer_size(0)
 {
 }
 #ifdef _WIN32
@@ -101,10 +102,10 @@ TcpSocket::TcpSocket(SocketHandler& h,size_t isize,size_t osize) : Socket(h)
 ,m_ssl(NULL)
 ,m_sbio(NULL)
 #endif
-,m_connection_retry(0)
-,m_retries(0)
 ,m_b_reconnect(false)
 ,m_b_is_reconnect(false)
+,m_send_timeout_count(0)
+,m_last_output_buffer_size(0)
 {
 }
 #ifdef _WIN32
@@ -115,6 +116,13 @@ TcpSocket::TcpSocket(SocketHandler& h,size_t isize,size_t osize) : Socket(h)
 TcpSocket::~TcpSocket()
 {
 DEB(printf("~TcpSocket()\n");)
+	while (m_mes.size())
+	{
+		ucharp_v::iterator it = m_mes.begin();
+		MES *p = *it;
+		delete p;
+		m_mes.erase(it);
+	}
 #ifdef HAVE_OPENSSL
 	if (m_ssl)
 	{
@@ -183,9 +191,10 @@ DEB(printf("Reusing connection\n");)
 		ipaddr_t a = GetSocks4Host();
 		memcpy(&sa.sin_addr, &a, 4);
 		{
-			char slask[100];
-			sprintf(slask,"Connecting to socks4 server @ %08x:%d",GetSocks4Host(),GetSocks4Port());
-			Handler().LogError(this, "Open", 0, slask, LOG_LEVEL_INFO);
+			std::string sockshost;
+			l2ip(GetSocks4Host(), sockshost);
+			Handler().LogError(this, "Open", 0, "Connecting to socks4 server @ " + sockshost + ":" +
+				Utility::l2string(GetSocks4Port()), LOG_LEVEL_INFO);
 		}
 		SetSocks4();
 	}
@@ -1179,18 +1188,6 @@ SSL *TcpSocket::GetSsl()
 #endif
 
 
-void TcpSocket::SetConnectionRetry(int x)
-{
-	m_connection_retry = x;
-}
-
-
-int TcpSocket::GetConnectionRetries()
-{
-	return m_retries;
-}
-
-
 void TcpSocket::SetReconnect(bool x)
 {
 	m_b_reconnect = x;
@@ -1226,24 +1223,6 @@ unsigned long TcpSocket::GetBytesSent()
 }
 
 
-int TcpSocket::GetConnectionRetry()
-{
-	return m_connection_retry;
-}
-
-
-void TcpSocket::IncreaseConnectionRetries()
-{
-	m_retries++;
-}
-
-
-void TcpSocket::ResetConnectionRetries()
-{
-	m_retries = 0;
-}
-
-
 bool TcpSocket::Reconnect()
 {
 	return m_b_reconnect;
@@ -1268,6 +1247,17 @@ const std::string& TcpSocket::GetPassword()
 	return m_password;
 }
 #endif
+
+
+long TcpSocket::CheckSendTimeoutCount()
+{
+	if (GetOutputLength() != m_last_output_buffer_size)
+	{
+		m_last_output_buffer_size = GetOutputLength();
+		m_send_timeout_count = 0;
+	}
+	return m_send_timeout_count++;
+}
 
 
 #ifdef SOCKETS_NAMESPACE

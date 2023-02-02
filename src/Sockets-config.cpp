@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <sys/select.h>
 /*
 CFLAGS =	-Wall -g -O2 $(INCLUDE) -MD -D_VERSION='"$(VERSION)"' 
 # manual autoconf ....

@@ -49,6 +49,9 @@ HttpGetSocket::HttpGetSocket(SocketHandler& h) : HTTPSocket(h)
 ,m_bComplete(false)
 ,m_content_length(0)
 ,m_content_ptr(0)
+,m_data(NULL)
+,m_data_set(false)
+,m_data_max(0)
 {
 }
 
@@ -59,6 +62,9 @@ HttpGetSocket::HttpGetSocket(SocketHandler& h,const std::string& url_in,const st
 ,m_bComplete(false)
 ,m_content_length(0)
 ,m_content_ptr(0)
+,m_data(NULL)
+,m_data_set(false)
+,m_data_max(0)
 {
 	url_this(url_in,m_host,m_port,m_url,m_to_file);
 	if (filename.size())
@@ -87,6 +93,9 @@ HttpGetSocket::HttpGetSocket(SocketHandler& h,const std::string& host,port_t por
 ,m_bComplete(false)
 ,m_content_length(0)
 ,m_content_ptr(0)
+,m_data(NULL)
+,m_data_set(false)
+,m_data_max(0)
 {
 	if (!Open(m_host,m_port))
 	{
@@ -103,6 +112,8 @@ HttpGetSocket::~HttpGetSocket()
 {
 	if (m_fil)
 		fclose(m_fil);
+	if (m_data && !m_data_set)
+		delete[] m_data;
 }
 
 
@@ -189,6 +200,11 @@ void HttpGetSocket::OnHeader(const std::string& key,const std::string& value)
 	if (!strcasecmp(key.c_str(),"content-length"))
 	{
 		m_content_length = atol(value.c_str());
+		if (!m_data_set)
+		{
+			m_data = new unsigned char[m_content_length];
+			m_data_max = m_content_length;
+		}
 	}
 }
 
@@ -211,7 +227,14 @@ void HttpGetSocket::OnHeaderComplete()
 
 void HttpGetSocket::OnData(const char *buf,size_t len)
 {
-	m_content += static_cast<std::string>(buf).substr(0,len);
+	if (m_content_ptr + len > m_data_max)
+	{
+		Handler().LogError(this, "OnData", -1, "content buffer overflow", LOG_LEVEL_ERROR);
+	}
+	else
+	{
+		memcpy(m_data + m_content_ptr, buf, len);
+	}
 
 	if (m_fil)
 	{
@@ -236,7 +259,6 @@ void HttpGetSocket::url_this(const std::string& url_in,std::string& host,port_t&
 		pa.getword(host);
 		port = static_cast<port_t>(pa.getvalue());
 	}
-	else
 	if (!strcasecmp(protocol.c_str(), "https:"))
 	{
 		EnableSSL();
@@ -270,6 +292,27 @@ void HttpGetSocket::Url(const std::string& url,std::string& host,port_t& port)
 	url_this(url,m_host,m_port,m_url,m_to_file);
 	host = m_host;
 	port = m_port;
+}
+
+
+void HttpGetSocket::SetDataPtr(unsigned char *p,size_t l)
+{
+	if (m_data)
+	{
+		Handler().LogError(this, "HttpGetSocket", -1, "content data buffer already allocated", LOG_LEVEL_WARNING);
+		return;
+	}
+	m_data = p;
+	m_data_set = true;
+	m_data_max = l;
+}
+
+
+const unsigned char *HttpGetSocket::GetDataPtr()
+{
+	if (!m_data)
+		Handler().LogError(this, "GetDataPtr", 0, "content buffer not allocated", LOG_LEVEL_WARNING);
+	return m_data;
 }
 
 

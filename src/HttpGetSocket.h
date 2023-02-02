@@ -48,7 +48,8 @@ public:
 	~HttpGetSocket();
 
 	void OnConnect();
-	void OnContent();
+	/** New callback method fires when all data is received. */
+	virtual void OnContent();
 	void OnDelete();
 
 	void OnFirst();
@@ -62,10 +63,16 @@ public:
 	size_t GetPos() { return m_content_ptr; }
 
 	void url_this(const std::string& url_in,std::string& host,port_t& port,std::string& url,std::string& file);
+	/** Returns received http headers. */
 	const std::string& GetContent() { return m_content; }
 
 	void SetFilename(const std::string& );
 	void Url(const std::string& url,std::string& host,port_t&);
+
+	/** Set external data buffer. */
+	void SetDataPtr(unsigned char *p,size_t l);
+	/** Get ptr to content buffer. Use together with GetContentLength to get entire document. */
+	const unsigned char *GetDataPtr();
 
 protected:
 	HttpGetSocket(const HttpGetSocket& s) : HTTPSocket(s) {}
@@ -82,7 +89,10 @@ private:
 	size_t m_content_length;
 	std::string m_content_type;
 	size_t m_content_ptr;
-	std::string m_content;
+	std::string m_content; ///< Received http headers
+	unsigned char *m_data; ///< Content buffer
+	bool m_data_set; ///< Content buffer set from outside this object
+	size_t m_data_max; ///< Content buffer maximum size
 };
 
 

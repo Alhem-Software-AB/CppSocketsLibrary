@@ -70,6 +70,10 @@ public:
 	void Set(SOCKET s,bool bRead,bool bWrite,bool bException = true);
 	/** Wait for events, generate callbacks. */
 	int Select(long sec,long usec);
+	/** This method will not return until an event has been detected. */
+	int Select();
+	/** Wait for events, generate callbacks. */
+	int Select(struct timeval *tsel);
 	/** Check that a socket really is handled by this socket handler. */
 	bool Valid(Socket *);
 	/** Override and return false to deny all incoming connections. 

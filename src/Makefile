@@ -1,5 +1,5 @@
-VERSION =	1.9.8
-DIFF_VERSION =	1.9.7
+VERSION =	1.9.9
+DIFF_VERSION =	1.9.8
 
 INCLUDE =	-I.
 PREFIX =	/usr/local
@@ -22,7 +22,7 @@ CFLAGS =	-Wall -g -O2 $(INCLUDE) -MD -D_VERSION='"$(VERSION)"'
 # cygwin
 #CFLAGS +=	-D__CYGWIN__
 
-# uncomment if openssl is installed
+# if you want the library to use openssl, make sure the next line is uncommented
 CFLAGS += 	-DHAVE_OPENSSL
 
 # uncomment these three lines if the library should be in its own namespace

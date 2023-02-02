@@ -220,6 +220,20 @@ void SocketHandler::Set(SOCKET s,bool bRead,bool bWrite,bool bException)
 int SocketHandler::Select(long sec,long usec)
 {
 	struct timeval tv;
+	tv.tv_sec = sec;
+	tv.tv_usec = usec;
+	return Select(&tv);
+}
+
+
+int SocketHandler::Select()
+{
+	return Select(NULL);
+}
+
+
+int SocketHandler::Select(struct timeval *tsel)
+{
 #ifdef MACOSX
 	fd_set rfds;
 	fd_set wfds;
@@ -259,9 +273,8 @@ int SocketHandler::Select(long sec,long usec)
 			m_maxsock = (s > m_maxsock) ? s : m_maxsock;
 			m_sockets[s] = p;
 			m_add.erase(it);
-DEB(printf("adding file descriptor %d ptr 0x%08x\n", s, (unsigned long)p);)
-DEB(printf("  m_sockets.size() = %d  FD_SETSIZE = %d\n",
-	m_sockets.size(), FD_SETSIZE);)
+DEB(printf("adding file descriptor %d\n", s);)
+DEB(printf("  m_sockets.size() = %d  FD_SETSIZE = %d\n", m_sockets.size(), FD_SETSIZE);)
 		}
 #ifndef MACOSX
 		rfds = m_rfds;
@@ -274,9 +287,7 @@ DEB(printf("  m_sockets.size() = %d  FD_SETSIZE = %d\n",
 	FD_COPY(&m_wfds, &wfds);
 	FD_COPY(&m_efds, &efds);
 #endif
-	tv.tv_sec = sec;
-	tv.tv_usec = usec;
-	n = select( (int)(m_maxsock + 1),&rfds,&wfds,&efds,&tv);
+	n = select( (int)(m_maxsock + 1),&rfds,&wfds,&efds,tsel);
 	if (n == -1)
 	{
 		LogError(NULL, "select", Errno, StrError(Errno));
@@ -521,7 +532,11 @@ DEB(
 				}
 				if (p && p -> CloseAndDelete() )
 				{
-					if (tcp && tcp -> GetOutputLength() && tcp -> GetFlushBeforeClose() && !tcp -> IsSSL() ) // wait until all data sent
+					if (tcp && tcp -> GetOutputLength() && 
+						tcp -> GetFlushBeforeClose() && 
+						!tcp -> IsSSL() &&
+						tcp -> CheckSendTimeoutCount() < 100 // magic number of cycles
+						) // wait until all data sent
 					{
 						LogError(p, "Closing", (int)tcp -> GetOutputLength(), "Sending all data before closing", LOG_LEVEL_INFO);
 					}
@@ -532,6 +547,7 @@ DEB(
 						tcp -> SetIsReconnect();
 						tcp -> SetConnected(false);
 						p -> Close(); // dispose of old file descriptor (Open creates a new)
+						p -> OnDisconnect();
 #ifdef IPPROTO_IPV6
 						if (p -> IsIpv6())
 						{

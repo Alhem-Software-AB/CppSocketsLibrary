@@ -37,6 +37,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 class ICrypt
 {
 public:
+	virtual ~ICrypt() {}
 	virtual std::string encrypt(unsigned char *key,const std::string& ) = 0;
 	virtual bool decrypt(unsigned char *key,const std::string& ,std::string& ) = 0;
 };

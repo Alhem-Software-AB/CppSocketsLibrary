@@ -143,8 +143,8 @@ std::string Utility::rfc1738_decode(const std::string& src)
 	{
 		if (src[i] == '%' && isxdigit(src[i + 1]) && isxdigit(src[i + 2]))
 		{
-			char c1 = src[i + 1];
-			char c2 = src[i + 2];
+			char c1 = src[++i];
+			char c2 = src[++i];
 			c1 = c1 - 48 - ((c1 >= 'A') ? 7 : 0) - ((c1 >= 'a') ? 32 : 0);
 			c2 = c2 - 48 - ((c2 >= 'A') ? 7 : 0) - ((c2 >= 'a') ? 32 : 0);
 			dst += (char)(c1 * 16 + c2);
