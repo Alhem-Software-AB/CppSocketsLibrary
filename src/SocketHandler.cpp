@@ -3,7 +3,7 @@
  **	\author grymse@alhem.net
 **/
 /*
-Copyright (C) 2004,2005  Anders Hedstrom
+Copyright (C) 2004-2006  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL.
 
@@ -46,12 +46,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
-#endif
-
-#ifdef _DEBUG
-#define DEB(x) x
-#else
-#define DEB(x)
 #endif
 
 
@@ -102,7 +96,6 @@ SocketHandler::SocketHandler(Mutex& mutex,StdLog *p)
 
 SocketHandler::~SocketHandler()
 {
-DEB(	printf("~SocketHandler()\n");)
 	if (m_resolver)
 	{
 		m_resolver -> Quit();
@@ -325,6 +318,7 @@ int SocketHandler::Select(struct timeval *tsel)
 	{
 		LogError(NULL, "select", Errno, StrError(Errno));
 #ifdef _WIN32
+		// %! rebuild fd_set's from active sockets list (m_sockets) here
 DEB(
 		int errcode = Errno;
 		if (errcode != m_preverror)

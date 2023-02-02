@@ -3,7 +3,7 @@
  ** \author grymse@alhem.net
 **/
 /*
-Copyright (C) 2004,2005  Anders Hedstrom
+Copyright (C) 2004-2006  Anders Hedstrom
 
 This software is made available under the terms of the GNU GPL.
 
@@ -111,7 +111,7 @@ public:
 	/** Called on connect timeout (5s). */
 	virtual void OnConnectFailed();
 	/** Called when a socket is created, to set socket options. */
-	virtual void OnOptions(int family,int type,int protocol,SOCKET);
+	virtual void OnOptions(int family,int type,int protocol,SOCKET) = 0;
 	/** Socks4 client support internal use. \sa TcpSocket */
 	virtual void OnSocks4Connect();
 	/** Socks4 client support internal use. \sa TcpSocket */

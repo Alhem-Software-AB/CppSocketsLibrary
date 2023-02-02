@@ -72,6 +72,8 @@ public:
 	/** recvmsg callback */
 	virtual void OnReceiveMessage(const char *buf,size_t sz,struct sockaddr *sa,socklen_t sa_len,struct sctp_sndrcvinfo *sinfo,int msg_flags) = 0;
 
+	void OnOptions(int,int,int,SOCKET) {}
+
 protected:
 	void OnRead();
 

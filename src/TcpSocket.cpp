@@ -3,7 +3,7 @@
  **	\author grymse@alhem.net
 **/
 /*
-Copyright (C) 2004,2005  Anders Hedstrom
+Copyright (C) 2004-2006  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL.
 
@@ -84,6 +84,7 @@ TcpSocket::TcpSocket(SocketHandler& h) : Socket(h)
 ,m_sbio(NULL)
 ,m_b_reconnect(false)
 ,m_b_is_reconnect(false)
+,m_b_input_buffer_disabled(false)
 {
 #ifdef HAVE_OPENSSL
 	if (!m_b_rand_file_generated)
@@ -137,6 +138,7 @@ TcpSocket::TcpSocket(SocketHandler& h,size_t isize,size_t osize) : Socket(h)
 ,m_sbio(NULL)
 ,m_b_reconnect(false)
 ,m_b_is_reconnect(false)
+,m_b_input_buffer_disabled(false)
 {
 #ifdef HAVE_OPENSSL
 	if (!m_b_rand_file_generated)
@@ -526,7 +528,7 @@ DEB(				printf("SSL read problem, errcode = %d\n",n);)
 		else
 		{
 			OnRawData(buf,n);
-			if (!ibuf.Write(buf,n))
+			if (!m_b_input_buffer_disabled && !ibuf.Write(buf,n))
 			{
 				// overflow
 				Handler().LogError(this, "OnRead(ssl)", 0, "ibuf overflow", LOG_LEVEL_WARNING);
@@ -562,7 +564,7 @@ DEB(				printf("SSL read problem, errcode = %d\n",n);)
 	else
 	{
 		OnRawData(buf,n);
-		if (!ibuf.Write(buf,n))
+		if (!m_b_input_buffer_disabled && !ibuf.Write(buf,n))
 		{
 			// overflow
 			Handler().LogError(this, "OnRead", 0, "ibuf overflow", LOG_LEVEL_WARNING);
@@ -1363,6 +1365,25 @@ void TcpSocket::DeleteRandFile()
 	{
 		unlink(m_rand_file.c_str());
 	}
+}
+
+
+void TcpSocket::DisableInputBuffer(bool x)
+{
+	m_b_input_buffer_disabled = x;
+}
+
+
+void TcpSocket::OnOptions(int family,int type,int protocol,SOCKET s)
+{
+DEB(printf("Socket::OnOptions()\n");)
+/*
+	Handler().LogError(this, "OnOptions", family, "Address Family", LOG_LEVEL_INFO);
+	Handler().LogError(this, "OnOptions", type, "Type", LOG_LEVEL_INFO);
+	Handler().LogError(this, "OnOptions", protocol, "Protocol", LOG_LEVEL_INFO);
+*/
+	SetReuse(true);
+	SetKeepalive(true);
 }
 
 

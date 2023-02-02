@@ -3,7 +3,7 @@
  **	\author grymse@alhem.net
 **/
 /*
-Copyright (C) 2004,2005  Anders Hedstrom
+Copyright (C) 2004-2006  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL.
 
@@ -56,7 +56,6 @@ UdpSocket::UdpSocket(SocketHandler& h,int ibufsz,bool ipv6) : Socket(h)
 #ifdef IPPROTO_IPV6
 	SetIpv6(ipv6);
 #endif
-	CreateConnection();
 }
 
 
@@ -114,6 +113,10 @@ int UdpSocket::Bind(const std::string& intf,port_t &port,int range)
 
 int UdpSocket::Bind(ipaddr_t a,port_t &port,int range)
 {
+	if (GetSocket() == INVALID_SOCKET)
+	{
+		CreateConnection();
+	}
 	SOCKET s = GetSocket();
 	struct sockaddr_in sa;
 	socklen_t sa_len = sizeof(sa);
@@ -145,6 +148,10 @@ int UdpSocket::Bind(ipaddr_t a,port_t &port,int range)
 #ifdef IPPROTO_IPV6
 int UdpSocket::Bind(in6_addr a,port_t &port,int range)
 {
+	if (GetSocket() == INVALID_SOCKET)
+	{
+		CreateConnection();
+	}
 	SOCKET s = GetSocket();
 	struct sockaddr_in6 sa;
 	socklen_t sa_len = sizeof(sa);
@@ -187,6 +194,10 @@ bool UdpSocket::Open(ipaddr_t l,port_t port)
 	sa.sin_port = htons( port );
 	memmove(&sa.sin_addr,&l,4);
 
+	if (GetSocket() == INVALID_SOCKET)
+	{
+		CreateConnection();
+	}
 	if (connect(GetSocket(), (struct sockaddr *)&sa, sa_len) == -1)
 	{
 		Handler().LogError(this, "connect", Errno, StrError(Errno), LOG_LEVEL_FATAL);
@@ -233,6 +244,10 @@ bool UdpSocket::Open(struct in6_addr& a,port_t port)
 	sa.sin6_scope_id = 0;
 	sa.sin6_addr = a;
 
+	if (GetSocket() == INVALID_SOCKET)
+	{
+		CreateConnection();
+	}
 	if (connect(GetSocket(), (struct sockaddr *)&sa, sa_len) == -1)
 	{
 		Handler().LogError(this, "connect", Errno, StrError(Errno), LOG_LEVEL_FATAL);
@@ -309,6 +324,10 @@ void UdpSocket::SendToBuf(ipaddr_t a,port_t p,const char *data,int len,int flags
 	sa.sin_port = htons( p );
 	memmove(&sa.sin_addr,&a,4);
 
+	if (GetSocket() == INVALID_SOCKET)
+	{
+		CreateConnection();
+	}
 	if (sendto(GetSocket(),data,len,flags,(struct sockaddr *)&sa,sa_len) == -1)
 	{
 		Handler().LogError(this,"sendto",Errno,StrError(Errno),LOG_LEVEL_ERROR);
@@ -329,6 +348,10 @@ void UdpSocket::SendToBuf(in6_addr a,port_t p,const char *data,int len,int flags
 	sa.sin6_scope_id = 0;
 	sa.sin6_addr = a;
 
+	if (GetSocket() == INVALID_SOCKET)
+	{
+		CreateConnection();
+	}
 	if (sendto(GetSocket(),data,len,flags,(struct sockaddr *)&sa,sa_len) == -1)
 	{
 		Handler().LogError(this,"sendto",Errno,StrError(Errno),LOG_LEVEL_ERROR);
@@ -444,6 +467,10 @@ void UdpSocket::SetBroadcast(bool b)
 	int one = 1;
 	int zero = 0;
 
+	if (GetSocket() == INVALID_SOCKET)
+	{
+		CreateConnection();
+	}
 	if (b)
 	{
 		if (setsockopt(GetSocket(), SOL_SOCKET, SO_BROADCAST, (char *) &one, sizeof(one)) == -1)
@@ -465,6 +492,11 @@ bool UdpSocket::IsBroadcast()
 {
 	int is_broadcast = 0;
 	socklen_t size;
+
+	if (GetSocket() == INVALID_SOCKET)
+	{
+		CreateConnection();
+	}
 	if (getsockopt(GetSocket(), SOL_SOCKET, SO_BROADCAST, (char *)&is_broadcast, &size) == -1)
 	{
 		Handler().LogError(this, "IsBroadcast", Errno, StrError(Errno), LOG_LEVEL_WARNING);
@@ -475,6 +507,10 @@ bool UdpSocket::IsBroadcast()
 
 void UdpSocket::SetMulticastTTL(int ttl)
 {
+	if (GetSocket() == INVALID_SOCKET)
+	{
+		CreateConnection();
+	}
 	if (setsockopt(GetSocket(), SOL_IP, IP_MULTICAST_TTL, (char *)&ttl, sizeof(int)) == -1)
 	{
 		Handler().LogError(this, "SetMulticastTTL", Errno, StrError(Errno), LOG_LEVEL_WARNING);
@@ -486,6 +522,11 @@ int UdpSocket::GetMulticastTTL()
 {
 	int ttl = 0;
 	socklen_t size = sizeof(int);
+
+	if (GetSocket() == INVALID_SOCKET)
+	{
+		CreateConnection();
+	}
 	if (getsockopt(GetSocket(), SOL_IP, IP_MULTICAST_TTL, (char *)&ttl, &size) == -1)
 	{
 		Handler().LogError(this, "GetMulticastTTL", Errno, StrError(Errno), LOG_LEVEL_WARNING);
@@ -496,6 +537,10 @@ int UdpSocket::GetMulticastTTL()
 
 void UdpSocket::SetMulticastLoop(bool x)
 {
+	if (GetSocket() == INVALID_SOCKET)
+	{
+		CreateConnection();
+	}
 #ifdef IPPROTO_IPV6
 	if (IsIpv6())
 	{
@@ -517,6 +562,10 @@ void UdpSocket::SetMulticastLoop(bool x)
 
 bool UdpSocket::IsMulticastLoop()
 {
+	if (GetSocket() == INVALID_SOCKET)
+	{
+		CreateConnection();
+	}
 #ifdef IPPROTO_IPV6
 	if (IsIpv6())
 	{
@@ -541,6 +590,10 @@ bool UdpSocket::IsMulticastLoop()
 
 void UdpSocket::AddMulticastMembership(const std::string& group,const std::string& local_if,int if_index)
 {
+	if (GetSocket() == INVALID_SOCKET)
+	{
+		CreateConnection();
+	}
 #ifdef IPPROTO_IPV6
 	if (IsIpv6())
 	{
@@ -576,6 +629,10 @@ void UdpSocket::AddMulticastMembership(const std::string& group,const std::strin
 
 void UdpSocket::DropMulticastMembership(const std::string& group,const std::string& local_if,int if_index)
 {
+	if (GetSocket() == INVALID_SOCKET)
+	{
+		CreateConnection();
+	}
 #ifdef IPPROTO_IPV6
 	if (IsIpv6())
 	{
@@ -612,6 +669,10 @@ void UdpSocket::DropMulticastMembership(const std::string& group,const std::stri
 #ifdef IPPROTO_IPV6
 void UdpSocket::SetMulticastHops(int hops)
 {
+	if (GetSocket() == INVALID_SOCKET)
+	{
+		CreateConnection();
+	}
 	if (!IsIpv6())
 	{
 		Handler().LogError(this, "SetMulticastHops", 0, "Ipv6 only", LOG_LEVEL_ERROR);
@@ -626,6 +687,10 @@ void UdpSocket::SetMulticastHops(int hops)
 
 int UdpSocket::GetMulticastHops()
 {
+	if (GetSocket() == INVALID_SOCKET)
+	{
+		CreateConnection();
+	}
 	if (!IsIpv6())
 	{
 		Handler().LogError(this, "SetMulticastHops", 0, "Ipv6 only", LOG_LEVEL_ERROR);

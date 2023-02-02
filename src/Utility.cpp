@@ -3,7 +3,7 @@
  **	\author grymse@alhem.net
 **/
 /*
-Copyright (C) 2004,2005  Anders Hedstrom
+Copyright (C) 2004-2006  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL.
 
@@ -32,13 +32,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
-#endif
-
-
-#ifdef _DEBUG
-#define DEB(x) x
-#else
-#define DEB(x)
 #endif
 
 

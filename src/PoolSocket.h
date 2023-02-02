@@ -3,7 +3,7 @@
  **	\author grymse@alhem.net
 **/
 /*
-Copyright (C) 2004,2005  Anders Hedstrom
+Copyright (C) 2004-2006  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL.
 
@@ -48,6 +48,7 @@ public:
 	~PoolSocket();
 
 	void OnRead();
+	void OnOptions(int,int,int,SOCKET) {}
 
 private:
 	PoolSocket(const PoolSocket& s) : Socket(s) {} // copy constructor

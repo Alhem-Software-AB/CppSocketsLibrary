@@ -3,7 +3,7 @@
  **	\author grymse@alhem.net
 **/
 /*
-Copyright (C) 2005  Anders Hedstrom
+Copyright (C) 2005,2006  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL.
 
@@ -41,13 +41,6 @@ namespace SOCKETS_NAMESPACE {
 #endif
 
 
-#ifdef _DEBUG
-#define DEB(x) x
-#else
-#define DEB(x)
-#endif
-
-
 EventHandler::EventHandler(StdLog *p) : SocketHandler(p), m_quit(false)
 {
 }
@@ -60,7 +53,6 @@ EventHandler::EventHandler(Mutex& m,StdLog *p) : SocketHandler(m, p), m_quit(fal
 
 EventHandler::~EventHandler()
 {
-DEB(	printf("~EventHandler()\n");)
 	while (m_events.size())
 	{
 		std::list<Event *>::iterator it = m_events.begin();

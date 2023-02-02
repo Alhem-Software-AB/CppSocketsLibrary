@@ -3,7 +3,7 @@
  **	\author grymse@alhem.net
 **/
 /*
-Copyright (C) 2004,2005  Anders Hedstrom
+Copyright (C) 2004-2006  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL.
 
@@ -141,6 +141,8 @@ public:
 	bool IsBound();
 	/** Return Bind port number */
 	port_t GetPort();
+
+	void OnOptions(int,int,int,SOCKET) {}
 
 protected:
 	UdpSocket(const UdpSocket& s) : Socket(s) {}

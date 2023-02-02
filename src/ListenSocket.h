@@ -3,7 +3,7 @@
  **	\author grymse@alhem.net
 **/
 /*
-Copyright (C) 2004,2005  Anders Hedstrom
+Copyright (C) 2004-2006  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL.
 
@@ -349,6 +349,8 @@ public:
         }
 
         bool HasCreator() { return m_bHasCreate; }
+
+	void OnOptions(int,int,int,SOCKET) {}
 
 protected:
 	ListenSocket(const ListenSocket& ) {}

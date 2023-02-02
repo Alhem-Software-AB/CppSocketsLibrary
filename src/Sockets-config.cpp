@@ -1,6 +1,6 @@
 #include <stdio.h>
-#include <sys/select.h>
 #include <string.h>
+#include "socket_include.h"
 /*
 CFLAGS =	-Wall -g -O2 $(INCLUDE) -MD -D_VERSION='"$(VERSION)"' 
 # manual autoconf ....
@@ -29,6 +29,51 @@ int main(int argc,char *argv[])
 #ifdef USE_SCTP
 #ifdef IPPROTO_SCTP
 		printf("SCTP support\n");
+#	ifdef HAVE_SCTP
+		printf("  HAVE_SCTP: yes\n");
+#	else
+		printf("  HAVE_SCTP: no\n");
+#	endif
+#	ifdef HAVE_KERNEL_SCTP
+		printf("  HAVE_KERNEL_SCTP: yes\n");
+#	else
+		printf("  HAVE_KERNEL_SCTP: no\n");
+#	endif
+#	ifdef HAVE_SCTP_PRSCTP
+		printf("  HAVE_SCTP_PRSCTP: yes\n");
+#	else
+		printf("  HAVE_SCTP_PRSCTP: no\n");
+#	endif
+#	ifdef HAVE_SCTP_ADDIP
+		printf("  HAVE_SCTP_ADDIP: yes\n");
+#	else
+		printf("  HAVE_SCTP_ADDIP: no\n");
+#	endif
+#	ifdef HAVE_SCTP_CANSET_PRIMARY
+		printf("  HAVE_SCTP_CANSETPRIMARY: yes\n");
+#	else
+		printf("  HAVE_SCTP_CANSETPRIMARY: no\n");
+#	endif
+#	ifdef HAVE_SCTP_SAT_NETWORK_CAPABILITY
+		printf("  HAVE_SCTP_SAT_NETWORK_CAPABILITY: yes\n");
+#	else
+		printf("  HAVE_SCTP_SAT_NETWORK_CAPABILITY: no\n");
+#	endif
+#	ifdef HAVE_SCTP_MULTIBUF
+		printf("  HAVE_SCTP_MULTIBUF: yes\n");
+#	else
+		printf("  HAVE_SCTP_MULTIBUF: no\n");
+#	endif
+#	ifdef HAVE_SCTP_NOCONNECT
+		printf("  HAVE_SCTP_NOCONNECT: yes\n");
+#	else
+		printf("  HAVE_SCTP_NOCONNECT: no\n");
+#	endif
+#	ifdef HAVE_SCTP_EXT_RCVINFO
+		printf("  HAVE_SCTP_EXT_RCVINFO: yes\n");
+#	else
+		printf("  HAVE_SCTP_EXT_RCVINFO: no\n");
+#	endif
 #else
 		printf("No SCTP support\n");
 #endif

@@ -3,7 +3,7 @@
  **	\author grymse@alhem.net
 **/
 /*
-Copyright (C) 2004,2005  Anders Hedstrom
+Copyright (C) 2004-2006  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL.
 
@@ -187,6 +187,10 @@ public:
 	/** SSL; delete random file when shutting down. */
 static	void DeleteRandFile();
 
+	void DisableInputBuffer(bool = true);
+
+	void OnOptions(int,int,int,SOCKET);
+
 protected:
 	TcpSocket(const TcpSocket& s);
 	void OnRead();
@@ -237,6 +241,7 @@ static	long m_rand_size;
 	bool m_b_reconnect; ///< Reconnect on lost connection flag
 	bool m_b_is_reconnect; ///< Trying to reconnect
 static	SSLInitializer m_ssl_init;
+	bool m_b_input_buffer_disabled;
 };
 
 

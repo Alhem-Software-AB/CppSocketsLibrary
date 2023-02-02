@@ -3,7 +3,7 @@
  **	\author grymse@alhem.net
 **/
 /*
-Copyright (C) 2004,2005  Anders Hedstrom
+Copyright (C) 2004-2006  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL.
 
@@ -671,18 +671,6 @@ void Socket::CopyConnection(Socket *sock)
 	socklen_t sa_len;
 	sock -> GetRemoteSocketAddress(sa, sa_len);
 	SetRemoteAddress(&sa, sa_len);
-}
-
-
-void Socket::OnOptions(int family,int type,int protocol,SOCKET s)
-{
-/*
-	Handler().LogError(this, "OnOptions", family, "Address Family", LOG_LEVEL_INFO);
-	Handler().LogError(this, "OnOptions", type, "Type", LOG_LEVEL_INFO);
-	Handler().LogError(this, "OnOptions", protocol, "Protocol", LOG_LEVEL_INFO);
-*/
-	SetReuse(true);
-	SetKeepalive(true);
 }
 
 
