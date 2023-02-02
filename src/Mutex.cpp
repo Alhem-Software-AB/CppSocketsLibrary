@@ -54,7 +54,7 @@ Mutex::~Mutex()
 }
 
 
-void Mutex::Lock()
+void Mutex::Lock() const
 {
 #ifdef _WIN32
 	DWORD d = WaitForSingleObject(m_mutex, INFINITE);
@@ -65,7 +65,7 @@ void Mutex::Lock()
 }
 
 
-void Mutex::Unlock()
+void Mutex::Unlock() const
 {
 #ifdef _WIN32
 	::ReleaseMutex(m_mutex);

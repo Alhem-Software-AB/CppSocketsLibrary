@@ -68,6 +68,13 @@ public:
 
 	virtual void Run() = 0;
 
+#ifdef _WIN32
+	HANDLE GetThread() { return m_thread; }
+	unsigned GetThreadId() { return m_dwThreadId; }
+#else
+	pthread_t GetThread() { return m_thread; }
+#endif
+
 	bool IsRunning();
 	void SetRunning(bool x);
 	bool IsReleased();
@@ -76,15 +83,17 @@ public:
 	void SetDeleteOnExit(bool x = true);
 	bool IsDestructor();
 
-private:
-	Thread(const Thread& ) {}
-	Thread& operator=(const Thread& ) { return *this; }
+protected:
 #ifdef _WIN32
 	HANDLE m_thread;
 	unsigned m_dwThreadId;
 #else
 	pthread_t m_thread;
 #endif
+
+private:
+	Thread(const Thread& ) {}
+	Thread& operator=(const Thread& ) { return *this; }
 	bool m_running;
 	bool m_release;
 	bool m_b_delete_on_exit;

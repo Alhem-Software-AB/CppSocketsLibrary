@@ -50,13 +50,13 @@ public:
 	Mutex();
 	~Mutex();
 
-	void Lock();
-	void Unlock();
+	void Lock() const;
+	void Unlock() const;
 private:
 #ifdef _WIN32
 	HANDLE m_mutex;
 #else
-	pthread_mutex_t m_mutex;
+	mutable pthread_mutex_t m_mutex;
 #endif
 };
 

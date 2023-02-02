@@ -78,6 +78,14 @@ void HttpDebugSocket::OnFirst()
 	Send(	"<form method='post' action='/test_post'>"
 		"<input type='text' name='text' value='test text'><br>"
 		"<input type='submit' name='submit' value=' OK '></form>");
+
+	// enctype 'multipart/form-data'
+	Sendf("<form action='/test_post' method='post' enctype='multipart/form-data'>");
+	Sendf("<input type=file name=the_file><br>");
+	Sendf("<input type=text name=the_name><br>");
+	Sendf("<input type=submit name=submit value=' test form-data '>");
+	Sendf("</form>");
+
 	Send(	"<pre style='background: #e0e0e0'>");
 	Send(GetMethod() + " " + GetUrl() + " " + GetHttpVersion() + "\n");
 }

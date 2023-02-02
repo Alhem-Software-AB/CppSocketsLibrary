@@ -35,7 +35,7 @@ namespace SOCKETS_NAMESPACE {
 #endif
 
 
-Lock::Lock(Mutex& m) : m_mutex(m)
+Lock::Lock(const Mutex& m) : m_mutex(m)
 {
 	m_mutex.Lock();
 }

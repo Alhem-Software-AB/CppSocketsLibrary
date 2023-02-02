@@ -48,7 +48,7 @@ public:
 	~File();
 
 	bool fopen(const std::string&, const std::string&);
-	void fclose();
+	void fclose() const;
 
 	size_t fread(char *, size_t, size_t) const;
 	size_t fwrite(const char *, size_t, size_t);
@@ -68,7 +68,7 @@ private:
 
 	std::string m_path;
 	std::string m_mode;
-	FILE *m_fil;
+	mutable FILE *m_fil;
 	mutable long m_rptr;
 	long m_wptr;
 };

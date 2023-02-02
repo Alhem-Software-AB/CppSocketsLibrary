@@ -186,6 +186,7 @@ DEB(	Debug deb("HttpBaseSocket::OnTransferLimit");)
 	}
 	if (!GetOutputLength())
 	{
+		m_res.GetFile().fclose();
 		OnResponseComplete();
 		if (!m_b_keepalive)
 		{

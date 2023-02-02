@@ -46,7 +46,7 @@ public:
 	virtual ~IFile() {}
 
 	virtual bool fopen(const std::string&, const std::string&) = 0;
-	virtual void fclose() = 0;
+	virtual void fclose() const = 0;
 
 	virtual size_t fread(char *, size_t, size_t) const = 0;
 	virtual size_t fwrite(const char *, size_t, size_t) = 0;

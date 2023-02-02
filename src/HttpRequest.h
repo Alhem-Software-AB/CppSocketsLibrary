@@ -43,6 +43,8 @@ public:
 	HttpRequest(const HttpRequest& src);
 	~HttpRequest();
 
+	HttpRequest& operator=(const HttpRequest& src);
+
 	/** Get, Post */
 	void SetHttpMethod(const std::string& value);
 	const std::string& HttpMethod() const;

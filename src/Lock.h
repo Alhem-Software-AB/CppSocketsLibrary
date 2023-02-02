@@ -42,11 +42,11 @@ class Mutex;
 class Lock
 {
 public:
-	Lock(Mutex&);
+	Lock(const Mutex&);
 	~Lock();
 
 private:
-	Mutex& m_mutex;
+	const Mutex& m_mutex;
 };
 
 

@@ -75,7 +75,7 @@ install:	all
 
 # no binary files, zip will translate lf to cr lf
 FILES =		*.h *.cpp Makefile Makefile.* Project/*.ds* \
-		INSTALL README.macosx gpl.txt mkdot.sh \
+		INSTALL Changelog README.macosx gpl.txt mkdot.sh \
 		Project.net/Sockets/*.vcproj Project.net/Sockets/*.sln \
 		Project.net/Test/*.vcproj \
 		DevCpp/*.dev tests/Makefile tests/*.cpp \

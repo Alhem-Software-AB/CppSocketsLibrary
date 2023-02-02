@@ -25,14 +25,14 @@ public:
 public:
 	Debug() {}
 	Debug(const std::string& x) : m_id(0), m_text(x) {
-		fprintf(stderr, "%s", colors[Utility::ThreadID() % 16 + 1]);
+		fprintf(stderr, "%s", colors[Utility::ThreadID() % 14 + 1]);
 		for (int i = 0; i < m_level[Utility::ThreadID()]; i++)
 			fprintf(stderr, "  ");
 		fprintf(stderr, "%s%s\n", x.c_str(), colors[0]);
 		m_level[Utility::ThreadID()]++;
 	}
 	Debug(int id, const std::string& x) : m_id(id), m_text(x) {
-		fprintf(stderr, "%s", colors[Utility::ThreadID() % 16 + 1]);
+		fprintf(stderr, "%s", colors[Utility::ThreadID() % 14 + 1]);
 		for (int i = 0; i < m_level[Utility::ThreadID()]; i++)
 			fprintf(stderr, "  ");
 		fprintf(stderr, "%d> %s%s\n", m_id, x.c_str(), colors[0]);
@@ -43,7 +43,7 @@ public:
 		{
 			if (m_level[Utility::ThreadID()])
 				m_level[Utility::ThreadID()]--;
-			fprintf(stderr, "%s", colors[Utility::ThreadID() % 16 + 1]);
+			fprintf(stderr, "%s", colors[Utility::ThreadID() % 14 + 1]);
 			for (int i = 0; i < m_level[Utility::ThreadID()]; i++)
 				fprintf(stderr, "  ");
 			if (m_id)

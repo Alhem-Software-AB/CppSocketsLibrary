@@ -79,6 +79,30 @@ HttpRequest::~HttpRequest()
 
 
 // --------------------------------------------------------------------------------------
+HttpRequest& HttpRequest::operator=(const HttpRequest& src)
+{
+	m_method = src.m_method;
+	m_protocol = src.m_protocol;
+	m_req_uri = src.m_req_uri;
+	m_remote_addr = src.m_remote_addr;
+	m_remote_host = src.m_remote_host;
+	m_server_name = src.m_server_name;
+	m_server_port = src.m_server_port;
+	m_is_ssl = src.m_is_ssl;
+	m_attribute = src.m_attribute;
+	m_null = src.m_null;
+	m_body_file = src.m_body_file;
+	m_form = src.m_form;
+	m_cookies = src.m_cookies;
+	m_cookie = src.m_cookie;
+
+	HttpTransaction::operator=(src);
+
+	return *this;
+}
+
+
+// --------------------------------------------------------------------------------------
 void HttpRequest::SetHttpMethod(const std::string& value)
 {
 	m_method = value;

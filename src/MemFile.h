@@ -59,7 +59,7 @@ public:
 	~MemFile();
 
 	bool fopen(const std::string& path, const std::string& mode);
-	void fclose();
+	void fclose() const;
 
 	size_t fread(char *ptr, size_t size, size_t nmemb) const;
 	size_t fwrite(const char *ptr, size_t size, size_t nmemb);

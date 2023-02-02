@@ -82,4 +82,7 @@ Project files for various IDE's can be found here:
 
 Please see steps 2-5 above for some details on configuring the library.
 
+When linking on cygwin/mingw, add the following libraries:
+ -lwsock32
+ -lws2_32
 

@@ -60,11 +60,12 @@ bool File::fopen(const std::string& path, const std::string& mode)
 	m_path = path;
 	m_mode = mode;
 	m_fil = ::fopen(path.c_str(), mode.c_str());
+
 	return m_fil ? true : false;
 }
 
 
-void File::fclose()
+void File::fclose() const
 {
 	if (m_fil)
 	{

@@ -17,16 +17,13 @@ const char *Debug::colors[] = {
 		"\x1B[0;0m\x1B[35m", // &m */
 		"\x1B[0;0m\x1B[36m", // &c */
 		"\x1B[0;0m\x1B[37m", // &w */
-		"\x1B[0;0m\x1B[30m", // &l */
 		"\x1B[1;31m", // &R */
 		"\x1B[1;32m", // &G */
 		"\x1B[1;33m", // &Y */
 		"\x1B[1;34m", // &B */
 		"\x1B[1;35m", // &M */
 		"\x1B[1;36m", // &C */
-		"\x1B[1;37m", // &W */
-		"\x1B[1;30m" }; // &L */
-
+		"\x1B[1;37m" }; // &W */
 
 
 void Debug::Print(const char *format, ...)
@@ -42,7 +39,7 @@ void Debug::Print(const char *format, ...)
 #endif
 	va_end(ap);
 
-	fprintf(stderr, "%s", colors[Utility::ThreadID() % 16 + 1]);
+	fprintf(stderr, "%s", colors[Utility::ThreadID() % 14 + 1]);
 	for (int i = 0; i < m_level[Utility::ThreadID()]; i++)
 		fprintf(stderr, "  ");
 	if (slask[strlen(slask) - 1] == '\n')

@@ -74,6 +74,50 @@ public:
 	public:
 		ncmap() {}
 	};
+	class Uri {
+	public:
+		Uri(const std::string& url) : m_url(url), m_port(0), m_path(url) {
+			size_t pos = url.find("://");
+			if (pos != std::string::npos)
+			{
+				m_protocol = Utility::ToLower(url.substr(0, pos));
+				m_port = (m_protocol == "http") ? 80 :
+					(m_protocol == "https") ? 443 : 0;
+				m_host = url.substr(pos + 3);
+				pos = m_host.find("/");
+				if (pos != std::string::npos)
+				{
+					m_path = m_host.substr(pos);
+					m_host = m_host.substr(0, pos);
+				}
+				pos = m_host.find(":");
+				if (pos != std::string::npos)
+				{
+					m_port = atoi(m_host.substr(pos + 1).c_str());
+					m_host = m_host.substr(0, pos);
+				}
+			}
+			pos = std::string::npos;
+			for (size_t i = 0; i < m_path.size(); i++)
+				if (m_path[i] == '.')
+					pos = i;
+			if (pos != std::string::npos)
+				m_ext = m_path.substr(pos + 1);
+		}
+		const std::string Url() { return m_url; }
+		const std::string Protocol() { return m_protocol; }
+		const std::string Host() { return m_host; }
+		int Port() { return m_port; }
+		const std::string Path() { return m_path; }
+		const std::string Extension() { return m_ext; }
+	private:
+		std::string m_url;
+		std::string m_protocol;
+		std::string m_host;
+		int m_port;
+		std::string m_path;
+		std::string m_ext;
+	};
 public:
 	static std::string base64(const std::string& str_in);
 	static std::string base64d(const std::string& str_in);
@@ -162,6 +206,8 @@ public:
 
 	/** Returns a random 32-bit integer */
 	static unsigned long Rnd();
+
+	static const char *Logo;
 
 private:
 	static std::string m_host; ///< local hostname

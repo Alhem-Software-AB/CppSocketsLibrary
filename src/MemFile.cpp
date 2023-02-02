@@ -95,7 +95,7 @@ bool MemFile::fopen(const std::string& path, const std::string& mode)
 }
 
 
-void MemFile::fclose()
+void MemFile::fclose() const
 {
 }
 

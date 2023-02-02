@@ -35,20 +35,28 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "Parse.h"
 #include "IFile.h"
 #include "HttpdForm.h"
+#include "Debug.h"
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
 #endif
 
 #define TMPSIZE 32000
+#ifdef _DEBUG
+#define DEB(x) x
+#else
+#define DEB(x)
+#endif
 
 
 HttpdForm::HttpdForm(IFile *infil, const std::string& content_type, size_t content_length) : raw(false)
 {
+DEB(	Debug deb("HttpdForm");)
 	CGI *cgi = NULL;
 	size_t extra = 2;
 
 	m_current = m_cgi.end();
+DEB(	deb << "Content-Type: " << content_type << Debug::endl();)
 
 	if (content_type.size() >= 19 && content_type.substr(0, 19) == "multipart/form-data")
 	{
@@ -71,6 +79,7 @@ HttpdForm::HttpdForm(IFile *infil, const std::string& content_type, size_t conte
 		}
 		if (!m_strBoundary.empty())
 		{
+DEB(			Debug deb("HttpdForm; parsing, boundary = " + m_strBoundary);)
 			std::string content_type;
 			std::string current_name;
 			std::string current_filename;
@@ -100,27 +109,34 @@ HttpdForm::HttpdForm(IFile *infil, const std::string& content_type, size_t conte
 					{
 						slask[strlen(slask) - 1] = 0;
 					}
+DEB(					deb << "Parsing header, line = " << slask << Debug::endl();)
 					while (!infil -> eof() && *slask)
 					{
-						Parse pa(slask,";");
+						Parse pa(slask,":");
 						std::string h = pa.getword();
-						if (!strcasecmp(h.c_str(),"Content-type:"))
+						std::string h2 = pa.getrest();
+DEB(						deb << "KEY:" << h << "  REST:" << h2 << Debug::endl();)
+						if (!strcasecmp(h.c_str(),"Content-type"))
 						{
+							Parse pa(h2, ";");
 							content_type = pa.getword();
+DEB(							deb << "Found Content-Type: " << content_type << Debug::endl();)
 						}
 						else
-						if (!strcasecmp(h.c_str(),"Content-Disposition:"))
+						if (!strcasecmp(h.c_str(),"Content-Disposition"))
 						{
+							Parse pa(h2, ";");
 							h = pa.getword();
 							if (!strcmp(h.c_str(),"form-data"))
 							{
+DEB(								deb << "Found Content-Disposition: form-data, parsing" << Debug::endl();)
 								pa.EnableQuote(true);
 								h = pa.getword();
 								while (!h.empty())
 								{
-									Parse pa2(slask,"=");
+									Parse pa2(h,"=");
 									std::string name = pa2.getword();
-									std::string h = pa2.getrest();
+									h = pa2.getrest();
 									if (!strcmp(name.c_str(),"name"))
 									{
 										if (!h.empty() && h[0] == '"')
@@ -131,6 +147,7 @@ HttpdForm::HttpdForm(IFile *infil, const std::string& content_type, size_t conte
 										{
 											current_name = h;
 										}
+DEB(										deb << "  Found name = " << current_name << Debug::endl();)
 									}
 									else
 									if (!strcmp(name.c_str(),"filename"))
@@ -153,6 +170,7 @@ HttpdForm::HttpdForm(IFile *infil, const std::string& content_type, size_t conte
 										{
 											current_filename = current_filename.substr(x);
 										}
+DEB(										deb << "  Found filename = " << current_filename << Debug::endl();)
 									}
 									h = pa.getword();
 								}
@@ -182,6 +200,7 @@ HttpdForm::HttpdForm(IFile *infil, const std::string& content_type, size_t conte
 						}
 						cgi = new CGI(current_name, val);
 						m_cgi.push_back(cgi);
+DEB(						deb << current_name << ": " << val << Debug::endl();)
 					}
 					else // current_filename.size() > 0
 					{
