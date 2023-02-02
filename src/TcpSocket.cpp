@@ -33,6 +33,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "SocketHandler.h"
 #include "TcpSocket.h"
+#include "PoolSocket.h"
 
 
 #ifdef _DEBUG
@@ -78,6 +79,20 @@ TcpSocket::~TcpSocket()
 
 bool TcpSocket::Open(ipaddr_t ip,port_t port)
 {
+	// check for pooling
+	PoolSocket *pools = Handler().FindConnection(SOCK_STREAM, "tcp", ip, port);
+	if (pools)
+	{
+		CopyConnection( pools );
+		delete pools;
+
+		SetIsClient();
+		SetCallOnConnect();
+DEB(printf("Reusing connection\n");)
+		return true;
+	}
+
+	// if not, create new connection
 	SOCKET s = CreateSocket4(SOCK_STREAM, "tcp");
 	if (s == INVALID_SOCKET)
 	{
@@ -87,6 +102,10 @@ bool TcpSocket::Open(ipaddr_t ip,port_t port)
 	{
 		struct sockaddr_in sa;
 		socklen_t sa_len = sizeof(sa);
+
+		SetIsClient();
+		SetClientRemoteAddr(ip);
+		SetClientRemotePort(port);
 
 		memset(&sa,0,sizeof(sa));
 		sa.sin_family = AF_INET; // hp -> h_addrtype;
@@ -118,6 +137,10 @@ bool TcpSocket::Open(ipaddr_t ip,port_t port)
 				SetConnecting( true ); // this flag will control fd_set's
 			}
 		}
+		else
+		{
+			SetCallOnConnect();
+		}
 		SetRemoteAddress( (struct sockaddr *)&sa,sa_len);
 		Attach(s);
 		return !Connecting();
@@ -128,16 +151,40 @@ bool TcpSocket::Open(ipaddr_t ip,port_t port)
 
 bool TcpSocket::Open(const std::string &host,port_t port)
 {
+	ipaddr_t l;
+	if (!u2ip(host,l))
+	{
+		return false;
+	}
+
+	// check for pooling
+	PoolSocket *pools = Handler().FindConnection(SOCK_STREAM, "tcp", l, port);
+	if (pools)
+	{
+		CopyConnection( pools );
+		delete pools;
+
+		SetIsClient();
+		SetCallOnConnect();
+DEB(printf("Reusing connection\n");)
+		return true;
+	}
+
+	// if not, create new connection
 	SOCKET s = CreateSocket4(SOCK_STREAM, "tcp");
 	if (s == INVALID_SOCKET)
 	{
 		return false;
 	}
-	ipaddr_t l;
-	if (u2ip(host,l))
+
+	// l is valid
 	{
 		struct sockaddr_in sa;
 		socklen_t sa_len = sizeof(sa);
+
+		SetIsClient();
+		SetClientRemoteAddr(l);
+		SetClientRemotePort(port);
 
 		memset(&sa,0,sizeof(sa));
 		sa.sin_family = AF_INET;
@@ -169,6 +216,10 @@ bool TcpSocket::Open(const std::string &host,port_t port)
 				SetConnecting(true);
 			}
 		}
+		else
+		{
+			SetCallOnConnect();
+		}
 		SetRemoteAddress((struct sockaddr *)&sa,sa_len);
 		Attach(s);
 		return !Connecting();
@@ -180,6 +231,9 @@ bool TcpSocket::Open(const std::string &host,port_t port)
 #ifdef IPPROTO_IPV6
 bool TcpSocket::Open6(const std::string &host,port_t port)
 {
+	// check for pooling
+
+	// if not, create new connection
 	SOCKET s = CreateSocket6(SOCK_STREAM, "tcp");
 	if (s == INVALID_SOCKET)
 	{
@@ -223,6 +277,10 @@ bool TcpSocket::Open6(const std::string &host,port_t port)
 				SetConnecting(true);
 			}
 		}
+		else
+		{
+			SetCallOnConnect();
+		}
 		SetRemoteAddress((struct sockaddr *)&sa,sa_len);
 		Attach(s);
 		return !Connecting();
@@ -240,17 +298,19 @@ void TcpSocket::OnRead()
 //	if (!n)
 //		return; // bad
 	n = BUFSIZE_READ; // %! patch away
-	n = readsocket(GetSocket(),buf,(n < BUFSIZE_READ) ? n : BUFSIZE_READ);
+	n = recv(GetSocket(),buf,(n < BUFSIZE_READ) ? n : BUFSIZE_READ,MSG_NOSIGNAL);
 	if (n == -1)
 	{
 		Handler().LogError(this, "read", Errno, StrError(Errno), LOG_LEVEL_FATAL);
 		SetCloseAndDelete(true); // %!
+		SetLost();
 	}
 	else
 	if (!n)
 	{
 		Handler().LogError(this, "read", 0, "read returns 0", LOG_LEVEL_FATAL);
 		SetCloseAndDelete(true);
+		SetLost();
 	}
 	else
 	{
@@ -286,7 +346,7 @@ printf("OnWrite abort because: not ready\n");
 		return;
 	}
 */
-	int n = writesocket(GetSocket(),obuf.GetStart(),obuf.GetL());
+	int n = send(GetSocket(),obuf.GetStart(),obuf.GetL(),MSG_NOSIGNAL);
 /*
 When writing onto a connection-oriented socket that has been shut down (by the  local
 or the remote end) SIGPIPE is sent to the writing process and EPIPE is returned.  The
@@ -296,6 +356,7 @@ signal is not sent when the write call specified the MSG_NOSIGNAL flag.
 	{
 		Handler().LogError(this, "write", Errno, StrError(Errno), LOG_LEVEL_FATAL);
 		SetCloseAndDelete(true); // %!
+		SetLost();
 	}
 	else
 	if (!n)

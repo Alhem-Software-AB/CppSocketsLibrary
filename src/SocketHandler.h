@@ -29,9 +29,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "socket_include.h"
 #include "StdLog.h"
 
+
 class Socket;
-
-
+class PoolSocket;
 
 class SocketHandler
 {
@@ -48,9 +48,9 @@ public:
 	void Add(Socket *);
 	void Set(SOCKET s,bool bRead,bool bWrite,bool bException = true);
 	int Select(long sec,long usec);
-	void StatLoop(long s,long us);
 	bool Valid(Socket *);
 	virtual bool OkToAccept();
+	void Get(SOCKET s,bool& r,bool& w,bool& e);
 
 	/** ResolveLocal before calling any GetLocal method */
 	void ResolveLocal();
@@ -63,6 +63,8 @@ public:
 
 	size_t GetCount();
 	void SetSlave(bool x = true);
+
+	PoolSocket *FindConnection(int type,const std::string& protocol,ipaddr_t,port_t);
 
 protected:
 	socket_m m_sockets;

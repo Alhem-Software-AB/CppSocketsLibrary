@@ -1,4 +1,4 @@
-VERSION =	1.6.4
+VERSION =	1.7
 
 INCLUDE =	-I/usr/devel/include -I.
 PREFIX =	/usr/local
@@ -42,7 +42,9 @@ OBJS =		CircularBuffer.o \
 		StdoutLog.o \
 		HttpPutSocket.o \
 		HttpPostSocket.o \
-		HttpDebugSocket.o
+		HttpDebugSocket.o \
+		Utility.o \
+		PoolSocket.o
 
 libSockets.a:	$(OBJS)
 		ar cru $@ $(OBJS)
@@ -75,7 +77,7 @@ tar:		clean
 		rm -f Stdin.*
 		./mkdot.sh
 		tar czf Sockets-$(VERSION).tar.gz *.h *.cpp Makefile Project/*.dsp \
-			README.macosx gpl.txt
+			README.macosx gpl.txt 
 		doxygen doxygen.cfg
 		/usr/local/bin/tarfix.sh Sockets-$(VERSION)
 		cp Sockets-$(VERSION).tar.gz /usr/local/apache/www.libsockets.net/htdocs

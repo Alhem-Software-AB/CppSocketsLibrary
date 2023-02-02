@@ -22,8 +22,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #ifdef _WIN32
 #pragma warning(disable:4786)
-#endif
-#ifdef _WIN32
 #define strcasecmp stricmp
 #else
 #include <errno.h>
@@ -93,20 +91,22 @@ HttpGetSocket::~HttpGetSocket()
 
 void HttpGetSocket::OnConnect()
 {
-	std::string str =
-		"GET " + m_url + " HTTP/1.0\n"
-		"Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,video/x-mng,image/png,image/jpeg,image/gif;q=0.2,*/*;q=0.1\n"
-		"Accept-Language: en-us,en;q=0.5\n"
-		"Accept-Encoding: gzip,deflate\n"
-		"Accept-Charset: ISO-8859-1,utf-8;q=0.7,*;q=0.7\n"
+	SetMethod( "GET" );
+	SetUrl( m_url );
+	AddResponseHeader( "Accept", "text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,video/x-mng,image/png,image/jpeg,image/gif;q=0.2,*/*;q=0.1");
+	AddResponseHeader( "Accept-Language", "en-us,en;q=0.5");
+	AddResponseHeader( "Accept-Encoding", "gzip,deflate");
+	AddResponseHeader( "Accept-Charset", "ISO-8859-1,utf-8;q=0.7,*;q=0.7");
 #ifdef _VERSION
-		"User-agent: C++Sockets/" _VERSION "\n"
+	AddResponseHeader( "User-agent", "C++Sockets/" _VERSION "");
 #else
-		"User-agent: C++Sockets/1.1\n"
+	AddResponseHeader( "User-agent", "C++ Sockets library");
 #endif
-		"Host: " + m_host + ":" + Utility::l2string(m_port) + "\n"
-		"\n";
-	Send(str);
+	if (m_port != 80)
+		AddResponseHeader( "Host", m_host + " " + Utility::l2string(m_port) );
+	else
+		AddResponseHeader( "Host", m_host );
+	SendRequest();
 }
 
 

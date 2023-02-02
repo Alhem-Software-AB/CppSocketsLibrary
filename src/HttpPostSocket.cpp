@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 //#include <stdio.h>
 #ifdef _WIN32
+#pragma warning(disable:4786)
 #else
 #include <errno.h>
 #endif
@@ -37,18 +38,20 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 HttpPostSocket::HttpPostSocket(SocketHandler& h,const std::string& url)
 :HTTPSocket(h)
+,m_port(80)
+,m_bMultipart(false)
 {
 	std::string host;
 	{
 		Parse pa(url,"/");
 		pa.getword(); // 'http:'
 		host = pa.getword();
-		m_url = "/" + pa.getrest();
+		SetUrl( "/" + pa.getrest() );
 	}
 	{
 		Parse pa(host,":");
 		m_host = pa.getword();
-		m_port = pa.getvalue();
+		m_port = (port_t)pa.getvalue();
 		if (!m_port)
 		{
 			m_port = 80;
@@ -76,7 +79,7 @@ void HttpPostSocket::AddField(const std::string& name,const std::string& value)
 {
 	std::list<std::string> vec;
 	vec.push_back(value);
-	m_fields[name] = vec;
+	AddMultilineField(name, vec);
 }
 
 
@@ -94,6 +97,7 @@ void HttpPostSocket::AddFile(const std::string& name,const std::string& filename
 		m_files[name] = filename;
 		m_content_length[filename] = st.st_size;
 		m_content_type[filename] = type;
+		m_bMultipart = true;
 	}
 	else
 	{
@@ -112,43 +116,93 @@ void HttpPostSocket::Open()
 
 void HttpPostSocket::OnConnect()
 {
+	if (m_bMultipart)
+	{
+		DoMultipartPost();
+	}
+	else
+	{
+		std::string body;
+
+		// only fields, no files, add urlencoding
+		for (std::map<std::string,std::list<std::string> >::iterator it = m_fields.begin(); it != m_fields.end(); it++)
+		{
+			std::string name = (*it).first;
+			std::list<std::string>& ref = (*it).second;
+			if (body.size())
+			{
+				body += '&';
+			}
+			body += name + "=";
+			bool first = true;
+			for (std::list<std::string>::iterator it = ref.begin(); it != ref.end(); it++)
+			{
+				std::string value = *it;
+				if (!first)
+				{
+					body += "%0d%0a"; // CRLF
+				}
+				body += Utility::rfc1738_encode(value);
+				first = false;
+			}
+		}
+
+		// build header, send body
+		SetMethod("POST");
+		SetHttpVersion( "HTTP/1.1" );
+		AddResponseHeader( "Host", m_host ); // oops - this is actually a request header that we're adding..
+		AddResponseHeader( "User-agent", "C++ Sockets library" );
+		AddResponseHeader( "Accept", "text/html, text/plain, */*;q=0.01" );
+		AddResponseHeader( "Connection", "close" );
+		AddResponseHeader( "Content-type", "application/x-www-form-urlencoded" );
+		AddResponseHeader( "Content-length", Utility::l2string(body.size()) );
+		SendRequest();
+
+		// send body
+		Send( body );
+	}
+}
+
+
+void HttpPostSocket::DoMultipartPost()
+{
 	long length = 0; // calculate content_length of our post body
 	std::string tmp;
 
 	// fields
 	{
-	for (std::map<std::string,std::list<std::string> >::iterator it = m_fields.begin(); it != m_fields.end(); it++)
-	{
-		std::string name = (*it).first;
-		std::list<std::string>& ref = (*it).second;
-		tmp = "--" + m_boundary + "\r\n"
-			"content-disposition: form-data; name=\"" + name + "\"\r\n"
-			"\r\n";
-		for (std::list<std::string>::iterator it = ref.begin(); it != ref.end(); it++)
+		for (std::map<std::string,std::list<std::string> >::iterator it = m_fields.begin(); it != m_fields.end(); it++)
 		{
-			std::string value = *it;
-			tmp += value + "\r\n";
+			std::string name = (*it).first;
+			std::list<std::string>& ref = (*it).second;
+			tmp = "--" + m_boundary + "\r\n"
+				"content-disposition: form-data; name=\"" + name + "\"\r\n"
+				"\r\n";
+			for (std::list<std::string>::iterator it = ref.begin(); it != ref.end(); it++)
+			{
+				std::string value = *it;
+				tmp += value + "\r\n";
+			}
+			length += tmp.size();
 		}
-		length += tmp.size();
-	}
 	}
 
 	// files
 	{
-	for (std::map<std::string,std::string>::iterator it = m_files.begin(); it != m_files.end(); it++)
-	{
-		std::string name = (*it).first;
-		std::string filename = (*it).second;
-		long content_length = m_content_length[filename];
-		std::string content_type = m_content_type[filename];
-		tmp = "--" + m_boundary + "\r\n"
-			"content-disposition: form-data; name=\"" + name + "\"; filename=\"" + filename + "\"\r\n"
-			"content-type: " + content_type + "\r\n"
-			"\r\n";
-		length += tmp.size();
-		length += content_length;
-		length += 2; // crlf after file
-	}
+		for (std::map<std::string,std::string>::iterator it = m_files.begin(); it != m_files.end(); it++)
+		{
+			std::string name = (*it).first;
+			std::string filename = (*it).second;
+			long content_length = m_content_length[filename];
+			std::string content_type = m_content_type[filename];
+			tmp = "--" + m_boundary + "\r\n"
+				"content-disposition: form-data; name=\"" + name + "\"; filename=\"" + filename + "\"\r\n"
+				"content-type: " + content_type + "\r\n"
+				"\r\n";
+			length += tmp.size();
+			length += content_length;
+			length += 2; // crlf after file
+		}
 	}
 
 	// end
@@ -156,62 +210,62 @@ void HttpPostSocket::OnConnect()
 	length += tmp.size();
 
 	// build header, send body
-	tmp =
-		"POST /check HTTP/1.1\r\n"
-		"Host: " + m_host + "\r\n"
-		"User-agent: C++ Sockets library\r\n"
-		"Accept: text/html, text/plain, */*;q=0.01\r\n"
-		"Connection: close\r\n"
-		"Content-type: multipart/form-data; boundary=" + m_boundary + "\r\n"
-		"Content-length: " + Utility::l2string(length) + "\r\n"
-		"\r\n";
-	Send(tmp);
+	SetMethod("POST");
+	SetHttpVersion( "HTTP/1.1" );
+	AddResponseHeader( "Host", m_host ); // oops - this is actually a request header that we're adding..
+	AddResponseHeader( "User-agent", "C++ Sockets library" );
+	AddResponseHeader( "Accept", "text/html, text/plain, */*;q=0.01" );
+	AddResponseHeader( "Connection", "close" );
+	AddResponseHeader( "Content-type", "multipart/form-data; boundary=" + m_boundary );
+	AddResponseHeader( "Content-length", Utility::l2string(length) );
+
+	SendRequest();
 
 	// send fields
 	{
-	for (std::map<std::string,std::list<std::string> >::iterator it = m_fields.begin(); it != m_fields.end(); it++)
-	{
-		std::string name = (*it).first;
-		std::list<std::string>& ref = (*it).second;
-		tmp = "--" + m_boundary + "\r\n"
-			"content-disposition: form-data; name=\"" + name + "\"\r\n"
-			"\r\n";
-		for (std::list<std::string>::iterator it = ref.begin(); it != ref.end(); it++)
+		for (std::map<std::string,std::list<std::string> >::iterator it = m_fields.begin(); it != m_fields.end(); it++)
 		{
-			std::string value = *it;
-			tmp += value + "\r\n";
+			std::string name = (*it).first;
+			std::list<std::string>& ref = (*it).second;
+			tmp = "--" + m_boundary + "\r\n"
+				"content-disposition: form-data; name=\"" + name + "\"\r\n"
+				"\r\n";
+			for (std::list<std::string>::iterator it = ref.begin(); it != ref.end(); it++)
+			{
+				std::string value = *it;
+				tmp += value + "\r\n";
+			}
+			Send( tmp );
 		}
-		Send( tmp );
-	}
 	}
 
 	// send files
 	{
-	for (std::map<std::string,std::string>::iterator it = m_files.begin(); it != m_files.end(); it++)
-	{
-		std::string name = (*it).first;
-		std::string filename = (*it).second;
-		std::string content_type = m_content_type[filename];
-		tmp = "--" + m_boundary + "\r\n"
-			"content-disposition: form-data; name=\"" + name + "\"; filename=\"" + filename + "\"\r\n"
-			"content-type: " + content_type + "\r\n"
-			"\r\n";
-		Send( tmp );
+		for (std::map<std::string,std::string>::iterator it = m_files.begin(); it != m_files.end(); it++)
 		{
-			FILE *fil = fopen(filename.c_str(),"rb");
-			if (fil)
+			std::string name = (*it).first;
+			std::string filename = (*it).second;
+			std::string content_type = m_content_type[filename];
+			tmp = "--" + m_boundary + "\r\n"
+				"content-disposition: form-data; name=\"" + name + "\"; filename=\"" + filename + "\"\r\n"
+				"content-type: " + content_type + "\r\n"
+				"\r\n";
+			Send( tmp );
 			{
-				char slask[2000];
-				int n;
-				while ((n = fread(slask, 1, 2000, fil)) > 0)
+				FILE *fil = fopen(filename.c_str(),"rb");
+				if (fil)
 				{
-					SendBuf(slask, n);
+					char slask[2000];
+					int n;
+					while ((n = fread(slask, 1, 2000, fil)) > 0)
+					{
+						SendBuf(slask, n);
+					}
+					fclose(fil);
 				}
-				fclose(fil);
 			}
+			Send("\r\n");
 		}
-		Send("\r\n");
-	}
 	}
 
 	// end of send
@@ -239,6 +293,12 @@ void HttpPostSocket::OnHeaderComplete()
 
 void HttpPostSocket::OnData(const char *,size_t)
 {
+}
+
+
+void HttpPostSocket::SetMultipart()
+{
+	m_bMultipart = true;
 }
 
 

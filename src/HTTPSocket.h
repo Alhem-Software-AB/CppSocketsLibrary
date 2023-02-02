@@ -44,7 +44,9 @@ public:
 	virtual void OnData(const char *,size_t) = 0;
 
 	const std::string& GetMethod() { return m_method; }
+	void SetMethod(const std::string& x) { m_method = x; }
 	const std::string& GetUrl() { return m_url; }
+	void SetUrl(const std::string& x) { m_url = x; }
 	const std::string& GetUri() { return m_uri; }
 	const std::string& GetQueryString() { return m_query_string; }
 	const std::string& GetHttpVersion() { return m_http_version; }
@@ -59,6 +61,7 @@ public:
 	void AddResponseHeader(const std::string& x,const std::string& y) { m_response_header[x] = y; }
 	void AddResponseHeader(const std::string& x,char *format, ...);
 	void SendResponse();
+	void SendRequest();
 
 protected:
 	HTTPSocket(const HTTPSocket& s) : TcpSocket(s) {}

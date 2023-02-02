@@ -20,7 +20,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
-//#include <stdio.h>
+#include <stdio.h>
 #ifdef _WIN32
 #pragma warning(disable:4786)
 #include <stdlib.h>
@@ -32,12 +32,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "StdLog.h"
 #include "SocketHandler.h"
 #include "UdpSocket.h"
+#include "PoolSocket.h"
 
 
 #ifdef _DEBUG
 #define DEB(x) x
 #else
-#define DEB(x)
+#define DEB(x) 
 #endif
 
 
@@ -123,6 +124,17 @@ DEB(	printf("%s: add socket %d\n",m_slave ? "slave" : "master",p -> GetSocket())
 }
 
 
+void SocketHandler::Get(SOCKET s,bool& r,bool& w,bool& e)
+{
+	if (s >= 0)
+	{
+		r = FD_ISSET(s, &m_rfds) ? true : false;
+		w = FD_ISSET(s, &m_wfds) ? true : false;
+		e = FD_ISSET(s, &m_efds) ? true : false;
+	}
+}
+
+
 void SocketHandler::Set(SOCKET s,bool bRead,bool bWrite,bool bException)
 {
 	if (s >= 0)
@@ -180,6 +192,7 @@ int SocketHandler::Select(long sec,long usec)
 		Socket *p = (*it).second;
 		m_sockets[s] = p;
 		m_add.erase(it);
+DEB(		printf(" * add => m_sockets; new socket added\n");)
 	}
 	tv.tv_sec = sec;
 	tv.tv_usec = usec;
@@ -219,51 +232,52 @@ DEB(		printf("slave: %s\n",m_slave ? "YES" : "NO");
 			Socket *p = (*it2).second;
 			if (p)
 			{
-//				if (!p -> IsDetached() || m_slave)
-				// always
+				if (p -> CallOnConnect() && p -> Ready() )
 				{
-					if (p -> SSLConnecting())
+					p -> OnConnect();
+					p -> SetCallOnConnect( false );
+				}
+				if (p -> SSLConnecting())
+				{
+					if (p -> SSLCheckConnect())
 					{
-						if (p -> SSLCheckConnect())
-						{
-							p -> OnSSLInitDone();
-						}
+						p -> OnSSLInitDone();
 					}
-					else
-					if (n > 0)
+				}
+				else
+				if (n > 0)
+				{
+					if (FD_ISSET(i, &rfds))
 					{
-						if (FD_ISSET(i, &rfds))
+						p -> OnRead();
+						if (p -> LineProtocol())
 						{
-							p -> OnRead();
-							if (p -> LineProtocol())
-							{
-								p -> ReadLine();
-							}
+							p -> ReadLine();
+						}
 //							p -> Touch();
-						}
-						if (FD_ISSET(i, &wfds))
+					}
+					if (FD_ISSET(i, &wfds))
+					{
+						if (p -> Connecting())
 						{
-							if (p -> Connecting())
+							if (p -> CheckConnect())
 							{
-								if (p -> CheckConnect())
-								{
 DEB(									printf("calling OnConnect\n");)
-									p -> OnConnect();
-								}
-//								p -> Touch();
+								p -> OnConnect();
 							}
-							else
-							{
-								p -> OnWrite();
 //								p -> Touch();
-							}
 						}
-						if (FD_ISSET(i, &efds))
+						else
 						{
-							p -> OnException();
+							p -> OnWrite();
+//								p -> Touch();
 						}
 					}
-				} // if (!detached)
+					if (FD_ISSET(i, &efds))
+					{
+						p -> OnException();
+					}
+				}
 			} // if (p)
 		} // for
 	}
@@ -301,8 +315,17 @@ DEB(									printf("calling OnConnect\n");)
 				if (p && p -> CloseAndDelete() )
 				{
 //DEB(printf("%s: calling Close for socket %d\n",m_slave ? "slave" : "master",s);)
-					Set(p -> GetSocket(),false,false,false);
-					p -> Close();
+					if (p -> Retain() && !p -> Lost())
+					{
+						PoolSocket *p2 = new PoolSocket(*this, p);
+						p2 -> SetDeleteByHandler();
+						Add(p2);
+					}
+					else
+					{
+						Set(p -> GetSocket(),false,false,false);
+						p -> Close();
+					}
 					p -> OnDelete();
 					if (p -> DeleteByHandler())
 					{
@@ -317,7 +340,12 @@ DEB(									printf("calling OnConnect\n");)
 		if (repeat)
 		{
 			m_maxsock = 0;
-			for (socket_m::iterator it3 = m_sockets.begin(); it3 != m_sockets.end(); it3++)
+			for (socket_m::iterator it = m_sockets.begin(); it != m_sockets.end(); it++)
+			{
+				SOCKET s = (*it).first;
+				m_maxsock = s > m_maxsock ? s : m_maxsock;
+			}
+			for (socket_m::iterator it3 = m_add.begin(); it3 != m_add.end(); it3++)
 			{
 				SOCKET s = (*it3).first;
 				m_maxsock = s > m_maxsock ? s : m_maxsock;
@@ -349,26 +377,6 @@ const std::string& SocketHandler::GetLocalAddress()
 	if (!m_local_resolved)
 		LogError(NULL, "GetLocalHostname", 0, "local address not resolved");
 	return m_addr;
-}
-
-
-void SocketHandler::StatLoop(long sec,long usec)
-{
-	time_t t = time(NULL);
-	int count = 0;
-	for (;;)
-	{
-		if (Select(sec, usec) > 0)
-			count++;
-		time_t x = time(NULL);
-		if (t != x)
-		{
-			if (count)
-				printf("ticks: %d\n", count);
-			t = x;
-			count = 0;
-		}
-	}
 }
 
 
@@ -432,6 +440,30 @@ const std::string& SocketHandler::GetLocalAddress6()
 	if (!m_local_resolved)
 		LogError(NULL, "GetLocalHostname", 0, "local address not resolved");
 	return m_local_addr6;
+}
+
+
+PoolSocket *SocketHandler::FindConnection(int type,const std::string& protocol,ipaddr_t a,port_t port)
+{
+	for (socket_m::iterator it = m_sockets.begin(); it != m_sockets.end(); it++)
+	{
+		PoolSocket *pools = dynamic_cast<PoolSocket *>((*it).second);
+		if (pools)
+		{
+			if (pools -> GetSocketType() == type &&
+			    pools -> GetSocketProtocol() == protocol &&
+			    pools -> GetClientRemoteAddr() == a &&
+			    pools -> GetClientRemotePort() == port)
+			{
+DEB(printf("FindConnection() successful\n");)
+				m_sockets.erase(it);
+				pools -> SetRetain(); // avoid Close in Socket destructor
+				return pools; // Caller is responsible that this socket is deleted
+			}
+		}
+	}
+DEB(printf("FindConnection() NOT successful\n");)
+	return NULL;
 }
 
 

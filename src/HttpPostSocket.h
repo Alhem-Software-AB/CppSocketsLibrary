@@ -40,6 +40,10 @@ public:
 	void AddMultilineField(const std::string& name,std::list<std::string>& values);
 	void AddFile(const std::string& name,const std::string& filename,const std::string& type);
 
+	// use this to post with content-type multipart/form-data
+	// when adding a file to the post, this is the default and only content-type
+	void SetMultipart();
+
 	// connect to host:port derived from url in constructor
 	void Open();
 
@@ -55,8 +59,8 @@ public:
 private:
 	HttpPostSocket(const HttpPostSocket& s) : HTTPSocket(s) {} // copy constructor
 	HttpPostSocket& operator=(const HttpPostSocket& ) { return *this; } // assignment operator
+	void DoMultipartPost();
 	//
-	std::string m_url;
 	std::string m_host;
 	port_t m_port;
 	std::map<std::string,std::list<std::string> > m_fields;
@@ -64,6 +68,7 @@ private:
 	std::string m_boundary;
 	std::map<std::string,long> m_content_length;
 	std::map<std::string,std::string> m_content_type;
+	bool m_bMultipart;
 };
 
 

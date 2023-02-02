@@ -55,7 +55,6 @@ private:
 	HttpPutSocket& operator=(const HttpPutSocket& ) { return *this; } // assignment operator
 	//
 	std::string m_filename;
-	std::string m_url;
 	std::string m_content_type;
 	long m_content_length;
 	std::string m_host;

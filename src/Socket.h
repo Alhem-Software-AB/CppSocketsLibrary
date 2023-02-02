@@ -97,6 +97,7 @@ public:
 
 	/** ipv4 and ipv6 */
 	void SetRemoteAddress(struct sockaddr* sa,socklen_t);
+	void GetRemoteSocketAddress(struct sockaddr& sa,socklen_t& sa_len);
 	/** ipv4 */
 	ipaddr_t GetRemoteIP4();
 	/** ipv6 */
@@ -136,6 +137,26 @@ public:
 	void SetParent(Socket *);
 	virtual port_t GetPort();
 
+	// pooling
+	void SetIsClient() { m_bClient = true; }
+	void SetSocketType(int x) { m_socket_type = x; }
+	int GetSocketType() { return m_socket_type; }
+	void SetSocketProtocol(const std::string& x) { m_socket_protocol = x; }
+	const std::string& GetSocketProtocol() { return m_socket_protocol; }
+	void SetClientRemoteAddr(ipaddr_t a) { m_client_remote_addr = a; }
+	ipaddr_t& GetClientRemoteAddr() { return m_client_remote_addr; }
+	void SetClientRemotePort(port_t p) { m_client_remote_port = p; }
+	port_t GetClientRemotePort() { return m_client_remote_port; }
+	void SetRetain() { if (m_bClient) m_bRetain = true; }
+	bool Retain() { return m_bRetain; }
+	void SetLost() { m_bLost = true; }
+	bool Lost() { return m_bLost; }
+	void SetCallOnConnect(bool x = true) { m_call_on_connect = x; }
+	bool CallOnConnect() { return m_call_on_connect; }
+
+	// copy connection parameters from sock
+	void CopyConnection(Socket *sock);
+
 protected:
 	Socket(const Socket& ); // do not allow use of copy constructor
 	void DetachSocket(); // protected, friend class SocketHandler;
@@ -164,6 +185,15 @@ static	WSAInitializer m_winsock_init;
 	struct sockaddr m_sa; // remote, from accept
 	socklen_t m_sa_len;
 	Socket *m_parent;
+	// pooling, ipv4
+	int m_socket_type;
+	std::string m_socket_protocol;
+	bool m_bClient; // only client connections are pooled
+	ipaddr_t m_client_remote_addr;
+	port_t m_client_remote_port;
+	bool m_bRetain; // keep connection on close
+	bool m_bLost; // connection lost
+	bool m_call_on_connect;
 };
 
 

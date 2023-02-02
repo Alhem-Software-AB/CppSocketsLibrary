@@ -136,3 +136,13 @@ Version 1.6.3
 Version 1.6.4
 --------------------------
 
+Version 1.7
+--------------------------
+34a35,36
+> PoolSocket.cpp
+> PoolSocket.h
+39a42
+> socket_include.cpp
+56a60
+> Utility.cpp
+

@@ -21,6 +21,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #ifdef _WIN32
+#pragma warning(disable:4786)
 #else
 #include <errno.h>
 #endif
@@ -44,12 +45,12 @@ HttpPutSocket::HttpPutSocket(SocketHandler& h,const std::string& url)
 		Parse pa(url,"/");
 		pa.getword(); // 'http:'
 		host = pa.getword();
-		m_url = "/" + pa.getrest();
+		SetUrl( "/" + pa.getrest() );
 	}
 	{
 		Parse pa(host,":");
 		m_host = pa.getword();
-		m_port = pa.getvalue();
+		m_port = (port_t)pa.getvalue();
 		if (!m_port)
 		{
 			m_port = 80;
@@ -95,13 +96,13 @@ void HttpPutSocket::Open()
 
 void HttpPutSocket::OnConnect()
 {
-	std::string header =
-		"PUT " + m_url + " HTTP/1.1\r\n"
-		"Host: " + m_host + "\r\n"
-		"Content-type: " + m_content_type + "\r\n"
-		"Content-length: " + Utility::l2string(m_content_length) + "\r\n"
-		"\r\n";
-	Send( header );
+	SetMethod( "PUT" );
+	SetHttpVersion( "HTTP/1.1" );
+	AddResponseHeader( "Host", m_host );
+	AddResponseHeader( "Content-type", m_content_type );
+	AddResponseHeader( "Content-length", Utility::l2string(m_content_length) );
+	SendRequest();
+
 	FILE *fil = fopen(m_filename.c_str(), "rb");
 	if (fil)
 	{

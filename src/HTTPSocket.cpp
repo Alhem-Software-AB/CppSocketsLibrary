@@ -22,7 +22,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #ifdef _WIN32
 #pragma warning(disable:4786)
+#define strcasecmp stricmp
 #endif
+#include <stdio.h>
 #include <stdarg.h>
 #include "Parse.h"
 #include "HTTPSocket.h"
@@ -34,6 +36,7 @@ HTTPSocket::HTTPSocket(SocketHandler& h)
 :TcpSocket(h)
 ,m_first(true)
 ,m_header(true)
+,m_http_version("HTTP/1.0")
 ,m_request(false)
 ,m_response(false)
 {
@@ -146,20 +149,25 @@ void HTTPSocket::OnLine(const std::string& line)
 	std::string key = pa.getword();
 	std::string value = pa.getrest();
 	OnHeader(key,value);
+	if (!strcasecmp(key.c_str(), "connection") &&
+	    !strcasecmp(value.c_str(), "keep-alive"))
+	{
+		SetRetain();
+	}
 }
 
 
 void HTTPSocket::SendResponse()
 {
 	std::string msg;
-	msg = m_http_version + " " + m_status + " " + m_status_text + "\n";
+	msg = m_http_version + " " + m_status + " " + m_status_text + "\r\n";
 	for (string_m::iterator it = m_response_header.begin(); it != m_response_header.end(); it++)
 	{
 		std::string key = (*it).first;
 		std::string val = (*it).second;
-		msg += key + ": " + val + "\n";
+		msg += key + ": " + val + "\r\n";
 	}
-	msg += "\n";
+	msg += "\r\n";
 	Send( msg );
 }
 
@@ -178,6 +186,21 @@ void HTTPSocket::AddResponseHeader(const std::string& header, char *format, ...)
 	va_end(ap);
 
 	m_response_header[header] = slask;
+}
+
+
+void HTTPSocket::SendRequest()
+{
+	std::string msg;
+	msg = m_method + " " + m_url + " " + m_http_version + "\r\n";
+	for (string_m::iterator it = m_response_header.begin(); it != m_response_header.end(); it++)
+	{
+		std::string key = (*it).first;
+		std::string val = (*it).second;
+		msg += key + ": " + val + "\r\n";
+	}
+	msg += "\r\n";
+	Send( msg );
 }
 
 

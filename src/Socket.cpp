@@ -66,13 +66,18 @@ Socket::Socket(SocketHandler& h)
 ,m_ipv6(false)
 ,m_sa_len(0)
 ,m_parent(NULL)
+,m_socket_type(0)
+,m_bClient(false)
+,m_bRetain(false)
+,m_bLost(false)
+,m_call_on_connect(false)
 {
 }
 
 
 Socket::~Socket()
 {
-	if (m_socket != INVALID_SOCKET )
+	if (m_socket != INVALID_SOCKET && !m_bRetain)
 	{
 		Close();
 	}
@@ -174,6 +179,8 @@ SOCKET Socket::CreateSocket4(int type, const std::string& protocol)
 	int optval;
 	SOCKET s;
 
+	m_socket_type = type;
+	m_socket_protocol = protocol;
 	if (protocol.size())
 	{
 		p = getprotobyname( protocol.c_str() );
@@ -221,6 +228,8 @@ SOCKET Socket::CreateSocket6(int type, const std::string& protocol)
 	int optval;
 	SOCKET s;
 
+	m_socket_type = type;
+	m_socket_protocol = protocol;
 	if (protocol.size())
 	{
 		p = getprotobyname( protocol.c_str() );
@@ -555,6 +564,13 @@ void Socket::SetRemoteAddress(struct sockaddr* sa, socklen_t l)
 }
 
 
+void Socket::GetRemoteSocketAddress(struct sockaddr& sa,socklen_t& sa_len)
+{
+	memcpy(&sa, &m_sa, m_sa_len);
+	sa_len = m_sa_len;
+}
+
+
 SocketHandler& Socket::Handler() const
 {
 	return m_handler;
@@ -822,6 +838,21 @@ port_t Socket::GetPort()
 {
 	Handler().LogError(this, "GetPort", 0, "GetPort only implemented for ListenSocket", LOG_LEVEL_WARNING);
 	return 0;
+}
+
+
+void Socket::CopyConnection(Socket *sock)
+{
+	Attach( sock -> GetSocket() );
+	SetSocketType( sock -> GetSocketType() );
+	SetSocketProtocol( sock -> GetSocketProtocol() );
+	SetClientRemoteAddr( sock -> GetClientRemoteAddr() );
+	SetClientRemotePort( sock -> GetClientRemotePort() );
+
+	struct sockaddr sa;
+	socklen_t sa_len;
+	sock -> GetRemoteSocketAddress(sa, sa_len);
+	SetRemoteAddress(&sa, sa_len);
 }
 
 

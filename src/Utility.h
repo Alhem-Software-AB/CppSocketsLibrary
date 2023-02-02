@@ -33,69 +33,18 @@ typedef unsigned __int64 uint64_t;
 #include "Base64.h"
 
 
-namespace Utility
+class Utility
 {
-	inline std::string base64(const std::string& str_in)
-	{
-		std::string str;
-		Base64 m_b;
-		m_b.encode(str_in, str, false); // , false == do not add cr/lf
-		return str;
-	}
-	inline std::string base64d(const std::string& str_in)
-	{
-		std::string str;
-		Base64 m_b;
-		m_b.decode(str_in, str);
-		return str;
-	}
-	inline std::string l2string(long l)
-	{
-		std::string str;
-		char tmp[100];
-		sprintf(tmp,"%ld",l);
-		str = tmp;
-		return str;
-	}
-	inline std::string bigint2string(uint64_t l)
-	{
-		std::string str;
-		uint64_t tmp = l;
-		while (tmp)
-		{
-			uint64_t a = tmp % 10;
-			str = (char)(a + 48) + str;
-			tmp /= 10;
-		}
-		if (!str.size())
-		{
-			str = "0";
-		}
-		return str;
-	}
-	inline uint64_t atoi64(const std::string& str) 
-	{
-		uint64_t l = 0;
-		for (size_t i = 0; i < str.size(); i++)
-		{
-			l = l * 10 + str[i] - 48;
-		}
-		return l;
-	}
-	inline unsigned int hex2unsigned(const std::string& str)
-	{
-		unsigned int r = 0;
-		for (size_t i = 0; i < str.size(); i++)
-		{
-			r = r * 16 + str[i] - 48 - ((str[i] >= 'A') ? 7 : 0) - ((str[i] >= 'a') ? 32 : 0);
-		}
-		return r;
-	}
-}
-
-//using Utility::l2string;
-//using Utility::base64;
-//using Utility::base64d;
+public:
+	static std::string base64(const std::string& str_in);
+	static std::string base64d(const std::string& str_in);
+	static std::string l2string(long l);
+	static std::string bigint2string(uint64_t l);
+	static uint64_t atoi64(const std::string& str);
+	static unsigned int hex2unsigned(const std::string& str);
+	static std::string rfc1738_encode(const std::string& src);
+	static std::string rfc1738_decode(const std::string& src);
+};
 
 
 #endif // _UTILITY_H
