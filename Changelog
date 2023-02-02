@@ -556,3 +556,12 @@ Version 2.1.1rc1
 > Semaphore.cpp
 > Semaphore.h
 
+Version 2.1.1
+--------------------------
+7d6
+< echoserver.cpp
+87d85
+< sockets_test.cpp
+93d90
+< stressclient.cpp
+

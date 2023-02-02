@@ -1,6 +1,6 @@
 include		Makefile.version
 
-INCLUDE =	-I../Tekton/openssl/include
+INCLUDE =	
 
 # .h files installed to $(PREFIX)/include/Sockets
 # static lib .a files installed to $(PREFIX)/lib
