@@ -1,4 +1,4 @@
-VERSION =	1.2
+VERSION =	1.2.1
 
 INCLUDE =	-I/usr/devel/include -I.
 CFLAGS =	-Wall -g -O2 $(INCLUDE) -MD -D_VERSION='"$(VERSION)"'
@@ -18,21 +18,27 @@ OBJS =		CircularBuffer.o \
 		SSLSocket.o \
 		HttpsGetSocket.o \
 		CTcpSocket.o \
-		Uid.o \
 		HTTPSocket.o \
-		HttpsSocket.o \
+		HttpsSocket.o 
+# SocketsEx
+EX =		Uid.o \
 		MinderSocket.o MinionSocket.o MinderHandler.o
 
 PROGS =		
 
-all:		libSockets.a $(PROGS)
+all:		libSockets.a $(PROGS) libSocketsEx.a
 
 libSockets.a:	$(OBJS)
 		ar cru $@ $(OBJS)
 		ranlib $@
 
+libSocketsEx.a:	$(EX)
+		ar cru $@ $(EX)
+		ranlib $@
+
 install:	all
 		cp libSockets.a /usr/local/lib
+		cp libSocketsEx.a /usr/local/lib
 		mkdir -p /usr/local/include/Sockets
 		cp -a *.h /usr/local/include/Sockets
 

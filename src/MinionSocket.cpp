@@ -227,7 +227,7 @@ DEB(		printf("Incoming command: '%s'\n",cmd.c_str());)
 	else
 	if (cmd == "Top")
 	{
-		long hid = pa.getvalue();
+		unsigned long hid = pa.getvalue();
 //printf("Top to: %ld\n",hid);
 		if (hid == static_cast<MinderHandler&>(Handler()).GetHostId())
 		{
