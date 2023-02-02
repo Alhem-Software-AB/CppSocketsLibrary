@@ -74,7 +74,11 @@ void HttpDebugSocket::OnFirst()
 		"\n");
 	Send(
 		"<html><head><title>Echo Request</title></head>"
-		"<body><h3>Request Header</h3><pre style='background: #e0e0e0'>");
+		"<body><h3>Request Header</h3>");
+	Send(	"<form method='post' action='/test_post'>"
+		"<input type='text' name='text' value='test text'><br>"
+		"<input type='submit' name='submit' value=' OK '></form>");
+	Send(	"<pre style='background: #e0e0e0'>");
 	Send(GetMethod() + " " + GetUrl() + " " + GetHttpVersion() + "\n");
 }
 

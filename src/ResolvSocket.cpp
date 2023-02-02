@@ -138,7 +138,7 @@ DEB(		fprintf(stderr, "ResolvSocket server; query=%s, data=%s\n", m_query.c_str(
 				if (time(NULL) - m_cache_to[m_query][m_data] < 3600) // ttl
 				{
 					std::string result = m_cache[m_query][m_data];
-DEB(printf("Returning cache for [%s][%s] = '%s'\n", m_query.c_str(), m_data.c_str(), result.c_str());)
+DEB(fprintf(stderr, "Returning cache for [%s][%s] = '%s'\n", m_query.c_str(), m_data.c_str(), result.c_str());)
 					Send("Cached\n");
 					if (!result.size()) /* failed */
 					{
@@ -199,7 +199,7 @@ DEB(		fprintf(stderr, "************ Resolve failed\n");)
 		if (!m_cached)
 		{
 			Lock lock(m_cache_mutex);
-DEB(printf("Update cache for [%s][%s] = '%s'\n", m_query.c_str(), m_data.c_str(), value.c_str());)
+DEB(fprintf(stderr, "Update cache for [%s][%s] = '%s'\n", m_query.c_str(), m_data.c_str(), value.c_str());)
 			m_cache[m_query][m_data] = value;
 			m_cache_to[m_query][m_data] = time(NULL);
 		}
@@ -216,7 +216,7 @@ DEB(printf("Update cache for [%s][%s] = '%s'\n", m_query.c_str(), m_data.c_str()
 		if (!m_cached)
 		{
 			Lock lock(m_cache_mutex);
-DEB(printf("Update cache for [%s][%s] = '%s'\n", m_query.c_str(), m_data.c_str(), value.c_str());)
+DEB(fprintf(stderr, "Update cache for [%s][%s] = '%s'\n", m_query.c_str(), m_data.c_str(), value.c_str());)
 			m_cache[m_query][m_data] = value;
 			m_cache_to[m_query][m_data] = time(NULL);
 		}
@@ -235,7 +235,7 @@ DEB(printf("Update cache for [%s][%s] = '%s'\n", m_query.c_str(), m_data.c_str()
 		if (!m_cached)
 		{
 			Lock lock(m_cache_mutex);
-DEB(printf("Update cache for [%s][%s] = '%s'\n", m_query.c_str(), m_data.c_str(), value.c_str());)
+DEB(fprintf(stderr, "Update cache for [%s][%s] = '%s'\n", m_query.c_str(), m_data.c_str(), value.c_str());)
 			m_cache[m_query][m_data] = value;
 			m_cache_to[m_query][m_data] = time(NULL);
 		}
@@ -256,7 +256,7 @@ DEB(printf("Update cache for [%s][%s] = '%s'\n", m_query.c_str(), m_data.c_str()
 		if (!m_cached)
 		{
 			Lock lock(m_cache_mutex);
-DEB(printf("Update cache for [%s][%s] = '%s'\n", m_query.c_str(), m_data.c_str(), value.c_str());)
+DEB(fprintf(stderr, "Update cache for [%s][%s] = '%s'\n", m_query.c_str(), m_data.c_str(), value.c_str());)
 			m_cache[m_query][m_data] = value;
 			m_cache_to[m_query][m_data] = time(NULL);
 		}
@@ -417,7 +417,7 @@ void ResolvSocket::OnDelete()
 		{
 			Lock lock(m_cache_mutex);
 			std::string value;
-DEB(printf("Update cache for [%s][%s] = '%s'\n", m_query.c_str(), m_data.c_str(), value.c_str());)
+DEB(fprintf(stderr, "Update cache for [%s][%s] = '%s'\n", m_query.c_str(), m_data.c_str(), value.c_str());)
 			m_cache[m_query][m_data] = value;
 			m_cache_to[m_query][m_data] = time(NULL);
 		}

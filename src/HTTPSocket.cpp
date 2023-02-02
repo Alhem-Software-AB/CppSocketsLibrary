@@ -48,6 +48,8 @@ HTTPSocket::HTTPSocket(ISocketHandler& h)
 ,m_request(false)
 ,m_response(false)
 ,m_body_size_left(0)
+,m_b_http_1_1(false)
+,m_b_keepalive(false)
 {
 	SetLineProtocol();
 	DisableInputBuffer();
@@ -63,21 +65,28 @@ void HTTPSocket::OnRawData(const char *buf,size_t len)
 {
 	if (!m_header)
 	{
-		size_t sz = m_body_size_left < len ? m_body_size_left : len;
-		OnData(buf, sz);
-		m_body_size_left -= sz;
-		if (!m_body_size_left)
+		if (!m_b_http_1_1 || !m_b_keepalive)
 		{
-			SetLineProtocol( true );
-			m_first = true;
-			m_header = true;
-			m_body_size_left = 0;
-			if (len - sz > 0)
+			OnData(buf, len);
+		}
+		else
+		{
+			size_t sz = m_body_size_left < len ? m_body_size_left : len;
+			OnData(buf, sz);
+			m_body_size_left -= sz;
+			if (!m_body_size_left)
 			{
-				char tmp[TCP_BUFSIZE_READ];
-				memcpy(tmp, buf + sz, len - sz);
-				tmp[len - sz] = 0;
-				OnRead( tmp, len - sz );
+				SetLineProtocol( true );
+				m_first = true;
+				m_header = true;
+				m_body_size_left = 0;
+				if (len - sz > 0)
+				{
+					char tmp[TCP_BUFSIZE_READ];
+					memcpy(tmp, buf + sz, len - sz);
+					tmp[len - sz] = 0;
+					OnRead( tmp, len - sz );
+				}
 			}
 		}
 	}
@@ -90,9 +99,11 @@ void HTTPSocket::OnLine(const std::string& line)
 	{
 		Parse pa(line);
 		std::string str = pa.getword();
-		if (str.substr(0,4) == "HTTP") // response
+		if (str.size() > 4 && Utility::ToLower(str.substr(0,5)) == "http/") // response
 		{
 			m_http_version = str;
+			m_b_http_1_1 = str.substr(4) == "/1.1";
+			m_b_keepalive = m_b_http_1_1;
 			m_status = pa.getword();
 			m_status_text = pa.getrest();
 			m_response = true;
@@ -120,7 +131,7 @@ void HTTPSocket::OnLine(const std::string& line)
 	}
 	if (!line.size())
 	{
-		if (m_body_size_left)
+		if (m_body_size_left || !m_b_http_1_1 || !m_b_keepalive)
 		{
 			SetLineProtocol(false);
 			m_header = false;
@@ -136,12 +147,15 @@ void HTTPSocket::OnLine(const std::string& line)
 	{
 		m_body_size_left = atol(value.c_str());
 	}
+	if (m_b_http_1_1 && Utility::ToLower(key) == "connection")
+	{
+		m_b_keepalive = Utility::ToLower(value) != "close";
+	}
 	/* If remote end tells us to keep connection alive, and we're operating
 	in http/1.1 mode (not http/1.0 mode), then we mark the socket to be
 	retained. */
 #ifdef ENABLE_POOL
-	if (!strcasecmp(key.c_str(), "connection") &&
-	    !strcasecmp(value.c_str(), "keep-alive") )
+	if (m_b_http_1_1 && m_b_keepalive)
 	{
 		SetRetain();
 	}

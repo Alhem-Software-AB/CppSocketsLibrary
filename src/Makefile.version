@@ -1,5 +1,5 @@
-VERSION =	2.1.9
-DIFF_VERSION =	2.1.8
+VERSION =	2.2
+DIFF_VERSION =	2.1.9
 
 # Sockets
 OBJS =		Socket.o \
@@ -35,4 +35,10 @@ OBJS =		Socket.o \
 		SSLInitializer.o \
 		SmtpdSocket.o \
 		Debug.o \
-		Exception.o
+		Exception.o \
+		Ajp13Socket.o \
+		AjpBaseSocket.o \
+		HttpBaseSocket.o \
+		HttpTransaction.o \
+		HttpRequest.o \
+		HttpResponse.o

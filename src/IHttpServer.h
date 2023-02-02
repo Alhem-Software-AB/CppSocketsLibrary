@@ -1,6 +1,6 @@
 /**
- **	\file Exception.cpp
- **	\date  2007-09-28
+ **	\file IHttpServer.h
+ **	\date  2007-10-05
  **	\author grymse@alhem.net
 **/
 /*
@@ -20,10 +20,8 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
-#ifdef _MSC_VER
-#pragma warning(disable:4786)
-#endif
-#include "Exception.h"
+#ifndef _SOCKETS_IHttpServer_H
+#define _SOCKETS_IHttpServer_H
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
@@ -31,17 +29,21 @@ namespace SOCKETS_NAMESPACE {
 
 
 
-Exception::Exception(const std::string& description) : m_description(description)
+
+class IHttpServer
 {
-}
+public:
+	virtual ~IHttpServer() {}
+
+	virtual void Respond() = 0;
+
+};
 
 
-const std::string Exception::ToString() const
-{
-	return m_description;
-}
 
 
 #ifdef SOCKETS_NAMESPACE
 } // namespace SOCKETS_NAMESPACE {
 #endif
+
+#endif // _SOCKETS_IHttpServer_H

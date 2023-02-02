@@ -539,7 +539,7 @@ DEB(				fprintf(stderr, "SSL read problem, errcode = %d\n",n);)
 }
 
 
-void TcpSocket::OnRead( char *buf, int n )
+void TcpSocket::OnRead( char *buf, size_t n )
 {
 	// unbuffered
 	if (n > 0 && n <= TCP_BUFSIZE_READ)
@@ -547,7 +547,7 @@ void TcpSocket::OnRead( char *buf, int n )
 		if (LineProtocol())
 		{
 			buf[n] = 0;
-			int i = 0;
+			size_t i = 0;
 			if (m_skip_c && (buf[i] == 13 || buf[i] == 10) && buf[i] != m_c)
 			{
 				m_skip_c = false;
@@ -721,7 +721,7 @@ int TcpSocket::TryWrite(const char *buf, size_t len)
 #ifdef HAVE_OPENSSL
 	if (IsSSL())
 	{
-		n = SSL_write(m_ssl, buf, len);
+		n = SSL_write(m_ssl, buf, (int)len);
 		if (n == -1)
 		{
 			int errnr = SSL_get_error(m_ssl, n);
@@ -735,6 +735,7 @@ int TcpSocket::TryWrite(const char *buf, size_t len)
 				const char *errbuf = ERR_error_string(errnr, NULL);
 				Handler().LogError(this, "OnWrite/SSL_write", errnr, errbuf, LOG_LEVEL_FATAL);
 			}
+			return 0;
 		}
 		else
 		if (!n)
@@ -752,7 +753,7 @@ DEB(			int errnr = SSL_get_error(m_ssl, n);
 	else
 #endif // HAVE_OPENSSL
 	{
-		n = send(GetSocket(), buf, len, MSG_NOSIGNAL);
+		n = send(GetSocket(), buf, (int)len, MSG_NOSIGNAL);
 		if (n == -1)
 		{
 		// normal error codes:
@@ -771,6 +772,7 @@ DEB(			int errnr = SSL_get_error(m_ssl, n);
 				SetLost();
 #endif
 			}
+			return 0;
 		}
 	}
 	if (n > 0)
@@ -848,7 +850,7 @@ void TcpSocket::SendBuf(const char *buf,size_t len,int)
 		return;
 	}
 	int n = TryWrite(buf, len);
-	if (n > 0 && n < (int)len)
+	if (n >= 0 && n < (int)len)
 	{
 		Buffer(buf + n, len - n);
 	}

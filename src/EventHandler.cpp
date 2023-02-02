@@ -103,10 +103,13 @@ void EventHandler::CheckEvents()
 		if (!s || (s && Valid(s)))
 		{
 			e -> GetFrom() -> OnEvent(e -> GetID());
-			e -> GetFrom() -> Decrease();
 		}
+		for (it = m_events.begin(); it != m_events.end(); ++it)
+			if (*it == e)
+				break;
 		delete e;
-		m_events.erase(it);
+		if (it != m_events.end())
+			m_events.erase(it);
 		it = m_events.begin();
 	}
 }
@@ -125,7 +128,6 @@ long EventHandler::AddEvent(IEventOwner *from,long sec,long usec)
 	{
 		m_socket -> Send("\n");
 	}
-	from -> Increase();
 	return e -> GetID();
 }
 
@@ -144,7 +146,6 @@ void EventHandler::ClearEvents(IEventOwner *from)
 				delete e;
 				m_events.erase(it);
 				repeat = true;
-				from -> Decrease();
 				break;
 			}
 		}

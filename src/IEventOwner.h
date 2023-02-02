@@ -62,13 +62,9 @@ public:
 	IEventHandler& EventHandler();
 	void SetHandlerInvalid(bool x = true) { m_handler_invalid = x; }
 
-	void Increase();
-	void Decrease();
-
 private:
 	IEventHandler& m_event_handler;
 	bool m_handler_invalid;
-	int m_events;
 };
 
 

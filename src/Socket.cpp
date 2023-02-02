@@ -29,7 +29,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #include "Socket.h"
 #ifdef _WIN32
-#ifndef __CYGWIN__
+#ifdef _MSC_VER
 #pragma warning(disable:4786)
 #endif
 #include <stdlib.h>

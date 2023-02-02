@@ -132,6 +132,8 @@ private:
 	bool m_response;
 	string_m m_response_header;
 	size_t m_body_size_left;
+	bool m_b_http_1_1;
+	bool m_b_keepalive;
 };
 
 

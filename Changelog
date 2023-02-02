@@ -655,3 +655,25 @@ Version 2.1.9
 > Makefile.Defines.solaris9-sparc-64
 > Makefile.Defines.win32-cygwin
 
+Version 2.2
+--------------------------
+0a1,5
+> ajp13.h
+> Ajp13Socket.cpp
+> Ajp13Socket.h
+> AjpBaseSocket.cpp
+> AjpBaseSocket.h
+15a21,22
+> HttpBaseSocket.cpp
+> HttpBaseSocket.h
+31a39,42
+> HttpRequest.cpp
+> HttpRequest.h
+> HttpResponse.cpp
+> HttpResponse.h
+33a45,46
+> HttpTransaction.cpp
+> HttpTransaction.h
+38a52
+> IHttpServer.h
+
