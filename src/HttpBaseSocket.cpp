@@ -59,7 +59,10 @@ DEB(fprintf(stderr, "  %s %s %s\n", GetMethod().c_str(), GetUri().c_str(), GetHt
 	m_req.SetUri( GetUri() );
 	m_req.SetHttpVersion( GetHttpVersion() );
 
-	m_req.SetAttribute("query_string", GetQueryString() );
+	if (Utility::ToLower(GetMethod()) == "get" && !GetQueryString().empty())
+	{
+		m_req.SetAttribute("query_string", GetQueryString() );
+	}
 
 	m_req.SetRemoteAddr( GetRemoteAddress() );
 	m_req.SetRemoteHost( "" ); // %!
@@ -113,9 +116,6 @@ void HttpBaseSocket::Execute()
 	// parse form data / query_string and cookie header if available
 	m_req.ParseBody();
 
-	// prepare page
-	OnExec( m_req );
-
 DEB(printf(" *** http version: %s\n", m_req.HttpVersion().c_str());
 printf(" ***   connection: %s\n", m_req.Header("connection").c_str());)
 	if ( !(m_req.HttpVersion().size() > 4 && m_req.HttpVersion().substr(m_req.HttpVersion().size() - 4) == "/1.1") ||
@@ -129,6 +129,10 @@ DEB(printf(" *** keepalive: false\n");)
 		m_b_keepalive = true;
 DEB(printf(" *** keepalive: true\n");)
 	}
+
+	// prepare page
+	OnExec( m_req );
+
 	m_req.Reset();
 	Reset();
 }

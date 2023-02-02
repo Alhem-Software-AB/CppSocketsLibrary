@@ -107,7 +107,8 @@ void HttpResponse::SetCookie(const std::string& value)
 {
 	Parse pa(value, "=");
 	std::string name = pa.getword();
-	m_cookie[Utility::ToLower(name)] = value;
+	// %! make case insensitive
+	m_cookie[name] = value;
 DEB(fprintf(stderr, "HttpResponse::Set-Cookie<%s>: %s\n", name.c_str(), value.c_str());)
 }
 

@@ -333,13 +333,14 @@ void HTTPSocket::SetStatusText(const std::string& x)
 
 void HTTPSocket::AddResponseHeader(const std::string& x,const std::string& y)
 {
-	m_response_header[Utility::ToLower(x)] = y;
+	// %! check if 'x' already present in m_response_header
+	m_response_header[x] = y;
 }
 
 
 void HTTPSocket::AppendResponseHeader(const std::string& x,const std::string& y)
 {
-	m_response_header_append.push_back(std::pair<std::string, std::string>(Utility::ToLower(x),y));
+	m_response_header_append.push_back(std::pair<std::string, std::string>(x,y));
 }
 
 
@@ -388,7 +389,8 @@ void HTTPSocket::url_this(const std::string& url_in,std::string& protocol,std::s
 
 bool HTTPSocket::ResponseHeaderIsSet(const std::string& name)
 {
-	string_m::iterator it = m_response_header.find( Utility::ToLower(name) );
+	// %! make case insensitive
+	string_m::iterator it = m_response_header.find( name );
 	if (it != m_response_header.end())
 	{
 		return true;
@@ -397,7 +399,7 @@ bool HTTPSocket::ResponseHeaderIsSet(const std::string& name)
 	for (it2 = m_response_header_append.begin(); it2 != m_response_header_append.end(); it2++)
 	{
 		std::pair<std::string, std::string>& ref = *it2;
-		if (ref.first == Utility::ToLower(name) )
+		if (ref.first == name )
 		{
 			return true;
 		}

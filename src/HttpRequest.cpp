@@ -204,20 +204,23 @@ bool HttpRequest::IsSsl() const
 // --------------------------------------------------------------------------------------
 void HttpRequest::SetAttribute(const std::string& key, const std::string& value)
 {
-	m_attribute[Utility::ToLower(key)] = value;
+	// %! make case insensitive
+	m_attribute[key] = value;
 }
 
 
 void HttpRequest::SetAttribute(const std::string& key, long value)
 {
-	m_attribute[Utility::ToLower(key)] = Utility::l2string(value);
+	// %! make case insensitive
+	m_attribute[key] = Utility::l2string(value);
 }
 
 
 const std::string& HttpRequest::Attribute(const std::string& key) const
 {
 	std::map<std::string, std::string>::const_iterator it;
-	if ( (it = m_attribute.find(Utility::ToLower(key))) != m_attribute.end())
+	// %! make case insensitive
+	if ( (it = m_attribute.find(key)) != m_attribute.end())
 		return it -> second;
 	return m_null;
 }

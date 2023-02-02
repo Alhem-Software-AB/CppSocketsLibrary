@@ -1082,7 +1082,7 @@ unsigned char Socket::IpTOS()
 	socklen_t len = sizeof(tos);
 	if (getsockopt(GetSocket(), IPPROTO_IP, IP_TOS, (char *)&tos, &len) == -1)
 	{
-		Handler().LogError(this, "setsockopt(IPPROTO_IP, IP_TOS)", Errno, StrError(Errno), LOG_LEVEL_FATAL);
+		Handler().LogError(this, "getsockopt(IPPROTO_IP, IP_TOS)", Errno, StrError(Errno), LOG_LEVEL_FATAL);
 	}
 #else
 	Handler().LogError(this, "ip option not available", 0, "IP_TOS", LOG_LEVEL_INFO);
@@ -1114,7 +1114,7 @@ int Socket::IpTTL()
 	socklen_t len = sizeof(ttl);
 	if (getsockopt(GetSocket(), IPPROTO_IP, IP_TTL, (char *)&ttl, &len) == -1)
 	{
-		Handler().LogError(this, "setsockopt(IPPROTO_IP, IP_TTL)", Errno, StrError(Errno), LOG_LEVEL_FATAL);
+		Handler().LogError(this, "getsockopt(IPPROTO_IP, IP_TTL)", Errno, StrError(Errno), LOG_LEVEL_FATAL);
 	}
 #else
 	Handler().LogError(this, "ip option not available", 0, "IP_TTL", LOG_LEVEL_INFO);
@@ -1175,7 +1175,7 @@ int Socket::IpMtu()
 	socklen_t len = sizeof(mtu);
 	if (getsockopt(GetSocket(), IPPROTO_IP, IP_MTU, (char *)&mtu, &len) == -1)
 	{
-		Handler().LogError(this, "setsockopt(IPPROTO_IP, IP_MTU)", Errno, StrError(Errno), LOG_LEVEL_FATAL);
+		Handler().LogError(this, "getsockopt(IPPROTO_IP, IP_MTU)", Errno, StrError(Errno), LOG_LEVEL_FATAL);
 	}
 	return mtu;
 }
@@ -1219,7 +1219,7 @@ int Socket::IpMulticastTTL()
 	socklen_t len = sizeof(ttl);
 	if (getsockopt(GetSocket(), IPPROTO_IP, IP_MULTICAST_TTL, (char *)&ttl, &len) == -1)
 	{
-		Handler().LogError(this, "setsockopt(IPPROTO_IP, IP_MULTICAST_TTL)", Errno, StrError(Errno), LOG_LEVEL_FATAL);
+		Handler().LogError(this, "getsockopt(IPPROTO_IP, IP_MULTICAST_TTL)", Errno, StrError(Errno), LOG_LEVEL_FATAL);
 	}
 #else
 	Handler().LogError(this, "ip option not available", 0, "IP_MULTICAST_TTL", LOG_LEVEL_INFO);
@@ -1371,7 +1371,7 @@ bool Socket::SoAcceptconn()
 	socklen_t len = sizeof(value);
 	if (getsockopt(GetSocket(), SOL_SOCKET, SO_ACCEPTCONN, (char *)&value, &len) == -1)
 	{
-		Handler().LogError(this, "setsockopt(SOL_SOCKET, SO_ACCEPTCONN)", Errno, StrError(Errno), LOG_LEVEL_FATAL);
+		Handler().LogError(this, "getsockopt(SOL_SOCKET, SO_ACCEPTCONN)", Errno, StrError(Errno), LOG_LEVEL_FATAL);
 	}
 #else
 	Handler().LogError(this, "socket option not available", 0, "SO_ACCEPTCONN", LOG_LEVEL_INFO);
@@ -1448,12 +1448,12 @@ int Socket::SoError()
 	socklen_t len = sizeof(value);
 	if (getsockopt(GetSocket(), SOL_SOCKET, SO_ERROR, (char *)&value, &len) == -1)
 	{
-		Handler().LogError(this, "setsockopt(SOL_SOCKET, SO_ERROR)", Errno, StrError(Errno), LOG_LEVEL_FATAL);
+		Handler().LogError(this, "getsockopt(SOL_SOCKET, SO_ERROR)", Errno, StrError(Errno), LOG_LEVEL_FATAL);
 	}
 #else
 	Handler().LogError(this, "socket option not available", 0, "SO_ERROR", LOG_LEVEL_INFO);
 #endif
-	return value ? true : false;
+	return value;
 }
 
 
@@ -1637,12 +1637,12 @@ int Socket::SoRcvbuf()
 	socklen_t len = sizeof(value);
 	if (getsockopt(GetSocket(), SOL_SOCKET, SO_RCVBUF, (char *)&value, &len) == -1)
 	{
-		Handler().LogError(this, "setsockopt(SOL_SOCKET, SO_RCVBUF)", Errno, StrError(Errno), LOG_LEVEL_FATAL);
+		Handler().LogError(this, "getsockopt(SOL_SOCKET, SO_RCVBUF)", Errno, StrError(Errno), LOG_LEVEL_FATAL);
 	}
 #else
 	Handler().LogError(this, "socket option not available", 0, "SO_RCVBUF", LOG_LEVEL_INFO);
 #endif
-	return value ? true : false;
+	return value;
 }
 
 
@@ -1682,12 +1682,12 @@ int Socket::SoSndbuf()
 	socklen_t len = sizeof(value);
 	if (getsockopt(GetSocket(), SOL_SOCKET, SO_SNDBUF, (char *)&value, &len) == -1)
 	{
-		Handler().LogError(this, "setsockopt(SOL_SOCKET, SO_SNDBUF)", Errno, StrError(Errno), LOG_LEVEL_FATAL);
+		Handler().LogError(this, "getsockopt(SOL_SOCKET, SO_SNDBUF)", Errno, StrError(Errno), LOG_LEVEL_FATAL);
 	}
 #else
 	Handler().LogError(this, "socket option not available", 0, "SO_SNDBUF", LOG_LEVEL_INFO);
 #endif
-	return value ? true : false;
+	return value;
 }
 
 
@@ -1725,12 +1725,12 @@ int Socket::SoType()
 	socklen_t len = sizeof(value);
 	if (getsockopt(GetSocket(), SOL_SOCKET, SO_TYPE, (char *)&value, &len) == -1)
 	{
-		Handler().LogError(this, "setsockopt(SOL_SOCKET, SO_TYPE)", Errno, StrError(Errno), LOG_LEVEL_FATAL);
+		Handler().LogError(this, "getsockopt(SOL_SOCKET, SO_TYPE)", Errno, StrError(Errno), LOG_LEVEL_FATAL);
 	}
 #else
 	Handler().LogError(this, "socket option not available", 0, "SO_TYPE", LOG_LEVEL_INFO);
 #endif
-	return value ? true : false;
+	return value;
 }
 
 
