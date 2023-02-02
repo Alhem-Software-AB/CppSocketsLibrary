@@ -127,11 +127,6 @@ void SocketHandler::Add(Socket *p)
 	}
 DEB(	printf("%s: add socket %d\n",m_slave ? "slave" : "master",p -> GetSocket());)
 	m_add[p -> GetSocket()] = p;
-	if (p -> Connecting())
-		Set(p -> GetSocket(),false,true);
-	else
-		Set(p -> GetSocket(),true,false);
-	m_maxsock = (p -> GetSocket() > m_maxsock) ? p -> GetSocket() : m_maxsock;
 }
 
 
@@ -194,16 +189,27 @@ int SocketHandler::Select(long sec,long usec)
 	fd_set wfds = m_wfds;
 	fd_set efds = m_efds;
 	int n;
-//DEB(	printf("tick\n");)
 
-	while (m_add.size())
+	while (m_add.size() && m_sockets.size() < FD_SETSIZE )
 	{
 		socket_m::iterator it = m_add.begin();
 		SOCKET s = (*it).first;
 		Socket *p = (*it).second;
+		// call Open before Add'ing a socket...
+		if (p -> Connecting())
+		{
+			Set(s,false,true);
+		}
+		else
+		{
+			if (p -> IsDisableRead())
+				Set(s, false, false);
+			else
+				Set(s,true,false);
+		}
+		m_maxsock = (s > m_maxsock) ? s : m_maxsock;
 		m_sockets[s] = p;
 		m_add.erase(it);
-DEB(		printf(" * add => m_sockets; new socket added\n");)
 	}
 	tv.tv_sec = sec;
 	tv.tv_usec = usec;
@@ -372,8 +378,8 @@ DEB(		printf("slave: %s\n",m_slave ? "YES" : "NO");
 					}
 					else
 					{
-						p -> OnConnectFailed();
 						p -> SetCloseAndDelete(true);
+						p -> OnConnectFailed();
 					}
 				}
 				if (p && p -> CloseAndDelete() )
@@ -384,6 +390,7 @@ DEB(		printf("slave: %s\n",m_slave ? "YES" : "NO");
 						PoolSocket *p2 = new PoolSocket(*this, p);
 						p2 -> SetDeleteByHandler();
 						Add(p2);
+//printf("Adding PoolSocket...\n");
 					}
 					else
 					{

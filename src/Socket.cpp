@@ -81,6 +81,7 @@ Socket::Socket(SocketHandler& h)
 ,m_b_enable_ssl(false)
 ,m_b_ssl(false)
 ,m_b_ssl_server(false)
+,m_b_disable_read(false)
 {
 }
 
@@ -154,6 +155,11 @@ bool Socket::CheckConnect()
 		r = false;
 	}
 	SetConnecting(false);
+	// %! add to read fd_set here
+	if (r) // ok
+	{
+		Set(!IsDisableRead(), false);
+	}
 	return r;
 }
 

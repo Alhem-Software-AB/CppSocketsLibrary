@@ -32,7 +32,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "SocketHandler.h"
 #include "HttpGetSocket.h"
 
-#define DEB(x) x
+#define DEB(x) 
 
 
 HttpGetSocket::HttpGetSocket(SocketHandler& h) : HTTPSocket(h)

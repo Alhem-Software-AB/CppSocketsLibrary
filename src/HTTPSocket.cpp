@@ -146,8 +146,11 @@ void HTTPSocket::OnLine(const std::string& line)
 	std::string key = pa.getword();
 	std::string value = pa.getrest();
 	OnHeader(key,value);
+	/* If remote end tells us to keep connection alive, and we're operating
+	in http/1.1 mode (not http/1.0 mode), then we mark the socket to be
+	retained. */
 	if (!strcasecmp(key.c_str(), "connection") &&
-	    !strcasecmp(value.c_str(), "keep-alive"))
+	    !strcasecmp(value.c_str(), "keep-alive") )
 	{
 		SetRetain();
 	}

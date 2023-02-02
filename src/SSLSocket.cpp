@@ -308,10 +308,16 @@ DEB(		printf("write() returns 0\n");)
 DEB(		printf(" %d bytes written\n",n);)
 		obuf.Remove(n);
 	}
-	if (obuf.GetLength())
-		Set(true, true);
-	else
-		Set(true, false);
+	{
+		bool br;
+		bool bw;
+		bool bx;
+		Handler().Get(GetSocket(), br, bw, bx);
+		if (obuf.GetLength())
+			Set(br, true);
+		else
+			Set(br, false);
+	}
 }
 
 

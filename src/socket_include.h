@@ -51,7 +51,7 @@ typedef int SOCKET;
 #define INADDR_NONE ((unsigned long) -1)
 #endif // INADDR_NONE
 
-#endif // _WIN32
+#endif // !_WIN32
 
 
 // ----------------------------------------
@@ -108,6 +108,10 @@ typedef unsigned short port_t;
 typedef int socklen_t;
 #define MSG_NOSIGNAL 0
 #define SHUT_RDWR 2
+
+// 1.8.6: define FD_SETSIZE to something bigger than 64 if there are a lot of
+// simultaneous connections (must be done before including winsock.h)
+//#define FD_SETSIZE 1024
 #include <winsock.h>
 
 #define Errno WSAGetLastError()

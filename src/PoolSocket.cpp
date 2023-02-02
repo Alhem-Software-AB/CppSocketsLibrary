@@ -23,24 +23,25 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifdef _WIN32
 #pragma warning(disable:4786)
 #endif
-//#include <stdio.h>
+#include <stdio.h>
 #include "SocketHandler.h"
 #include "PoolSocket.h"
 
-
+#define DEB(x) 
 
 
 PoolSocket::PoolSocket(SocketHandler& h,Socket *src)
 :Socket(h)
 {
 	CopyConnection( src );
-
+DEB(printf("PoolSocket()\n");)
 	SetIsClient();
 }
 
 
 PoolSocket::~PoolSocket()
 {
+DEB(printf("~PoolSocket()\n");)
 }
 
 

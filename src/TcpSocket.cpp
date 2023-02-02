@@ -419,10 +419,16 @@ DEB(			printf("write() returns 0\n");)
 DEB(			printf(" %d bytes written\n",n);)
 			obuf.Remove(n);
 		}
-		if (obuf.GetLength())
-			Set(true, true);
-		else
-			Set(true, false);
+		{
+			bool br;
+			bool bw;
+			bool bx;
+			Handler().Get(GetSocket(), br, bw, bx);
+			if (obuf.GetLength())
+				Set(br, true);
+			else
+				Set(br, false);
+		}
 		return;
 #endif // HAVE_OPENSSL
 	}
@@ -496,12 +502,18 @@ signal is not sent when the write call specified the MSG_NOSIGNAL flag.
 			p -> ptr += sz;
 		}
 	}
-	if (obuf.GetLength())
-		Set(true, true);
-	else
 	{
-		Set(true, false);
-//		OnWriteComplete();
+		bool br;
+		bool bw;
+		bool bx;
+		Handler().Get(GetSocket(), br, bw, bx);
+		if (obuf.GetLength())
+			Set(br, true);
+		else
+		{
+			Set(br, false);
+//			OnWriteComplete();
+		}
 	}
 }
 
@@ -648,8 +660,8 @@ void TcpSocket::OnSocks4ConnectFailed()
 	Handler().LogError(this,"OnSocks4ConnectFailed",0,"connection to socks4 server failed, trying direct connection",LOG_LEVEL_WARNING);
 	if (!Handler().Socks4TryDirect())
 	{
-		OnConnectFailed(); // just in case
 		SetCloseAndDelete();
+		OnConnectFailed(); // just in case
 	}
 	else
 	{
@@ -697,8 +709,8 @@ bool TcpSocket::OnSocks4Read()
 			case 92:
 			case 93:
 				Handler().LogError(this,"OnSocks4Read",m_socks4_cd,"socks4 server reports connect failed",LOG_LEVEL_FATAL);
-				OnConnectFailed();
 				SetCloseAndDelete();
+				OnConnectFailed();
 				break;
 			default:
 				Handler().LogError(this,"OnSocks4Read",m_socks4_cd,"socks4 server unrecognized response",LOG_LEVEL_FATAL);

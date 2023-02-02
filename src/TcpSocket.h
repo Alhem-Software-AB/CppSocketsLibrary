@@ -62,6 +62,10 @@ public:
 	TcpSocket(SocketHandler& ,size_t isize,size_t osize);
 	~TcpSocket();
 
+	/** If you want your socket to connect to a server, 
+	    always call Open before Add'ing a socket to the sockethandler.
+	    If not, the connection attempt will not be monitored by the
+	    socket handler... */
 	bool Open(ipaddr_t,port_t,bool skip_socks = false);
 	bool Open(const std::string &host,port_t port);
 	bool Open6(const std::string& host,port_t port);

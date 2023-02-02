@@ -1,4 +1,4 @@
-VERSION =	1.8.5
+VERSION =	1.8.6
 
 INCLUDE =	-I/usr/devel/include -I.
 PREFIX =	/usr/local

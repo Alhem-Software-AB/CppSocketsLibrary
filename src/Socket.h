@@ -236,6 +236,9 @@ public:
 	bool IsSSLServer() { return m_b_ssl_server; }
 	void SetSSLServer(bool x = true) { m_b_ssl_server = x; }
 
+	void DisableRead(bool x = true) { m_b_disable_read = x; }
+	bool IsDisableRead() { return m_b_disable_read; }
+
 protected:
 	Socket(const Socket& ); // do not allow use of copy constructor
 	void DetachSocket(); // protected, friend class SocketHandler;
@@ -285,6 +288,7 @@ static	WSAInitializer m_winsock_init;
 	bool m_b_enable_ssl;
 	bool m_b_ssl; // ssl negotiation mode (TcpSocket)
 	bool m_b_ssl_server;
+	bool m_b_disable_read;
 };
 
 
