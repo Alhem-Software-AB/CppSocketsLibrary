@@ -42,17 +42,13 @@ LIBS =		-lSockets -lpthread -lssl -lcrypto
 
 PROGS =		Sockets-config
 
-all:		libSockets.a libSocketsEx.a $(PROGS)
+all:		libSockets.a $(PROGS)
 
 Sockets-config:	Sockets-config.o
 		$(CXX) -o $@ $^
 
 libSockets.a:	$(OBJS)
 		ar cru $@ $(OBJS)
-		ranlib $@
-
-libSocketsEx.a:	$(EX)
-		ar cru $@ $(EX)
 		ranlib $@
 
 clean:
@@ -71,7 +67,6 @@ diff:
 install:	all 
 		@mkdir -p $(PREFIX)/lib
 		cp libSockets.a $(PREFIX)/lib
-		cp libSocketsEx.a $(PREFIX)/lib
 		@mkdir -p $(PREFIX)/include/Sockets
 		cp -a *.h $(PREFIX)/include/Sockets
 		@rm -f $(PREFIX)/include/Sockets/SSLSocket.*
@@ -80,6 +75,12 @@ install:	all
 		@rm -f $(PREFIX)/include/Sockets/EventSocket.*
 		@rm -f $(PREFIX)/include/Sockets/PoolSocket.*
 		@rm -f $(PREFIX)/include/Sockets/SocketThread.*
+		@rm -f $(PREFIX)/include/Sockets/CircularBuffer.*
+		@rm -f $(PREFIX)/include/Sockets/*Crypt.h
+		@rm -f $(PREFIX)/include/Sockets/CTcpSocket.h
+		@rm -f $(PREFIX)/include/Sockets/Min*Socket.h
+		@rm -f $(PREFIX)/include/Sockets/Min*Handler.h
+		@rm -f $(PREFIX)/include/Sockets/Uid.h
 		@mkdir -p $(PREFIX)/bin
 		install Sockets-config $(PREFIX)/bin
 
@@ -94,13 +95,33 @@ tar:		clean
 		rm -f MinderSocket_T.h
 		rm -f uuid.h
 		rm -f Stdin.*
+		rm -f sockets_test.cpp
 		rm -f ListenSocketBase.*
+		rm -f CircularBuffer.*
+		rm -f ICrypt.* NullCrypt.* CTcpSocket.*
+		rm -f Min*Socket.* Min*Handler.*
+		rm -f Uid.*
 		tar czf Sockets-$(VERSION).tar.gz $(FILES)
-#		zip -l Sockets-$(VERSION).zip $(FILES)
 		/usr/local/bin/tarfix.sh Sockets-$(VERSION)
 		cp Sockets-$(VERSION).tar.gz $(HTDOCS)/Sockets
 		cp Sockets-$(VERSION).zip $(HTDOCS)/Sockets
 		cp tests/sockets_test.cpp /usr/local/apache/www.alhem.net/htdocs/Sockets/
+
+tmptar:		clean
+		rm -f MinderSocket_T.h
+		rm -f uuid.h
+		rm -f Stdin.*
+		rm -f sockets_test.cpp
+		rm -f ListenSocketBase.*
+		rm -f CircularBuffer.*
+		rm -f ICrypt.* NullCrypt.* CTcpSocket.*
+		rm -f Min*Socket.* Min*Handler.*
+		rm -f Uid.*
+		tar czf Sockets-$(VERSION).tar.gz $(FILES)
+		/usr/local/bin/tarfix.sh Sockets-$(VERSION)
+		cp Sockets-$(VERSION).tar.gz $(HTDOCS)/Sockets-tmp
+		cp Sockets-$(VERSION).zip $(HTDOCS)/Sockets-tmp
+		cp tests/sockets_test.cpp /usr/local/apache/www.alhem.net/htdocs/Sockets-tmp
 
 docs:		clean
 		doxygen dox2.cfg
@@ -109,9 +130,29 @@ docs:		clean
 		rm -f Stdin.*
 		rm -f sockets_test.cpp
 		rm -f ListenSocketBase.*
+		rm -f CircularBuffer.*
+		rm -f ICrypt.* NullCrypt.* CTcpSocket.*
+		rm -f Min*Socket.* Min*Handler.*
+		rm -f Uid.*
 		rm -f tests/*.cpp
 		./mkdot.sh
 		rm -rf /usr/local/apache/www.alhem.net/htdocs/Sockets/html
 		doxygen doxygen.cfg
 		./packdocs.sh Sockets-$(VERSION)-doxygendocs
+		cvs up
+
+tmpdocs:	clean
+		rm -f MinderSocket_T.h
+		rm -f uuid.h
+		rm -f Stdin.*
+		rm -f sockets_test.cpp
+		rm -f ListenSocketBase.*
+		rm -f CircularBuffer.*
+		rm -f ICrypt.* NullCrypt.* CTcpSocket.*
+		rm -f Min*Socket.* Min*Handler.*
+		rm -f Uid.*
+		rm -f tests/*.cpp
+		./mkdot-tmp.sh
+		rm -rf /usr/local/apache/www.alhem.net/htdocs/Sockets-tmp/html
+		doxygen doxygen-tmp.cfg
 		cvs up

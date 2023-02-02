@@ -1,9 +1,8 @@
-VERSION =	2.1.4
-DIFF_VERSION =	2.1.3
+VERSION =	2.1.5
+DIFF_VERSION =	2.1.4
 
 # Sockets
-OBJS =		CircularBuffer.o \
-		Socket.o \
+OBJS =		Socket.o \
 		SocketHandler.o \
 		TcpSocket.o \
 		UdpSocket.o \
@@ -35,11 +34,5 @@ OBJS =		CircularBuffer.o \
 		Semaphore.o \
 		RandomNumber.o \
 		SSLInitializer.o \
-		SmtpdSocket.o
-
-# SocketsEx
-EX =		Uid.o \
-		NullCrypt.o \
-		CTcpSocket.o \
-		MinderSocket.o MinionSocket.o MinderHandler.o
-
+		SmtpdSocket.o \
+		Debug.o

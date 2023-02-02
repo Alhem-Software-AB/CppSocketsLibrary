@@ -22,7 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #include "SctpSocket.h"
 #ifdef USE_SCTP
-#include <Utility.h>
+#include "Utility.h"
 #include "ISocketHandler.h"
 #include <errno.h>
 #include "Ipv4Address.h"
@@ -53,12 +53,14 @@ SctpSocket::~SctpSocket()
 
 int SctpSocket::Bind(const std::string& a,port_t p)
 {
+#ifdef ENABLE_IPV6
 #ifdef IPPROTO_IPV6
 	if (IsIpv6())
 	{
 		Ipv6Address ad(a, p);
 		return Bind(ad);
 	}
+#endif
 #endif
 	Ipv4Address ad(a, p);
 	return Bind(ad);
@@ -91,12 +93,14 @@ int SctpSocket::Bind(SocketAddress& ad)
 
 int SctpSocket::AddAddress(const std::string& a,port_t p)
 {
+#ifdef ENABLE_IPV6
 #ifdef IPPROTO_IPV6
 	if (IsIpv6())
 	{
 		Ipv6Address ad(a, p);
 		return AddAddress(ad);
 	}
+#endif
 #endif
 	Ipv4Address ad(a, p);
 	return AddAddress(ad);
@@ -126,12 +130,14 @@ int SctpSocket::AddAddress(SocketAddress& ad)
 
 int SctpSocket::RemoveAddress(const std::string& a,port_t p)
 {
+#ifdef ENABLE_IPV6
 #ifdef IPPROTO_IPV6
 	if (IsIpv6())
 	{
 		Ipv6Address ad(a, p);
 		return RemoveAddress(ad);
 	}
+#endif
 #endif
 	Ipv4Address ad(a, p);
 	return RemoveAddress(ad);
@@ -161,12 +167,14 @@ int SctpSocket::RemoveAddress(SocketAddress& ad)
 
 int SctpSocket::Open(const std::string& a,port_t p)
 {
+#ifdef ENABLE_IPV6
 #ifdef IPPROTO_IPV6
 	if (IsIpv6())
 	{
 		Ipv6Address ad(a, p);
 		return Open(ad);
 	}
+#endif
 #endif
 	Ipv4Address ad(a, p);
 	return Open(ad);
@@ -214,14 +222,17 @@ int SctpSocket::Open(SocketAddress& ad)
 }
 
 
+#ifndef SOLARIS
 int SctpSocket::AddConnection(const std::string& a,port_t p)
 {
+#ifdef ENABLE_IPV6
 #ifdef IPPROTO_IPV6
 	if (IsIpv6())
 	{
 		Ipv6Address ad(a, p);
 		return AddConnection(ad);
 	}
+#endif
 #endif
 	Ipv4Address ad(a, p);
 	return AddConnection(ad);
@@ -251,6 +262,7 @@ int SctpSocket::AddConnection(SocketAddress& ad)
 	}
 	return n;
 }
+#endif
 
 
 int SctpSocket::getpaddrs(sctp_assoc_t id,std::list<std::string>& vec)
@@ -356,11 +368,13 @@ void SctpSocket::OnWrite()
 			return;
 		}
 		// failed
+#ifdef ENABLE_SOCKS4
 		if (Socks4())
 		{
 			OnSocks4ConnectFailed();
 			return;
 		}
+#endif
 		if (GetConnectionRetry() == -1 ||
 			(GetConnectionRetry() && GetConnectionRetries() < GetConnectionRetry()) )
 		{

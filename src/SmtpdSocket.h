@@ -40,7 +40,7 @@ protected:
 		SMTP_NO_HELLO,
 		SMTP_NAME_TOO_LONG,
 		SMTP_DOMAIN_TOO_LONG,
-		SMTP_QUIT,
+		SMTP_QUIT
 	} reason_t;
 
 public:
@@ -70,16 +70,31 @@ public:
 				m_name = m_name.substr(1);
 			while (m_domain.size() && m_domain[0] == ' ')
 				m_domain = m_domain.substr(1);
+			m_top = m_domain;
+			{
+				for (size_t i = 0; i < m_domain.size(); i++)
+				{
+					if (m_domain[i] == '.')
+					{
+						m_sub = m_top;
+						m_top = m_domain.substr(i + 1);
+					}
+				}
+			}
 		}
 
 		const std::string& GetName() const { return m_name; }
 		const std::string& GetDomain() const { return m_domain; }
+		const std::string& GetTopDomain() const { return m_top; }
+		const std::string& GetSubDomain() const { return m_sub; }
 
 		std::string ToString() const { return m_name + "@" + m_domain; }
 
 	private:
 		std::string m_name;
 		std::string m_domain;
+		std::string m_top;
+		std::string m_sub;
 	};
 
 public:
@@ -113,9 +128,6 @@ public:
 	virtual void OnNotSupported(const std::string& cmd, const std::string& arg) = 0;
 
 private:
-	std::string ToLower(const std::string& str);
-	std::string ToUpper(const std::string& str);
-
 	bool m_hello; // we need HELO or EHLO first of all
 	bool m_data;
 	bool m_header;

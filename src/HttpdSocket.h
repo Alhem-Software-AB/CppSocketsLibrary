@@ -66,6 +66,7 @@ public:
 	HttpdForm *GetForm();
 
 protected:
+	HttpdSocket(const HttpdSocket& s) : HTTPSocket(s) {}
 	/** Decode and send a base64-encoded string. 
 		\param str64 Base64-encoded string
 		\param type Mime type of content (content-type header) */
@@ -80,6 +81,7 @@ protected:
 	std::string m_if_modified_since;
 
 private:
+	HttpdSocket& operator=(const HttpdSocket& s) { return *this; }
 static	int m_request_count;
 static	std::string m_start;
 	size_t m_content_length;

@@ -76,8 +76,6 @@ Socket::Socket(ISocketHandler& h)
 #endif
 ,m_parent(NULL)
 ,m_call_on_connect(false)
-,m_opt_reuse(true)
-,m_opt_keepalive(true)
 ,m_connect_timeout(5)
 ,m_b_disable_read(false)
 ,m_b_retry_connect(false)
@@ -175,14 +173,9 @@ void Socket::OnException()
 		return;
 	}
 #endif
+	// %! exception doesn't always mean something bad happened, this code should be reworked
 	// errno valid here?
-	int err;
-	socklen_t errlen = sizeof(err);
-#ifdef _WIN32
-	getsockopt(m_socket, SOL_SOCKET, SO_ERROR, (char *)&err, &errlen);
-#else
-	getsockopt(m_socket, SOL_SOCKET, SO_ERROR, &err, &errlen);
-#endif
+	int err = SoError();
 	Handler().LogError(this, "exception on select", err, StrError(err), LOG_LEVEL_FATAL);
 	SetCloseAndDelete();
 }
@@ -200,31 +193,19 @@ void Socket::OnConnect()
 
 bool Socket::CheckConnect()
 {
-	int err;
-	socklen_t errlen = sizeof(err);
-	bool r = true;
-#ifdef _WIN32
-	getsockopt(m_socket, SOL_SOCKET, SO_ERROR, (char *)&err, &errlen);
-#else
-	getsockopt(m_socket, SOL_SOCKET, SO_ERROR, &err, &errlen);
-#endif
-	if (err)
-	{
-		Handler().LogError(this, "connect failed", err, StrError(err), LOG_LEVEL_FATAL);
-		r = false;
-	}
+	int err = SoError();
+
 	// don't reset connecting flag on error here, we want the OnConnectFailed timeout later on
 	/// \todo add to read fd_set here
-	if (r) // ok
+	if (!err) // ok
 	{
 		Set(!IsDisableRead(), false);
 		SetConnecting(false);
+		return true;
 	}
-	else
-	{
-		Set(false, false); // no more monitoring because connection failed
-	}
-	return r;
+	Handler().LogError(this, "connect failed", err, StrError(err), LOG_LEVEL_FATAL);
+	Set(false, false); // no more monitoring because connection failed
+	return false;
 }
 
 
@@ -286,7 +267,6 @@ DEB(	fprintf(stderr, " fd %d\n", m_socket);)
 SOCKET Socket::CreateSocket(int af,int type, const std::string& protocol)
 {
 	struct protoent *p = NULL;
-	int optval;
 	SOCKET s;
 
 #ifdef ENABLE_POOL
@@ -312,39 +292,9 @@ SOCKET Socket::CreateSocket(int af,int type, const std::string& protocol)
 		SetCloseAndDelete();
 		return INVALID_SOCKET;
 	}
+	Attach(s);
 	OnOptions(af, type, protno, s);
-#ifdef SO_NOSIGPIPE
-	{
-		optval = 1;
-		if (setsockopt(s, SOL_SOCKET, SO_NOSIGPIPE, (char *)&optval, sizeof(optval)) == -1)
-		{
-			Handler().LogError(this, "setsockopt(SOL_SOCKET, SO_NOSIGPIPE)", Errno, StrError(Errno), LOG_LEVEL_FATAL);
-			closesocket(s);
-			SetCloseAndDelete();
-			return INVALID_SOCKET;
-		}
-	}
-#endif
-	if (type == SOCK_STREAM)
-	{
-		optval = m_opt_reuse ? 1 : 0;
-		if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, (char *)&optval, sizeof(optval)) == -1)
-		{
-			Handler().LogError(this, "setsockopt(SOL_SOCKET, SO_REUSEADDR)", Errno, StrError(Errno), LOG_LEVEL_FATAL);
-			closesocket(s);
-			SetCloseAndDelete();
-			return INVALID_SOCKET;
-		}
-
-		optval = m_opt_keepalive ? 1 : 0;
-		if (setsockopt(s, SOL_SOCKET, SO_KEEPALIVE, (char *)&optval, sizeof(optval)) == -1)
-		{
-			Handler().LogError(this, "setsockopt(SOL_SOCKET, SO_KEEPALIVE)", Errno, StrError(Errno), LOG_LEVEL_FATAL);
-			closesocket(s);
-			SetCloseAndDelete();
-			return INVALID_SOCKET;
-		}
-	}
+	Attach(INVALID_SOCKET);
 	return s;
 }
 
@@ -622,11 +572,6 @@ void Socket::OnConnectFailed()
 }
 
 
-Socket::Socket(const Socket& s) : m_handler(s.Handler())
-{
-}
-
-
 Socket *Socket::GetParent()
 {
 	return m_parent;
@@ -643,12 +588,6 @@ port_t Socket::GetPort()
 {
 	Handler().LogError(this, "GetPort", 0, "GetPort only implemented for ListenSocket", LOG_LEVEL_WARNING);
 	return 0;
-}
-
-
-Socket *Socket::Create()
-{
-	return NULL;
 }
 
 
@@ -695,18 +634,6 @@ void Socket::SetCallOnConnect(bool x)
 bool Socket::CallOnConnect()
 {
 	return m_call_on_connect;
-}
-
-
-void Socket::SetReuse(bool x)
-{
-	m_opt_reuse = x;
-}
-
-
-void Socket::SetKeepalive(bool x)
-{
-	m_opt_keepalive = x;
 }
 
 
@@ -1247,7 +1174,794 @@ void Socket::OnResolveFailed(int)
 #endif // ENABLE_RESOLVER
 
 
-#ifdef SOCKETS_NAMESPACE
+/* IP options */
+
+
+bool Socket::SetIpOptions(const void *p, socklen_t len)
+{
+#ifdef IP_OPTIONS
+	if (setsockopt(GetSocket(), IPPROTO_IP, IP_OPTIONS, (char *)p, len) == -1)
+	{
+		Handler().LogError(this, "setsockopt(IPPROTO_IP, IP_OPTIONS)", Errno, StrError(Errno), LOG_LEVEL_FATAL);
+		return false;
+	}
+	return true;
+#else
+	Handler().LogError(this, "ip option not available", 0, "IP_OPTIONS", LOG_LEVEL_INFO);
+	return false;
+#endif
+}
+
+
+#ifdef IP_PKTINFO
+bool Socket::SetIpPktinfo(bool x)
+{
+	int optval = x ? 1 : 0;
+	if (setsockopt(GetSocket(), IPPROTO_IP, IP_PKTINFO, (char *)&optval, sizeof(optval)) == -1)
+	{
+		Handler().LogError(this, "setsockopt(IPPROTO_IP, IP_PKTINFO)", Errno, StrError(Errno), LOG_LEVEL_FATAL);
+		return false;
+	}
+	return true;
 }
 #endif
 
+
+#ifdef IP_RECVTOS
+bool Socket::SetIpRecvTOS(bool x)
+{
+	int optval = x ? 1 : 0;
+	if (setsockopt(GetSocket(), IPPROTO_IP, IP_RECVTOS, (char *)&optval, sizeof(optval)) == -1)
+	{
+		Handler().LogError(this, "setsockopt(IPPROTO_IP, IP_RECVTOS)", Errno, StrError(Errno), LOG_LEVEL_FATAL);
+		return false;
+	}
+	return true;
+}
+#endif
+
+
+#ifdef IP_RECVTTL
+bool Socket::SetIpRecvTTL(bool x)
+{
+	int optval = x ? 1 : 0;
+	if (setsockopt(GetSocket(), IPPROTO_IP, IP_RECVTTL, (char *)&optval, sizeof(optval)) == -1)
+	{
+		Handler().LogError(this, "setsockopt(IPPROTO_IP, IP_RECVTTL)", Errno, StrError(Errno), LOG_LEVEL_FATAL);
+		return false;
+	}
+	return true;
+}
+#endif
+
+
+#ifdef IP_RECVOPTS
+bool Socket::SetIpRecvopts(bool x)
+{
+	int optval = x ? 1 : 0;
+	if (setsockopt(GetSocket(), IPPROTO_IP, IP_RECVOPTS, (char *)&optval, sizeof(optval)) == -1)
+	{
+		Handler().LogError(this, "setsockopt(IPPROTO_IP, IP_RECVOPTS)", Errno, StrError(Errno), LOG_LEVEL_FATAL);
+		return false;
+	}
+	return true;
+}
+#endif
+
+
+#ifdef IP_RETOPTS
+bool Socket::SetIpRetopts(bool x)
+{
+	int optval = x ? 1 : 0;
+	if (setsockopt(GetSocket(), IPPROTO_IP, IP_RETOPTS, (char *)&optval, sizeof(optval)) == -1)
+	{
+		Handler().LogError(this, "setsockopt(IPPROTO_IP, IP_RETOPTS)", Errno, StrError(Errno), LOG_LEVEL_FATAL);
+		return false;
+	}
+	return true;
+}
+#endif
+
+
+bool Socket::SetIpTOS(unsigned char tos)
+{
+#ifdef IP_TOS
+	if (setsockopt(GetSocket(), IPPROTO_IP, IP_TOS, (char *)&tos, sizeof(tos)) == -1)
+	{
+		Handler().LogError(this, "setsockopt(IPPROTO_IP, IP_TOS)", Errno, StrError(Errno), LOG_LEVEL_FATAL);
+		return false;
+	}
+	return true;
+#else
+	Handler().LogError(this, "ip option not available", 0, "IP_TOS", LOG_LEVEL_INFO);
+	return false;
+#endif
+}
+
+
+unsigned char Socket::IpTOS()
+{
+	unsigned char tos = 0;
+#ifdef IP_TOS
+	socklen_t len = sizeof(tos);
+	if (getsockopt(GetSocket(), IPPROTO_IP, IP_TOS, (char *)&tos, &len) == -1)
+	{
+		Handler().LogError(this, "setsockopt(IPPROTO_IP, IP_TOS)", Errno, StrError(Errno), LOG_LEVEL_FATAL);
+	}
+#else
+	Handler().LogError(this, "ip option not available", 0, "IP_TOS", LOG_LEVEL_INFO);
+#endif
+	return tos;
+}
+
+
+bool Socket::SetIpTTL(int ttl)
+{
+#ifdef IP_TTL
+	if (setsockopt(GetSocket(), IPPROTO_IP, IP_TTL, (char *)&ttl, sizeof(ttl)) == -1)
+	{
+		Handler().LogError(this, "setsockopt(IPPROTO_IP, IP_TTL)", Errno, StrError(Errno), LOG_LEVEL_FATAL);
+		return false;
+	}
+	return true;
+#else
+	Handler().LogError(this, "ip option not available", 0, "IP_TTL", LOG_LEVEL_INFO);
+	return false;
+#endif
+}
+
+
+int Socket::IpTTL()
+{
+	int ttl = 0;
+#ifdef IP_TTL
+	socklen_t len = sizeof(ttl);
+	if (getsockopt(GetSocket(), IPPROTO_IP, IP_TTL, (char *)&ttl, &len) == -1)
+	{
+		Handler().LogError(this, "setsockopt(IPPROTO_IP, IP_TTL)", Errno, StrError(Errno), LOG_LEVEL_FATAL);
+	}
+#else
+	Handler().LogError(this, "ip option not available", 0, "IP_TTL", LOG_LEVEL_INFO);
+#endif
+	return ttl;
+}
+
+
+bool Socket::SetIpHdrincl(bool x)
+{
+#ifdef IP_HDRINCL
+	int optval = x ? 1 : 0;
+	if (setsockopt(GetSocket(), IPPROTO_IP, IP_HDRINCL, (char *)&optval, sizeof(optval)) == -1)
+	{
+		Handler().LogError(this, "setsockopt(IPPROTO_IP, IP_HDRINCL)", Errno, StrError(Errno), LOG_LEVEL_FATAL);
+		return false;
+	}
+	return true;
+#else
+	Handler().LogError(this, "ip option not available", 0, "IP_HDRINCL", LOG_LEVEL_INFO);
+	return false;
+#endif
+}
+
+
+#ifdef IP_RECVERR
+bool Socket::SetIpRecverr(bool x)
+{
+	int optval = x ? 1 : 0;
+	if (setsockopt(GetSocket(), IPPROTO_IP, IP_RECVERR, (char *)&optval, sizeof(optval)) == -1)
+	{
+		Handler().LogError(this, "setsockopt(IPPROTO_IP, IP_RECVERR)", Errno, StrError(Errno), LOG_LEVEL_FATAL);
+		return false;
+	}
+	return true;
+}
+#endif
+
+
+#ifdef IP_MTU_DISCOVER
+bool Socket::SetIpMtudiscover(bool x)
+{
+	int optval = x ? 1 : 0;
+	if (setsockopt(GetSocket(), IPPROTO_IP, IP_MTU_DISCOVER, (char *)&optval, sizeof(optval)) == -1)
+	{
+		Handler().LogError(this, "setsockopt(IPPROTO_IP, IP_MTU_DISCOVER)", Errno, StrError(Errno), LOG_LEVEL_FATAL);
+		return false;
+	}
+	return true;
+}
+#endif
+
+
+#ifdef IP_MTU
+int Socket::IpMtu()
+{
+	int mtu = 0;
+	socklen_t len = sizeof(mtu);
+	if (getsockopt(GetSocket(), IPPROTO_IP, IP_MTU, (char *)&mtu, &len) == -1)
+	{
+		Handler().LogError(this, "setsockopt(IPPROTO_IP, IP_MTU)", Errno, StrError(Errno), LOG_LEVEL_FATAL);
+	}
+	return mtu;
+}
+#endif
+
+
+#ifdef IP_ROUTER_ALERT
+bool Socket::SetIpRouterAlert(bool x)
+{
+	int optval = x ? 1 : 0;
+	if (setsockopt(GetSocket(), IPPROTO_IP, IP_ROUTER_ALERT, (char *)&optval, sizeof(optval)) == -1)
+	{
+		Handler().LogError(this, "setsockopt(IPPROTO_IP, IP_ROUTER_ALERT)", Errno, StrError(Errno), LOG_LEVEL_FATAL);
+		return false;
+	}
+	return true;
+}
+#endif
+
+
+bool Socket::SetIpMulticastTTL(int ttl)
+{
+#ifdef IP_MULTICAST_TTL
+	if (setsockopt(GetSocket(), IPPROTO_IP, IP_MULTICAST_TTL, (char *)&ttl, sizeof(ttl)) == -1)
+	{
+		Handler().LogError(this, "setsockopt(IPPROTO_IP, IP_MULTICAST_TTL)", Errno, StrError(Errno), LOG_LEVEL_FATAL);
+		return false;
+	}
+	return true;
+#else
+	Handler().LogError(this, "ip option not available", 0, "IP_MULTICAST_TTL", LOG_LEVEL_INFO);
+	return false;
+#endif
+}
+
+
+int Socket::IpMulticastTTL()
+{
+	int ttl = 0;
+#ifdef IP_MULTICAST_TTL
+	socklen_t len = sizeof(ttl);
+	if (getsockopt(GetSocket(), IPPROTO_IP, IP_MULTICAST_TTL, (char *)&ttl, &len) == -1)
+	{
+		Handler().LogError(this, "setsockopt(IPPROTO_IP, IP_MULTICAST_TTL)", Errno, StrError(Errno), LOG_LEVEL_FATAL);
+	}
+#else
+	Handler().LogError(this, "ip option not available", 0, "IP_MULTICAST_TTL", LOG_LEVEL_INFO);
+#endif
+	return ttl;
+}
+
+
+bool Socket::SetMulticastLoop(bool x)
+{
+#ifdef IP_MULTICAST_LOOP
+	int optval = x ? 1 : 0;
+	if (setsockopt(GetSocket(), IPPROTO_IP, IP_MULTICAST_LOOP, (char *)&optval, sizeof(optval)) == -1)
+	{
+		Handler().LogError(this, "setsockopt(IPPROTO_IP, IP_MULTICAST_LOOP)", Errno, StrError(Errno), LOG_LEVEL_FATAL);
+		return false;
+	}
+	return true;
+#else
+	Handler().LogError(this, "ip option not available", 0, "IP_MULTICAST_LOOP", LOG_LEVEL_INFO);
+	return false;
+#endif
+}
+
+
+#ifdef LINUX
+bool Socket::IpAddMembership(struct ip_mreqn& ref)
+{
+#ifdef IP_ADD_MEMBERSHIP
+	if (setsockopt(GetSocket(), IPPROTO_IP, IP_ADD_MEMBERSHIP, (char *)&ref, sizeof(struct ip_mreqn)) == -1)
+	{
+		Handler().LogError(this, "setsockopt(IPPROTO_IP, IP_ADD_MEMBERSHIP)", Errno, StrError(Errno), LOG_LEVEL_FATAL);
+		return false;
+	}
+	return true;
+#else
+	Handler().LogError(this, "ip option not available", 0, "IP_ADD_MEMBERSHIP", LOG_LEVEL_INFO);
+	return false;
+#endif
+}
+#endif
+
+
+bool Socket::IpAddMembership(struct ip_mreq& ref)
+{
+#ifdef IP_ADD_MEMBERSHIP
+	if (setsockopt(GetSocket(), IPPROTO_IP, IP_ADD_MEMBERSHIP, (char *)&ref, sizeof(struct ip_mreq)) == -1)
+	{
+		Handler().LogError(this, "setsockopt(IPPROTO_IP, IP_ADD_MEMBERSHIP)", Errno, StrError(Errno), LOG_LEVEL_FATAL);
+		return false;
+	}
+	return true;
+#else
+	Handler().LogError(this, "ip option not available", 0, "IP_ADD_MEMBERSHIP", LOG_LEVEL_INFO);
+	return false;
+#endif
+}
+
+
+#ifdef LINUX
+bool Socket::IpDropMembership(struct ip_mreqn& ref)
+{
+#ifdef IP_DROP_MEMBERSHIP
+	if (setsockopt(GetSocket(), IPPROTO_IP, IP_DROP_MEMBERSHIP, (char *)&ref, sizeof(struct ip_mreqn)) == -1)
+	{
+		Handler().LogError(this, "setsockopt(IPPROTO_IP, IP_DROP_MEMBERSHIP)", Errno, StrError(Errno), LOG_LEVEL_FATAL);
+		return false;
+	}
+	return true;
+#else
+	Handler().LogError(this, "ip option not available", 0, "IP_DROP_MEMBERSHIP", LOG_LEVEL_INFO);
+	return false;
+#endif
+}
+#endif
+
+
+bool Socket::IpDropMembership(struct ip_mreq& ref)
+{
+#ifdef IP_DROP_MEMBERSHIP
+	if (setsockopt(GetSocket(), IPPROTO_IP, IP_DROP_MEMBERSHIP, (char *)&ref, sizeof(struct ip_mreq)) == -1)
+	{
+		Handler().LogError(this, "setsockopt(IPPROTO_IP, IP_DROP_MEMBERSHIP)", Errno, StrError(Errno), LOG_LEVEL_FATAL);
+		return false;
+	}
+	return true;
+#else
+	Handler().LogError(this, "ip option not available", 0, "IP_DROP_MEMBERSHIP", LOG_LEVEL_INFO);
+	return false;
+#endif
+}
+
+
+/* SOCKET options */
+
+
+bool Socket::SetSoReuseaddr(bool x)
+{
+#ifdef SO_REUSEADDR
+	int optval = x ? 1 : 0;
+	if (setsockopt(GetSocket(), SOL_SOCKET, SO_REUSEADDR, (char *)&optval, sizeof(optval)) == -1)
+	{
+		Handler().LogError(this, "setsockopt(SOL_SOCKET, SO_REUSEADDR)", Errno, StrError(Errno), LOG_LEVEL_FATAL);
+		return false;
+	}
+	return true;
+#else
+	Handler().LogError(this, "socket option not available", 0, "SO_REUSEADDR", LOG_LEVEL_INFO);
+	return false;
+#endif
+}
+
+
+bool Socket::SetSoKeepalive(bool x)
+{
+#ifdef SO_KEEPALIVE
+	int optval = x ? 1 : 0;
+	if (setsockopt(GetSocket(), SOL_SOCKET, SO_KEEPALIVE, (char *)&optval, sizeof(optval)) == -1)
+	{
+		Handler().LogError(this, "setsockopt(SOL_SOCKET, SO_KEEPALIVE)", Errno, StrError(Errno), LOG_LEVEL_FATAL);
+		return false;
+	}
+	return true;
+#else
+	Handler().LogError(this, "socket option not available", 0, "SO_KEEPALIVE", LOG_LEVEL_INFO);
+	return false;
+#endif
+}
+
+
+#ifdef SO_NOSIGPIPE
+bool Socket::SetSoNosigpipe(bool x)
+{
+	int optval = x ? 1 : 0;
+	if (setsockopt(GetSocket(), SOL_SOCKET, SO_NOSIGPIPE, (char *)&optval, sizeof(optval)) == -1)
+	{
+		Handler().LogError(this, "setsockopt(SOL_SOCKET, SO_NOSIGPIPE)", Errno, StrError(Errno), LOG_LEVEL_FATAL);
+		return false;
+	}
+	return true;
+}
+#endif
+
+
+bool Socket::SoAcceptconn()
+{
+	int value = 0;
+#ifdef SO_ACCEPTCONN
+	socklen_t len = sizeof(value);
+	if (getsockopt(GetSocket(), SOL_SOCKET, SO_ACCEPTCONN, (char *)&value, &len) == -1)
+	{
+		Handler().LogError(this, "setsockopt(SOL_SOCKET, SO_ACCEPTCONN)", Errno, StrError(Errno), LOG_LEVEL_FATAL);
+	}
+#else
+	Handler().LogError(this, "socket option not available", 0, "SO_ACCEPTCONN", LOG_LEVEL_INFO);
+#endif
+	return value ? true : false;
+}
+
+
+#ifdef SO_BSDCOMPAT
+bool Socket::SetSoBsdcompat(bool x)
+{
+	int optval = x ? 1 : 0;
+	if (setsockopt(GetSocket(), SOL_SOCKET, SO_BSDCOMPAT, (char *)&optval, sizeof(optval)) == -1)
+	{
+		Handler().LogError(this, "setsockopt(SOL_SOCKET, SO_BSDCOMPAT)", Errno, StrError(Errno), LOG_LEVEL_FATAL);
+		return false;
+	}
+	return true;
+}
+#endif
+
+
+#ifdef SO_BINDTODEVICE
+bool Socket::SetSoBindtodevice(const std::string& intf)
+{
+	if (setsockopt(GetSocket(), SOL_SOCKET, SO_BINDTODEVICE, (char *)intf.c_str(), intf.size()) == -1)
+	{
+		Handler().LogError(this, "setsockopt(SOL_SOCKET, SO_BINDTODEVICE)", Errno, StrError(Errno), LOG_LEVEL_FATAL);
+		return false;
+	}
+	return true;
+}
+#endif
+
+
+bool Socket::SetSoBroadcast(bool x)
+{
+#ifdef SO_BROADCAST
+	int optval = x ? 1 : 0;
+	if (setsockopt(GetSocket(), SOL_SOCKET, SO_BROADCAST, (char *)&optval, sizeof(optval)) == -1)
+	{
+		Handler().LogError(this, "setsockopt(SOL_SOCKET, SO_BROADCAST)", Errno, StrError(Errno), LOG_LEVEL_FATAL);
+		return false;
+	}
+	return true;
+#else
+	Handler().LogError(this, "socket option not available", 0, "SO_BROADCAST", LOG_LEVEL_INFO);
+	return false;
+#endif
+}
+
+
+bool Socket::SetSoDebug(bool x)
+{
+#ifdef SO_DEBUG
+	int optval = x ? 1 : 0;
+	if (setsockopt(GetSocket(), SOL_SOCKET, SO_DEBUG, (char *)&optval, sizeof(optval)) == -1)
+	{
+		Handler().LogError(this, "setsockopt(SOL_SOCKET, SO_DEBUG)", Errno, StrError(Errno), LOG_LEVEL_FATAL);
+		return false;
+	}
+	return true;
+#else
+	Handler().LogError(this, "socket option not available", 0, "SO_DEBUG", LOG_LEVEL_INFO);
+	return false;
+#endif
+}
+
+
+int Socket::SoError()
+{
+	int value = 0;
+#ifdef SO_ERROR
+	socklen_t len = sizeof(value);
+	if (getsockopt(GetSocket(), SOL_SOCKET, SO_ERROR, (char *)&value, &len) == -1)
+	{
+		Handler().LogError(this, "setsockopt(SOL_SOCKET, SO_ERROR)", Errno, StrError(Errno), LOG_LEVEL_FATAL);
+	}
+#else
+	Handler().LogError(this, "socket option not available", 0, "SO_ERROR", LOG_LEVEL_INFO);
+#endif
+	return value ? true : false;
+}
+
+
+bool Socket::SetSoDontroute(bool x)
+{
+#ifdef SO_DONTROUTE
+	int optval = x ? 1 : 0;
+	if (setsockopt(GetSocket(), SOL_SOCKET, SO_DONTROUTE, (char *)&optval, sizeof(optval)) == -1)
+	{
+		Handler().LogError(this, "setsockopt(SOL_SOCKET, SO_DONTROUTE)", Errno, StrError(Errno), LOG_LEVEL_FATAL);
+		return false;
+	}
+	return true;
+#else
+	Handler().LogError(this, "socket option not available", 0, "SO_DONTROUTE", LOG_LEVEL_INFO);
+	return false;
+#endif
+}
+
+
+bool Socket::SetSoLinger(int onoff, int linger)
+{
+#ifdef SO_LINGER
+	struct linger stl;
+	stl.l_onoff = onoff;
+	stl.l_linger = linger;
+	if (setsockopt(GetSocket(), SOL_SOCKET, SO_LINGER, (char *)&stl, sizeof(stl)) == -1)
+	{
+		Handler().LogError(this, "setsockopt(SOL_SOCKET, SO_LINGER)", Errno, StrError(Errno), LOG_LEVEL_FATAL);
+		return false;
+	}
+	return true;
+#else
+	Handler().LogError(this, "socket option not available", 0, "SO_LINGER", LOG_LEVEL_INFO);
+	return false;
+#endif
+}
+
+
+bool Socket::SetSoOobinline(bool x)
+{
+#ifdef SO_OOBINLINE
+	int optval = x ? 1 : 0;
+	if (setsockopt(GetSocket(), SOL_SOCKET, SO_OOBINLINE, (char *)&optval, sizeof(optval)) == -1)
+	{
+		Handler().LogError(this, "setsockopt(SOL_SOCKET, SO_OOBINLINE)", Errno, StrError(Errno), LOG_LEVEL_FATAL);
+		return false;
+	}
+	return true;
+#else
+	Handler().LogError(this, "socket option not available", 0, "SO_OOBINLINE", LOG_LEVEL_INFO);
+	return false;
+#endif
+}
+
+
+#ifdef SO_PASSCRED
+bool Socket::SetSoPasscred(bool x)
+{
+	int optval = x ? 1 : 0;
+	if (setsockopt(GetSocket(), SOL_SOCKET, SO_PASSCRED, (char *)&optval, sizeof(optval)) == -1)
+	{
+		Handler().LogError(this, "setsockopt(SOL_SOCKET, SO_PASSCRED)", Errno, StrError(Errno), LOG_LEVEL_FATAL);
+		return false;
+	}
+	return true;
+}
+#endif
+
+
+#ifdef SO_PEERCRED
+bool Socket::SoPeercred(struct ucred& ucr)
+{
+	if (setsockopt(GetSocket(), SOL_SOCKET, SO_PEERCRED, (char *)&ucr, sizeof(ucr)) == -1)
+	{
+		Handler().LogError(this, "setsockopt(SOL_SOCKET, SO_PEERCRED)", Errno, StrError(Errno), LOG_LEVEL_FATAL);
+		return false;
+	}
+	return true;
+}
+#endif
+
+
+#ifdef SO_PRIORITY
+bool Socket::SetSoPriority(int x)
+{
+	if (setsockopt(GetSocket(), SOL_SOCKET, SO_PRIORITY, (char *)&x, sizeof(x)) == -1)
+	{
+		Handler().LogError(this, "setsockopt(SOL_SOCKET, SO_PRIORITY)", Errno, StrError(Errno), LOG_LEVEL_FATAL);
+		return false;
+	}
+	return true;
+}
+#endif
+
+
+bool Socket::SetSoRcvlowat(int x)
+{
+#ifdef SO_RCVLOWAT
+	if (setsockopt(GetSocket(), SOL_SOCKET, SO_RCVLOWAT, (char *)&x, sizeof(x)) == -1)
+	{
+		Handler().LogError(this, "setsockopt(SOL_SOCKET, SO_RCVLOWAT)", Errno, StrError(Errno), LOG_LEVEL_FATAL);
+		return false;
+	}
+	return true;
+#else
+	Handler().LogError(this, "socket option not available", 0, "SO_RCVLOWAT", LOG_LEVEL_INFO);
+	return false;
+#endif
+}
+
+
+bool Socket::SetSoSndlowat(int x)
+{
+#ifdef SO_SNDLOWAT
+	if (setsockopt(GetSocket(), SOL_SOCKET, SO_SNDLOWAT, (char *)&x, sizeof(x)) == -1)
+	{
+		Handler().LogError(this, "setsockopt(SOL_SOCKET, SO_SNDLOWAT)", Errno, StrError(Errno), LOG_LEVEL_FATAL);
+		return false;
+	}
+	return true;
+#else
+	Handler().LogError(this, "socket option not available", 0, "SO_SNDLOWAT", LOG_LEVEL_INFO);
+	return false;
+#endif
+}
+
+
+bool Socket::SetSoRcvtimeo(struct timeval& tv)
+{
+#ifdef SO_RCVTIMEO
+	if (setsockopt(GetSocket(), SOL_SOCKET, SO_RCVTIMEO, (char *)&tv, sizeof(tv)) == -1)
+	{
+		Handler().LogError(this, "setsockopt(SOL_SOCKET, SO_RCVTIMEO)", Errno, StrError(Errno), LOG_LEVEL_FATAL);
+		return false;
+	}
+	return true;
+#else
+	Handler().LogError(this, "socket option not available", 0, "SO_RCVTIMEO", LOG_LEVEL_INFO);
+	return false;
+#endif
+}
+
+
+bool Socket::SetSoSndtimeo(struct timeval& tv)
+{
+#ifdef SO_SNDTIMEO
+	if (setsockopt(GetSocket(), SOL_SOCKET, SO_SNDTIMEO, (char *)&tv, sizeof(tv)) == -1)
+	{
+		Handler().LogError(this, "setsockopt(SOL_SOCKET, SO_SNDTIMEO)", Errno, StrError(Errno), LOG_LEVEL_FATAL);
+		return false;
+	}
+	return true;
+#else
+	Handler().LogError(this, "socket option not available", 0, "SO_SNDTIMEO", LOG_LEVEL_INFO);
+	return false;
+#endif
+}
+
+
+bool Socket::SetSoRcvbuf(int x)
+{
+#ifdef SO_RCVBUF
+	if (setsockopt(GetSocket(), SOL_SOCKET, SO_RCVBUF, (char *)&x, sizeof(x)) == -1)
+	{
+		Handler().LogError(this, "setsockopt(SOL_SOCKET, SO_RCVBUF)", Errno, StrError(Errno), LOG_LEVEL_FATAL);
+		return false;
+	}
+	return true;
+#else
+	Handler().LogError(this, "socket option not available", 0, "SO_RCVBUF", LOG_LEVEL_INFO);
+	return false;
+#endif
+}
+
+
+int Socket::SoRcvbuf()
+{
+	int value = 0;
+#ifdef SO_RCVBUF
+	socklen_t len = sizeof(value);
+	if (getsockopt(GetSocket(), SOL_SOCKET, SO_RCVBUF, (char *)&value, &len) == -1)
+	{
+		Handler().LogError(this, "setsockopt(SOL_SOCKET, SO_RCVBUF)", Errno, StrError(Errno), LOG_LEVEL_FATAL);
+	}
+#else
+	Handler().LogError(this, "socket option not available", 0, "SO_RCVBUF", LOG_LEVEL_INFO);
+#endif
+	return value ? true : false;
+}
+
+
+#ifdef SO_RCVBUFFORCE
+bool Socket::SetSoRcvbufforce(int x)
+{
+	if (setsockopt(GetSocket(), SOL_SOCKET, SO_RCVBUFFORCE, (char *)&x, sizeof(x)) == -1)
+	{
+		Handler().LogError(this, "setsockopt(SOL_SOCKET, SO_RCVBUFFORCE)", Errno, StrError(Errno), LOG_LEVEL_FATAL);
+		return false;
+	}
+	return true;
+}
+#endif
+
+
+bool Socket::SetSoSndbuf(int x)
+{
+#ifdef SO_SNDBUF
+	if (setsockopt(GetSocket(), SOL_SOCKET, SO_SNDBUF, (char *)&x, sizeof(x)) == -1)
+	{
+		Handler().LogError(this, "setsockopt(SOL_SOCKET, SO_SNDBUF)", Errno, StrError(Errno), LOG_LEVEL_FATAL);
+		return false;
+	}
+	return true;
+#else
+	Handler().LogError(this, "socket option not available", 0, "SO_SNDBUF", LOG_LEVEL_INFO);
+	return false;
+#endif
+}
+
+
+int Socket::SoSndbuf()
+{
+	int value = 0;
+#ifdef SO_SNDBUF
+	socklen_t len = sizeof(value);
+	if (getsockopt(GetSocket(), SOL_SOCKET, SO_SNDBUF, (char *)&value, &len) == -1)
+	{
+		Handler().LogError(this, "setsockopt(SOL_SOCKET, SO_SNDBUF)", Errno, StrError(Errno), LOG_LEVEL_FATAL);
+	}
+#else
+	Handler().LogError(this, "socket option not available", 0, "SO_SNDBUF", LOG_LEVEL_INFO);
+#endif
+	return value ? true : false;
+}
+
+
+#ifdef SO_SNDBUFFORCE
+bool Socket::SetSoSndbufforce(int x)
+{
+	if (setsockopt(GetSocket(), SOL_SOCKET, SO_SNDBUFFORCE, (char *)&x, sizeof(x)) == -1)
+	{
+		Handler().LogError(this, "setsockopt(SOL_SOCKET, SO_SNDBUFFORCE)", Errno, StrError(Errno), LOG_LEVEL_FATAL);
+		return false;
+	}
+	return true;
+}
+#endif
+
+
+#ifdef SO_TIMESTAMP
+bool Socket::SetSoTimestamp(bool x)
+{
+	int optval = x ? 1 : 0;
+	if (setsockopt(GetSocket(), SOL_SOCKET, SO_TIMESTAMP, (char *)&optval, sizeof(optval)) == -1)
+	{
+		Handler().LogError(this, "setsockopt(SOL_SOCKET, SO_TIMESTAMP)", Errno, StrError(Errno), LOG_LEVEL_FATAL);
+		return false;
+	}
+	return true;
+}
+#endif
+
+
+int Socket::SoType()
+{
+	int value = 0;
+#ifdef SO_TYPE
+	socklen_t len = sizeof(value);
+	if (getsockopt(GetSocket(), SOL_SOCKET, SO_TYPE, (char *)&value, &len) == -1)
+	{
+		Handler().LogError(this, "setsockopt(SOL_SOCKET, SO_TYPE)", Errno, StrError(Errno), LOG_LEVEL_FATAL);
+	}
+#else
+	Handler().LogError(this, "socket option not available", 0, "SO_TYPE", LOG_LEVEL_INFO);
+#endif
+	return value ? true : false;
+}
+
+
+#ifdef ENABLE_TRIGGERS
+void Socket::Subscribe(int id)
+{
+	Handler().Subscribe(id, this);
+}
+
+
+void Socket::Unsubscribe(int id)
+{
+	Handler().Unsubscribe(id, this);
+}
+
+
+void Socket::OnTrigger(int, const TriggerData&)
+{
+}
+
+
+void Socket::OnCancelled(int)
+{
+}
+#endif
+
+
+#ifdef SOCKETS_NAMESPACE
+}
+#endif

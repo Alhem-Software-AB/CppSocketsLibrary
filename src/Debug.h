@@ -13,12 +13,22 @@ class Debug
 {
 public:
 	Debug(const std::string& x) : m_id(0), m_text(x) {
+		for (int i = 0; i < m_level; i++)
+			fprintf(stderr, "  ");
 		fprintf(stderr, "%s\n", x.c_str());
+		m_level++;
 	}
 	Debug(int id, const std::string& x) : m_id(id), m_text(x) {
+		for (int i = 0; i < m_level; i++)
+			fprintf(stderr, "  ");
 		fprintf(stderr, "%d> %s\n", m_id, x.c_str());
+		m_level++;
 	}
 	~Debug() {
+		if (m_level)
+			m_level--;
+		for (int i = 0; i < m_level; i++)
+			fprintf(stderr, "  ");
 		if (m_id)
 			fprintf(stderr, "%d> /%s\n", m_id, m_text.c_str());
 		else
@@ -28,6 +38,7 @@ public:
 private:
 	int m_id;
 	std::string m_text;
+static	int m_level;
 };
 
 

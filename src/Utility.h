@@ -137,6 +137,11 @@ public:
 
 	static unsigned long ThreadID();
 
+	static std::string ToLower(const std::string& str);
+	static std::string ToUpper(const std::string& str);
+
+	static std::string ToString(double d);
+
 private:
 	static std::string m_host; ///< local hostname
 	static ipaddr_t m_ip; ///< local ip address

@@ -47,7 +47,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "Ipv4Address.h"
 #include "Ipv6Address.h"
 #include "Mutex.h"
-#include "Uid.h"
 #include "IFile.h"
 
 #ifdef SOCKETS_NAMESPACE
@@ -323,7 +322,7 @@ bool TcpSocket::Open(const std::string &host,port_t port)
 	if (IsIpv6())
 	{
 #ifdef ENABLE_RESOLVER
-		if (!Handler().ResolvedEnabled() || Utility::isipv4(host) )
+		if (!Handler().ResolverEnabled() || Utility::isipv6(host) )
 		{
 #endif
 			in6_addr a;
@@ -1363,13 +1362,11 @@ void TcpSocket::DisableInputBuffer(bool x)
 void TcpSocket::OnOptions(int family,int type,int protocol,SOCKET s)
 {
 DEB(	fprintf(stderr, "Socket::OnOptions()\n");)
-/*
-	Handler().LogError(this, "OnOptions", family, "Address Family", LOG_LEVEL_INFO);
-	Handler().LogError(this, "OnOptions", type, "Type", LOG_LEVEL_INFO);
-	Handler().LogError(this, "OnOptions", protocol, "Protocol", LOG_LEVEL_INFO);
-*/
-	SetReuse(true);
-	SetKeepalive(true);
+#ifdef SO_NOSIGPIPE
+	SetSoNosigpipe(true);
+#endif
+	SetSoReuseaddr(true);
+	SetSoKeepalive(true);
 }
 
 
@@ -1377,6 +1374,172 @@ void TcpSocket::SetLineProtocol(bool x)
 {
 	Socket::SetLineProtocol(x);
 	DisableInputBuffer(x);
+}
+
+
+bool TcpSocket::SetTcpNodelay(bool x)
+{
+#ifdef TCP_NODELAY
+	int optval = x ? 1 : 0;
+	if (setsockopt(GetSocket(), IPPROTO_TCP, TCP_NODELAY, (char *)&optval, sizeof(optval)) == -1)
+	{
+		Handler().LogError(this, "setsockopt(IPPROTO_TCP, TCP_NODELAY)", Errno, StrError(Errno), LOG_LEVEL_FATAL);
+		return false;
+	}
+	return true;
+#else
+	Handler().LogError(this, "socket option not available", 0, "TCP_NODELAY", LOG_LEVEL_INFO);
+	return false;
+#endif
+}
+
+
+TcpSocket::CircularBuffer::CircularBuffer(Socket& owner,size_t size)
+:m_owner(owner)
+,buf(new char[2 * size])
+,m_max(size)
+,m_q(0)
+,m_b(0)
+,m_t(0)
+,m_count(0)
+{
+}
+
+
+TcpSocket::CircularBuffer::~CircularBuffer()
+{
+	delete[] buf;
+}
+
+
+bool TcpSocket::CircularBuffer::Write(const char *s,size_t l)
+{
+	if (m_q + l > m_max)
+	{
+		m_owner.Handler().LogError(&m_owner, "TcpSocket::CircularBuffer::Write", -1, "write buffer overflow");
+		return false; // overflow
+	}
+	m_count += (unsigned long)l;
+	if (m_t + l > m_max) // block crosses circular border
+	{
+		size_t l1 = m_max - m_t; // size left until circular border crossing
+		// always copy full block to buffer(buf) + top pointer(m_t)
+		// because we have doubled the buffer size for performance reasons
+		memcpy(buf + m_t, s, l);
+		memcpy(buf, s + l1, l - l1);
+		m_t = l - l1;
+		m_q += l;
+	}
+	else
+	{
+		memcpy(buf + m_t, s, l);
+		memcpy(buf + m_max + m_t, s, l);
+		m_t += l;
+		if (m_t >= m_max)
+			m_t -= m_max;
+		m_q += l;
+	}
+	return true;
+}
+
+
+bool TcpSocket::CircularBuffer::Read(char *s,size_t l)
+{
+	if (l > m_q)
+	{
+		m_owner.Handler().LogError(&m_owner, s ? "TcpSocket::CircularBuffer::Read" : "TcpSocket::CircularBuffer::Write", -1, "attempt to read beyond buffer");
+		return false; // not enough chars
+	}
+	if (m_b + l > m_max) // block crosses circular border
+	{
+		size_t l1 = m_max - m_b;
+		if (s)
+		{
+			memcpy(s, buf + m_b, l1);
+			memcpy(s + l1, buf, l - l1);
+		}
+		m_b = l - l1;
+		m_q -= l;
+	}
+	else
+	{
+		if (s)
+		{
+			memcpy(s, buf + m_b, l);
+		}
+		m_b += l;
+		if (m_b >= m_max)
+			m_b -= m_max;
+		m_q -= l;
+	}
+	if (!m_q)
+	{
+		m_b = m_t = 0;
+	}
+	return true;
+}
+
+
+bool TcpSocket::CircularBuffer::Remove(size_t l)
+{
+	return Read(NULL, l);
+}
+
+
+size_t TcpSocket::CircularBuffer::GetLength()
+{
+	return m_q;
+}
+
+
+const char *TcpSocket::CircularBuffer::GetStart()
+{
+	return buf + m_b;
+}
+
+
+size_t TcpSocket::CircularBuffer::GetL()
+{
+	return (m_b + m_q > m_max) ? m_max - m_b : m_q;
+}
+
+
+size_t TcpSocket::CircularBuffer::Space()
+{
+	return m_max - m_q;
+}
+
+
+unsigned long TcpSocket::CircularBuffer::ByteCounter(bool clear)
+{
+	if (clear)
+	{
+		unsigned long x = m_count;
+		m_count = 0;
+		return x;
+	}
+	return m_count;
+}
+
+
+Socket& TcpSocket::CircularBuffer::GetOwner() const 
+{ 
+	return m_owner; 
+}
+
+
+std::string TcpSocket::CircularBuffer::ReadString(size_t l)
+{
+	char *sz = new char[l + 1];
+	if (!Read(sz, l)) // failed, debug printout in Read() method
+	{
+		delete[] sz;
+		return "";
+	}
+	sz[l] = 0;
+	std::string tmp = sz;
+	delete[] sz;
+	return tmp;
 }
 
 

@@ -233,7 +233,29 @@ public:
 	virtual bool ResolverReady() {
 		return false;
 	}
-#endif
+#endif // ENABLE_RESOLVER
+
+#ifdef ENABLE_TRIGGERS
+	/** Fetch unique trigger id. */
+	virtual int TriggerID(Socket *src) {
+		return -1;
+	}
+	/** Subscribe socket to trigger id. */
+	virtual bool Subscribe(int id, Socket *dst) {
+		return false;
+	}
+	/** Unsubscribe socket from trigger id. */
+	virtual bool Unsubscribe(int id, Socket *dst) {
+		return false;
+	}
+	/** Execute OnTrigger for subscribed sockets.
+		\param id Trigger ID
+		\param data Data passed from source to destination
+		\param erase Empty trigger id source and destination maps if 'true',
+			Leave them in place if 'false' - if a trigger should be called many times */
+	virtual void Trigger(int id, Socket::TriggerData& data, bool erase = true) {
+	}
+#endif // ENABLE_TRIGGERS
 
 protected:
 	StdLog *m_stdlog; ///< Registered log class, or NULL

@@ -407,10 +407,12 @@ public:
 
         bool HasCreator() { return m_bHasCreate; }
 
-	void OnOptions(int,int,int,SOCKET) {}
+	void OnOptions(int,int,int,SOCKET) {
+		SetSoReuseaddr(true);
+	}
 
 protected:
-	ListenSocket(const ListenSocket& ) {}
+	ListenSocket(const ListenSocket& s) : Socket(s) {}
 private:
 	ListenSocket& operator=(const ListenSocket& ) { return *this; }
 	port_t m_port;

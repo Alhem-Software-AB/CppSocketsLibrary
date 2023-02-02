@@ -31,7 +31,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define _SOCKETS_TcpSocket_H
 #include "sockets-config.h"
 #include "Socket.h"
-#include "CircularBuffer.h"
 #ifdef HAVE_OPENSSL
 #include <openssl/ssl.h>
 #include "SSLInitializer.h"
@@ -52,6 +51,50 @@ class SocketAddress;
 	\ingroup basic */
 class TcpSocket : public Socket
 {
+	/** \defgroup internal Internal utility */
+protected:
+	/** Buffer class containing one read/write circular buffer. 
+		\ingroup internal */
+	class CircularBuffer
+	{
+	public:
+		CircularBuffer(Socket& owner,size_t size);
+		~CircularBuffer();
+
+		/** append l bytes from p to buffer */
+		bool Write(const char *p,size_t l);
+		/** copy l bytes from buffer to dest */
+		bool Read(char *dest,size_t l);
+		/** skip l bytes from buffer */
+		bool Remove(size_t l);
+		/** read l bytes from buffer, returns as string. */
+		std::string ReadString(size_t l);
+
+		/** total buffer length */
+		size_t GetLength();
+		/** pointer to circular buffer beginning */
+		const char *GetStart();
+		/** return number of bytes from circular buffer beginning to buffer physical end */
+		size_t GetL();
+		/** return free space in buffer, number of bytes until buffer overrun */
+		size_t Space();
+
+		/** return total number of bytes written to this buffer, ever */
+		unsigned long ByteCounter(bool clear = false);
+
+	private:
+		Socket& GetOwner() const;
+		CircularBuffer(const CircularBuffer& s) : m_owner( s.GetOwner() ) {}
+		CircularBuffer& operator=(const CircularBuffer& ) { return *this; }
+		Socket& m_owner;
+		char *buf;
+		size_t m_max;
+		size_t m_q;
+		size_t m_b;
+		size_t m_t;
+		unsigned long m_count;
+	};
+private:
 	/** Dynamic output buffer storage struct. 
 		\ingroup internal */
 	struct MES {
@@ -183,8 +226,11 @@ public:
 
 	void SetLineProtocol(bool = true);
 
+	// TCP options
+	bool SetTcpNodelay(bool = true);
+
 protected:
-	TcpSocket(const TcpSocket& s);
+	TcpSocket(const TcpSocket& );
 	void OnRead();
 	void OnWrite();
 #ifdef HAVE_OPENSSL

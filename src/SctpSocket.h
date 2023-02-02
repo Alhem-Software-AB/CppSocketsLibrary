@@ -60,9 +60,12 @@ public:
 	/** connect() */
 	int Open(const std::string&,port_t);
 	int Open(SocketAddress&);
+
+#ifndef SOLARIS
 	/** sctp_connectx() */
 	int AddConnection(const std::string&,port_t);
 	int AddConnection(SocketAddress&);
+#endif
 
 	/** Get peer addresses of an association. */
 	int getpaddrs(sctp_assoc_t id,std::list<std::string>&);
@@ -78,10 +81,12 @@ public:
 	void OnOptions(int,int,int,SOCKET) {}
 
 protected:
+	SctpSocket(const SctpSocket& s) : Socket(s) {}
 	void OnRead();
 	void OnWrite();
 
 private:
+	SctpSocket& operator=(const SctpSocket& s) { return *this; }
 	int m_type; ///< SCTP_STREAM or SCTP_SEQPACKET
 	char *m_buf; ///< Temporary receive buffer
 };

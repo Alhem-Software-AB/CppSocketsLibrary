@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #include "SmtpdSocket.h"
 #include "Parse.h"
+#include "Utility.h"
 
 
 SmtpdSocket::SmtpdSocket(ISocketHandler& h)
@@ -94,7 +95,7 @@ void SmtpdSocket::OnLine(const std::string& line)
 		return;
 	}
 	Parse pa(line);
-	std::string cmd = ToUpper(pa.getword());
+	std::string cmd = Utility::ToUpper(pa.getword());
 
 	if (cmd == "EHLO")
 	{
@@ -133,7 +134,7 @@ void SmtpdSocket::OnLine(const std::string& line)
 		Parse pa(line, ":");
 		pa.getword(); // 'mail'
 		pa.getword(); // 'from'
-		std::string email = ToLower(pa.getrest());
+		std::string email = Utility::ToLower(pa.getrest());
 
 		EmailAddress addr( email );
 		if (addr.GetName().size() > 64)
@@ -164,7 +165,7 @@ void SmtpdSocket::OnLine(const std::string& line)
 		Parse pa(line, ":");
 		pa.getword(); // 'rcpt'
 		pa.getword(); // 'to'
-		std::string email = ToLower(pa.getrest());
+		std::string email = Utility::ToLower(pa.getrest());
 		// %! reject based on user / domain?
 		EmailAddress addr( email );
 
@@ -221,34 +222,6 @@ void SmtpdSocket::OnLine(const std::string& line)
 	{
 		OnNotSupported(cmd, pa.getrest());
 	}
-}
-
-
-std::string SmtpdSocket::ToLower(const std::string& str)
-{
-	std::string r;
-	for (size_t i = 0; i < str.size(); i++)
-	{
-		if (str[i] >= 'A' && str[i] <= 'Z')
-			r += str[i] | 32;
-		else
-			r += str[i];
-	}
-	return r;
-}
-
-
-std::string SmtpdSocket::ToUpper(const std::string& str)
-{
-	std::string r;
-	for (size_t i = 0; i < str.size(); i++)
-	{
-		if (str[i] >= 'a' && str[i] <= 'z')
-			r += (char)(str[i] - 32);
-		else
-			r += str[i];
-	}
-	return r;
 }
 
 

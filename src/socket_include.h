@@ -42,17 +42,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define SOCKETS_DYNAMIC_TEMP
 
 
-// getaddrinfo / getnameinfo replacements
-#ifdef NO_GETADDRINFO
-#ifndef AI_NUMERICHOST
-#define AI_NUMERICHOST 1
-#endif
-#ifndef NI_NUMERICHOST
-#define NI_NUMERICHOST 1
-#endif
-#endif
-
-
 // platform specific stuff
 #if (defined(__unix__) || defined(unix)) && !defined(USG)
 #include <sys/param.h>
@@ -267,6 +256,17 @@ namespace SOCKETS_NAMESPACE {
 
 #ifdef SOCKETS_NAMESPACE
 }
+#endif
+
+
+// getaddrinfo / getnameinfo replacements
+#ifdef NO_GETADDRINFO
+#ifndef AI_NUMERICHOST
+#define AI_NUMERICHOST 1
+#endif
+#ifndef NI_NUMERICHOST
+#define NI_NUMERICHOST 1
+#endif
 #endif
 
 

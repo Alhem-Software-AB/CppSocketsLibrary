@@ -600,3 +600,30 @@ Version 2.1.4
 < SocketThread.cpp
 < SocketThread.h
 
+Version 2.1.5
+--------------------------
+3,6c3
+< CircularBuffer.cpp
+< CircularBuffer.h
+< CTcpSocket.cpp
+< CTcpSocket.h
+---
+> Debug.cpp
+35d31
+< ICrypt.h
+54,59d49
+< MinderHandler.cpp
+< MinderHandler.h
+< MinderSocket.cpp
+< MinderSocket.h
+< MinionSocket.cpp
+< MinionSocket.h
+62,63d51
+< NullCrypt.cpp
+< NullCrypt.h
+88d75
+< sockets_test.cpp
+100,101d86
+< Uid.cpp
+< Uid.h
+

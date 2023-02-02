@@ -37,6 +37,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <time.h>
 #else
 #include <netdb.h>
+#include <pthread.h>
 #endif
 #include <map>
 
@@ -901,8 +902,44 @@ unsigned long Utility::ThreadID()
 #ifdef _WIN32
 	return GetCurrentThreadId();
 #else
-	return pthread_self();
+	return (unsigned long)pthread_self();
 #endif
+}
+
+
+std::string Utility::ToLower(const std::string& str)
+{
+	std::string r;
+	for (size_t i = 0; i < str.size(); i++)
+	{
+		if (str[i] >= 'A' && str[i] <= 'Z')
+			r += str[i] | 32;
+		else
+			r += str[i];
+	}
+	return r;
+}
+
+
+std::string Utility::ToUpper(const std::string& str)
+{
+	std::string r;
+	for (size_t i = 0; i < str.size(); i++)
+	{
+		if (str[i] >= 'a' && str[i] <= 'z')
+			r += (char)(str[i] - 32);
+		else
+			r += str[i];
+	}
+	return r;
+}
+
+
+std::string Utility::ToString(double d)
+{
+	char tmp[100];
+	sprintf(tmp, "%f", d);
+	return tmp;
 }
 
 

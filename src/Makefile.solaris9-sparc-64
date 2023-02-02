@@ -44,17 +44,13 @@ LIBS =		-lSockets -lpthread -lssl -lcrypto
 
 PROGS =		Sockets-config
 
-all:		libSockets.a libSocketsEx.a $(PROGS)
+all:		libSockets.a $(PROGS)
 
 Sockets-config:	Sockets-config.o
 		$(CXX) -o $@ $^
 
 libSockets.a:	$(OBJS)
 		ar cru $@ $(OBJS)
-		ranlib $@
-
-libSocketsEx.a:	$(EX)
-		ar cru $@ $(EX)
 		ranlib $@
 
 stressclient:	stressclient.o libSockets.a

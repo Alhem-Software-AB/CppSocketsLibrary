@@ -62,10 +62,9 @@ class IFile;
 class Socket
 {
 	friend class ISocketHandler;
-protected:
+#ifdef ENABLE_DETACH
 	/** Detached socket run thread. 
 		\ingroup internal */
-#ifdef ENABLE_DETACH
 	class SocketThread : public Thread
 	{
 	public:
@@ -82,16 +81,34 @@ protected:
 	};
 #endif // ENABLE_DETACH
 
+#ifdef ENABLE_TRIGGERS
+public:
+	/** Data pass class from source to destination. */
+	class TriggerData
+	{
+	public:
+		TriggerData() : m_src(NULL) {}
+		virtual ~TriggerData() {}
+
+		Socket *GetSource() const { return m_src; }
+		void SetSource(Socket *x) { m_src = x; }
+
+	private:
+		Socket *m_src;
+	};
+#endif // ENABLE_TRIGGERS
+
 public:
 	/** "Default" constructor */
 	Socket(ISocketHandler&);
+
 	virtual ~Socket();
 
 	/** Socket class instantiation method. Used when a "non-standard" constructor
 	 * needs to be used for the socket class. Note: the socket class still needs
 	 * the "default" constructor with one ISocketHandler& as input parameter.
 	 */
-	virtual Socket *Create();
+	virtual Socket *Create() { return NULL; }
 
 	/** CTcpSocket uses this to create its ICrypt member variable.
 	 * The ICrypt member variable is created by a virtual method, therefore
@@ -138,8 +155,13 @@ public:
 	virtual void OnLine(const std::string& );
 	/** Called on connect timeout (5s). */
 	virtual void OnConnectFailed();
-	/** Called when a socket is created, to set socket options. */
-	virtual void OnOptions(int family,int type,int protocol,SOCKET) = 0;
+	/** Called when a client socket is created, to set socket options.
+		\param family AF_INET, AF_INET6, etc
+		\param type SOCK_STREAM, SOCK_DGRAM, etc
+		\param protocol Protocol number (tcp, udp, sctp, etc)
+		\param s Socket file descriptor
+	*/
+	virtual void OnOptions(int family,int type,int protocol,SOCKET s) = 0;
 	/** Connection retry callback - return false to abort connection attempts */
 	virtual bool OnConnectRetry();
 #ifdef ENABLE_RECONNECT
@@ -165,16 +187,23 @@ public:
 	/** Check delete by handler flag.
 		\return true if this instance should be deleted by the sockethandler */
 	bool DeleteByHandler();
+
+	// LIST_CLOSE
+
 	/** Set close and delete to terminate the connection. */
 	void SetCloseAndDelete(bool = true);
 	/** Check close and delete flag.
 		\return true if this socket should be closed and the instance removed */
 	bool CloseAndDelete();
+
+	// LIST_CONNECTING
+
 	/** Socket should call CheckConnect on next write event from select(). */
 	void SetConnecting(bool = true);
 	/** Check connecting flag.
 		\return true if the socket is still trying to connect */
 	bool Connecting();
+
 	/** Number of seconds the socket has been connected. */
 	time_t GetConnectTime();
 
@@ -240,18 +269,13 @@ public:
 	/** Get address/port of last connect() call. */
 	std::auto_ptr<SocketAddress> GetClientRemoteAddress();
 
+	// LIST_CALLONCONNECT
+
 	/** Instruct socket to call OnConnect callback next sockethandler cycle. */
 	void SetCallOnConnect(bool x = true);
 	/** Check call on connect flag.
 		\return true if OnConnect() should be called a.s.a.p */
 	bool CallOnConnect();
-
-	/** Socket option SO_REUSEADDR.
-		\sa OnOptions */
-	void SetReuse(bool x);
-	/** Socket option SO_KEEPALIVE.
-		\sa OnOptions */
-	void SetKeepalive(bool x);
 
 	/** Set timeout to use for connection attempt.
 		\param x Timeout in seconds */
@@ -264,6 +288,8 @@ public:
 	/** Check ignore read events flag.
 		\return true if read events should be ignored */
 	bool IsDisableRead();
+
+	// LIST_RETRY
 
 	/** Set flag to initiate a connection attempt after a connection timeout. */
 	void SetRetryClientConnect(bool x = true);
@@ -319,7 +345,122 @@ public:
 
 	unsigned long int Random();
 
+	// --------------------------------------------------------------------------
+	/** @name IP options
+	   When an ip or socket option is available on all of the operating systems
+	   I'm testing on (linux 2.4.x, _win32, macosx, solaris9 intel) they are not
+	   checked with an #ifdef below.
+	   This might cause a compile error on other operating systems. */
+	// --------------------------------------------------------------------------
+
+	// IP options
+	//@{
+
+	bool SetIpOptions(const void *p, socklen_t len);
+	bool SetIpTOS(unsigned char tos);
+	unsigned char IpTOS();
+	bool SetIpTTL(int ttl);
+	int IpTTL();
+	bool SetIpHdrincl(bool x = true);
+	bool SetIpMulticastTTL(int);
+	int IpMulticastTTL();
+	bool SetMulticastLoop(bool x = true);
+	bool IpAddMembership(struct ip_mreq&);
+	bool IpDropMembership(struct ip_mreq&);
+
+#ifdef IP_PKTINFO
+	bool SetIpPktinfo(bool x = true);
+#endif
+#ifdef IP_RECVTOS
+	bool SetIpRecvTOS(bool x = true);
+#endif
+#ifdef IP_RECVTTL
+	bool SetIpRecvTTL(bool x = true);
+#endif
+#ifdef IP_RECVOPTS
+	bool SetIpRecvopts(bool x = true);
+#endif
+#ifdef IP_RETOPTS
+	bool SetIpRetopts(bool x = true);
+#endif
+#ifdef IP_RECVERR
+	bool SetIpRecverr(bool x = true);
+#endif
+#ifdef IP_MTU_DISCOVER
+	bool SetIpMtudiscover(bool x = true);
+#endif
+#ifdef IP_MTU
+	int IpMtu();
+#endif
+#ifdef IP_ROUTER_ALERT
+	bool SetIpRouterAlert(bool x = true);
+#endif
+#ifdef LINUX
+	bool IpAddMembership(struct ip_mreqn&);
+#endif
+#ifdef LINUX
+	bool IpDropMembership(struct ip_mreqn&);
+#endif
+	//@}
+
+	// SOCKET options
+	/** @name Socket Options */
+	//@{
+
+	bool SoAcceptconn();
+	bool SetSoBroadcast(bool x = true);
+	bool SetSoDebug(bool x = true);
+	int SoError();
+	bool SetSoDontroute(bool x = true);
+	bool SetSoLinger(int onoff, int linger);
+	bool SetSoOobinline(bool x = true);
+	bool SetSoRcvlowat(int);
+	bool SetSoSndlowat(int);
+	bool SetSoRcvtimeo(struct timeval&);
+	bool SetSoSndtimeo(struct timeval&);
+	bool SetSoRcvbuf(int);
+	int SoRcvbuf();
+	bool SetSoSndbuf(int);
+	int SoSndbuf();
+	int SoType();
+	bool SetSoReuseaddr(bool x = true);
+	bool SetSoKeepalive(bool x = true);
+
+#ifdef SO_BSDCOMPAT
+	bool SetSoBsdcompat(bool x = true);
+#endif
+#ifdef SO_BINDTODEVICE
+	bool SetSoBindtodevice(const std::string& intf);
+#endif
+#ifdef SO_PASSCRED
+	bool SetSoPasscred(bool x = true);
+#endif
+#ifdef SO_PEERCRED
+	bool SoPeercred(struct ucred& );
+#endif
+#ifdef SO_PRIORITY
+	bool SetSoPriority(int);
+#endif
+#ifdef SO_RCVBUFFORCE
+	bool SetSoRcvbufforce(int);
+#endif
+#ifdef SO_SNDBUFFORCE
+	bool SetSoSndbufforce(int);
+#endif
+#ifdef SO_TIMESTAMP
+	bool SetSoTimestamp(bool x = true);
+#endif
+#ifdef SO_NOSIGPIPE
+	bool SetSoNosigpipe(bool x = true);
+#endif
+	//@}
+
+	// TCP options in TcpSocket.h/TcpSocket.cpp
+
+
 #ifdef HAVE_OPENSSL
+	/** @name SSL Support */
+	//@{
 	/** SSL client/server support - internal use. \sa TcpSocket */
 	virtual void OnSSLConnect();
 	/** SSL client/server support - internal use. \sa TcpSocket */
@@ -349,9 +490,12 @@ public:
 	virtual SSL_CTX *GetSslContext() { return NULL; }
 	/** SSL; Get pointer to ssl structure. */
 	virtual SSL *GetSsl() { return NULL; }
+	//@}
 #endif // HAVE_OPENSSL
 
 #ifdef ENABLE_POOL
+	/** @name Connection Pool */
+	//@{
 	/** Client = connecting TcpSocket. */
 	void SetIsClient();
 	/** Socket type from socket() call. */
@@ -379,9 +523,12 @@ public:
 	bool Lost();
 	/** Copy connection parameters from sock. */
 	void CopyConnection(Socket *sock);
+	//@}
 #endif // ENABLE_POOL
 
 #ifdef ENABLE_SOCKS4
+	/** \name Socks4 support */
+	//@{
 	/** Socks4 client support internal use. \sa TcpSocket */
 	virtual void OnSocks4Connect();
 	/** Socks4 client support internal use. \sa TcpSocket */
@@ -412,9 +559,12 @@ public:
 	/** Get socks4 userid.
 		\return Socks4 userid */
 	const std::string& GetSocks4Userid();
+	//@}
 #endif // ENABLE_SOCKS4
 
 #ifdef ENABLE_RESOLVER
+	/** \name Asynchronous Resolver */
+	//@{
 	/** Request an asynchronous dns resolution.
 		\param host hostname to be resolved
 		\param port port number passed along for the ride
@@ -444,18 +594,25 @@ public:
 	/** Callback indicating failed dns lookup.
 		\param id Resolve ID */
 	virtual void OnResolveFailed(int id);
+	//@}
 #endif  // ENABLE_RESOLVER
 
 #ifdef ENABLE_DETACH
+	/** \name Thread Support */
+	//@{
 	/** Callback fires when a new socket thread has started and this
 		socket is ready for operation again.
 		\sa ResolvSocket */
 	virtual void OnDetached();
+
+	// LIST_DETACH
+
 	/** Internal use. */
 	void SetDetach(bool x = true);
 	/** Check detach flag.
 		\return true if the socket should detach to its own thread */
 	bool IsDetach();
+
 	/** Internal use. */
 	void SetDetached(bool x = true);
 	/** Check detached flag.
@@ -468,18 +625,37 @@ public:
 	void SetSlaveHandler(ISocketHandler *);
 	/** Create new thread for this socket to run detached in. */
 	void DetachSocket();
+	//@}
 #endif // ENABLE_DETACH
 
+	/** Write traffic to an IFile. Socket will not delete this object. */
 	void SetTrafficMonitor(IFile *p) { m_traffic_monitor = p; }
 
+#ifdef ENABLE_TRIGGERS
+	/** \name Triggers */
+	//@{
+	/** Subscribe to trigger id. */
+	void Subscribe(int id);
+	/** Unsubscribe from trigger id. */
+	void Unsubscribe(int id);
+	/** Trigger callback, with data passed from source to destination. */
+	virtual void OnTrigger(int id, const TriggerData& data);
+	/** Trigger cancelled because source has been deleted (as in delete). */
+	virtual void OnCancelled(int id);
+	//@}
+#endif
+
 protected:
-	Socket(const Socket& ); ///< do not allow use of copy constructor
+	/** copy constructor not available */
+	Socket(const Socket& s) : m_handler(s.m_handler) {}
+	//
 	RandomNumber m_prng; ///< Random number generator
+	/** All traffic will be written to this IFile, if set. */
 	IFile *GetTrafficMonitor() { return m_traffic_monitor; }
 
 private:
 	/** default constructor not available */
-	Socket() : m_handler(Handler()) {}
+	Socket() : m_handler(m_handler) {}
 #ifdef _WIN32
 static	WSAInitializer m_winsock_init; ///< Winsock initialization singleton class
 #endif
@@ -501,8 +677,6 @@ static	WSAInitializer m_winsock_init; ///< Winsock initialization singleton clas
 #endif
 	Socket *m_parent; ///< Pointer to ListenSocket class, valid for incoming sockets
 	bool m_call_on_connect; ///< OnConnect will be called next ISocketHandler cycle if true
-	bool m_opt_reuse; ///< Socket option reuseaddr
-	bool m_opt_keepalive; ///< Socket option keep-alive
 	int m_connect_timeout; ///< Connection timeout (seconds)
 	bool m_b_disable_read; ///< Disable checking for read events
 	bool m_b_retry_connect; ///< Try another connection attempt next ISocketHandler cycle
@@ -544,7 +718,6 @@ static	WSAInitializer m_winsock_init; ///< Winsock initialization singleton clas
 	SocketThread *m_pThread; ///< Detach socket thread class pointer
 	ISocketHandler *m_slave_handler; ///< Actual sockethandler while detached
 #endif
-
 };
 
 #ifdef SOCKETS_NAMESPACE

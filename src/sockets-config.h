@@ -23,8 +23,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef _SOCKETS_CONFIG_H
 #define _SOCKETS_CONFIG_H
 
+#ifndef _RUN_DP
 /* First undefine symbols if already defined. */
 #undef HAVE_OPENSSL
+#undef ENABLE_IPV6
 #undef USE_SCTP
 #undef NO_GETADDRINFO
 #undef ENABLE_POOL
@@ -32,6 +34,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #undef ENABLE_RESOLVER
 #undef ENABLE_RECONNECT
 #undef ENABLE_DETACH
+#undef ENABLE_TRIGGERS
+#endif // _RUN_DP
 
 
 /* OpenSSL support. */
@@ -39,7 +43,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 
 /* Ipv6 support. */
-//#define ENABLE_IPV6
+#define ENABLE_IPV6
 
 
 /* SCTP support. */
@@ -52,14 +56,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 
 /* Connection pool support. */
-//#define ENABLE_POOL
+#define ENABLE_POOL
 
 
 /* Socks4 client support. */
-//#define ENABLE_SOCKS4
+#define ENABLE_SOCKS4
 
 
-/* Asynchronous resolver. */
+/* Asynchronous resolver. Needs ENABLE_TRIGGERS. */
 #define ENABLE_RESOLVER
 
 
@@ -73,6 +77,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 /* Enable socket thread detach functionality. */
 #define ENABLE_DETACH
 
+
+/* Enable socket to socket triggers. Used by resolver. */
+#define ENABLE_TRIGGERS
 
 
 /* Resolver uses the detach function so either enable both or disable both. */

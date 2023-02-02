@@ -70,10 +70,6 @@ public:
 
 	/** Add socket instance to socket map. Removal is always automatic. */
 	void Add(Socket *);
-private:
-	/** Remove socket from socket map, used by Socket class. */
-	void Remove(Socket *);
-public:
 	/** Get status of read/write/exception file descriptor set for a socket. */
 	void Get(SOCKET s,bool& r,bool& w,bool& e);
 	/** Set read/write/exception file descriptor sets (fd_set). */
@@ -159,7 +155,22 @@ public:
 	port_t GetResolverPort();
 	/** Resolver thread ready for queries. */
 	bool ResolverReady();
-#endif
+#endif // ENABLE_RESOLVER
+
+#ifdef ENABLE_TRIGGERS
+	/** Fetch unique trigger id. */
+	int TriggerID(Socket *src);
+	/** Subscribe socket to trigger id. */
+	bool Subscribe(int id, Socket *dst);
+	/** Unsubscribe socket from trigger id. */
+	bool Unsubscribe(int id, Socket *dst);
+	/** Execute OnTrigger for subscribed sockets.
+		\param id Trigger ID
+		\param data Data passed from source to destination
+		\param erase Empty trigger id source and destination maps if 'true',
+			Leave them in place if 'false' - if a trigger should be called many times */
+	void Trigger(int id, Socket::TriggerData& data, bool erase = true);
+#endif // ENABLE_TRIGGERS
 
 	/** Sanity check of those accursed lists. */
 	void CheckSanity();
@@ -171,12 +182,26 @@ protected:
 
 private:
 	void CheckList(socket_v&,const std::string&); ///< Used by CheckSanity
+	/** Remove socket from socket map, used by Socket class. */
+	void Remove(Socket *);
 	SOCKET m_maxsock; ///< Highest file descriptor + 1 in active sockets list
 	fd_set m_rfds; ///< file descriptor set monitored for read events
 	fd_set m_wfds; ///< file descriptor set monitored for write events
 	fd_set m_efds; ///< file descriptor set monitored for exceptions
 	int m_preverror; ///< debug select() error
 	int m_errcnt;
+
+	// state lists
+	socket_v m_fds; ///< Active file descriptor list
+	socket_v m_fds_erase; ///< File descriptors that are to be erased from m_sockets
+	socket_v m_fds_callonconnect; ///< checklist CallOnConnect
+#ifdef ENABLE_DETACH
+	socket_v m_fds_detach; ///< checklist Detach
+#endif
+	socket_v m_fds_connecting; ///< checklist Connecting
+	socket_v m_fds_retry; ///< checklist retry client connect
+	socket_v m_fds_close; ///< checklist close and delete
+
 #ifdef ENABLE_SOCKS4
 	ipaddr_t m_socks4_host; ///< Socks4 server host ip
 	port_t m_socks4_port; ///< Socks4 server port number
@@ -191,15 +216,11 @@ private:
 #ifdef ENABLE_POOL
 	bool m_b_enable_pool; ///< Connection pool enabled if true
 #endif
-	socket_v m_fds; ///< Active file descriptor list
-	socket_v m_fds_erase; ///< File descriptors that are to be erased from m_sockets
-	socket_v m_fds_callonconnect; ///< checklist CallOnConnect
-#ifdef ENABLE_DETACH
-	socket_v m_fds_detach; ///< checklist Detach
+#ifdef ENABLE_TRIGGERS
+	int m_next_trigger_id; ///< Unique trigger id counter
+	std::map<int, Socket *> m_trigger_src; ///< mapping trigger id to source socket
+	std::map<int, std::map<Socket *, bool> > m_trigger_dst; ///< mapping trigger id to destination sockets
 #endif
-	socket_v m_fds_connecting; ///< checklist Connecting
-	socket_v m_fds_retry; ///< checklist retry client connect
-	socket_v m_fds_close; ///< checklist close and delete
 };
 
 
