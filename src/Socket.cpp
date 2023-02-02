@@ -74,6 +74,9 @@ Socket::Socket(SocketHandler& h)
 ,m_opt_reuse(true)
 ,m_opt_keepalive(true)
 ,m_bSocks4(false)
+,m_socks4_host(h.GetSocks4Host())
+,m_socks4_port(h.GetSocks4Port())
+,m_socks4_userid(h.GetSocks4Userid())
 {
 }
 
@@ -158,6 +161,11 @@ void Socket::OnAccept()
 
 int Socket::Close()
 {
+	if (m_socket == INVALID_SOCKET) // this could happen
+	{
+		Handler().LogError(this, "Socket::Close", 0, "file descriptor invalid", LOG_LEVEL_WARNING);
+		return 0;
+	}
 	int n;
 	SetNonblocking(true);
 	if (shutdown(m_socket, SHUT_RDWR) == -1)
@@ -173,7 +181,8 @@ int Socket::Close()
 	}
 	else
 	{
-		Handler().LogError(this, "read() after shutdown", n, "bytes read", LOG_LEVEL_WARNING);
+		if (n)
+			Handler().LogError(this, "read() after shutdown", n, "bytes read", LOG_LEVEL_WARNING);
 	}
 	if ((n = closesocket(m_socket)) == -1)
 	{
@@ -902,6 +911,12 @@ bool Socket::OnSocks4Read()
 {
 	Handler().LogError(this, "OnSocks4Read", 0, "Use with TcpSocket only");
 	return true;
+}
+
+
+void Socket::SetSocks4Host(const std::string& host)
+{
+	u2ip(host, m_socks4_host);
 }
 
 

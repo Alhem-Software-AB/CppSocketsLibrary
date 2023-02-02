@@ -21,6 +21,11 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #include <stdio.h>
+#if defined(_WIN32) || defined(__CYGWIN__)
+#include <winsock.h>
+#else
+#include <netdb.h>
+#endif
 
 #include "Parse.h"
 #include "ResolvSocket.h"
@@ -125,36 +130,6 @@ void ResolvSocket::OnDetached()
 	}
 	SetCloseAndDelete();
 }
-
-
-/*
-       The hostent structure is defined in <netdb.h> as follows:
-
-              struct hostent {
-                      char    *h_name;        // official name of host 
-                      char    **h_aliases;    // alias list 
-                      int     h_addrtype;     // host address type 
-                      int     h_length;       // length of address 
-                      char    **h_addr_list;  // list of addresses 
-              }
-              #define h_addr  h_addr_list[0]  // for backward compatibility 
-
-       The members of the hostent structure are:
-
-       h_name The official name of the host.
-
-       h_aliases
-              A zero-terminated array of alternative names for the host.
-
-       h_addrtype
-              The type of address; always AF_INET at present.
-
-       h_length
-              The length of the address in bytes.
-
-       h_addr_list
-              A zero-terminated array of network addresses for the host in network byte order.
-*/
 
 
 void ResolvSocket::OnConnect()

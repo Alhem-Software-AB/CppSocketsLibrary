@@ -23,10 +23,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef _UTILITY_H
 #define _UTILITY_H
 
+#include <ctype.h>
 #ifdef _WIN32
 typedef unsigned __int64 uint64_t;
 #else
-#include <ctype.h>
 #include <stdlib.h>
 #ifdef SOLARIS
 # include <sys/types.h>

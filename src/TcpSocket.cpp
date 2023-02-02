@@ -115,16 +115,16 @@ DEB(printf("Reusing connection\n");)
 	struct sockaddr_in sa;
 	// size of sockaddr struct
 	socklen_t sa_len = sizeof(sa);
-	if (!skip_socks && Handler().GetSocks4Host() && Handler().GetSocks4Port())
+	if (!skip_socks && GetSocks4Host() && GetSocks4Port())
 	{
 		memset(&sa, 0, sa_len);
 		sa.sin_family = AF_INET;
-		sa.sin_port = htons(Handler().GetSocks4Port());
-		ipaddr_t a = Handler().GetSocks4Host();
+		sa.sin_port = htons(GetSocks4Port());
+		ipaddr_t a = GetSocks4Host();
 		memcpy(&sa.sin_addr, &a, 4);
 		{
 			char slask[100];
-			sprintf(slask,"Connecting to socks4 server @ %08x:%d",Handler().GetSocks4Host(),Handler().GetSocks4Port());
+			sprintf(slask,"Connecting to socks4 server @ %08x:%d",GetSocks4Host(),GetSocks4Port());
 			Handler().LogError(this, "Open", 0, slask, LOG_LEVEL_INFO);
 		}
 		SetSocks4();
@@ -515,8 +515,8 @@ void TcpSocket::OnSocks4Connect()
 	unsigned short port = htons(GetClientRemotePort()); // send port in network byte order
 	memcpy(request + 2, &port, 2);
 	memcpy(request + 4, &GetClientRemoteAddr(), 4); // ipaddr_t is already in network byte order
-	strcpy(request + 8, Handler().GetSocks4Userid().c_str());
-	size_t length = Handler().GetSocks4Userid().size() + 8 + 1;
+	strcpy(request + 8, GetSocks4Userid().c_str());
+	size_t length = GetSocks4Userid().size() + 8 + 1;
 	SendBuf(request, length);
 	m_socks4_state = 0;
 }

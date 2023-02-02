@@ -36,24 +36,28 @@ class ResolvServer;
 
 class SocketHandler
 {
+	/** Map type for holding file descriptors/socket object pointers. */
 	typedef std::map<SOCKET,Socket *> socket_m;
 
 public:
 	SocketHandler(StdLog * = NULL);
 	virtual ~SocketHandler();
 
-	/** Register StdLog object for error callback */
+	/** Register StdLog object for error callback. */
 	void RegStdLog(StdLog *);
 	void LogError(Socket *,const std::string&,int,const std::string&,loglevel_t = LOG_LEVEL_WARNING);
 
 	void Add(Socket *);
+	/** Set read/write/exception file descriptor sets (fd_set). */
 	void Set(SOCKET s,bool bRead,bool bWrite,bool bException = true);
 	int Select(long sec,long usec);
 	bool Valid(Socket *);
+	/** Override and return false to deny all incoming connections. */
 	virtual bool OkToAccept();
+	/** Get status of read/write/exception file descriptor set for a socket. */
 	void Get(SOCKET s,bool& r,bool& w,bool& e);
 
-	/** ResolveLocal before calling any GetLocal method */
+	/** ResolveLocal (hostname) - call once before calling any GetLocal method. */
 	void ResolveLocal();
 
 	const std::string& GetLocalHostname();
@@ -62,11 +66,14 @@ public:
 	const struct in6_addr& GetLocalIP6();
 	const std::string& GetLocalAddress6();
 
+	/** Return number of sockets handled by this handler.  */
 	size_t GetCount();
+	/** Indicates that the handler runs under SocketThread. */
 	void SetSlave(bool x = true);
-
+	/** Find available open connection (used by connection pool). */
 	PoolSocket *FindConnection(int type,const std::string& protocol,ipaddr_t,port_t);
 
+	/** Enable transparent Socks4 client support. */
 	void SetSocks4Host(ipaddr_t);
 	void SetSocks4Host(const std::string& );
 	void SetSocks4Port(port_t);
@@ -77,6 +84,7 @@ public:
 	const std::string& GetSocks4Userid() { return m_socks4_userid; }
 	bool Socks4TryDirect() { return m_bTryDirect; }
 
+	/** Enable asynchronous DNS. */
 	void EnableResolver(port_t port = 16667);
 	bool ResolverEnabled() { return m_resolver ? true : false; }
 	int Resolve(Socket *,const std::string& host,port_t);
@@ -112,8 +120,6 @@ private:
 	ResolvServer *m_resolver;
 	port_t m_resolver_port;
 };
-
-
 
 
 #endif // _SOCKETHANDLER_H

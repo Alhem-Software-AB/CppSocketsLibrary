@@ -173,6 +173,14 @@ public:
 	bool Socks4() { return m_bSocks4; }
 	void SetSocks4(bool x = true) { m_bSocks4 = x; }
 
+	void SetSocks4Host(ipaddr_t a) { m_socks4_host = a; }
+	void SetSocks4Host(const std::string& );
+	void SetSocks4Port(port_t p) { m_socks4_port = p; }
+	void SetSocks4Userid(const std::string& x) { m_socks4_userid = x; }
+	ipaddr_t GetSocks4Host() { return m_socks4_host; }
+	port_t GetSocks4Port() { return m_socks4_port; }
+	const std::string& GetSocks4Userid() { return m_socks4_userid; }
+
 protected:
 	Socket(const Socket& ); // do not allow use of copy constructor
 	void DetachSocket(); // protected, friend class SocketHandler;
@@ -213,6 +221,9 @@ static	WSAInitializer m_winsock_init;
 	bool m_opt_reuse;
 	bool m_opt_keepalive;
 	bool m_bSocks4; // socks4 negotiation mode (TcpSocket)
+	ipaddr_t m_socks4_host;
+	port_t m_socks4_port;
+	std::string m_socks4_userid;
 };
 
 

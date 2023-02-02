@@ -1,4 +1,4 @@
-VERSION =	1.8.1
+VERSION =	1.8.2
 
 INCLUDE =	-I/usr/devel/include -I.
 PREFIX =	/usr/local
@@ -54,7 +54,8 @@ OBJS =		CircularBuffer.o \
 		Utility.o \
 		PoolSocket.o \
 		ResolvServer.o \
-		ResolvSocket.o
+		ResolvSocket.o \
+		socket_include.o
 
 libSockets.a:	$(OBJS)
 		ar cru $@ $(OBJS)
@@ -106,7 +107,7 @@ docs:		clean
 		rm -f MinderSocket_T.h
 		rm -f uuid.h
 		rm -f Stdin.*
-		rm sockets_test.cpp
+		rm -f sockets_test.cpp
 		rm -f ListenSocketBase.*
 		./mkdot.sh
 		doxygen doxygen.cfg
