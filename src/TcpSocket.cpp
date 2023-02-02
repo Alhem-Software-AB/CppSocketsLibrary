@@ -57,7 +57,7 @@ TcpSocket::~TcpSocket()
 bool TcpSocket::Open4(ipaddr_t ip,port_t port)
 {
 	SOCKET s = CreateSocket4(SOCK_STREAM, "tcp");
-	if (s == -1)
+	if (s == INVALID_SOCKET)
 	{
 		return false;
 	}
@@ -107,7 +107,7 @@ bool TcpSocket::Open4(ipaddr_t ip,port_t port)
 bool TcpSocket::Open4(const std::string &host,port_t port)
 {
 	SOCKET s = CreateSocket4(SOCK_STREAM, "tcp");
-	if (s == -1)
+	if (s == INVALID_SOCKET)
 	{
 		return false;
 	}
@@ -158,7 +158,7 @@ bool TcpSocket::Open4(const std::string &host,port_t port)
 bool TcpSocket::Open6(const std::string &host,port_t port)
 {
 	SOCKET s = CreateSocket6(SOCK_STREAM, "tcp");
-	if (s == -1)
+	if (s == INVALID_SOCKET)
 	{
 		return false;
 	}

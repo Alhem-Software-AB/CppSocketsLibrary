@@ -46,7 +46,7 @@ public:
 		struct sockaddr_in sa;
 		SOCKET s;
 
-		if ( (s = CreateSocket4(SOCK_STREAM)) == -1)
+		if ( (s = CreateSocket4(SOCK_STREAM)) == INVALID_SOCKET)
 		{
 			return -1;
 		}
@@ -82,7 +82,7 @@ public:
 		struct sockaddr_in sa;
 		SOCKET s;
 
-		if ( (s = CreateSocket4(SOCK_STREAM)) == -1)
+		if ( (s = CreateSocket4(SOCK_STREAM)) == INVALID_SOCKET)
 		{
 			return -1;
 		}
@@ -120,7 +120,7 @@ public:
 		struct sockaddr_in sa;
 		SOCKET s;
 
-		if ( (s = CreateSocket4(SOCK_STREAM)) == -1)
+		if ( (s = CreateSocket4(SOCK_STREAM)) == INVALID_SOCKET)
 		{
 			return -1;
 		}
@@ -152,7 +152,7 @@ public:
 		struct sockaddr_in6 sa;
 		SOCKET s;
 
-		if ( (s = CreateSocket6(SOCK_STREAM)) != -1)
+		if ( (s = CreateSocket6(SOCK_STREAM)) != INVALID_SOCKET)
 		{
 			memset(&sa, 0, sizeof(sa));
 			sa.sin6_family = AF_INET6;
@@ -189,7 +189,7 @@ public:
 		struct sockaddr_in6 sa;
 		SOCKET s;
 
-		if ( (s = CreateSocket6(SOCK_STREAM)) != -1)
+		if ( (s = CreateSocket6(SOCK_STREAM)) != INVALID_SOCKET)
 		{
 			struct in6_addr a;
 			memset(&sa, 0, sizeof(sa));
@@ -249,7 +249,7 @@ public:
 			saptr = (struct sockaddr *)&sa;
 			*lenptr = sizeof(struct sockaddr_in6);
 			a_s = accept(GetSocket(), saptr, lenptr);
-			if (a_s == -1)
+			if (a_s == INVALID_SOCKET)
 			{
 				Handler().LogError(this, "accept", errno, strerror(errno), LOG_LEVEL_ERROR);
 				return;
@@ -277,7 +277,7 @@ public:
 		saptr = (struct sockaddr *)&sa;
 		*lenptr = sizeof(struct sockaddr_in);
 		a_s = accept(GetSocket(), saptr, lenptr);
-		if (a_s == -1)
+		if (a_s == INVALID_SOCKET)
 		{
 			Handler().LogError(this, "accept", errno, strerror(errno), LOG_LEVEL_ERROR);
 			return;

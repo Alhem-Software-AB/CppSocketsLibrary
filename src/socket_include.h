@@ -22,11 +22,15 @@ typedef unsigned short port_t;
 #define GetRemoteIP GetRemoteIP6
 #define Bind Bind6
 #define Open Open6
+#define SendTo SendTo6
+#define SendToBuf SendToBuf6
 #else
 #define CreateSocket CreateSocket4
 #define GetRemoteIP GetRemoteIP4
 #define Bind Bind4
 #define Open Open4
+#define SendTo SendTo4
+#define SendToBuf SendToBuf4
 #endif
 
 

@@ -121,7 +121,7 @@ SocketHandler::~SocketHandler()
 
 void SocketHandler::Add(Socket *p)
 {
-	if (p -> GetSocket() == -1)
+	if (p -> GetSocket() == INVALID_SOCKET)
 	{
 		LogError(p, "Add", -1, "Invalid socket", LOG_LEVEL_FATAL);
 		return;

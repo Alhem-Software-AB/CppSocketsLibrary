@@ -45,7 +45,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 Socket::Socket(SocketHandler& h)
 :m_handler(h)
-,m_socket(-1)
+,m_socket( INVALID_SOCKET )
 ,m_bDel(false)
 ,m_bClose(false)
 ,m_bConnecting(false)
@@ -65,7 +65,7 @@ Socket::Socket(SocketHandler& h)
 
 Socket::~Socket()
 {
-	if (m_socket != -1)
+	if (m_socket != INVALID_SOCKET )
 	{
 		Close();
 	}
@@ -152,7 +152,7 @@ int Socket::Close()
 		// failed...
 		Handler().LogError(this, "close", errno, strerror(errno), LOG_LEVEL_ERROR);
 	}
-	m_socket = -1;
+	m_socket = INVALID_SOCKET;
 	return n;
 }
 
@@ -169,15 +169,15 @@ SOCKET Socket::CreateSocket4(int type, const std::string& protocol)
 		if (!p)
 		{
 			Handler().LogError(this, "getprotobyname", errno, strerror(errno), LOG_LEVEL_FATAL);
-			return -1;
+			return INVALID_SOCKET;
 		}
 	}
 
 	s = socket(AF_INET, type, p ? p -> p_proto : 0);
-	if (s == -1)
+	if (s == INVALID_SOCKET)
 	{
 		Handler().LogError(this, "socket", errno, strerror(errno), LOG_LEVEL_FATAL);
-		return -1;
+		return INVALID_SOCKET;
 	}
 
 	if (type == SOCK_STREAM)
@@ -187,7 +187,7 @@ SOCKET Socket::CreateSocket4(int type, const std::string& protocol)
 		{
 			Handler().LogError(this, "setsockopt(SOL_SOCKET, SO_REUSEADDR)", errno, strerror(errno), LOG_LEVEL_FATAL);
 			closesocket(s);
-			return -1;
+			return INVALID_SOCKET;
 		}
 
 		optval = 1;
@@ -195,7 +195,7 @@ SOCKET Socket::CreateSocket4(int type, const std::string& protocol)
 		{
 			Handler().LogError(this, "setsockopt(SOL_SOCKET, SO_KEEPALIVE)", errno, strerror(errno), LOG_LEVEL_FATAL);
 			closesocket(s);
-			return -1;
+			return INVALID_SOCKET;
 		}
 	}
 
@@ -215,14 +215,14 @@ SOCKET Socket::CreateSocket6(int type, const std::string& protocol)
 		if (!p)
 		{
 			Handler().LogError(this, "getprotobyname", errno, strerror(errno), LOG_LEVEL_FATAL);
-			return -1;
+			return INVALID_SOCKET;
 		}
 	}
 	s = socket(AF_INET6, type, p ? p -> p_proto : 0);
-	if (s == -1)
+	if (s == INVALID_SOCKET)
 	{
 		Handler().LogError(this, "socket", errno, strerror(errno), LOG_LEVEL_FATAL);
-		return -1;
+		return INVALID_SOCKET;
 	}
 	if (type == SOCK_STREAM)
 	{
@@ -231,7 +231,7 @@ SOCKET Socket::CreateSocket6(int type, const std::string& protocol)
 		{
 			Handler().LogError(this, "setsockopt(SOL_SOCKET, SO_REUSEADDR)", errno, strerror(errno), LOG_LEVEL_FATAL);
 			closesocket(s);
-			return -1;
+			return INVALID_SOCKET;
 		}
 
 		optval = 1;
@@ -239,7 +239,7 @@ SOCKET Socket::CreateSocket6(int type, const std::string& protocol)
 		{
 			Handler().LogError(this, "setsockopt(SOL_SOCKET, SO_KEEPALIVE)", errno, strerror(errno), LOG_LEVEL_FATAL);
 			closesocket(s);
-			return -1;
+			return INVALID_SOCKET;
 		}
 	}
 	m_ipv6 = true;
@@ -388,9 +388,9 @@ bool Socket::u2ip(const std::string& str, struct in6_addr& l)
 					unsigned long b1 = pa.getvalue();
 					unsigned long b2 = pa.getvalue();
 					unsigned long b3 = pa.getvalue();
-					sprintf(slask,"%x",b0 * 256 + b1);
+					sprintf(slask,"%lx",b0 * 256 + b1);
 					vec.push_back(slask);
-					sprintf(slask,"%x",b2 * 256 + b3);
+					sprintf(slask,"%lx",b2 * 256 + b3);
 					vec.push_back(slask);
 				}
 				else
@@ -728,7 +728,7 @@ time_t Socket::GetConnectTime()
 
 bool Socket::Ready()
 {
-	if (m_socket != -1 && !Connecting() && !CloseAndDelete())
+	if (m_socket != INVALID_SOCKET && !Connecting() && !CloseAndDelete())
 		return true;
 	return false;
 }
