@@ -1,5 +1,6 @@
 # platforms:
 #  linux-x86-32
+#  linux-x86-64
 #  win32-cygwin
 #  solaris9-sparc-64
 #  macosx
@@ -113,7 +114,7 @@ install:	all
 install_shared:	install shared
 		@mkdir -p $(DESTDIR)/$(PREFIX)/lib/pkgconfig
 		install -m 0644 $(SHAREDLIBNAME) $(DESTDIR)/$(PREFIX)/lib
-		install -m 0644 -a pkgconfig/*pc $(DESTDIR)/$(PREFIX)/lib/pkgconfig
+		install -m 0644  pkgconfig/*pc $(DESTDIR)/$(PREFIX)/lib/pkgconfig
 		rm -f $(DESTDIR)/$(PREFIX)/lib/lib$(NAME).so
 		rm -f $(DESTDIR)/$(PREFIX)/lib/lib$(NAME).so.$(MAJOR)
 		ln -s lib$(NAME).so.$(MAJOR).$(MINOR) $(DESTDIR)/$(PREFIX)/lib/lib$(NAME).so

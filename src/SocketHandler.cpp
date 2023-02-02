@@ -173,7 +173,7 @@ SocketHandler::SocketHandler(IMutex& mutex, ISocketHandler& parent, StdLog *p)
 
 SocketHandler::~SocketHandler()
 {
-	for (std::list<SocketHandlerThread *>::iterator it = m_threads.begin(); it != m_threads.end(); it++)
+	for (std::list<SocketHandlerThread *>::iterator it = m_threads.begin(); it != m_threads.end(); ++it)
 	{
 		SocketHandlerThread *p = *it;
 		p -> Stop();
@@ -266,7 +266,7 @@ ISocketHandler& SocketHandler::GetRandomHandler()
 		throw Exception("SocketHandler is not multithreaded");
 	size_t min_count = 99999;
 	SocketHandlerThread *match = NULL;
-	for (std::list<SocketHandlerThread *>::iterator it = m_threads.begin(); it != m_threads.end(); it++)
+	for (std::list<SocketHandlerThread *>::iterator it = m_threads.begin(); it != m_threads.end(); ++it)
 	{
 		SocketHandlerThread *thr = *it;
 		ISocketHandler& h = thr -> Handler();
@@ -918,7 +918,7 @@ void SocketHandler::CheckErasedSockets()
 	{
 		std::list<socketuid_t>::iterator it = m_fds_erase.begin();
 		socketuid_t uid = *it;
-		for (socket_m::iterator it = m_sockets.begin(); it != m_sockets.end(); it++)
+		for (socket_m::iterator it = m_sockets.begin(); it != m_sockets.end(); ++it)
 		{
 			Socket *p = it -> second;
 			if (p -> UniqueIdentifier() == uid)
@@ -949,7 +949,7 @@ void SocketHandler::CheckErasedSockets()
 	if (check_max_fd)
 	{
 		m_maxsock = 0;
-		for (socket_m::iterator it = m_sockets.begin(); it != m_sockets.end(); it++)
+		for (socket_m::iterator it = m_sockets.begin(); it != m_sockets.end(); ++it)
 		{
 			SOCKET s = it -> first;
 			m_maxsock = s > m_maxsock ? s : m_maxsock;
@@ -961,12 +961,11 @@ void SocketHandler::CheckErasedSockets()
 void SocketHandler::CheckCallOnConnect()
 {
 	m_b_check_callonconnect = false;
-	for (socket_m::iterator it = m_sockets.begin(); it != m_sockets.end(); it++)
+	for (socket_m::iterator it = m_sockets.begin(); it != m_sockets.end(); ++it)
 	{
 		Socket *p = it -> second;
 		if (Valid(p) && Valid(p -> UniqueIdentifier()) && p -> CallOnConnect())
 		{
-			TcpSocket *tcp = dynamic_cast<TcpSocket *>(p);
 			p -> SetConnected(); // moved here from inside if (tcp) check below
 #ifdef HAVE_OPENSSL
 			if (p -> IsSSL()) // SSL Enabled socket
@@ -979,6 +978,7 @@ void SocketHandler::CheckCallOnConnect()
 			else
 #endif
 			{
+				TcpSocket *tcp = dynamic_cast<TcpSocket *>(p);
 				if (tcp)
 				{
 					if (tcp -> GetOutputLength())
@@ -999,6 +999,15 @@ void SocketHandler::CheckCallOnConnect()
 			m_b_check_callonconnect = true;
 		}
 	}
+	// %! preserve m_b_check parameter for newly added sockets
+	for (std::list<Socket *>::iterator it = m_add.begin(); it != m_add.end() && !m_b_check_callonconnect; ++it)
+	{
+		Socket *p = *it;
+		if (Valid(p) && Valid(p -> UniqueIdentifier()) && p -> CallOnConnect())
+		{
+			m_b_check_callonconnect = true;
+		}
+	}
 }
 
 
@@ -1006,7 +1015,7 @@ void SocketHandler::CheckCallOnConnect()
 void SocketHandler::CheckDetach()
 {
 	m_b_check_detach = false;
-	for (socket_m::iterator it = m_sockets.begin(); it != m_sockets.end(); it++)
+	for (socket_m::iterator it = m_sockets.begin(); it != m_sockets.end(); ++it)
 	{
 		Socket *p = it -> second;
 		if (p -> IsDetach())
@@ -1021,6 +1030,15 @@ void SocketHandler::CheckDetach()
 			m_b_check_detach = true;
 		}
 	}
+	// %! preserve m_b_check parameter for newly added sockets
+	for (std::list<Socket *>::iterator it = m_add.begin(); it != m_add.end() && !m_b_check_detach; ++it)
+	{
+		Socket *p = *it;
+		if (Valid(p) && Valid(p -> UniqueIdentifier()) && p -> IsDetach())
+		{
+			m_b_check_detach = true;
+		}
+	}
 }
 #endif
 
@@ -1028,7 +1046,7 @@ void SocketHandler::CheckDetach()
 void SocketHandler::CheckTimeout(time_t tnow)
 {
 	m_b_check_timeout = false;
-	for (socket_m::iterator it = m_sockets.begin(); it != m_sockets.end(); it++)
+	for (socket_m::iterator it = m_sockets.begin(); it != m_sockets.end(); ++it)
 	{
 		Socket *p = it -> second;
 		if (Valid(p) && Valid(p -> UniqueIdentifier()) && p -> CheckTimeout())
@@ -1051,13 +1069,22 @@ void SocketHandler::CheckTimeout(time_t tnow)
 			m_b_check_timeout = true;
 		}
 	}
+	// %! preserve m_b_check parameter for newly added sockets
+	for (std::list<Socket *>::iterator it = m_add.begin(); it != m_add.end() && !m_b_check_timeout; ++it)
+	{
+		Socket *p = *it;
+		if (Valid(p) && Valid(p -> UniqueIdentifier()) && p -> CheckTimeout())
+		{
+			m_b_check_timeout = true;
+		}
+	}
 }
 
 
 void SocketHandler::CheckRetry()
 {
 	m_b_check_retry = false;
-	for (socket_m::iterator it = m_sockets.begin(); it != m_sockets.end(); it++)
+	for (socket_m::iterator it = m_sockets.begin(); it != m_sockets.end(); ++it)
 	{
 		Socket *p = it -> second;
 		if (Valid(p) && Valid(p -> UniqueIdentifier()) && p -> RetryClientConnect())
@@ -1080,13 +1107,22 @@ DEB(					fprintf(stderr, "Close() before retry client connect\n");)
 			m_b_check_retry = true;
 		}
 	}
+	// %! preserve m_b_check parameter for newly added sockets
+	for (std::list<Socket *>::iterator it = m_add.begin(); it != m_add.end() && !m_b_check_retry; ++it)
+	{
+		Socket *p = *it;
+		if (Valid(p) && Valid(p -> UniqueIdentifier()) && p -> RetryClientConnect())
+		{
+			m_b_check_retry = true;
+		}
+	}
 }
 
 
 void SocketHandler::CheckClose()
 {
 	m_b_check_close = false;
-	for (socket_m::iterator it = m_sockets.begin(); it != m_sockets.end(); it++)
+	for (socket_m::iterator it = m_sockets.begin(); it != m_sockets.end(); ++it)
 	{
 		Socket *p = it -> second;
 		if (Valid(p) && Valid(p -> UniqueIdentifier()) && p -> CloseAndDelete() )
@@ -1179,6 +1215,15 @@ DEB(							fprintf(stderr, "Close() before OnDelete\n");)
 				}
 				DeleteSocket(p);
 			}
+			m_b_check_close = true;
+		}
+	}
+	// %! preserve m_b_check parameter for newly added sockets
+	for (std::list<Socket *>::iterator it = m_add.begin(); it != m_add.end() && !m_b_check_close; ++it)
+	{
+		Socket *p = *it;
+		if (Valid(p) && Valid(p -> UniqueIdentifier()) && p -> CloseAndDelete())
+		{
 			m_b_check_close = true;
 		}
 	}
@@ -1279,7 +1324,7 @@ printf("]\n");
 	else
 	if (n > 0)
 	{
-		for (socket_m::iterator it = m_sockets.begin(); it != m_sockets.end(); it++)
+		for (socket_m::iterator it = m_sockets.begin(); it != m_sockets.end(); ++it)
 		{
 			SOCKET i = it -> first;
 			Socket *p = it -> second;
