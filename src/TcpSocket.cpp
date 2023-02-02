@@ -1266,6 +1266,42 @@ void TcpSocket::InitializeContext(const std::string& context,const std::string& 
 }
 
 
+void TcpSocket::InitializeContext(const std::string& context,const std::string& certfile,const std::string& keyfile,const std::string& password,SSL_METHOD *meth_in)
+{
+	/* Create our context*/
+	static std::map<std::string, SSL_CTX *> server_contexts;
+	if (server_contexts.find(context) == server_contexts.end())
+	{
+		SSL_METHOD *meth = meth_in ? meth_in : SSLv3_method();
+		m_ssl_ctx = server_contexts[context] = SSL_CTX_new(meth);
+		SSL_CTX_set_mode(m_ssl_ctx, SSL_MODE_AUTO_RETRY);
+		// session id
+		if (context.size())
+			SSL_CTX_set_session_id_context(m_ssl_ctx, (const unsigned char *)context.c_str(), (unsigned int)context.size());
+		else
+			SSL_CTX_set_session_id_context(m_ssl_ctx, (const unsigned char *)"--empty--", 9);
+	}
+	else
+	{
+		m_ssl_ctx = server_contexts[context];
+	}
+
+	/* Load our keys and certificates*/
+	if (!(SSL_CTX_use_certificate_file(m_ssl_ctx, certfile.c_str(), SSL_FILETYPE_PEM)))
+	{
+		Handler().LogError(this, "TcpSocket InitializeContext", 0, "Couldn't read certificate file " + keyfile, LOG_LEVEL_FATAL);
+	}
+
+	m_password = password;
+	SSL_CTX_set_default_passwd_cb(m_ssl_ctx, SSL_password_cb);
+	SSL_CTX_set_default_passwd_cb_userdata(m_ssl_ctx, this);
+	if (!(SSL_CTX_use_PrivateKey_file(m_ssl_ctx, keyfile.c_str(), SSL_FILETYPE_PEM)))
+	{
+		Handler().LogError(this, "TcpSocket InitializeContext", 0, "Couldn't read private key file " + keyfile, LOG_LEVEL_FATAL);
+	}
+}
+
+
 int TcpSocket::SSL_password_cb(char *buf,int num,int rwflag,void *userdata)
 {
 	Socket *p0 = static_cast<Socket *>(userdata);
@@ -1359,12 +1395,6 @@ size_t TcpSocket::GetInputLength()
 size_t TcpSocket::GetOutputLength()
 {
 	return m_output_length;
-/*
-	size_t len = 0;
-	for (output_l::iterator it = m_obuf.begin(); it != m_obuf.end(); it++)
-		len += (*it) -> Len();
-	return len;
-*/
 }
 
 

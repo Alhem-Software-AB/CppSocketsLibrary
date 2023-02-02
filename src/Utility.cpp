@@ -32,6 +32,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "Ipv4Address.h"
 #include "Ipv6Address.h"
 #include "RandomNumber.h"
+#include "Base64.h"
 #include <vector>
 #ifdef _WIN32
 #include <time.h>

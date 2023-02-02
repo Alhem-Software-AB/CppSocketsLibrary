@@ -44,8 +44,6 @@ public:
 	void OnHeaderComplete();
 	void OnData(const char *,size_t);
 
-	virtual void OnExec(const HttpRequest& req, HttpResponse& res) = 0;
-
 	// implements IHttpServer::Respond
 	void Respond();
 
@@ -53,14 +51,14 @@ public:
 
 protected:
 	HttpBaseSocket(const HttpBaseSocket& s) : HTTPSocket(s), m_res(m_req) {} // copy constructor
+	//
+	HttpRequest m_req;
+	HttpResponse m_res;
 
 private:
 	HttpBaseSocket& operator=(const HttpBaseSocket& ) { return *this; } // assignment operator
-
 	//
 	size_t m_body_size_left;
-	HttpRequest m_req;
-	HttpResponse m_res;
 };
 
 

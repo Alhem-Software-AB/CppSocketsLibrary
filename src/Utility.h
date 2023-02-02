@@ -43,7 +43,6 @@ typedef unsigned __int64 uint64_t;
 #endif
 #endif
 #include <memory>
-#include "Base64.h"
 #include "socket_include.h"
 
 #ifdef SOCKETS_NAMESPACE

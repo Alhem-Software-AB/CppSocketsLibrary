@@ -40,7 +40,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "socket_include.h"
 #include <time.h>
-#include "Utility.h"
 #include "SocketAddress.h"
 #include "Thread.h"
 
@@ -340,6 +339,20 @@ public:
 	std::string GetRemoteHostname();
 	//@}
 
+	/** Returns local port number for bound socket file descriptor. */
+	port_t GetSockPort();
+	/** Returns local ipv4 address for bound socket file descriptor. */
+	ipaddr_t GetSockIP4();
+	/** Returns local ipv4 address as text for bound socket file descriptor. */
+	std::string GetSockAddress();
+#ifdef ENABLE_IPV6
+#ifdef IPPROTO_IPV6
+	/** Returns local ipv6 address for bound socket file descriptor. */
+	struct in6_addr GetSockIP6();
+	/** Returns local ipv6 address as text for bound socket file descriptor. */
+	std::string GetSockAddress6();
+#endif
+#endif
 	// --------------------------------------------------------------------------
 	/** @name IP options
 	   When an ip or socket option is available on all of the operating systems

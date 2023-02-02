@@ -1,44 +1,49 @@
-VERSION =	2.2
-DIFF_VERSION =	2.1.9
+VERSION =	2.2.1
+DIFF_VERSION =	2.2
 
 # Sockets
-OBJS =		Socket.o \
-		SocketHandler.o \
-		StreamSocket.o \
-		TcpSocket.o \
-		UdpSocket.o \
-		Parse.o \
-		Base64.o \
-		HttpGetSocket.o \
-		HTTPSocket.o \
-		Thread.o \
-		StdoutLog.o \
-		HttpPutSocket.o \
-		HttpPostSocket.o \
-		HttpDebugSocket.o \
-		Utility.o \
-		ResolvServer.o \
-		ResolvSocket.o \
-		HttpdSocket.o \
-		HttpdCookies.o \
-		HttpdForm.o \
-		File.o \
-		MemFile.o \
-		socket_include.o \
-		Mutex.o \
-		Lock.o \
-		EventTime.o Event.o IEventOwner.o EventHandler.o \
-		HttpClientSocket.o \
-		SctpSocket.o \
-		Ipv4Address.o Ipv6Address.o \
-		RandomNumber.o \
-		SSLInitializer.o \
-		SmtpdSocket.o \
-		Debug.o \
-		Exception.o \
+OBJS =		\
 		Ajp13Socket.o \
 		AjpBaseSocket.o \
+		Base64.o \
+		Debug.o \
+		Event.o \
+		EventHandler.o \
+		EventTime.o \
+		Exception.o \
+		File.o \
+		HTTPSocket.o \
 		HttpBaseSocket.o \
-		HttpTransaction.o \
+		HttpClientSocket.o \
+		HttpDebugSocket.o \
+		HttpGetSocket.o \
+		HttpPostSocket.o \
+		HttpPutSocket.o \
 		HttpRequest.o \
-		HttpResponse.o
+		HttpResponse.o \
+		HttpTransaction.o \
+		HttpdCookies.o \
+		HttpdForm.o \
+		HttpdSocket.o \
+		IEventOwner.o \
+		Ipv4Address.o \
+		Ipv6Address.o \
+		Lock.o \
+		MemFile.o \
+		Mutex.o \
+		Parse.o \
+		RandomNumber.o \
+		ResolvServer.o \
+		ResolvSocket.o \
+		SSLInitializer.o \
+		SctpSocket.o \
+		SmtpdSocket.o \
+		Socket.o \
+		SocketHandler.o \
+		StdoutLog.o \
+		StreamSocket.o \
+		TcpSocket.o \
+		Thread.o \
+		UdpSocket.o \
+		Utility.o \
+		socket_include.o

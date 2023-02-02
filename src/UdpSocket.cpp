@@ -41,6 +41,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "Utility.h"
 #include "Ipv4Address.h"
 #include "Ipv6Address.h"
+#ifdef ENABLE_EXCEPTIONS
+#include "Exception.h"
+#endif
 // include this to see strange sights
 //#include <linux/in6.h>
 
@@ -50,12 +53,13 @@ namespace SOCKETS_NAMESPACE {
 #endif
 
 
-UdpSocket::UdpSocket(ISocketHandler& h, int ibufsz, bool ipv6) : Socket(h)
+UdpSocket::UdpSocket(ISocketHandler& h, int ibufsz, bool ipv6, int retries) : Socket(h)
 , m_ibuf(new char[ibufsz])
 , m_ibufsz(ibufsz)
 , m_bind_ok(false)
 , m_port(0)
 , m_last_size_written(-1)
+, m_retries(retries)
 {
 #ifdef ENABLE_IPV6
 #ifdef IPPROTO_IPV6
@@ -152,6 +156,9 @@ int UdpSocket::Bind(SocketAddress& ad, int range)
 		{
 			Handler().LogError(this, "bind", Errno, StrError(Errno), LOG_LEVEL_FATAL);
 			SetCloseAndDelete();
+#ifdef ENABLE_EXCEPTIONS
+			throw Exception("bind() failed for UdpSocket, port:range: " + Utility::l2string(ad.GetPort()) + ":" + Utility::l2string(range));
+#endif
 			return -1;
 		}
 		m_bind_ok = true;
@@ -378,7 +385,7 @@ void UdpSocket::OnRead()
 		struct sockaddr_in6 sa;
 		socklen_t sa_len = sizeof(sa);
 		int n = recvfrom(GetSocket(), m_ibuf, m_ibufsz, 0, (struct sockaddr *)&sa, &sa_len);
-		int q = 10; // receive max 10 at one cycle
+		int q = m_retries; // receive max 10 at one cycle
 		while (n > 0)
 		{
 			if (sa_len != sizeof(sa))
@@ -407,7 +414,7 @@ void UdpSocket::OnRead()
 	struct sockaddr_in sa;
 	socklen_t sa_len = sizeof(sa);
 	int n = recvfrom(GetSocket(), m_ibuf, m_ibufsz, 0, (struct sockaddr *)&sa, &sa_len);
-	int q = 10;
+	int q = m_retries;
 	while (n > 0)
 	{
 		if (sa_len != sizeof(sa))

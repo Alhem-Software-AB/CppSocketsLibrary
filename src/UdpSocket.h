@@ -46,7 +46,7 @@ public:
 		\param h ISocketHandler reference
 		\param ibufsz Maximum size of receive message (extra bytes will be truncated)
 		\param ipv6 'true' if this is an ipv6 socket */
-	UdpSocket(ISocketHandler& h,int ibufsz = 16384,bool ipv6 = false);
+	UdpSocket(ISocketHandler& h,int ibufsz = 16384,bool ipv6 = false, int retries = 0);
 	~UdpSocket();
 
 	/** Called when incoming data has been received.
@@ -187,6 +187,7 @@ private:
 	bool m_bind_ok; ///< Bind completed successfully
 	port_t m_port; ///< Bind port number
 	int m_last_size_written;
+	int m_retries;
 };
 
 

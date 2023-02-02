@@ -33,6 +33,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 namespace SOCKETS_NAMESPACE {
 #endif
 
+#ifdef _DEBUG
+#define DEB(x) x; fflush(stderr);
+#else
+#define DEB(x)
+#endif
+
 
 // --------------------------------------------------------------------------------------
 HttpRequest::HttpRequest() : HttpTransaction()
@@ -222,8 +228,8 @@ void HttpRequest::InitBody( size_t sz )
 {
 	if (!m_body_file)
 		m_body_file = new MemFile;
-	else
-		fprintf(stderr, "Body data file already opened\n");
+DEB(	else
+		fprintf(stderr, "Body data file already opened\n");)
 }
 
 
@@ -232,8 +238,8 @@ void HttpRequest::Write( const char *buf, size_t sz )
 {
 	if (m_body_file)
 		m_body_file -> fwrite(buf, 1, sz);
-	else
-		fprintf(stderr, "Write: Body data file not open\n");
+DEB(	else
+		fprintf(stderr, "Write: Body data file not open\n");)
 }
 
 
@@ -242,8 +248,8 @@ void HttpRequest::CloseBody()
 {
 	if (m_body_file)
 		m_body_file -> fclose();
-	else
-		fprintf(stderr, "CloseBody: File not open\n");
+DEB(	else
+		fprintf(stderr, "CloseBody: File not open\n");)
 }
 
 

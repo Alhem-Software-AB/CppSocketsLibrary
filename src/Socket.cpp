@@ -45,6 +45,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "SocketAddress.h"
 #include "SocketHandler.h"
+#ifdef ENABLE_EXCEPTIONS
+#include "Exception.h"
+#endif
+#include "Ipv4Address.h"
 
 #ifdef _DEBUG
 #define DEB(x) x; fflush(stderr);
@@ -204,6 +208,9 @@ SOCKET Socket::CreateSocket(int af,int type, const std::string& protocol)
 		{
 			Handler().LogError(this, "getprotobyname", Errno, StrError(Errno), LOG_LEVEL_FATAL);
 			SetCloseAndDelete();
+#ifdef ENABLE_EXCEPTIONS
+			throw Exception(std::string("getprotobyname() failed: ") + StrError(Errno));
+#endif
 			return INVALID_SOCKET;
 		}
 	}
@@ -214,6 +221,9 @@ SOCKET Socket::CreateSocket(int af,int type, const std::string& protocol)
 	{
 		Handler().LogError(this, "socket", Errno, StrError(Errno), LOG_LEVEL_FATAL);
 		SetCloseAndDelete();
+#ifdef ENABLE_EXCEPTIONS
+		throw Exception(std::string("socket() failed: ") + StrError(Errno));
+#endif
 		return INVALID_SOCKET;
 	}
 	Attach(s);
@@ -1777,6 +1787,107 @@ bool Socket::Timeout(time_t tnow)
 		return true;
 	return false;
 }
+
+
+/** Returns local port number for bound socket file descriptor. */
+port_t Socket::GetSockPort()
+{
+#ifdef ENABLE_IPV6
+#ifdef IPPROTO_IPV6
+	if (IsIpv6())
+	{
+		struct sockaddr_in6 sa;
+		socklen_t sockaddr_length = sizeof(struct sockaddr_in6);
+		if (getsockname(GetSocket(), (struct sockaddr *)&sa, (socklen_t*)&sockaddr_length) == -1)
+			memset(&sa, 0, sizeof(sa));
+		return ntohs(sa.sin6_port);
+	}
+#endif
+#endif
+	struct sockaddr_in sa;
+	socklen_t sockaddr_length = sizeof(struct sockaddr_in);
+	if (getsockname(GetSocket(), (struct sockaddr *)&sa, (socklen_t*)&sockaddr_length) == -1)
+		memset(&sa, 0, sizeof(sa));
+	return ntohs(sa.sin_port);
+}
+
+
+/** Returns local ipv4 address for bound socket file descriptor. */
+ipaddr_t Socket::GetSockIP4()
+{
+#ifdef ENABLE_IPV6
+#ifdef IPPROTO_IPV6
+	if (IsIpv6())
+	{
+		return 0;
+	}
+#endif
+#endif
+	struct sockaddr_in sa;
+	socklen_t sockaddr_length = sizeof(struct sockaddr_in);
+	if (getsockname(GetSocket(), (struct sockaddr *)&sa, (socklen_t*)&sockaddr_length) == -1)
+		memset(&sa, 0, sizeof(sa));
+	ipaddr_t a;
+	memcpy(&a, &sa.sin_addr, 4);
+	return a;
+}
+
+
+/** Returns local ipv4 address as text for bound socket file descriptor. */
+std::string Socket::GetSockAddress()
+{
+#ifdef ENABLE_IPV6
+#ifdef IPPROTO_IPV6
+	if (IsIpv6())
+	{
+		return "";
+	}
+#endif
+#endif
+	struct sockaddr_in sa;
+	socklen_t sockaddr_length = sizeof(struct sockaddr_in);
+	if (getsockname(GetSocket(), (struct sockaddr *)&sa, (socklen_t*)&sockaddr_length) == -1)
+		memset(&sa, 0, sizeof(sa));
+	Ipv4Address addr( sa );
+	return addr.Convert();
+}
+
+
+#ifdef ENABLE_IPV6
+#ifdef IPPROTO_IPV6
+/** Returns local ipv6 address for bound socket file descriptor. */
+struct in6_addr Socket::GetSockIP6()
+{
+	if (IsIpv6())
+	{
+		struct sockaddr_in6 sa;
+		socklen_t sockaddr_length = sizeof(struct sockaddr_in6);
+		if (getsockname(GetSocket(), (struct sockaddr *)&sa, (socklen_t*)&sockaddr_length) == -1)
+			memset(&sa, 0, sizeof(sa));
+		return sa.sin6_addr;
+	}
+	struct in6_addr a;
+	memset(&a, 0, sizeof(a));
+	return a;
+}
+
+
+/** Returns local ipv6 address as text for bound socket file descriptor. */
+std::string Socket::GetSockAddress6()
+{
+	if (IsIpv6())
+	{
+		struct sockaddr_in6 sa;
+		socklen_t sockaddr_length = sizeof(struct sockaddr_in6);
+		if (getsockname(GetSocket(), (struct sockaddr *)&sa, (socklen_t*)&sockaddr_length) == -1)
+			memset(&sa, 0, sizeof(sa));
+		Ipv6Address addr( sa );
+		return addr.Convert();
+	}
+	return "";
+}
+#endif
+#endif
 
 
 #ifdef SOCKETS_NAMESPACE

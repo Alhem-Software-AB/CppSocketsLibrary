@@ -51,6 +51,28 @@ void Debug::Print(const char *format, ...)
 }
 
 
+Debug& Debug::operator<<(const std::string& str)
+{
+	m_line += str;
+	return *this;
+}
+
+
+Debug& Debug::operator<<(long l)
+{
+	m_line += Utility::l2string(l);
+	return *this;
+}
+
+
+Debug& Debug::operator<<(endl)
+{
+	Print("%s", m_line.c_str());
+	m_line = "";
+	return *this;
+}
+
+
 #ifdef SOCKETS_NAMESPACE
 } // namespace SOCKETS_NAMESPACE {
 #endif

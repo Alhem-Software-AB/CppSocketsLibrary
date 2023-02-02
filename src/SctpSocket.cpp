@@ -27,7 +27,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <errno.h>
 #include "Ipv4Address.h"
 #include "Ipv6Address.h"
-
+#ifdef ENABLE_EXCEPTIONS
+#include "Exception.h"
+#endif
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE
@@ -84,6 +86,9 @@ int SctpSocket::Bind(SocketAddress& ad)
 		if (n == -1)
 		{
 			Handler().LogError(this, "SctpSocket", -1, "bind() failed", LOG_LEVEL_ERROR);
+#ifdef ENABLE_EXCEPTIONS
+			throw Exception("bind() failed for SctpSocket, port: " + Utility::l2string(ad.GetPort()));
+#endif
 		}
 		return n;
 	}

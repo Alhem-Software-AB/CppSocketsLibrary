@@ -41,8 +41,6 @@ public:
 	void OnHeader( short id, short len );
 	void OnPacket( const char *buf, size_t sz );
 
-	virtual void OnExec(const HttpRequest& req, HttpResponse& res) = 0;
-
 	// implements IHttpServer::Respond
 	void Respond();
 

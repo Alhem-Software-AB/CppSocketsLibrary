@@ -24,11 +24,16 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #pragma warning(disable:4786)
 #endif
 #include <stdarg.h>
+#include <stdio.h>
 
 #include "HttpResponse.h"
 #include "HttpRequest.h"
 #include "MemFile.h"
 #include "File.h"
+
+#ifdef SOCKETS_NAMESPACE
+namespace SOCKETS_NAMESPACE {
+#endif
 
 
 // --------------------------------------------------------------------------------------
@@ -116,3 +121,6 @@ void HttpResponse::SetFile( const std::string& path )
 }
 
 
+#ifdef SOCKETS_NAMESPACE
+} // namespace SOCKETS_NAMESPACE {
+#endif

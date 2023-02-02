@@ -35,8 +35,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <list>
 
 #include "socket_include.h"
-#include "StdLog.h"
-#include "Mutex.h"
 #include "ISocketHandler.h"
 
 #ifdef SOCKETS_NAMESPACE

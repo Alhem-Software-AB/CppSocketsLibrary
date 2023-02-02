@@ -31,9 +31,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #pragma warning(disable:4786)
 #endif
 #include "HTTPSocket.h"
-#include <stdarg.h>
 #include "Parse.h"
 #include "ISocketHandler.h"
+#include "Utility.h"
+#include <stdarg.h>
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
@@ -102,8 +103,6 @@ void HTTPSocket::OnLine(const std::string& line)
 		if (str.size() > 4 && Utility::ToLower(str.substr(0,5)) == "http/") // response
 		{
 			m_http_version = str;
-			m_b_http_1_1 = str.substr(4) == "/1.1";
-			m_b_keepalive = m_b_http_1_1;
 			m_status = pa.getword();
 			m_status_text = pa.getrest();
 			m_response = true;
@@ -121,8 +120,11 @@ void HTTPSocket::OnLine(const std::string& line)
 			else
 			{
 				m_uri = m_url;
+				m_query_string = "";
 			}
 			m_http_version = pa.getword();
+			m_b_http_1_1 = m_http_version.substr(4) == "/1.1";
+			m_b_keepalive = m_b_http_1_1;
 			m_request = true;
 		}
 		m_first = false;

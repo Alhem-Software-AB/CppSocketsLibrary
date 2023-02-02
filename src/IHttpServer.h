@@ -28,12 +28,15 @@ namespace SOCKETS_NAMESPACE {
 #endif
 
 
-
+class HttpRequest;
+class HttpResponse;
 
 class IHttpServer
 {
 public:
 	virtual ~IHttpServer() {}
+
+	virtual void OnExec(const HttpRequest& req, HttpResponse& res) = 0;
 
 	virtual void Respond() = 0;
 

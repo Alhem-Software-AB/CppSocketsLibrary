@@ -95,6 +95,7 @@ tar:		clean
 		cp Sockets-$(VERSION).tar.gz $(HTDOCS)/Sockets
 		cp Sockets-$(VERSION).zip $(HTDOCS)/Sockets
 		cp tests/sockets_test.cpp /usr/local/apache/www.alhem.net/htdocs/Sockets/
+#		$(MAKE) -C ../SocketsLite tar
 
 tmptar:		clean
 		rm -f MinderSocket_T.h
@@ -111,6 +112,7 @@ tmptar:		clean
 		cp Sockets-$(VERSION).tar.gz $(HTDOCS)/Sockets-tmp
 		cp Sockets-$(VERSION).zip $(HTDOCS)/Sockets-tmp
 		cp tests/sockets_test.cpp /usr/local/apache/www.alhem.net/htdocs/Sockets-tmp
+		$(MAKE) -C ../SocketsLite tmptar
 
 docs:		clean
 		doxygen dox2.cfg
@@ -129,6 +131,7 @@ docs:		clean
 		doxygen doxygen.cfg
 		./packdocs.sh Sockets-$(VERSION)-doxygendocs
 		cvs up
+#		$(MAKE) -C ../SocketsLite docs
 
 tmpdocs:	clean
 		rm -f MinderSocket_T.h
@@ -145,3 +148,4 @@ tmpdocs:	clean
 		rm -rf /usr/local/apache/www.alhem.net/htdocs/Sockets-tmp/html
 		doxygen doxygen-tmp.cfg
 		cvs up
+		$(MAKE) -C ../SocketsLite tmpdocs

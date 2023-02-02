@@ -15,8 +15,15 @@ namespace SOCKETS_NAMESPACE {
 class Debug
 {
 static	const char *colors[];
+public:
+	class endl {
+	public:
+		endl() {}
+		virtual ~endl() {}
+	};
 
 public:
+	Debug() {}
 	Debug(const std::string& x) : m_id(0), m_text(x) {
 		fprintf(stderr, "%s", colors[Utility::ThreadID() % 16 + 1]);
 		for (int i = 0; i < m_level[Utility::ThreadID()]; i++)
@@ -32,23 +39,31 @@ public:
 		m_level[Utility::ThreadID()]++;
 	}
 	~Debug() {
-		if (m_level[Utility::ThreadID()])
-			m_level[Utility::ThreadID()]--;
-		fprintf(stderr, "%s", colors[Utility::ThreadID() % 16 + 1]);
-		for (int i = 0; i < m_level[Utility::ThreadID()]; i++)
-			fprintf(stderr, "  ");
-		if (m_id)
-			fprintf(stderr, "%d> /%s%s\n", m_id, m_text.c_str(), colors[0]);
-		else
-			fprintf(stderr, "/%s%s\n", m_text.c_str(), colors[0]);
-		fflush(stderr);
+		if (!m_text.empty())
+		{
+			if (m_level[Utility::ThreadID()])
+				m_level[Utility::ThreadID()]--;
+			fprintf(stderr, "%s", colors[Utility::ThreadID() % 16 + 1]);
+			for (int i = 0; i < m_level[Utility::ThreadID()]; i++)
+				fprintf(stderr, "  ");
+			if (m_id)
+				fprintf(stderr, "%d> /%s%s\n", m_id, m_text.c_str(), colors[0]);
+			else
+				fprintf(stderr, "/%s%s\n", m_text.c_str(), colors[0]);
+			fflush(stderr);
+		}
 	}
 static	void Print(const char *format, ...);
+
+	Debug& operator<<(const std::string& );
+	Debug& operator<<(long);
+	Debug& operator<<(endl);
 
 private:
 	int m_id;
 	std::string m_text;
 static	std::map<unsigned long, int> m_level;
+	std::string m_line;
 };
 
 
