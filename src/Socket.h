@@ -24,8 +24,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define _SOCKETBASE_H
 
 #include <string>
-#include <time.h>
 #include <vector>
+#include <list>
+
+#include <time.h>
 #include "socket_include.h"
 
 
@@ -33,7 +35,6 @@ class SocketHandler;
 class SocketThread;
 
 
-#include <list>
 //	typedef std::list<std::string> string_v;
 
 class Socket

@@ -128,24 +128,36 @@ void SocketHandler::Set(SOCKET s,bool bRead,bool bWrite,bool bException)
 		if (bRead)
 		{
 			if (!FD_ISSET(s, &m_rfds))
+			{
 				FD_SET(s, &m_rfds);
+			}
 		}
 		else
+		{
 			FD_CLR(s, &m_rfds);
+		}
 		if (bWrite)
 		{
 			if (!FD_ISSET(s, &m_wfds))
+			{
 				FD_SET(s, &m_wfds);
+			}
 		}
 		else
+		{
 			FD_CLR(s, &m_wfds);
+		}
 		if (bException)
 		{
 			if (!FD_ISSET(s, &m_efds))
+			{
 				FD_SET(s, &m_efds);
+			}
 		}
 		else
+		{
 			FD_CLR(s, &m_efds);
+		}
 	}
 }
 

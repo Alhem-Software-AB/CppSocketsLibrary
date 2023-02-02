@@ -56,7 +56,7 @@ UdpSocket::~UdpSocket()
 }
 
 
-SOCKET UdpSocket::Bind4(port_t &port,int range)
+SOCKET UdpSocket::Bind(port_t &port,int range)
 {
 	SOCKET s = GetSocket();
 	if (s == INVALID_SOCKET)
@@ -138,7 +138,7 @@ SOCKET UdpSocket::Bind6(port_t &port,int range)
 
 
 /** if you wish to use Send, first Open a connection */
-bool UdpSocket::Open4(ipaddr_t l,port_t port)
+bool UdpSocket::Open(ipaddr_t l,port_t port)
 {
 	if (GetSocket() == INVALID_SOCKET)
 	{
@@ -168,7 +168,7 @@ bool UdpSocket::Open4(ipaddr_t l,port_t port)
 }
 
 
-bool UdpSocket::Open4(const std::string& host,port_t port)
+bool UdpSocket::Open(const std::string& host,port_t port)
 {
 	if (GetSocket() == INVALID_SOCKET)
 	{
@@ -182,7 +182,7 @@ bool UdpSocket::Open4(const std::string& host,port_t port)
 	ipaddr_t a;
 	if (u2ip(host, a))
 	{
-		return Open4(a, port);
+		return Open(a, port);
 	}
 	return false;
 }
@@ -243,7 +243,7 @@ bool UdpSocket::Open6(const std::string& host,port_t port)
 
 
 /** send to specified address */
-void UdpSocket::SendToBuf4(const std::string& h,port_t p,const char *data,size_t len,int flags)
+void UdpSocket::SendToBuf(const std::string& h,port_t p,const char *data,size_t len,int flags)
 {
 	if (GetSocket() == INVALID_SOCKET)
 	{
@@ -307,9 +307,9 @@ void UdpSocket::SendToBuf6(const std::string& h,port_t p,const char *data,size_t
 #endif
 
 
-void UdpSocket::SendTo4(const std::string& a,port_t p,const std::string& str,int flags)
+void UdpSocket::SendTo(const std::string& a,port_t p,const std::string& str,int flags)
 {
-	SendToBuf4(a,p,str.c_str(),str.size(),flags);
+	SendToBuf(a,p,str.c_str(),str.size(),flags);
 }
 
 

@@ -11,7 +11,7 @@ typedef unsigned long ipaddr_t;
 #define IPV6_ADD_MEMBERSHIP IPV6_JOIN_GROUP
 #define IPV6_DROP_MEMBERSHIP IPV6_LEAVE_GROUP
 
-#elif defined WIN32 // Win32
+#elif defined _WIN32 // Win32
 typedef unsigned long ipaddr_t;
 typedef unsigned short port_t;
 #pragma comment(lib, "wsock32.lib")
@@ -28,21 +28,23 @@ typedef unsigned short port_t;
 #endif
 
 
+/*
 #ifdef _USING_IPV6
-#define CreateSocket CreateSocket6
-#define GetRemoteIP GetRemoteIP6
+//#define CreateSocket CreateSocket6
+//#define GetRemoteIP GetRemoteIP6
 #define Bind Bind6
 #define Open Open6
 #define SendTo SendTo6
 #define SendToBuf SendToBuf6
 #else
-#define CreateSocket CreateSocket4
-#define GetRemoteIP GetRemoteIP4
+//#define CreateSocket CreateSocket4
+//#define GetRemoteIP GetRemoteIP4
 #define Bind Bind4
 #define Open Open4
 #define SendTo SendTo4
 #define SendToBuf SendToBuf4
 #endif
+*/
 
 
 // ---> note!
@@ -58,7 +60,7 @@ typedef unsigned short port_t;
  *    allow operation under Windows and BSD-style sockets.
  */
 
-#ifdef WIN32 /* Windows systems */
+#ifdef _WIN32 /* Windows systems */
 
 /*
 0  	swShutdownRead  	Disable reception of data.

@@ -36,19 +36,19 @@ public:
 	virtual void OnRawData(const char *,size_t,struct sockaddr *,socklen_t) {}
 
 	/** to receive incoming data, call Bind to setup an incoming port */
-	SOCKET Bind4(port_t& port,int range);
+	SOCKET Bind(port_t& port,int range);
 	SOCKET Bind6(port_t& port,int range);
 
 	/** if you wish to use Send, first Open a connection */
-	bool Open4(ipaddr_t,port_t);
-	bool Open4(const std::string& host,port_t port);
+	bool Open(ipaddr_t,port_t);
+	bool Open(const std::string& host,port_t port);
 	bool Open6(struct in6_addr&,port_t);
 	bool Open6(const std::string& host,port_t port);
 
 	/** send to specified address */
-	void SendToBuf4(const std::string& ,port_t,const char *data,size_t len,int flags = 0);
+	void SendToBuf(const std::string& ,port_t,const char *data,size_t len,int flags = 0);
 	void SendToBuf6(const std::string& ,port_t,const char *data,size_t len,int flags = 0);
-	void SendTo4(const std::string&,port_t,const std::string&,int flags = 0);
+	void SendTo(const std::string&,port_t,const std::string&,int flags = 0);
 	void SendTo6(const std::string&,port_t,const std::string&,int flags = 0);
 
 	/** send to connected address */

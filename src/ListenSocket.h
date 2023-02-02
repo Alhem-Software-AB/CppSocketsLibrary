@@ -39,7 +39,7 @@ public:
 	ListenSocket(SocketHandler& h) : Socket(h), m_port(0), m_depth(0) {}
 
 	/** bind() to port 0 - a random port */
-	int Bind4()
+	int Bind()
 	{
 		int depth = 3; // think of maybe increasing this value if needed
 		ipaddr_t l = 0;
@@ -69,14 +69,14 @@ public:
 		// Find out what port was choosen
 		int sockaddr_length = sizeof(sockaddr);
 		getsockname(s, (struct sockaddr *)&sa, (socklen_t*)&sockaddr_length);
-		m_port = sa.sin_port;
+		m_port = ntohs(sa.sin_port);
 		m_depth = depth;
 		Attach(s);
 		return 0;
 	}
 
 	/** bind to port with optional listen queue length (depth) */
-	int Bind4(port_t port, int depth = 3)
+	int Bind(port_t port, int depth = 3)
 	{
 		ipaddr_t l = 0;
 		struct sockaddr_in sa;
@@ -109,7 +109,7 @@ public:
 	}
 
 	/** bind to port on a specified address */
-	int Bind4(const std::string& adapter, port_t port, int depth = 3)
+	int Bind(const std::string& adapter, port_t port, int depth = 3)
 	{
 		ipaddr_t l = 0;
 		ipaddr_t tmp;

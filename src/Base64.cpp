@@ -176,19 +176,19 @@ void Base64::decode(const std::string& input,std::string& output)
 			i++;
 		if (i < l)
 		{
-			char b1 = (rstr[(int)input[i]] << 2 & 0xfc) +
-					(rstr[(int)input[i + 1]] >> 4 & 0x03);
+			char b1 = (char)((rstr[(int)input[i]] << 2 & 0xfc) +
+					(rstr[(int)input[i + 1]] >> 4 & 0x03));
 			output += b1;
 			if (input[i + 2] != '=')
 			{
-				char b2 = (rstr[(int)input[i + 1]] << 4 & 0xf0) +
-						(rstr[(int)input[i + 2]] >> 2 & 0x0f);
+				char b2 = (char)((rstr[(int)input[i + 1]] << 4 & 0xf0) +
+						(rstr[(int)input[i + 2]] >> 2 & 0x0f));
 				output += b2;
 			}
 			if (input[i + 3] != '=')
 			{
-				char b3 = (rstr[(int)input[i + 2]] << 6 & 0xc0) +
-						rstr[(int)input[i + 3]];
+				char b3 = (char)((rstr[(int)input[i + 2]] << 6 & 0xc0) +
+						rstr[(int)input[i + 3]]);
 				output += b3;
 			}
 			i += 4;
@@ -209,8 +209,8 @@ void Base64::decode(const std::string& input, unsigned char *output, size_t& sz)
 			i++;
 		if (i < l)
 		{
-			unsigned char b1 = (rstr[(int)input[i]] << 2 & 0xfc) +
-					(rstr[(int)input[i + 1]] >> 4 & 0x03);
+			unsigned char b1 = (unsigned char)((rstr[(int)input[i]] << 2 & 0xfc) +
+					(rstr[(int)input[i + 1]] >> 4 & 0x03));
 			if (output)
 			{
 				output[j] = b1;
@@ -218,8 +218,8 @@ void Base64::decode(const std::string& input, unsigned char *output, size_t& sz)
 			j++;
 			if (input[i + 2] != '=')
 			{
-				unsigned char b2 = (rstr[(int)input[i + 1]] << 4 & 0xf0) +
-						(rstr[(int)input[i + 2]] >> 2 & 0x0f);
+				unsigned char b2 = (unsigned char)((rstr[(int)input[i + 1]] << 4 & 0xf0) +
+						(rstr[(int)input[i + 2]] >> 2 & 0x0f));
 				if (output)
 				{
 					output[j] = b2;
@@ -228,8 +228,8 @@ void Base64::decode(const std::string& input, unsigned char *output, size_t& sz)
 			}
 			if (input[i + 3] != '=')
 			{
-				unsigned char b3 = (rstr[(int)input[i + 2]] << 6 & 0xc0) +
-						rstr[(int)input[i + 3]];
+				unsigned char b3 = (unsigned char)((rstr[(int)input[i + 2]] << 6 & 0xc0) +
+						rstr[(int)input[i + 3]]);
 				if (output)
 				{
 					output[j] = b3;

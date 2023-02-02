@@ -23,7 +23,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef _SOCKETHANDLER_H
 #define _SOCKETHANDLER_H
 
-//#include <vector>
 #include <map>
 #include <string>
 
@@ -73,7 +72,7 @@ private:
 	SocketHandler(const SocketHandler& ) {}
 	SocketHandler& operator=(const SocketHandler& ) { return *this; }
 	StdLog *m_stdlog;
-	int m_maxsock;
+	SOCKET m_maxsock;
 	std::string m_host; // local
 	ipaddr_t m_ip; // local
 	std::string m_addr; // local

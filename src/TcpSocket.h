@@ -51,8 +51,8 @@ public:
 	TcpSocket(SocketHandler& ,size_t isize,size_t osize);
 	~TcpSocket();
 
-	bool Open4(ipaddr_t,port_t);
-	bool Open4(const std::string &host,port_t port);
+	bool Open(ipaddr_t,port_t);
+	bool Open(const std::string &host,port_t port);
 	bool Open6(const std::string& host,port_t port);
 
 	void Send(const std::string &);
@@ -70,7 +70,7 @@ public:
 	unsigned long GetBytesSent() { return obuf.ByteCounter(); }
 
 protected:
-	TcpSocket(const TcpSocket& s) : Socket(s),ibuf(*this,0),obuf(*this,0) {}
+	TcpSocket(const TcpSocket& s);
 	void OnRead();
 	void OnWrite();
 	//

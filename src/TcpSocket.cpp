@@ -41,20 +41,33 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #endif
 
 
+// thanks, q
+#ifdef WIN32
+#pragma warning(disable:4355)
+#endif
 TcpSocket::TcpSocket(SocketHandler& h) : Socket(h)
 ,ibuf(*this, 10240)
 ,obuf(*this, 32768)
 ,m_line("")
 {
 }
+#ifdef WIN32
+#pragma warning(default:4355)
+#endif
 
 
+#ifdef WIN32
+#pragma warning(disable:4355)
+#endif
 TcpSocket::TcpSocket(SocketHandler& h,size_t isize,size_t osize) : Socket(h)
 ,ibuf(*this, isize)
 ,obuf(*this, osize)
 ,m_line("")
 {
 }
+#ifdef WIN32
+#pragma warning(default:4355)
+#endif
 
 
 TcpSocket::~TcpSocket()
@@ -62,7 +75,7 @@ TcpSocket::~TcpSocket()
 }
 
 
-bool TcpSocket::Open4(ipaddr_t ip,port_t port)
+bool TcpSocket::Open(ipaddr_t ip,port_t port)
 {
 	SOCKET s = CreateSocket4(SOCK_STREAM, "tcp");
 	if (s == INVALID_SOCKET)
@@ -112,7 +125,7 @@ bool TcpSocket::Open4(ipaddr_t ip,port_t port)
 }
 
 
-bool TcpSocket::Open4(const std::string &host,port_t port)
+bool TcpSocket::Open(const std::string &host,port_t port)
 {
 	SOCKET s = CreateSocket4(SOCK_STREAM, "tcp");
 	if (s == INVALID_SOCKET)
@@ -421,5 +434,19 @@ void TcpSocket::ReadLine()
 		}
 	}
 }
+
+
+#ifdef WIN32
+#pragma warning(disable:4355)
+#endif
+TcpSocket::TcpSocket(const TcpSocket& s) 
+:Socket(s)
+,ibuf(*this,0)
+,obuf(*this,0) 
+{
+}
+#ifdef WIN32
+#pragma warning(default:4355)
+#endif
 
 
