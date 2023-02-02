@@ -283,18 +283,18 @@ static	char hex[] = "0123456789ABCDEF";
 	std::string dst;
 	for (size_t i = 0; i < src.size(); ++i)
 	{
-		if (isalnum(src[i]))
+		unsigned char c = static_cast<unsigned char>(src[i]);
+		if (isalnum(c))
 		{
-			dst += src[i];
+			dst += c;
 		}
 		else
-		if (src[i] == ' ')
+		if (c == ' ')
 		{
 			dst += '+';
 		}
 		else
 		{
-			unsigned char c = static_cast<unsigned char>(src[i]);
 			dst += '%';
 			dst += hex[c / 16];
 			dst += hex[c % 16];

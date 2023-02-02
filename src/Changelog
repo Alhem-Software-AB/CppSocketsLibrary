@@ -1,5 +1,14 @@
 diff for next release always available @ http://www.alhem.net/Sockets/latest_diff.html
 
+2.3.9.9
+--------
+Make sure HttpGetSocket exits normally even when fetched resource has
+zero length. Add optional connect parameter to HttpGetSocket
+constructor, previous version always tried to establish a connection.
+Made some methods in HTTPSocket protected, as those are only used
+internally in derived classes.
+Added some #include's to make library compile on never compilers.
+
 2.3.9.8
 --------
 Fix multiple include file problems on macosx, win32, and gcc 4.7.

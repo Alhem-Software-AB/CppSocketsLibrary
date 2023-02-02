@@ -31,5 +31,5 @@ LDFLAGSSO =	-shared \
 
 .cpp.o:
 		@echo [$(CXX)] Compiling $<
-		$(CXX) $(CFLAGS) -o $@ -c $<
+		@$(CXX) $(CFLAGS) -o $@ -c $<
 

@@ -107,10 +107,12 @@ protected:
 	HttpClientSocket(const HttpClientSocket& s) : HTTPSocket(s) {} // copy constructor
 	HttpClientSocket& operator=(const HttpClientSocket& ) { return *this; } // assignment operator
 private:
+	void EndConnection();
 	std::string m_filename; ///< Filename to write response to
 	unsigned char *m_data_ptr; ///< Ptr to buffer where to store response
 	size_t m_data_size; ///< Max size of data buffer
 	size_t m_content_length; ///< Content-length header received from remote
+	bool m_content_length_is_set;
 	std::string m_content; ///< Received http headers
 	bool m_data_ptr_set; ///< Buffer set from outside, do not delete
 	IFile *m_fil; ///< Output file

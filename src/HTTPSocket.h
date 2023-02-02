@@ -70,29 +70,26 @@ public:
 	virtual void OnDataComplete() {}
 
 	/** Get http method from incoming request, ie GET/POST/PUT etc */
-	const std::string& GetMethod();
-	/** Set http method to be used in request. */
-	void SetMethod(const std::string& x);
+	const std::string& GetMethod() const;
+
+public:
 	/** Get url from request. */
-	const std::string& GetUrl();
-	/** Set url to be used in outgoing request. */
-	void SetUrl(const std::string& x);
+	const std::string& GetUrl() const;
 	/** Get part of url before '?' character. */
-	const std::string& GetUri();
-	/** Now why would I need this when there is a SetUrl method? */
-	void SetUri(const std::string& x);
+	const std::string& GetUri() const;
 	/** Get part of url after '?' character. */
-	const std::string& GetQueryString();
+	const std::string& GetQueryString() const;
 	/** Get http version from incoming request/response. */
-	const std::string& GetHttpVersion();
+	const std::string& GetHttpVersion() const;
 	/** Get http status from incoming response. */
-	const std::string& GetStatus();
+	const std::string& GetStatus() const;
 	/** Get http statustext from incoming response. */
-	const std::string& GetStatusText();
+	const std::string& GetStatusText() const;
 	/** Incoming header has been identified as a request (method url http_version\r\n). */
-	bool IsRequest();
+	bool IsRequest() const;
 	/** Incoming header has been identified as a response (http_version status status_text\r\n). */
-	bool IsResponse();
+	bool IsResponse() const;
+
 	/** Set http version to be used in outgoing request/response. */
 	void SetHttpVersion(const std::string& x);
 	/** Set http status for outgoing response. */
@@ -106,7 +103,7 @@ public:
 	/** Add http header. */
 	void AppendResponseHeader(const std::string& x,const std::string& y);
 	/** See if http header 'name' has been set. */
-	bool ResponseHeaderIsSet(const std::string& name);
+	bool ResponseHeaderIsSet(const std::string& name) const;
 	/** Send response prepared with calls to methods SetHttpVersion, SetStatus, SetStatusText,
 		and AddResponseHeader. */
 	void SendResponse();
@@ -121,7 +118,7 @@ public:
 	void url_this(const std::string& url_in,std::string& protocol,std::string& host,port_t& port,std::string& url,std::string& file);
 
 	/** Transfer coding 'chunked' */
-	bool IsChunked() { return m_b_chunked; }
+	bool IsChunked() const { return m_b_chunked; }
 
 protected:
 	HTTPSocket(const HTTPSocket& s) : TcpSocket(s) {}
@@ -129,6 +126,13 @@ protected:
 	virtual void Reset();
 
 	void SetMaxHeaderCount(int x) { m_max_header_count = x; }
+
+	/** Set http method to be used in request. */
+	void SetMethod(const std::string& x);
+	/** Set url to be used in outgoing request. */
+	void SetUrl(const std::string& x);
+	/** Now why would I need this when there is a SetUrl method? */
+	void SetUri(const std::string& x);
 
 private:
 	HTTPSocket& operator=(const HTTPSocket& ) { return *this; }

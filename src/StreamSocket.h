@@ -115,7 +115,7 @@ public:
 	virtual int Protocol() = 0;
 
 protected:
-	StreamSocket(const StreamSocket& ) {} // copy constructor
+	StreamSocket(const StreamSocket& src) : Socket(src) {} // copy constructor
 
 private:
 	StreamSocket& operator=(const StreamSocket& ) { return *this; } // assignment operator

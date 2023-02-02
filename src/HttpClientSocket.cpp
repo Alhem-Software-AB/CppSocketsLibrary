@@ -49,6 +49,7 @@ HttpClientSocket::HttpClientSocket(ISocketHandler& h)
 ,m_data_ptr(NULL)
 ,m_data_size(0)
 ,m_content_length(0)
+,m_content_length_is_set(false)
 ,m_data_ptr_set(false)
 ,m_fil(NULL)
 ,m_content_ptr(0)
@@ -63,6 +64,7 @@ HttpClientSocket::HttpClientSocket(ISocketHandler& h,const std::string& url_in)
 ,m_data_ptr(NULL)
 ,m_data_size(0)
 ,m_content_length(0)
+,m_content_length_is_set(false)
 ,m_data_ptr_set(false)
 ,m_fil(NULL)
 ,m_content_ptr(0)
@@ -80,6 +82,7 @@ HttpClientSocket::HttpClientSocket(ISocketHandler& h,const std::string& host, po
 ,m_data_ptr(NULL)
 ,m_data_size(0)
 ,m_content_length(0)
+,m_content_length_is_set(false)
 ,m_data_ptr_set(false)
 ,m_fil(NULL)
 ,m_content_ptr(0)
@@ -123,6 +126,7 @@ void HttpClientSocket::OnHeader(const std::string& key,const std::string& value)
 	if (!strcasecmp(key.c_str(), "content-length"))
 	{
 		m_content_length = atoi(value.c_str());
+		m_content_length_is_set = true;
 	}
 	else
 	if (!strcasecmp(key.c_str(), "content-type"))
@@ -143,11 +147,33 @@ void HttpClientSocket::OnHeaderComplete()
 			m_fil = NULL;
 		}
 	}
-	else
-	if (!m_data_ptr && m_content_length)
+	if (!m_data_ptr && m_content_length > 0)
 	{
 		m_data_ptr = new unsigned char[m_content_length];
 		m_data_size = m_content_length;
+	}
+	// make sure we finish in a good way even when response
+	// has content-length: 0
+	if (m_content_length_is_set && m_content_length == 0)
+	{
+		EndConnection();
+	}
+}
+
+
+void HttpClientSocket::EndConnection()
+{
+	if (m_fil)
+	{
+		m_fil -> fclose();
+		delete m_fil;
+		m_fil = NULL;
+	}
+	m_b_complete = true;
+	OnContent();
+	if (m_b_close_when_complete)
+	{
+		SetCloseAndDelete();
 	}
 }
 
@@ -158,33 +184,21 @@ void HttpClientSocket::OnData(const char *buf,size_t len)
 	{
 		m_fil -> fwrite(buf, 1, len);
 	}
-	else
 	if (m_data_ptr)
 	{
-		if (m_content_ptr + len > m_data_size)
+		size_t left = m_data_size - m_content_ptr;
+		size_t sz = len < left ? len : left;
+		if (sz > 0)
+			memcpy(m_data_ptr + m_content_ptr, buf, sz);
+		m_content_ptr += sz;
+		if (len > left)
 		{
 			Handler().LogError(this, "OnData", -1, "content buffer overflow", LOG_LEVEL_ERROR);
 		}
-		else
-		{
-			memcpy(m_data_ptr + m_content_ptr, buf, len);
-		}
 	}
-	m_content_ptr += len;
 	if (m_content_ptr == m_content_length && m_content_length)
 	{
-		if (m_fil)
-		{
-			m_fil -> fclose();
-			delete m_fil;
-			m_fil = NULL;
-		}
-		m_b_complete = true;
-		OnContent();
-		if (m_b_close_when_complete)
-		{
-			SetCloseAndDelete();
-		}
+		EndConnection();
 	}
 }
 

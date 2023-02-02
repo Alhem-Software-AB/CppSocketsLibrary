@@ -353,7 +353,7 @@ void HTTPSocket::Reset()
 }
 
 
-const std::string& HTTPSocket::GetMethod()
+const std::string& HTTPSocket::GetMethod() const
 {
 	return m_method;
 }
@@ -365,7 +365,7 @@ void HTTPSocket::SetMethod(const std::string& x)
 }
 
 
-const std::string& HTTPSocket::GetUrl()
+const std::string& HTTPSocket::GetUrl() const
 {
 	return m_url;
 }
@@ -377,43 +377,43 @@ void HTTPSocket::SetUrl(const std::string& x)
 }
 
 
-const std::string& HTTPSocket::GetUri()
+const std::string& HTTPSocket::GetUri() const
 {
 	return m_uri;
 }
 
 
-const std::string& HTTPSocket::GetQueryString()
+const std::string& HTTPSocket::GetQueryString() const
 {
 	return m_query_string;
 }
 
 
-const std::string& HTTPSocket::GetHttpVersion()
+const std::string& HTTPSocket::GetHttpVersion() const
 {
 	return m_http_version;
 }
 
 
-const std::string& HTTPSocket::GetStatus()
+const std::string& HTTPSocket::GetStatus() const
 {
 	return m_status;
 }
 
 
-const std::string& HTTPSocket::GetStatusText()
+const std::string& HTTPSocket::GetStatusText() const
 {
 	return m_status_text;
 }
 
 
-bool HTTPSocket::IsRequest()
+bool HTTPSocket::IsRequest() const
 {
 	return m_request;
 }
 
 
-bool HTTPSocket::IsResponse()
+bool HTTPSocket::IsResponse() const
 {
 	return m_response;
 }
@@ -504,17 +504,17 @@ void HTTPSocket::url_this(const std::string& url_in,std::string& protocol,std::s
 } // url_this
 
 
-bool HTTPSocket::ResponseHeaderIsSet(const std::string& name)
+bool HTTPSocket::ResponseHeaderIsSet(const std::string& name) const
 {
-	string_m::iterator it = m_response_header.find( name );
+	string_m::const_iterator it = m_response_header.find( name );
 	if (it != m_response_header.end())
 	{
 		return true;
 	}
-	std::list<std::pair<std::string, std::string> >::iterator it2;
+	std::list<std::pair<std::string, std::string> >::const_iterator it2;
 	for (it2 = m_response_header_append.begin(); it2 != m_response_header_append.end(); ++it2)
 	{
-		std::pair<std::string, std::string>& ref = *it2;
+		const std::pair<std::string, std::string>& ref = *it2;
 		if (!strcasecmp(ref.first.c_str(), name.c_str()) )
 		{
 			return true;

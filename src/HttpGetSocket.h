@@ -46,9 +46,12 @@ class HttpGetSocket : public HttpClientSocket
 {
 public:
 	HttpGetSocket(ISocketHandler&);
-	HttpGetSocket(ISocketHandler&,const std::string& url,const std::string& to_file = "");
-	HttpGetSocket(ISocketHandler&,const std::string& host,port_t port,const std::string& url,const std::string& to_file = "");
+	HttpGetSocket(ISocketHandler&,const std::string& url,const std::string& to_file = "", bool connect = true);
+	HttpGetSocket(ISocketHandler&,const std::string& host,port_t port,const std::string& url,const std::string& to_file = "", bool connect = true);
 	~HttpGetSocket();
+
+	void DoConnect();
+	void DoConnect(const std::string& host, unsigned short port);
 
 	void OnConnect();
 

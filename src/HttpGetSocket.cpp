@@ -50,13 +50,26 @@ HttpGetSocket::HttpGetSocket(ISocketHandler& h) : HttpClientSocket(h)
 }
 
 
-HttpGetSocket::HttpGetSocket(ISocketHandler& h,const std::string& url_in,const std::string& to_file) : HttpClientSocket(h, url_in)
+HttpGetSocket::HttpGetSocket(ISocketHandler& h,const std::string& url_in,const std::string& to_file, bool connect) : HttpClientSocket(h, url_in)
 {
 	if (to_file.size())
 	{
 		SetFilename(to_file);
 	}
-	if (!Open(GetUrlHost(),GetUrlPort()))
+	if (connect)
+		DoConnect();
+}
+
+
+void HttpGetSocket::DoConnect()
+{
+	DoConnect(GetUrlHost(), GetUrlPort());
+}
+
+
+void HttpGetSocket::DoConnect(const std::string& host, unsigned short port)
+{
+	if (!Open(host, port))
 	{
 		if (!Connecting())
 		{
@@ -67,21 +80,15 @@ HttpGetSocket::HttpGetSocket(ISocketHandler& h,const std::string& url_in,const s
 }
 
 
-HttpGetSocket::HttpGetSocket(ISocketHandler& h,const std::string& host,port_t port,const std::string& url,const std::string& to_file) : HttpClientSocket(h, host, port, url)
+HttpGetSocket::HttpGetSocket(ISocketHandler& h,const std::string& host,port_t port,const std::string& url,const std::string& to_file, bool connect) : HttpClientSocket(h, host, port, url)
 {
 	SetUrl(url);
 	if (to_file.size())
 	{
 		SetFilename(to_file);
 	}
-	if (!Open(host, port))
-	{
-		if (!Connecting())
-		{
-			Handler().LogError(this, "HttpGetSocket", -1, "connect() failed miserably", LOG_LEVEL_FATAL);
-			SetCloseAndDelete();
-		}
-	}
+	if (connect)
+		DoConnect(host, port);
 }
 
 

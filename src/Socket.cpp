@@ -899,7 +899,7 @@ void Socket::SetDetached(bool x)
 }
 
 
-const bool Socket::IsDetached() const
+bool Socket::IsDetached() const
 {
 	return m_detached;
 }
