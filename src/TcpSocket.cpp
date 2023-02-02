@@ -3,7 +3,7 @@
  **	\author grymse@alhem.net
 **/
 /*
-Copyright (C) 2004-2009  Anders Hedstrom
+Copyright (C) 2004-2010  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL, with
 the additional exemption that compiling, linking, and/or using OpenSSL 
@@ -595,7 +595,7 @@ void TcpSocket::OnRead( char *buf, size_t n )
 						}
 						else
 						{
-							Handler().LogError(this, "TcpSocket::OnRead", m_line_ptr + sz, "maximum tcp_line_size exceeded, connection closed", LOG_LEVEL_FATAL);
+							Handler().LogError(this, "TcpSocket::OnRead", (int)(m_line_ptr + sz), "maximum tcp_line_size exceeded, connection closed", LOG_LEVEL_FATAL);
 							SetCloseAndDelete();
 						}
 					}
@@ -637,7 +637,7 @@ void TcpSocket::OnRead( char *buf, size_t n )
 				}
 				else
 				{
-					Handler().LogError(this, "TcpSocket::OnRead", m_line_ptr + sz, "maximum tcp_line_size exceeded, connection closed", LOG_LEVEL_FATAL);
+					Handler().LogError(this, "TcpSocket::OnRead", (int)(m_line_ptr + sz), "maximum tcp_line_size exceeded, connection closed", LOG_LEVEL_FATAL);
 					SetCloseAndDelete();
 				}
 			}
@@ -728,7 +728,7 @@ void TcpSocket::SendFromOutputBuffer()
 	{
 		if (m_obuf.empty())
 		{
-			Handler().LogError(this, "OnWrite", m_output_length, "Empty output buffer in OnWrite", LOG_LEVEL_ERROR);
+			Handler().LogError(this, "OnWrite", (int)m_output_length, "Empty output buffer in OnWrite", LOG_LEVEL_ERROR);
 			break;
 		}
 		output_l::iterator it = m_obuf.begin();
@@ -914,12 +914,14 @@ void TcpSocket::SendBuf(const char *buf,size_t len,int)
 		Buffer(buf, len);
 		return;
 	}
+#ifdef HAVE_OPENSSL
 	if (IsSSL())
 	{
 		Buffer(buf, len);
 		SendFromOutputBuffer();
 		return;
 	}
+#endif
 	int n = TryWrite(buf, len);
 	if (n >= 0 && n < (int)len)
 	{
@@ -993,7 +995,11 @@ void TcpSocket::OnSocks4Connect()
 			/// \todo warn
 		}
 	}
+#ifdef _WIN32
+	strcpy_s(request + 8, sizeof(request) - 8, GetSocks4Userid().c_str());
+#else
 	strcpy(request + 8, GetSocks4Userid().c_str());
+#endif
 	size_t length = GetSocks4Userid().size() + 8 + 1;
 	SendBuf(request, length);
 	m_socks4_state = 0;
@@ -1082,9 +1088,9 @@ void TcpSocket::Sendf(const char *format, ...)
 	va_start(ap, format);
 	char slask[5000]; // vsprintf / vsnprintf temporary
 #ifdef _WIN32
-	vsprintf(slask, format, ap);
+	vsprintf_s(slask, sizeof(slask), format, ap);
 #else
-	vsnprintf(slask, 5000, format, ap);
+	vsnprintf(slask, sizeof(slask), format, ap);
 #endif
 	va_end(ap);
 	Send( slask );
@@ -1375,7 +1381,11 @@ int TcpSocket::SSL_password_cb(char *buf,int num,int rwflag,void *userdata)
 	{
 		return 0;
 	}
+#ifdef _WIN32
+	strcpy_s(buf, num, pw.c_str());
+#else
 	strcpy(buf,pw.c_str());
+#endif
 	return (int)pw.size();
 }
 #endif // HAVE_OPENSSL
@@ -1730,6 +1740,8 @@ void TcpSocket::OnConnectTimeout()
 			SetCloseAndDelete( true );
 			/// \todo state reason why connect failed
 			OnConnectFailed();
+			//
+			SetConnecting(false);
 		}
 	}
 	else
@@ -1737,9 +1749,9 @@ void TcpSocket::OnConnectTimeout()
 		SetCloseAndDelete(true);
 		/// \todo state reason why connect failed
 		OnConnectFailed();
+		//
+		SetConnecting(false);
 	}
-	//
-	SetConnecting(false);
 }
 
 

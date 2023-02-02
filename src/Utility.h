@@ -3,7 +3,7 @@
  **	\author grymse@alhem.net
 **/
 /*
-Copyright (C) 2004-2009  Anders Hedstrom
+Copyright (C) 2004-2010  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL, with
 the additional exemption that compiling, linking, and/or using OpenSSL 
@@ -182,6 +182,8 @@ public:
 	static const std::string& GetLocalAddress6();
 #endif
 #endif
+	/** Get environment variable */
+	static const std::string GetEnv(const std::string& name);
 	/** Set environment variable.
 		\param var Name of variable to set
 		\param value Value */
@@ -214,7 +216,7 @@ public:
 	static const std::string ToUtf8(const std::string&);
 
 	/** File system stuff */
-	static const Path GetCurrentDirectory();
+	static const Path CurrentDirectory();
 	static bool ChangeDirectory(const Path& to_dir);
 
 private:

@@ -4,7 +4,7 @@
  **/
 
 /*
-Copyright (C) 1999-2009  Anders Hedstrom
+Copyright (C) 1999-2010  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL, with
 the additional exemption that compiling, linking, and/or using OpenSSL 
@@ -88,7 +88,7 @@ HttpdForm::HttpdForm(IFile *infil, const std::string& content_type, size_t conte
 			std::string current_filename;
 			char *slask = new char[TMPSIZE];
 			infil -> fgets(slask, TMPSIZE);
-			cl -= strlen(slask);
+			cl -= (int)strlen(slask);
 			while (cl >= 0 && !infil -> eof())
 			{
 				while (strlen(slask) && (slask[strlen(slask) - 1] == 13 || slask[strlen(slask) - 1] == 10))
@@ -109,7 +109,7 @@ HttpdForm::HttpdForm(IFile *infil, const std::string& content_type, size_t conte
 				{
 					// Get headers until empty line
 					infil -> fgets(slask, TMPSIZE);
-					cl -= strlen(slask);
+					cl -= (int)strlen(slask);
 					while (strlen(slask) && (slask[strlen(slask) - 1] == 13 || slask[strlen(slask) - 1] == 10))
 					{
 						slask[strlen(slask) - 1] = 0;
@@ -177,7 +177,7 @@ HttpdForm::HttpdForm(IFile *infil, const std::string& content_type, size_t conte
 						}
 						// get next header value
 						infil -> fgets(slask, TMPSIZE);
-						cl -= strlen(slask);
+						cl -= (int)strlen(slask);
 						while (strlen(slask) && (slask[strlen(slask) - 1] == 13 || slask[strlen(slask) - 1] == 10))
 						{
 							slask[strlen(slask) - 1] = 0;
@@ -188,12 +188,12 @@ HttpdForm::HttpdForm(IFile *infil, const std::string& content_type, size_t conte
 					{
 						std::string val;
 						infil -> fgets(slask, TMPSIZE);
-						cl -= strlen(slask);
+						cl -= (int)strlen(slask);
 						while (cl >= 0 && !infil -> eof() && strncmp(slask,m_strBoundary.c_str(),m_strBoundary.size() ))
 						{
 							val += slask;
 							infil -> fgets(slask, TMPSIZE);
-							cl -= strlen(slask);
+							cl -= (int)strlen(slask);
 						}
 						// remove trailing cr/linefeed
 						while (!val.empty() && (val[val.size() - 1] == 13 || val[val.size() - 1] == 10))
@@ -220,17 +220,24 @@ HttpdForm::HttpdForm(IFile *infil, const std::string& content_type, size_t conte
 							::GetTempPathA(2000, tmp_path);
 							if (tmp_path[strlen(tmp_path) - 1] != '\\')
 							{
-								strcat(tmp_path, "\\");
+								strcat_s(tmp_path, sizeof(tmp_path), "\\");
 							}
-							sprintf(fn,"%s%s",tmp_path,current_filename.c_str());
+							snprintf(fn,sizeof(fn),"%s%s",tmp_path,current_filename.c_str());
 						}
 #else
-						sprintf(fn,"/tmp/%s",current_filename.c_str());
+						snprintf(fn,sizeof(fn),"/tmp/%s",current_filename.c_str());
 #endif
 						if (m_file_upload && !m_upload_stream)
 							m_upload_stream = &m_file_upload -> IFileUploadBegin(current_name, current_filename, content_type);
 						else
+						{
+#ifdef _WIN32
+							if (fopen_s(&fil, fn, "wb"))
+								fil = NULL;
+#else
 							fil = fopen(fn, "wb");
+#endif
+						}
 						if (fil || m_upload_stream)
 						{
 							infil -> fread(&c,1,1);
@@ -283,10 +290,14 @@ HttpdForm::HttpdForm(IFile *infil, const std::string& content_type, size_t conte
 							cgi = new CGI(current_name,fn,fn);
 							m_cgi.push_back(cgi);
 						
+#ifdef _WIN32
+							strcpy_s(slask, TMPSIZE, m_strBoundary.c_str());
+#else
 							strcpy(slask, m_strBoundary.c_str());
+#endif
 							size_t l = strlen(slask);
-							infil -> fgets(slask + l, TMPSIZE); // next line
-							cl -= strlen(slask + l);
+							infil -> fgets(slask + l, TMPSIZE - (int)l); // next line
+							cl -= (int)strlen(slask + l);
 						}
 						else
 						{

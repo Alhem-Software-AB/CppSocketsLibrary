@@ -1,7 +1,7 @@
 /** \file HttpdCookies.cpp
 */
 /*
-Copyright (C) 2003-2009  Anders Hedstrom
+Copyright (C) 2003-2010  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL, with
 the additional exemption that compiling, linking, and/or using OpenSSL 
@@ -145,12 +145,13 @@ size_t HttpdCookies::getlength(const std::string& name) const
 
 void HttpdCookies::setcookie(HTTPSocket *sock, const std::string& domain, const std::string& path, const std::string& name, const std::string& value)
 {
-	char *str = new char[name.size() + value.size() + domain.size() + path.size() + 100];
+	size_t sz = name.size() + value.size() + domain.size() + path.size() + 100;
+	char *str = new char[sz];
 
 	// set-cookie response
 	if (domain.size())
 	{
-		sprintf(str, "%s=%s; domain=%s; path=%s; expires=%s",
+		snprintf(str, sz, "%s=%s; domain=%s; path=%s; expires=%s",
 		 name.c_str(), value.c_str(),
 		 domain.c_str(),
 		 path.c_str(),
@@ -158,7 +159,7 @@ void HttpdCookies::setcookie(HTTPSocket *sock, const std::string& domain, const 
 	}
 	else
 	{
-		sprintf(str, "%s=%s; path=%s; expires=%s",
+		snprintf(str, sz, "%s=%s; path=%s; expires=%s",
 		 name.c_str(), value.c_str(),
 		 path.c_str(),
 		 expiredatetime().c_str());
@@ -171,13 +172,14 @@ void HttpdCookies::setcookie(HTTPSocket *sock, const std::string& domain, const 
 
 void HttpdCookies::setcookie(HTTPSocket *sock, const std::string& domain, const std::string& path, const std::string& name, long value)
 {
-	char *str = new char[name.size() + domain.size() + path.size() + 100];
+	size_t sz = name.size() + domain.size() + path.size() + 100;
+	char *str = new char[sz];
 	char dt[80];
 
 	// set-cookie response
 	if (domain.size())
 	{
-		sprintf(str, "%s=%ld; domain=%s; path=%s; expires=%s",
+		snprintf(str, sz, "%s=%ld; domain=%s; path=%s; expires=%s",
 		 name.c_str(), value,
 		 domain.c_str(),
 		 path.c_str(),
@@ -185,7 +187,7 @@ void HttpdCookies::setcookie(HTTPSocket *sock, const std::string& domain, const 
 	}
 	else
 	{
-		sprintf(str, "%s=%ld; path=%s; expires=%s",
+		snprintf(str, sz, "%s=%ld; path=%s; expires=%s",
 		 name.c_str(), value,
 		 path.c_str(),
 		 expiredatetime().c_str());
@@ -193,19 +195,20 @@ void HttpdCookies::setcookie(HTTPSocket *sock, const std::string& domain, const 
 	sock -> AddResponseHeader("Set-cookie", str);
 	delete[] str;
 
-	sprintf(dt, "%ld", value);
+	snprintf(dt, sizeof(dt), "%ld", value);
 	replacevalue(name, dt);
 }
 
 void HttpdCookies::setcookie(HTTPSocket *sock, const std::string& domain, const std::string& path, const std::string& name, int value)
 {
-	char *str = new char[name.size() + domain.size() + path.size() + 100];
+	size_t sz = name.size() + domain.size() + path.size() + 100;
+	char *str = new char[sz];
 	char dt[80];
 
 	// set-cookie response
 	if (domain.size())
 	{
-		sprintf(str, "%s=%d; domain=%s; path=%s; expires=%s",
+		snprintf(str, sz, "%s=%d; domain=%s; path=%s; expires=%s",
 		 name.c_str(), value,
 		 domain.c_str(),
 		 path.c_str(),
@@ -213,7 +216,7 @@ void HttpdCookies::setcookie(HTTPSocket *sock, const std::string& domain, const 
 	}
 	else
 	{
-		sprintf(str, "%s=%d; path=%s; expires=%s",
+		snprintf(str, sz, "%s=%d; path=%s; expires=%s",
 		 name.c_str(), value,
 		 path.c_str(),
 		 expiredatetime().c_str());
@@ -221,7 +224,7 @@ void HttpdCookies::setcookie(HTTPSocket *sock, const std::string& domain, const 
 	sock -> AddResponseHeader("Set-cookie", str);
 	delete[] str;
 
-	sprintf(dt, "%d", value);
+	snprintf(dt, sizeof(dt), "%d", value);
 	replacevalue(name, dt);
 }
 
@@ -231,7 +234,7 @@ const std::string& HttpdCookies::expiredatetime() const
 	time_t t = time(NULL);
 	struct tm tp;
 #ifdef _WIN32
-	memcpy(&tp, gmtime(&t), sizeof(tp));
+	gmtime_s(&tp, &t);
 #else
 	gmtime_r(&t, &tp);
 #endif
@@ -241,7 +244,7 @@ const std::string& HttpdCookies::expiredatetime() const
 	 "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
 	char dt[100];
 
-	sprintf(dt, "%s, %02d-%s-%04d %02d:%02d:%02d GMT",
+	snprintf(dt, sizeof(dt), "%s, %02d-%s-%04d %02d:%02d:%02d GMT",
 	 days[tp.tm_wday],
 	 tp.tm_mday,
 	 months[tp.tm_mon],

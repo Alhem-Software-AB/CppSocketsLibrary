@@ -3,7 +3,7 @@
  **	\author grymse@alhem.net
 **/
 /*
-Copyright (C) 2004-2009  Anders Hedstrom
+Copyright (C) 2004-2010  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL, with
 the additional exemption that compiling, linking, and/or using OpenSSL 
@@ -109,8 +109,16 @@ public:
 		\param p ListenSocket class pointer (use GetPort to identify which one) */
 	bool OkToAccept(Socket *p);
 
-	/** Called by Socket when a socket changes state. */
-	void AddList(SOCKET s,list_t which_one,bool add);
+	/** Use with care, always lock with h.GetMutex() if multithreaded */
+	const std::map<SOCKET, Socket *>& AllSockets() { return m_sockets; }
+
+	size_t MaxTcpLineSize() { return TCP_LINE_SIZE; }
+
+	void SetCallOnConnect(bool = true);
+	void SetDetach(bool = true);
+	void SetTimeout(bool = true);
+	void SetRetry(bool = true);
+	void SetClose(bool = true);
 
 	// Connection pool
 #ifdef ENABLE_POOL
@@ -177,21 +185,6 @@ public:
 	bool Resolving(Socket *);
 #endif // ENABLE_RESOLVER
 
-#ifdef ENABLE_TRIGGERS
-	/** Fetch unique trigger id. */
-	int TriggerID(Socket *src);
-	/** Subscribe socket to trigger id. */
-	bool Subscribe(int id, Socket *dst);
-	/** Unsubscribe socket from trigger id. */
-	bool Unsubscribe(int id, Socket *dst);
-	/** Execute OnTrigger for subscribed sockets.
-		\param id Trigger ID
-		\param data Data passed from source to destination
-		\param erase Empty trigger id source and destination maps if 'true',
-			Leave them in place if 'false' - if a trigger should be called many times */
-	void Trigger(int id, Socket::TriggerData& data, bool erase = true);
-#endif // ENABLE_TRIGGERS
-
 #ifdef ENABLE_DETACH
 	/** Indicates that the handler runs under SocketThread. */
 	void SetSlave(bool x = true);
@@ -199,17 +192,9 @@ public:
 	bool IsSlave();
 #endif
 
-	/** Sanity check of those accursed lists. */
-	void CheckSanity();
-
-	/** Use with care, always lock with h.GetMutex() if multithreaded */
-	const std::map<SOCKET, Socket *>& AllSockets() { return m_sockets; }
-
-	size_t MaxTcpLineSize() { return TCP_LINE_SIZE; }
-
 protected:
 	socket_m m_sockets; ///< Active sockets map
-	socket_m m_add; ///< Sockets to be added to sockets map
+	std::list<Socket *> m_add; ///< Sockets to be added to sockets map
 	std::list<Socket *> m_delete; ///< Sockets to be deleted (failed when Add)
 
 protected:
@@ -220,25 +205,32 @@ protected:
 	bool m_b_use_mutex; ///< Mutex correctly initialized
 
 private:
-	void CheckList(socket_v&,const std::string&); ///< Used by CheckSanity
+	/** Schedule socket for deletion */
+	void DeleteSocket(Socket *);
+	void RebuildFdset();
+	void AddIncoming();
+	void CheckErasedSockets();
+	void CheckCallOnConnect();
+	void CheckDetach();
+	void CheckTimeout(time_t);
+	void CheckRetry();
+	void CheckClose();
+
+	//
 	SOCKET m_maxsock; ///< Highest file descriptor + 1 in active sockets list
 	fd_set m_rfds; ///< file descriptor set monitored for read events
 	fd_set m_wfds; ///< file descriptor set monitored for write events
 	fd_set m_efds; ///< file descriptor set monitored for exceptions
-	int m_preverror; ///< debug select() error
-	int m_errcnt; ///< debug select() error
 	time_t m_tlast; ///< timeout control
 
 	// state lists
-	socket_v m_fds; ///< Active file descriptor list
-	socket_v m_fds_erase; ///< File descriptors that are to be erased from m_sockets
-	socket_v m_fds_callonconnect; ///< checklist CallOnConnect
-#ifdef ENABLE_DETACH
-	socket_v m_fds_detach; ///< checklist Detach
-#endif
-	socket_v m_fds_timeout; ///< checklist timeout
-	socket_v m_fds_retry; ///< checklist retry client connect
-	socket_v m_fds_close; ///< checklist close and delete
+	std::list<socketuid_t> m_fds_erase; ///< File descriptors that are to be erased from m_sockets
+
+	bool m_b_check_callonconnect;
+	bool m_b_check_detach;
+	bool m_b_check_timeout;
+	bool m_b_check_retry;
+	bool m_b_check_close;
 
 #ifdef ENABLE_SOCKS4
 	ipaddr_t m_socks4_host; ///< Socks4 server host ip
@@ -254,11 +246,6 @@ private:
 #endif
 #ifdef ENABLE_POOL
 	bool m_b_enable_pool; ///< Connection pool enabled if true
-#endif
-#ifdef ENABLE_TRIGGERS
-	int m_next_trigger_id; ///< Unique trigger id counter
-	std::map<int, Socket *> m_trigger_src; ///< mapping trigger id to source socket
-	std::map<int, std::map<Socket *, bool> > m_trigger_dst; ///< mapping trigger id to destination sockets
 #endif
 #ifdef ENABLE_DETACH
 	bool m_slave; ///< Indicates that this is a ISocketHandler run in SocketThread

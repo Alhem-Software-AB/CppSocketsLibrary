@@ -1,7 +1,7 @@
 /** \file HttpdSocket.cpp
 */
 /*
-Copyright (C) 2001-2009  Anders Hedstrom (grymse@alhem.net)
+Copyright (C) 2001-2010  Anders Hedstrom (grymse@alhem.net)
 
 This library is made available under the terms of the GNU GPL, with
 the additional exemption that compiling, linking, and/or using OpenSSL 
@@ -237,7 +237,7 @@ std::string HttpdSocket::datetime2httpdate(const std::string& dt)
 			Handler().LogError(this, "datetime2httpdate", 0, "mktime() failed");
 		}
 
-		sprintf(s,"%s, %02d %s %d %02d:%02d:%02d GMT",
+		snprintf(s,sizeof(s),"%s, %02d %s %d %02d:%02d:%02d GMT",
 		 days[tp.tm_wday],
 		 tp.tm_mday,
 		 months[tp.tm_mon],
@@ -257,12 +257,12 @@ std::string HttpdSocket::GetDate()
 	time_t t = time(NULL);
 	struct tm tp;
 #ifdef _WIN32
-	memcpy(&tp, localtime(&t), sizeof(tp));
+	localtime_s(&tp, &t);
 #else
 	localtime_r(&t, &tp);
 #endif
 	char slask[40]; // yyyy-mm-dd hh:mm:ss
-	sprintf(slask,"%d-%02d-%02d %02d:%02d:%02d",
+	snprintf(slask,sizeof(slask),"%d-%02d-%02d %02d:%02d:%02d",
 		tp.tm_year + 1900,
 		tp.tm_mon + 1,
 		tp.tm_mday,

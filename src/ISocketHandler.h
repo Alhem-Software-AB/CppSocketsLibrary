@@ -3,7 +3,7 @@
  **	\author grymse@alhem.net
 **/
 /*
-Copyright (C) 2004-2009  Anders Hedstrom
+Copyright (C) 2004-2010  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL, with
 the additional exemption that compiling, linking, and/or using OpenSSL 
@@ -39,21 +39,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "socket_include.h"
 #include "Socket.h"
 #include "StdLog.h"
-#include "IBase.h"
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
 #endif
-
-typedef enum {
-	LIST_CALLONCONNECT = 0,
-#ifdef ENABLE_DETACH
-	LIST_DETACH,
-#endif
-	LIST_TIMEOUT,
-	LIST_RETRY,
-	LIST_CLOSE
-} list_t;
 
 class SocketAddress;
 class IMutex;
@@ -61,7 +50,7 @@ class IMutex;
 
 /** Socket container class, event generator. 
 	\ingroup basic */
-class ISocketHandler : public IBase
+class ISocketHandler
 {
 	friend class Socket;
 
@@ -87,6 +76,8 @@ public:
 #endif
 
 public:
+	virtual ~ISocketHandler() {}
+
 	/** Get mutex reference for threadsafe operations. */
 	virtual IMutex& GetMutex() const = 0;
 
@@ -130,14 +121,17 @@ public:
 		\param p ListenSocket class pointer (use GetPort to identify which one) */
 	virtual bool OkToAccept(Socket *p) = 0;
 
-	/** Called by Socket when a socket changes state. */
-	virtual void AddList(SOCKET s,list_t which_one,bool add) = 0;
-
 	/** Use with care, always lock with h.GetMutex() if multithreaded */
 	virtual const std::map<SOCKET, Socket *>& AllSockets() = 0;
 
 	/** Override to accept longer lines than TCP_LINE_SIZE */
 	virtual size_t MaxTcpLineSize() = 0;
+
+	virtual void SetCallOnConnect(bool = true) = 0;
+	virtual void SetDetach(bool = true) = 0;
+	virtual void SetTimeout(bool = true) = 0;
+	virtual void SetRetry(bool = true) = 0;
+	virtual void SetClose(bool = true) = 0;
 
 	// -------------------------------------------------------------------------
 	// Connection pool
@@ -209,21 +203,6 @@ public:
 	/** Returns true if socket waiting for a resolve event. */
 	virtual bool Resolving(Socket *) = 0;
 #endif // ENABLE_RESOLVER
-
-#ifdef ENABLE_TRIGGERS
-	/** Fetch unique trigger id. */
-	virtual int TriggerID(Socket *src) = 0;
-	/** Subscribe socket to trigger id. */
-	virtual bool Subscribe(int id, Socket *dst) = 0;
-	/** Unsubscribe socket from trigger id. */
-	virtual bool Unsubscribe(int id, Socket *dst) = 0;
-	/** Execute OnTrigger for subscribed sockets.
-		\param id Trigger ID
-		\param data Data passed from source to destination
-		\param erase Empty trigger id source and destination maps if 'true',
-			Leave them in place if 'false' - if a trigger should be called many times */
-	virtual void Trigger(int id, Socket::TriggerData& data, bool erase = true) = 0;
-#endif // ENABLE_TRIGGERS
 
 #ifdef ENABLE_DETACH
 	/** Indicates that the handler runs under SocketThread. */

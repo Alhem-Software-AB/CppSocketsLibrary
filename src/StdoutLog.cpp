@@ -3,7 +3,7 @@
  **	\author grymse@alhem.net
 **/
 /*
-Copyright (C) 2004-2009  Anders Hedstrom
+Copyright (C) 2004-2010  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL, with
 the additional exemption that compiling, linking, and/or using OpenSSL 
@@ -49,7 +49,7 @@ void StdoutLog::error(ISocketHandler *,Socket *sock,const std::string& call,int 
 	time_t t = time(NULL);
 	struct tm tp;
 #ifdef _WIN32
-	memcpy(&tp, localtime(&t), sizeof(tp));
+	localtime_s(&tp, &t);
 #else
 	localtime_r(&t, &tp);
 #endif

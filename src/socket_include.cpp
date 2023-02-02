@@ -3,7 +3,7 @@
  **	\author grymse@alhem.net
 **/
 /*
-Copyright (C) 2004-2009  Anders Hedstrom
+Copyright (C) 2004-2010  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL, with
 the additional exemption that compiling, linking, and/or using OpenSSL 
@@ -84,7 +84,11 @@ static	char tmp[100];
 	default:
 		break;
 	}
-	sprintf(tmp, "Winsock error code: %d", x);
+#ifdef _WIN32
+	sprintf_s(tmp, sizeof(tmp), "Winsock error code: %d", x);
+#else
+	snprintf(tmp, sizeof(tmp), "Winsock error code: %d", x);
+#endif
 	return tmp;
 }
 

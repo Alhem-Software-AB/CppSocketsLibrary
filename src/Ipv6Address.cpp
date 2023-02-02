@@ -4,7 +4,7 @@
  **	\author grymse@alhem.net
 **/
 /*
-Copyright (C) 2007-2009  Anders Hedstrom
+Copyright (C) 2007-2010  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL, with
 the additional exemption that compiling, linking, and/or using OpenSSL 
@@ -165,10 +165,16 @@ std::string Ipv6Address::Convert(struct in6_addr& a,bool mixed)
 		{
 			x = ntohs(addr16[i]);
 			if (*slask && (x || !ok_to_skip || prev))
+			{
+#ifdef _WIN32
+				strcat_s(slask,sizeof(slask),":");
+#else
 				strcat(slask,":");
+#endif
+			}
 			if (x || !ok_to_skip)
 			{
-				sprintf(slask + strlen(slask),"%x", x);
+				snprintf(slask + strlen(slask), sizeof(slask) - strlen(slask),"%x", x);
 				if (x && skipped)
 					ok_to_skip = false;
 			}
@@ -179,9 +185,9 @@ std::string Ipv6Address::Convert(struct in6_addr& a,bool mixed)
 			prev = x;
 		}
 		x = ntohs(addr16[6]);
-		sprintf(slask + strlen(slask),":%u.%u",x / 256,x & 255);
+		snprintf(slask + strlen(slask), sizeof(slask) - strlen(slask),":%u.%u",x / 256,x & 255);
 		x = ntohs(addr16[7]);
-		sprintf(slask + strlen(slask),".%u.%u",x / 256,x & 255);
+		snprintf(slask + strlen(slask), sizeof(slask) - strlen(slask),".%u.%u",x / 256,x & 255);
 	}
 	else
 	{

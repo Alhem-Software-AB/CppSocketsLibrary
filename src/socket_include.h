@@ -3,7 +3,7 @@
  **	\author grymse@alhem.net
 **/
 /*
-Copyright (C) 2004-2009  Anders Hedstrom
+Copyright (C) 2004-2010  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL, with
 the additional exemption that compiling, linking, and/or using OpenSSL 
@@ -183,6 +183,7 @@ namespace SOCKETS_NAMESPACE {
 #pragma comment(lib, "wsock32.lib")
 #endif
 #define strcasecmp _stricmp
+#define snprintf sprintf_s
 
 typedef unsigned long ipaddr_t;
 typedef unsigned short port_t;

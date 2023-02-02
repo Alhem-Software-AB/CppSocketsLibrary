@@ -4,7 +4,7 @@
  **	\author grymse@alhem.net
 **/
 /*
-Copyright (C) 2007-2009  Anders Hedstrom
+Copyright (C) 2007-2010  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL, with
 the additional exemption that compiling, linking, and/or using OpenSSL 
@@ -195,7 +195,11 @@ void HttpResponse::Writef( const char *format, ... )
 	va_list ap;
 	va_start(ap, format);
 	char tmp[10000];
-	vsprintf(tmp, format, ap);
+#ifdef _WIN32
+	vsprintf_s(tmp, sizeof(tmp), format, ap);
+#else
+	vsnprintf(tmp, sizeof(tmp), format, ap);
+#endif
 	va_end(ap);
 	m_file -> fwrite( tmp, 1, strlen(tmp) );
 }

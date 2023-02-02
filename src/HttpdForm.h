@@ -4,7 +4,7 @@
  **/
 
 /*
-Copyright (C) 1999-2009  Anders Hedstrom
+Copyright (C) 1999-2010  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL, with
 the additional exemption that compiling, linking, and/or using OpenSSL 
@@ -37,6 +37,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "sockets-config.h"
 #include <string>
 #include <list>
+#include <cstdio>
+#include <cstring>
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {

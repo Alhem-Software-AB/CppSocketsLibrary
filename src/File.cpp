@@ -3,7 +3,7 @@
  **	\author grymse@alhem.net
 **/
 /*
-Copyright (C) 2004-2009  Anders Hedstrom
+Copyright (C) 2004-2010  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL, with
 the additional exemption that compiling, linking, and/or using OpenSSL 
@@ -67,7 +67,12 @@ bool File::fopen(const std::string& path, const std::string& mode)
 {
 	m_path = path;
 	m_mode = mode;
+#ifdef _WIN32
+	if (fopen_s(&m_fil, path.c_str(), mode.c_str()))
+		m_fil = NULL;
+#else
 	m_fil = ::fopen(path.c_str(), mode.c_str());
+#endif
 
 	return m_fil ? true : false;
 }

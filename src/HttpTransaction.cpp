@@ -4,7 +4,7 @@
  **	\author grymse@alhem.net
 **/
 /*
-Copyright (C) 2007-2009  Anders Hedstrom
+Copyright (C) 2007-2010  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL, with
 the additional exemption that compiling, linking, and/or using OpenSSL 
@@ -183,6 +183,16 @@ void HttpTransaction::SetHost(const std::string& value)
 const std::string& HttpTransaction::Host() const
 {
 	return Header("host");
+}
+
+
+const std::string HttpTransaction::HostOnly() const
+{
+	std::string host = Header("host");
+	size_t pos = host.find(":");
+	if (pos != std::string::npos)
+		return host.substr(0, pos);
+	return host;
 }
 
 

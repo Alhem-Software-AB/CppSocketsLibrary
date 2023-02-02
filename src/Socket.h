@@ -3,7 +3,7 @@
  ** \author grymse@alhem.net
 **/
 /*
-Copyright (C) 2004-2009  Anders Hedstrom
+Copyright (C) 2004-2010  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL, with
 the additional exemption that compiling, linking, and/or using OpenSSL 
@@ -80,23 +80,6 @@ class Socket
 		Socket *m_socket;
 	};
 #endif // ENABLE_DETACH
-
-#ifdef ENABLE_TRIGGERS
-public:
-	/** Data pass class from source to destination. */
-	class TriggerData
-	{
-	public:
-		TriggerData() : m_src(NULL) {}
-		virtual ~TriggerData() {}
-
-		Socket *GetSource() const { return m_src; }
-		void SetSource(Socket *x) { m_src = x; }
-
-	private:
-		Socket *m_src;
-	};
-#endif // ENABLE_TRIGGERS
 
 	/** Socket mode flags. */
 /*
@@ -234,6 +217,8 @@ public:
 
 	/** Enable timeout control. 0=disable timeout check. */
 	void SetTimeout(time_t secs);
+
+	bool CheckTimeout();
 
 	/** Check timeout. \return true if time limit reached */
 	bool Timeout(time_t tnow);
@@ -483,6 +468,24 @@ public:
 	// TCP options in TcpSocket.h/TcpSocket.cpp
 
 
+	// LIST_CALLONCONNECT
+
+	/** Instruct socket to call OnConnect callback next sockethandler cycle. */
+	void SetCallOnConnect(bool x = true);
+
+	/** Check call on connect flag.
+		\return true if OnConnect() should be called a.s.a.p */
+	bool CallOnConnect();
+
+	// LIST_RETRY
+
+	/** Set flag to initiate a connection attempt after a connection timeout. */
+	void SetRetryClientConnect(bool x = true);
+
+	/** Check if a connection attempt should be made.
+		\return true when another attempt should be made */
+	bool RetryClientConnect();
+
 #ifdef HAVE_OPENSSL
 	/** @name SSL Support */
 	//@{
@@ -659,20 +662,6 @@ public:
 	/** Write traffic to an IFile. Socket will not delete this object. */
 	void SetTrafficMonitor(IFile *p) { m_traffic_monitor = p; }
 
-#ifdef ENABLE_TRIGGERS
-	/** \name Triggers */
-	//@{
-	/** Subscribe to trigger id. */
-	void Subscribe(int id);
-	/** Unsubscribe from trigger id. */
-	void Unsubscribe(int id);
-	/** Trigger callback, with data passed from source to destination. */
-	virtual void OnTrigger(int id, const TriggerData& data);
-	/** Trigger cancelled because source has been deleted (as in delete). */
-	virtual void OnCancelled(int id);
-	//@}
-#endif
-
 protected:
 	/** default constructor not available */
 	Socket() : m_handler(m_handler) {}
@@ -706,6 +695,8 @@ private:
 	bool m_bLost; ///< connection lost
 static	socketuid_t m_next_uid;
 	socketuid_t m_uid;
+	bool m_call_on_connect; ///< OnConnect will be called next ISocketHandler cycle if true
+	bool m_b_retry_connect; ///< Try another connection attempt next ISocketHandler cycle
 
 #ifdef _WIN32
 static	WSAInitializer m_winsock_init; ///< Winsock initialization singleton class

@@ -4,7 +4,7 @@
  **	\author grymse@alhem.net
 **/
 /*
-Copyright (C) 2008-2009  Anders Hedstrom
+Copyright (C) 2008-2010  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL, with
 the additional exemption that compiling, linking, and/or using OpenSSL 
@@ -45,8 +45,6 @@ StreamSocket::StreamSocket(ISocketHandler& h) : Socket(h)
 ,m_flush_before_close(true)
 ,m_connection_retry(0)
 ,m_retries(0)
-,m_call_on_connect(false)
-,m_b_retry_connect(false)
 ,m_line_protocol(false)
 ,m_shutdown(0)
 {
@@ -140,32 +138,6 @@ void StreamSocket::IncreaseConnectionRetries()
 void StreamSocket::ResetConnectionRetries()
 {
 	m_retries = 0;
-}
-
-
-void StreamSocket::SetCallOnConnect(bool x)
-{
-	Handler().AddList(GetSocket(), LIST_CALLONCONNECT, x);
-	m_call_on_connect = x;
-}
-
-
-bool StreamSocket::CallOnConnect()
-{
-	return m_call_on_connect;
-}
-
-
-void StreamSocket::SetRetryClientConnect(bool x)
-{
-	Handler().AddList(GetSocket(), LIST_RETRY, x);
-	m_b_retry_connect = x;
-}
-
-
-bool StreamSocket::RetryClientConnect()
-{
-	return m_b_retry_connect;
 }
 
 

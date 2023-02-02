@@ -3,7 +3,7 @@
  **	\author grymse@alhem.net
 **/
 /*
-Copyright (C) 2004-2009  Anders Hedstrom
+Copyright (C) 2004-2010  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL, with
 the additional exemption that compiling, linking, and/or using OpenSSL 
@@ -260,7 +260,13 @@ void HttpPostSocket::DoMultipartPost()
 				"\r\n";
 			Send( tmp );
 			{
+#ifdef _WIN32
+				FILE *fil;
+				if (fopen_s(&fil, filename.c_str(), "rb"))
+					fil = NULL;
+#else
 				FILE *fil = fopen(filename.c_str(),"rb");
+#endif
 				if (fil)
 				{
 					char slask[2000]; // for fread

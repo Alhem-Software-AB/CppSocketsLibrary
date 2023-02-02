@@ -4,7 +4,7 @@
  **	\author grymse@alhem.net
 **/
 /*
-Copyright (C) 2007-2009  Anders Hedstrom
+Copyright (C) 2007-2010  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL, with
 the additional exemption that compiling, linking, and/or using OpenSSL 
@@ -75,6 +75,7 @@ public:
 
 	void SetHost(const std::string& value);
 	const std::string& Host() const;
+	const std::string HostOnly() const;
 
 	void SetPragma(const std::string& value);
 	const std::string& Pragma() const;

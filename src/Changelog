@@ -1,6 +1,16 @@
 diff for next release always available @ http://www.alhem.net/Sockets/latest_diff.html
 
-next
+2.3.9.1
+--------
+Using thread- and memory safe clib/c runtime function when possible.
+Restructured sockethandler internals.
+Quicker tcp shutdown sequence when sockets lib initiates close.
+Renamed Utility::GetCurrentDirectory to Utility::CurrentDirectory, and
+added Utility::GetEnv().
+Removed unused triggers code.
+
+
+2.3.9
 ------
 TcpSocket using std::vector<char> to receive incoming line (OnLine
 callback). Configurable max limit for library available in sockets-config.h,
@@ -11,7 +21,6 @@ HttpResponse returns non-const output file.
 HTTPSocket aborts after receiving more than 200 (MAX_HTTP_HEADER_COUNT) http
 headers. Use method HTTPSocket::SetMaxHeaderCount() to modify this value.
 Reordered log level enum, added minlevel to StdoutLog.
-
 
 2.3.8
 ------

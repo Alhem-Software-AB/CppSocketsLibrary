@@ -3,7 +3,7 @@
  **	\author grymse@alhem.net
 **/
 /*
-Copyright (C) 2004-2009  Anders Hedstrom
+Copyright (C) 2004-2010  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL, with
 the additional exemption that compiling, linking, and/or using OpenSSL 
@@ -204,7 +204,7 @@ std::string Utility::l2string(long l)
 {
 	std::string str;
 	char tmp[100];
-	sprintf(tmp,"%ld",l);
+	snprintf(tmp,sizeof(tmp),"%ld",l);
 	str = tmp;
 	return str;
 }
@@ -430,10 +430,16 @@ void Utility::l2ip(const struct in6_addr& ip, std::string& str,bool mixed)
 		{
 			x = ntohs(addr16[i]);
 			if (*slask && (x || !ok_to_skip || prev))
+			{
+#ifdef _WIN32
+				strcat_s(slask,sizeof(slask),":");
+#else
 				strcat(slask,":");
+#endif
+			}
 			if (x || !ok_to_skip)
 			{
-				sprintf(slask + strlen(slask),"%x", x);
+				snprintf(slask + strlen(slask),sizeof(slask) - strlen(slask),"%x", x);
 				if (x && skipped)
 					ok_to_skip = false;
 			}
@@ -444,9 +450,9 @@ void Utility::l2ip(const struct in6_addr& ip, std::string& str,bool mixed)
 			prev = x;
 		}
 		x = ntohs(addr16[6]);
-		sprintf(slask + strlen(slask),":%u.%u",x / 256,x & 255);
+		snprintf(slask + strlen(slask),sizeof(slask) - strlen(slask),":%u.%u",x / 256,x & 255);
 		x = ntohs(addr16[7]);
-		sprintf(slask + strlen(slask),".%u.%u",x / 256,x & 255);
+		snprintf(slask + strlen(slask),sizeof(slask) - strlen(slask),".%u.%u",x / 256,x & 255);
 	}
 	else
 	{
@@ -559,6 +565,25 @@ const std::string& Utility::GetLocalAddress6()
 #endif
 
 
+const std::string Utility::GetEnv(const std::string& name)
+{
+#ifdef _WIN32
+	size_t sz = 0;
+	char tmp[2048];
+	if (getenv_s(&sz, tmp, sizeof(tmp), name.c_str()))
+	{
+		*tmp = 0;
+	}
+	return tmp;
+#else
+	char *s = getenv(name.c_str());
+	if (!s)
+		return "";
+	return s;
+#endif
+}
+
+
 void Utility::SetEnv(const std::string& var,const std::string& value)
 {
 #if (defined(SOLARIS8) || defined(SOLARIS))
@@ -568,8 +593,9 @@ void Utility::SetEnv(const std::string& var,const std::string& value)
 		{
 			delete[] vmap[var];
 		}
-		vmap[var] = new char[var.size() + 1 + value.size() + 1];
-		sprintf(vmap[var], "%s=%s", var.c_str(), value.c_str());
+		size_t sz = var.size() + 1 + value.size() + 1;
+		vmap[var] = new char[sz];
+		snprintf(vmap[var], sz, "%s=%s", var.c_str(), value.c_str());
 		putenv( vmap[var] );
 	}
 #elif defined _WIN32
@@ -770,9 +796,9 @@ bool Utility::u2ip(const std::string& host, struct sockaddr_in6& sa, int ai_flag
 					unsigned long b1 = static_cast<unsigned long>(pa.getvalue());
 					unsigned long b2 = static_cast<unsigned long>(pa.getvalue());
 					unsigned long b3 = static_cast<unsigned long>(pa.getvalue());
-					sprintf(slask,"%lx",b0 * 256 + b1);
+					snprintf(slask,sizeof(slask),"%lx",b0 * 256 + b1);
 					vec.push_back(slask);
-					sprintf(slask,"%lx",b2 * 256 + b3);
+					snprintf(slask,sizeof(slask),"%lx",b2 * 256 + b3);
 					vec.push_back(slask);
 				}
 				else
@@ -890,7 +916,7 @@ bool Utility::reverse(struct sockaddr *sa, socklen_t sa_len, std::string& hostna
 			struct sockaddr_in *sa_in = (struct sockaddr_in *)sa;
 			memcpy(&u.l, &sa_in -> sin_addr, sizeof(u.l));
 			char tmp[100];
-			sprintf(tmp, "%u.%u.%u.%u", u.a.b1, u.a.b2, u.a.b3, u.a.b4);
+			snprintf(tmp, sizeof(tmp), "%u.%u.%u.%u", u.a.b1, u.a.b2, u.a.b3, u.a.b4);
 			hostname = tmp;
 			return true;
 		}
@@ -922,10 +948,16 @@ bool Utility::reverse(struct sockaddr *sa, socklen_t sa_len, std::string& hostna
 				{
 					unsigned short x = ntohs(addr16[i]);
 					if (*slask && (x || !ok_to_skip || prev))
+					{
+#ifdef _WIN32
+						strcat_s(slask, sizeof(slask),":");
+#else
 						strcat(slask,":");
+#endif
+					}
 					if (x || !ok_to_skip)
 					{
-						sprintf(slask + strlen(slask),"%x", x);
+						snprintf(slask + strlen(slask), sizeof(slask) - strlen(slask),"%x", x);
 						if (x && skipped)
 							ok_to_skip = false;
 					}
@@ -937,7 +969,13 @@ bool Utility::reverse(struct sockaddr *sa, socklen_t sa_len, std::string& hostna
 				}
 			}
 			if (!*slask)
+			{
+#ifdef _WIN32
+				strcpy_s(slask, sizeof(slask), "::");
+#else
 				strcpy(slask, "::");
+#endif
+			}
 			hostname = slask;
 			return true;
 		}
@@ -1056,7 +1094,7 @@ std::string Utility::ToUpper(const std::string& str)
 std::string Utility::ToString(double d)
 {
 	char tmp[100];
-	sprintf(tmp, "%f", d);
+	snprintf(tmp, sizeof(tmp), "%f", d);
 	return tmp;
 }
 
@@ -1314,9 +1352,22 @@ const std::string Utility::ToUtf8(const std::string& str)
 }
 
 
-const Utility::Path Utility::GetCurrentDirectory()
+const Utility::Path Utility::CurrentDirectory()
 {
 #ifdef _WIN32
+	TCHAR slask[MAX_PATH + 1];
+	DWORD ret =
+#ifdef UNICODE
+	::GetCurrentDirectoryW(MAX_PATH, slask);
+#else
+	::GetCurrentDirectoryA(MAX_PATH, slask);
+#endif
+	if (!ret)
+	{
+		*slask = 0;
+		DWORD err = GetLastError();
+	}
+	return Path(slask);
 #else
 	char slask[32000];
 	if (!getcwd(slask, 32000))
@@ -1331,6 +1382,7 @@ const Utility::Path Utility::GetCurrentDirectory()
 bool Utility::ChangeDirectory(const Utility::Path& to_dir)
 {
 #ifdef _WIN32
+	return SetCurrentDirectory(to_dir.GetPath().c_str()) ? true : false;
 #else
 	if (chdir( to_dir.GetPath().c_str() ) == -1)
 	{

@@ -3,7 +3,7 @@
  **	\author grymse@alhem.net
 **/
 /*
-Copyright (C) 2004-2009  Anders Hedstrom
+Copyright (C) 2004-2010  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL, with
 the additional exemption that compiling, linking, and/or using OpenSSL 
@@ -49,7 +49,7 @@ namespace SOCKETS_NAMESPACE {
 
 
 MemFile::MemFile()
-:m_src(*this)
+:m_src(m_src)
 ,m_src_valid(false)
 ,m_base(new block_t)
 ,m_current_read(m_base)
@@ -83,7 +83,7 @@ MemFile::MemFile(MemFile& s)
 
 
 MemFile::MemFile(File& f)
-:m_src(*this)
+:m_src(m_src)
 ,m_src_valid(false)
 ,m_base(new block_t)
 ,m_current_read(NULL)
@@ -286,9 +286,9 @@ void MemFile::fprintf(const char *format, ...)
 	char tmp[BLOCKSIZE];
 	va_start(ap, format);
 #ifdef _WIN32
-	vsprintf(tmp, format, ap);
+	vsprintf_s(tmp, sizeof(tmp), format, ap);
 #else
-	vsnprintf(tmp, BLOCKSIZE - 1, format, ap);
+	vsnprintf(tmp, sizeof(tmp), format, ap);
 #endif
 	va_end(ap);
 	fwrite(tmp, 1, strlen(tmp));

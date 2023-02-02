@@ -3,7 +3,7 @@
  **	\author grymse@alhem.net
 **/
 /*
-Copyright (C) 2004-2009  Anders Hedstrom
+Copyright (C) 2004-2010  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL, with
 the additional exemption that compiling, linking, and/or using OpenSSL 
@@ -299,9 +299,9 @@ void HTTPSocket::AddResponseHeader(const std::string& header, const char *format
 
 	va_start(ap, format);
 #ifdef _WIN32
-	vsprintf(slask, format, ap);
+	vsprintf_s(slask, sizeof(slask), format, ap);
 #else
-	vsnprintf(slask, 8192, format, ap);
+	vsnprintf(slask, sizeof(slask), format, ap);
 #endif
 	va_end(ap);
 

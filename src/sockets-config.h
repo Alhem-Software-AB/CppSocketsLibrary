@@ -4,7 +4,7 @@
  **	\author grymse@alhem.net
 **/
 /*
-Copyright (C) 2007-2009  Anders Hedstrom
+Copyright (C) 2007-2010  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL, with
 the additional exemption that compiling, linking, and/or using OpenSSL 
@@ -48,7 +48,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #undef ENABLE_RESOLVER
 #undef ENABLE_RECONNECT
 #undef ENABLE_DETACH
-#undef ENABLE_TRIGGERS
 #undef ENABLE_EXCEPTIONS
 #undef ENABLE_XML
 #endif // _RUN_DP
@@ -92,10 +91,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 /* Enable socket thread detach functionality. */
 #define ENABLE_DETACH
-
-
-/* Enable socket to socket triggers. Not yet in use. */
-//#define ENABLE_TRIGGERS
 
 
 /* Enabled exceptions. */

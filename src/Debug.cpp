@@ -34,9 +34,9 @@ void Debug::Print(const char *format, ...)
 
 	va_start(ap, format);
 #ifdef _WIN32
-	vsprintf(slask, format, ap);
+	vsprintf_s(slask, sizeof(slask), format, ap);
 #else
-	vsnprintf(slask, 5000, format, ap);
+	vsnprintf(slask, sizeof(slask), format, ap);
 #endif
 	va_end(ap);
 
@@ -87,7 +87,7 @@ Debug& Debug::operator<<(long l)
 Debug& Debug::operator<<(double d)
 {
 	char slask[100];
-	sprintf(slask, "%f", d);
+	snprintf(slask, sizeof(slask), "%f", d);
 	m_line += slask;
 	return *this;
 }

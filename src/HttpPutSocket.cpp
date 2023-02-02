@@ -3,7 +3,7 @@
  **	\author grymse@alhem.net
 **/
 /*
-Copyright (C) 2004-2009  Anders Hedstrom
+Copyright (C) 2004-2010  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL, with
 the additional exemption that compiling, linking, and/or using OpenSSL 
@@ -103,7 +103,13 @@ void HttpPutSocket::OnConnect()
 	AddResponseHeader( "User-agent", MyUseragent() );
 	SendRequest();
 
+#ifdef _WIN32
+	FILE *fil;
+	if (fopen_s(&fil, m_filename.c_str(), "rb"))
+		fil = NULL;
+#else
 	FILE *fil = fopen(m_filename.c_str(), "rb");
+#endif
 	if (fil)
 	{
 		size_t n;

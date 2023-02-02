@@ -4,7 +4,7 @@
  **	\author grymse@alhem.net
 **/
 /*
-Copyright (C) 2007-2009  Anders Hedstrom
+Copyright (C) 2007-2010  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL, with
 the additional exemption that compiling, linking, and/or using OpenSSL 
@@ -135,7 +135,12 @@ void HttpClientSocket::OnHeaderComplete()
 {
 	if (m_filename.size())
 	{
+#ifdef _WIN32
+		if (fopen_s(&m_fil, m_filename.c_str(), "wb"))
+			m_fil = NULL;
+#else
 		m_fil = fopen(m_filename.c_str(), "wb");
+#endif
 	}
 	else
 	if (!m_data_ptr && m_content_length)

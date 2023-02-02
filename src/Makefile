@@ -112,9 +112,16 @@ install_shared:	install shared
 		@mkdir -p $(DESTDIR)/$(PREFIX)/lib/pkgconfig
 		cp $(SHAREDLIBNAME) $(DESTDIR)/$(PREFIX)/lib
 		cp -a pkgconfig/*pc $(DESTDIR)/$(PREFIX)/lib/pkgconfig
+		rm -f $(DESTDIR)/$(PREFIX)/lib/lib$(NAME).so
+		rm -f $(DESTDIR)/$(PREFIX)/lib/lib$(NAME).so.$(MAJOR)
+		ln -s $(DESTDIR)/$(PREFIX)/lib/lib$(NAME).so.$(MAJOR).$(MINOR) $(DESTDIR)/$(PREFIX)/lib/lib$(NAME).so
+		ln -s $(DESTDIR)/$(PREFIX)/lib/lib$(NAME).so.$(MAJOR).$(MINOR) $(DESTDIR)/$(PREFIX)/lib/lib$(NAME).so.$(MAJOR)
+		ldconfig
 
 # no binary files, zip will translate lf to cr lf
-FILES =		*.h *.cpp Makefile Makefile.Defines.* Makefile.solaris9-sparc-64 Project/*.ds* \
+FILES =		*.h *.cpp \
+		Makefile Makefile.version \
+		Makefile.Defines.* Makefile.solaris9-sparc-64 Project/*.ds* \
 		README Changelog README.macosx gpl.txt mkdot.sh \
 		Project.net/Sockets/*.vcproj Project.net/Sockets/*.sln \
 		Project.net/Test/*.vcproj \
