@@ -32,6 +32,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "Socket.h"
 #include "SocketHandler.h"
 #include "StdLog.h"
+#include "TcpSocket.h"
 
 
 template <class X>
@@ -287,11 +288,14 @@ public:
 				tmp = m_creator -> Create();
 			else
 				tmp = new X(Handler());
+			TcpSocket *tcp = dynamic_cast<TcpSocket *>(tmp);
 			tmp -> SetIpv6();
 			tmp -> SetParent(this);
 			tmp -> Attach(a_s);
 			tmp -> SetNonblocking(true);
 			tmp -> SetRemoteAddress( (struct sockaddr *)saptr, len);
+			if (tcp)
+				tcp -> SetConnected(true);
 			tmp -> Init();
 			Handler().Add(tmp);
 			tmp -> SetDeleteByHandler(true);
@@ -325,10 +329,13 @@ public:
 			tmp = m_creator -> Create();
 		else
 			tmp = new X(Handler());
+		TcpSocket *tcp = dynamic_cast<TcpSocket *>(tmp);
 		tmp -> SetParent(this);
 		tmp -> Attach(a_s);
 		tmp -> SetNonblocking(true);
 		tmp -> SetRemoteAddress( (struct sockaddr *)saptr, len);
+		if (tcp)
+			tcp -> SetConnected(true);
 		tmp -> Init();
 		Handler().Add(tmp);
 		tmp -> SetDeleteByHandler(true);
