@@ -3,7 +3,7 @@
  **	\author grymse@alhem.net
 **/
 /*
-Copyright (C) 2004-2010  Anders Hedstrom
+Copyright (C) 2004-2011  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL, with
 the additional exemption that compiling, linking, and/or using OpenSSL 
@@ -1003,7 +1003,7 @@ void SocketHandler::CheckCallOnConnect()
 	for (std::list<Socket *>::iterator it = m_add.begin(); it != m_add.end() && !m_b_check_callonconnect; ++it)
 	{
 		Socket *p = *it;
-		if (Valid(p) && Valid(p -> UniqueIdentifier()) && p -> CallOnConnect())
+		if (p -> CallOnConnect())
 		{
 			m_b_check_callonconnect = true;
 		}
@@ -1021,20 +1021,22 @@ void SocketHandler::CheckDetach()
 		if (p -> IsDetach())
 		{
 			ISocketHandler_Del(p);
+			m_sockets.erase(it); // we don't want this around anymore
 			// After DetachSocket(), all calls to Handler() will return a reference
 			// to the new slave SocketHandler running in the new thread.
 			p -> DetachSocket();
 			// Adding the file descriptor to m_fds_erase will now also remove the
 			// socket from the detach queue - tnx knightmad
-			m_fds_erase.push_back(p -> UniqueIdentifier());
+//			m_fds_erase.push_back(p -> UniqueIdentifier());
 			m_b_check_detach = true;
+			break; // 'it' is invalid
 		}
 	}
 	// %! preserve m_b_check parameter for newly added sockets
 	for (std::list<Socket *>::iterator it = m_add.begin(); it != m_add.end() && !m_b_check_detach; ++it)
 	{
 		Socket *p = *it;
-		if (Valid(p) && Valid(p -> UniqueIdentifier()) && p -> IsDetach())
+		if (p -> IsDetach())
 		{
 			m_b_check_detach = true;
 		}
@@ -1073,7 +1075,7 @@ void SocketHandler::CheckTimeout(time_t tnow)
 	for (std::list<Socket *>::iterator it = m_add.begin(); it != m_add.end() && !m_b_check_timeout; ++it)
 	{
 		Socket *p = *it;
-		if (Valid(p) && Valid(p -> UniqueIdentifier()) && p -> CheckTimeout())
+		if (p -> CheckTimeout())
 		{
 			m_b_check_timeout = true;
 		}
@@ -1111,7 +1113,7 @@ DEB(					fprintf(stderr, "Close() before retry client connect\n");)
 	for (std::list<Socket *>::iterator it = m_add.begin(); it != m_add.end() && !m_b_check_retry; ++it)
 	{
 		Socket *p = *it;
-		if (Valid(p) && Valid(p -> UniqueIdentifier()) && p -> RetryClientConnect())
+		if (p -> RetryClientConnect())
 		{
 			m_b_check_retry = true;
 		}
@@ -1222,7 +1224,7 @@ DEB(							fprintf(stderr, "Close() before OnDelete\n");)
 	for (std::list<Socket *>::iterator it = m_add.begin(); it != m_add.end() && !m_b_check_close; ++it)
 	{
 		Socket *p = *it;
-		if (Valid(p) && Valid(p -> UniqueIdentifier()) && p -> CloseAndDelete())
+		if (p -> CloseAndDelete())
 		{
 			m_b_check_close = true;
 		}
