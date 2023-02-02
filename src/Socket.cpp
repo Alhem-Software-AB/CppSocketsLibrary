@@ -36,7 +36,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <stdio.h>
 #include <ctype.h>
 #include <fcntl.h>
-#include "Parse.h"
 #include "SocketHandler.h"
 #include "SocketThread.h"
 #include "Utility.h"
@@ -408,6 +407,12 @@ SocketHandler& Socket::Handler() const
 {
 	if (IsDetached())
 		return *m_slave_handler;
+	return m_handler;
+}
+
+
+SocketHandler& Socket::MasterHandler() const
+{
 	return m_handler;
 }
 

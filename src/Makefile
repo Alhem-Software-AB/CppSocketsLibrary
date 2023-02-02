@@ -1,4 +1,4 @@
-VERSION =	1.9.10rc5
+VERSION =	2.0
 DIFF_VERSION =	1.9.9
 
 INCLUDE =	-I.
@@ -41,9 +41,11 @@ CPPFLAGS =	$(CFLAGS)
 
 HTDOCS =	/usr/local/apache/www.alhem.net/htdocs
 
-PROGS =		
+PROGS =		Sockets-config
 
-all:		libSockets.a $(PROGS) libSocketsEx.a Sockets-config 
+all:		libSockets.a $(PROGS)
+
+libs:		all libSocketsEx.a
 
 Sockets-config:	Sockets-config.o
 		$(CXX) -o $@ $^
@@ -55,9 +57,7 @@ OBJS =		CircularBuffer.o \
 		UdpSocket.o \
 		Parse.o \
 		Base64.o \
-		NullCrypt.o \
 		HttpGetSocket.o \
-		CTcpSocket.o \
 		HTTPSocket.o \
 		Thread.o SocketThread.o \
 		StdoutLog.o \
@@ -84,6 +84,8 @@ libSockets.a:	$(OBJS)
 
 # SocketsEx
 EX =		Uid.o \
+		NullCrypt.o \
+		CTcpSocket.o \
 		MinderSocket.o MinionSocket.o MinderHandler.o
 
 libSocketsEx.a:	$(EX)

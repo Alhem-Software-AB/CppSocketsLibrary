@@ -41,11 +41,17 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "HttpPutSocket.h"
 
+
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
 #endif
 
 
+#ifdef _DEBUG
+#define DEB(x) x
+#else
+#define DEB(x)
+#endif
 
 
 HttpPutSocket::HttpPutSocket(SocketHandler& h,const std::string& url)
@@ -131,8 +137,8 @@ void HttpPutSocket::OnConnect()
 
 void HttpPutSocket::OnFirst()
 {
-	int status = atoi(GetStatus().c_str());
-	printf("Response status %d: %s\n", status, GetStatusText().c_str());
+DEB(	int status = atoi(GetStatus().c_str());
+	printf("Response status %d: %s\n", status, GetStatusText().c_str());)
 }
 
 

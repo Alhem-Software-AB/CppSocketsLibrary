@@ -47,8 +47,8 @@ class Event;
 class EventHandler : public SocketHandler,public IEventHandler
 {
 public:
-	EventHandler();
-	EventHandler(StdLog *);
+	EventHandler(StdLog * = NULL);
+	EventHandler(Mutex&,StdLog * = NULL);
 	~EventHandler();
 
 	bool GetTimeUntilNextEvent(struct timeval *);

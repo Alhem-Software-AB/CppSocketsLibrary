@@ -80,7 +80,7 @@ HttpdForm::HttpdForm(IFile *infil) : raw(false)
 			std::string content_type;
 			std::string current_name;
 			std::string current_filename;
-			char slask[TMPSIZE];
+			char *slask = new char[TMPSIZE];
 			infil -> fgets(slask, TMPSIZE);
 			while (!infil -> eof())
 			{
@@ -263,6 +263,7 @@ HttpdForm::HttpdForm(IFile *infil) : raw(false)
 					break;
 				}
 			} // while (!infil -> eof())
+			delete[] slask;
 		} // if (m_strBoundary)
 		if (tempcmp)
 		{
@@ -271,10 +272,11 @@ HttpdForm::HttpdForm(IFile *infil) : raw(false)
 	}
 	else
 	{
+		bool got_name = false; // tnx to FatherNitwit
 		int i = 0;
 		int cl = c_l ? atoi(c_l) : -1;
 		char c,chigh,clow;
-		char slask[TMPSIZE];
+		char *slask = new char[TMPSIZE];
 		m_current = m_cgi.end();
 
 		*name = 0;
@@ -289,11 +291,20 @@ HttpdForm::HttpdForm(IFile *infil) : raw(false)
 					slask[i] = 0;
 					i = 0;
 					strcpy(name,slask);
+					got_name = true;
 					break;
 				case '&': /* end of value */
 					slask[i] = 0;
 					i = 0;
-					cgi = new CGI(name,slask);
+					if (got_name)
+					{
+						cgi = new CGI(name,slask);
+						got_name = false;
+					}
+					else
+					{
+						cgi = new CGI(slask, "");
+					}
 					m_cgi.push_back(cgi);
 					break;
 				case '+': /* space */
@@ -302,16 +313,10 @@ HttpdForm::HttpdForm(IFile *infil) : raw(false)
 				case '%': /* hex value */
 					infil -> fread(&chigh,1,1);
 					cl--;
-					chigh -= 48;
-					chigh &= 0xff - 32;
-					if (chigh > 9)
-						chigh -= 7;
+					chigh -= 48 + (chigh > '9' ? 7 : 0) + (chigh >= 'a' ? 32 : 0);
 					infil -> fread(&clow,1,1);
 					cl--;
-					clow -= 48;
-					clow &= 0xff - 32;
-					if (clow > 9)
-						clow -= 7;
+					clow -= 48 + (clow > '9' ? 7 : 0) + (clow >= 'a' ? 32 : 0);
 					slask[i++] = (char)(chigh * 16 + clow);
 					break;
 				default: /* just another char */
@@ -327,8 +332,16 @@ HttpdForm::HttpdForm(IFile *infil) : raw(false)
 		}
 		slask[i] = 0;
 		i = 0;
-		cgi = new CGI(name,slask);
+		if (got_name)
+		{
+			cgi = new CGI(name,slask);
+		}
+		else
+		{
+			cgi = new CGI(slask, "");
+		}
 		m_cgi.push_back(cgi);
+		delete[] slask;
 	}
 }
 
@@ -338,11 +351,12 @@ HttpdForm::HttpdForm(IFile *infil) : raw(false)
 HttpdForm::HttpdForm(const std::string& buffer,size_t l) : raw(false)
 {
 	CGI *cgi = NULL;
-	char slask[TMPSIZE];
-	char name[TMPSIZE];
+	char *slask = new char[TMPSIZE];
+	char *name = new char[TMPSIZE];
 	int i = 0;
 	char c,chigh,clow;
 	size_t ptr = 0;
+	bool got_name = false;
 
 	m_current = m_cgi.end();
 
@@ -358,11 +372,20 @@ HttpdForm::HttpdForm(const std::string& buffer,size_t l) : raw(false)
 				slask[i] = 0;
 				i = 0;
 				strcpy(name,slask);
+				got_name = true;
 				break;
 			case '&': /* end of value */
 				slask[i] = 0;
 				i = 0;
-				cgi = new CGI(name,slask);
+				if (got_name)
+				{
+					cgi = new CGI(name,slask);
+					got_name = false;
+				}
+				else
+				{
+					cgi = new CGI(slask, "");
+				}
 				m_cgi.push_back(cgi);
 				break;
 			case '+': /* space */
@@ -370,15 +393,9 @@ HttpdForm::HttpdForm(const std::string& buffer,size_t l) : raw(false)
 				break;
 			case '%': /* hex value */
 				chigh = buffer[ptr++];
-				chigh -= 48;
-				chigh &= 0xff - 32;
-				if (chigh > 9)
-					chigh -= 7;
+				chigh -= 48 + (chigh > '9' ? 7 : 0) + (chigh >= 'a' ? 32 : 0);
 				clow = buffer[ptr++];
-				clow -= 48;
-				clow &= 0xff - 32;
-				if (clow > 9)
-					clow -= 7;
+				clow -= 48 + (clow > '9' ? 7 : 0) + (clow >= 'a' ? 32 : 0);
 				slask[i++] = (char)(chigh * 16 + clow);
 				break;
 			default: /* just another char */
@@ -388,8 +405,17 @@ HttpdForm::HttpdForm(const std::string& buffer,size_t l) : raw(false)
 	}
 	slask[i] = 0;
 	i = 0;
-	cgi = new CGI(name,slask);
+	if (got_name)
+	{
+		cgi = new CGI(name,slask);
+	}
+	else
+	{
+		cgi = new CGI(slask, "");
+	}
 	m_cgi.push_back(cgi);
+	delete[] slask;
+	delete[] name;
 }
 
 

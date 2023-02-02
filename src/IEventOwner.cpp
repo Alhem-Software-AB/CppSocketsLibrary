@@ -42,7 +42,6 @@ IEventOwner::IEventOwner(IEventHandler& h) : m_event_handler(h)
 
 IEventOwner::~IEventOwner()
 {
-	printf("~IEventOwner()\n");
 	m_event_handler.ClearEvents(this);
 }
 

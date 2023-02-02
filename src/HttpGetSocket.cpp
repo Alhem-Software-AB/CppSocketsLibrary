@@ -37,10 +37,16 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "SocketHandler.h"
 #include "HttpGetSocket.h"
 
-#define DEB(x) 
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
+#endif
+
+
+#ifdef _DEBUG
+#define DEB(x) x
+#else
+#define DEB(x)
 #endif
 
 
@@ -182,7 +188,7 @@ void HttpGetSocket::OnFirst()
 	}
 	if (GetStatus() != "200")
 	{
-		printf("Failed (status %s): %s\n",GetStatus().c_str(),GetStatusText().c_str());
+DEB(		printf("Failed (status %s): %s\n",GetStatus().c_str(),GetStatusText().c_str());)
 		SetCloseAndDelete();
 	}
 }

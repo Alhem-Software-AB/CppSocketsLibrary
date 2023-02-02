@@ -186,8 +186,15 @@ public:
 	/** ipv4 and ipv6(not implemented) */
 	std::string GetRemoteHostname();
 
-	/** Returns reference to sockethandler that owns the socket. */
+	/** Returns reference to sockethandler that owns the socket. 
+	If the socket is detached, this is a reference to the slave sockethandler.
+	*/
 	SocketHandler& Handler() const;
+	/** Returns reference to sockethandler that owns the socket. 
+	This one always returns the reference to the original sockethandler,
+	even if the socket is detached.
+	*/
+	SocketHandler& MasterHandler() const;
 	/** Set socket non-block operation. */
 	bool SetNonblocking(bool);
 	/** Set socket non-block operation. */

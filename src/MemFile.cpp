@@ -56,6 +56,7 @@ MemFile::MemFile()
 ,m_current_write(m_base)
 ,m_read_ptr(0)
 ,m_write_ptr(0)
+,m_b_read_caused_eof(false)
 {
 }
 
@@ -68,6 +69,7 @@ MemFile::MemFile(const std::string& path)
 ,m_current_write(NULL)
 ,m_read_ptr(0)
 ,m_write_ptr(0)
+,m_b_read_caused_eof(false)
 {
 	if (!m_base)
 	{
@@ -101,11 +103,21 @@ void MemFile::fclose()
 }
 
 
-
+// TODO: fix for reads much larger than BLOCKSIZE
 size_t MemFile::fread(char *ptr, size_t size, size_t nmemb)
 {
 	size_t p = m_read_ptr % BLOCKSIZE;
 	size_t sz = size * nmemb;
+	size_t available = m_write_ptr - m_read_ptr;
+	if (sz > available) // read beyond eof
+	{
+		sz = available;
+		m_b_read_caused_eof = true;
+	}
+	if (!sz)
+	{
+		return 0;
+	}
 	if (p + sz < BLOCKSIZE)
 	{
 		memcpy(ptr, m_current_read -> data + p, sz);
@@ -133,6 +145,7 @@ DEB(printf("Read beyond available data\n");)
 }
 
 
+// TODO: fix for writes that are much larger than BLOCKSIZE
 size_t MemFile::fwrite(const char *ptr, size_t size, size_t nmemb)
 {
 	size_t p = m_write_ptr % BLOCKSIZE;
@@ -164,13 +177,16 @@ char *MemFile::fgets(char *s, int size)
 	while (n < size - 1 && !eof())
 	{
 		char c;
-		fread(&c, 1, 1);
-		if (c == 10)
+		size_t sz = fread(&c, 1, 1);
+		if (sz)
 		{
-			s[n] = 0;
-			return s;
+			if (c == 10)
+			{
+				s[n] = 0;
+				return s;
+			}
+			s[n++] = c;
 		}
-		s[n++] = c;
 	}
 	s[n] = 0;
 	return s;
@@ -200,7 +216,7 @@ off_t MemFile::size()
 
 bool MemFile::eof()
 {
-	return (m_read_ptr < m_write_ptr) ? false : true;
+	return m_b_read_caused_eof; //(m_read_ptr < m_write_ptr) ? false : true;
 }
 
 

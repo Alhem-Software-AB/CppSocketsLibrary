@@ -43,10 +43,17 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "HttpPostSocket.h"
 
+
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
 #endif
 
+
+#ifdef _DEBUG
+#define DEB(x) x
+#else
+#define DEB(x)
+#endif
 
 
 HttpPostSocket::HttpPostSocket(SocketHandler& h,const std::string& url)
@@ -288,8 +295,8 @@ void HttpPostSocket::DoMultipartPost()
 
 void HttpPostSocket::OnFirst()
 {
-	int status = atoi(GetStatus().c_str());
-	printf("Response status %d: %s\n", status, GetStatusText().c_str());
+DEB(	int status = atoi(GetStatus().c_str());
+	printf("Response status %d: %s\n", status, GetStatusText().c_str());)
 }
 
 

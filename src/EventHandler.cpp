@@ -41,12 +41,12 @@ namespace SOCKETS_NAMESPACE {
 #endif
 
 
-EventHandler::EventHandler() : SocketHandler(), m_quit(false)
+EventHandler::EventHandler(StdLog *p) : SocketHandler(p), m_quit(false)
 {
 }
 
 
-EventHandler::EventHandler(StdLog *p) : SocketHandler(p), m_quit(false)
+EventHandler::EventHandler(Mutex& m,StdLog *p) : SocketHandler(m, p), m_quit(false)
 {
 }
 

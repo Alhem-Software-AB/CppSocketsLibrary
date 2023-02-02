@@ -81,6 +81,7 @@ static	std::map<std::string,block_t *> m_files;
 	block_t *m_current_write;
 	size_t m_read_ptr;
 	size_t m_write_ptr;
+	bool m_b_read_caused_eof;
 };
 
 
