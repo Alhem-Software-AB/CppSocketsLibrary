@@ -54,9 +54,9 @@ TcpSocket::~TcpSocket()
 }
 
 
-bool TcpSocket::Open(ipaddr_t ip,port_t port)
+bool TcpSocket::Open4(ipaddr_t ip,port_t port)
 {
-	SOCKET s = CreateSocket(SOCK_STREAM);
+	SOCKET s = CreateSocket4(SOCK_STREAM, "tcp");
 	if (s == -1)
 	{
 		return false;
@@ -104,9 +104,9 @@ bool TcpSocket::Open(ipaddr_t ip,port_t port)
 }
 
 
-bool TcpSocket::Open(const std::string &host,port_t port)
+bool TcpSocket::Open4(const std::string &host,port_t port)
 {
-	SOCKET s = CreateSocket(SOCK_STREAM);
+	SOCKET s = CreateSocket4(SOCK_STREAM, "tcp");
 	if (s == -1)
 	{
 		return false;
@@ -117,16 +117,63 @@ bool TcpSocket::Open(const std::string &host,port_t port)
 		struct sockaddr_in sa;
 		socklen_t sa_len = sizeof(sa);
 
-{
-	std::string ipstr;
-	l2ip(l,ipstr);
-DEB(	printf("Connecting to: %s:%d\n",ipstr.c_str(),port);)
-}
-
 		memset(&sa,0,sizeof(sa));
-		sa.sin_family = AF_INET; // hp -> h_addrtype;
+		sa.sin_family = AF_INET;
 		sa.sin_port = htons( port );
 		memcpy(&sa.sin_addr,&l,4);
+
+		if (!SetNonblocking(true, s))
+		{
+			closesocket(s);
+			return false;
+		}
+		int n = connect(s, (struct sockaddr *)&sa, sa_len);
+		if (n == -1)
+		{
+#ifdef _WIN32
+			int errcode;
+			errcode = WSAGetLastError();
+			if (errcode != WSAEWOULDBLOCK)
+#else
+			if (errno != EINPROGRESS)
+#endif
+			{
+				Handler().LogError(this, "connect", errno, strerror(errno), LOG_LEVEL_FATAL);
+				closesocket(s);
+				return false;
+			}
+			else
+			{
+				SetConnecting(true);
+			}
+		}
+		SetRemoteAddress((struct sockaddr *)&sa,sa_len);
+		Attach(s);
+		return !Connecting();
+	}
+	return false;
+}
+
+
+bool TcpSocket::Open6(const std::string &host,port_t port)
+{
+	SOCKET s = CreateSocket6(SOCK_STREAM, "tcp");
+	if (s == -1)
+	{
+		return false;
+	}
+	struct in6_addr a;
+	if (u2ip(host,a))
+	{
+		struct sockaddr_in6 sa;
+		socklen_t sa_len = sizeof(sa);
+
+		memset(&sa,0,sizeof(sa));
+		sa.sin6_family = AF_INET6;
+		sa.sin6_port = htons( port );
+		sa.sin6_flowinfo = 0;
+		sa.sin6_scope_id = 0;
+		sa.sin6_addr = a;
 
 		if (!SetNonblocking(true, s))
 		{

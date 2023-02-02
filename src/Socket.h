@@ -47,7 +47,8 @@ public:
 	void Attach(SOCKET s);
 	SOCKET GetSocket();
 	virtual int Close();
-	SOCKET CreateSocket(int type);
+	SOCKET CreateSocket4(int type,const std::string& protocol = "");
+	SOCKET CreateSocket6(int type,const std::string& protocol = "");
 	void Set(bool bRead,bool bWrite,bool bException = true);
 	bool Ready();
 
@@ -57,33 +58,48 @@ public:
 	virtual void OnDelete();
 	virtual void OnConnect();
 	virtual void OnAccept();
-	virtual void OnLine(const std::string& ) {}
-	virtual void OnSSLInitDone() {}
+	virtual void OnLine(const std::string& );
+	virtual void OnSSLInitDone();
+	virtual void OnConnectFailed();
 
 	virtual bool CheckConnect();
-	virtual void ReadLine() {}
-	virtual bool SSLCheckConnect() { return false; }
+	virtual void ReadLine();
+	virtual bool SSLCheckConnect();
 
-	void SetSSLConnecting(bool x = true) { m_ssl_connecting = x; }
-	bool SSLConnecting() { return m_ssl_connecting; }
-	void SetLineProtocol(bool x = true) { m_line_protocol = x; }
-	bool LineProtocol() { return m_line_protocol; }
-	void SetDeleteByHandler(bool x = true);
+	void SetSSLConnecting(bool = true);
+	bool SSLConnecting();
+	void SetLineProtocol(bool = true);
+	bool LineProtocol();
+	void SetDeleteByHandler(bool = true);
 	bool DeleteByHandler();
-	void SetCloseAndDelete(bool x = true);
+	void SetCloseAndDelete(bool = true);
 	bool CloseAndDelete();
-	void SetConnecting(bool x = true);
+	void SetConnecting(bool = true);
 	bool Connecting();
 	time_t GetConnectTime();
 
+	/** ipv4 and ipv6 */
 	bool isip(const std::string&);
+	/** ipv4 */
 	bool u2ip(const std::string&, ipaddr_t&);
-	void l2ip(ipaddr_t,std::string& );
+	/** ipv6 */
+	bool u2ip(const std::string&, struct in6_addr&);
+	/** ipv4 */
+	void l2ip(const ipaddr_t,std::string& );
+	/** ipv6 */
+	void l2ip(const struct in6_addr&,std::string& ,bool mixed = false);
 
+	/** ipv4 and ipv6 */
 	void SetRemoteAddress(struct sockaddr* sa,socklen_t);
-	ipaddr_t GetRemoteIP();
+	/** ipv4 */
+	ipaddr_t GetRemoteIP4();
+	/** ipv6 */
+	struct in6_addr GetRemoteIP6();
+	/** ipv4 and ipv6 */
 	port_t GetRemotePort();
+	/** ipv4 and ipv6 */
 	std::string GetRemoteAddress();
+	/** ipv4 and ipv6(not implemented) */
 	std::string GetRemoteHostname();
 
 	SocketHandler& Handler();
@@ -105,8 +121,10 @@ public:
 	bool IsDetached() { return m_detached; }
 	bool Detach();
 
+	void SetIpv6(bool x = true) { m_ipv6 = x; }
+	bool IsIpv6() { return m_ipv6; }
+
 protected:
-	struct sockaddr m_sa; // remote, from accept
 	void DetachSocket(); // protected, friend class SocketHandler;
 
 private:
@@ -124,6 +142,9 @@ private:
 	bool m_detach;
 	bool m_detached;
 	SocketThread *m_pThread;
+	bool m_ipv6;
+	struct sockaddr m_sa; // remote, from accept
+	socklen_t m_sa_len;
 };
 
 

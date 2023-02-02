@@ -1,25 +1,34 @@
 #ifndef _SOCKET_INCLUDE_H
 #define _SOCKET_INCLUDE_H
 
-#ifdef _WIN32
-typedef unsigned long ipaddr_t;
-typedef unsigned short port_t;
-#endif
-
-#ifdef LINUX
-typedef unsigned long ipaddr_t;
-typedef unsigned short port_t;
-#endif
-
 #ifdef SOLARIS
 //typedef unsigned long ipaddr_t;
 typedef unsigned short port_t;
-#endif
 
-#ifdef MACOSX
+#elif defined MACOSX
 typedef unsigned long ipaddr_t;
 //typedef unsigned short port_t;
+#define s6_addr16 __u6_addr.__u6_addr16
+
+#else // LINUX / _WIN32
+typedef unsigned long ipaddr_t;
+typedef unsigned short port_t;
+
 #endif
+
+
+#ifdef _USING_IPV6
+#define CreateSocket CreateSocket6
+#define GetRemoteIP GetRemoteIP6
+#define Bind Bind6
+#define Open Open6
+#else
+#define CreateSocket CreateSocket4
+#define GetRemoteIP GetRemoteIP4
+#define Bind Bind4
+#define Open Open4
+#endif
+
 
 // ---> note!
 // (modified) rip from httpsync.c

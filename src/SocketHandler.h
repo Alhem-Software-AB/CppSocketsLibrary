@@ -56,6 +56,8 @@ public:
 	const std::string& GetLocalHostname();
 	ipaddr_t GetLocalIP();
 	const std::string& GetLocalAddress();
+	const struct in6_addr& GetLocalIP6();
+	const std::string& GetLocalAddress6();
 
 	size_t GetCount();
 	void SetSlave(bool x = true);
@@ -67,14 +69,16 @@ protected:
 private:
 	StdLog *m_stdlog;
 	int m_maxsock;
-	std::string m_host;
-	ipaddr_t m_ip;
-	std::string m_addr;
+	std::string m_host; // local
+	ipaddr_t m_ip; // local
+	std::string m_addr; // local
 	fd_set m_rfds;
 	fd_set m_wfds;
 	fd_set m_efds;
 	int m_preverror;
 	bool m_slave;
+	struct in6_addr m_local_ip6;
+	std::string m_local_addr6;
 };
 
 

@@ -50,9 +50,12 @@ public:
 	TcpSocket(SocketHandler& );
 	~TcpSocket();
 
-	bool Open(ipaddr_t,port_t);
-	bool Open(const std::string &host,port_t port);
+	bool Open4(ipaddr_t,port_t);
+	bool Open4(const std::string &host,port_t port);
+	bool Open6(const std::string& host,port_t port);
+
 	void Send(const std::string &);
+
 	virtual void SendBuf(const char *,size_t);
 	virtual void OnRawData(const char *,size_t) {}
 

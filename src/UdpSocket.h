@@ -32,7 +32,8 @@ public:
 	UdpSocket(SocketHandler& );
 	~UdpSocket();
 
-	SOCKET Bind(port_t &port,int range); // 'listen'
+	SOCKET Bind4(port_t &port,int range); // 'listen'
+	SOCKET Bind6(port_t &port,int range); // 'listen'
 
 	void SendTo(const std::string &);
 

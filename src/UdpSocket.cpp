@@ -51,9 +51,9 @@ UdpSocket::~UdpSocket()
 }
 
 
-SOCKET UdpSocket::Bind(port_t &port,int range)
+SOCKET UdpSocket::Bind4(port_t &port,int range)
 {
-	SOCKET s = CreateSocket(SOCK_DGRAM);
+	SOCKET s = CreateSocket4(SOCK_DGRAM, "udp");
 	if (s == -1)
 	{
 		return -1;
@@ -73,6 +73,42 @@ SOCKET UdpSocket::Bind(port_t &port,int range)
 	while (n == -1 && tries--)
 	{
 		sa.sin_port = htons( ++port );
+		n = bind(s, (struct sockaddr *)&sa, sa_len);
+	}
+	if (n == -1)
+	{
+		Handler().LogError(this, "bind", errno, strerror(errno), LOG_LEVEL_FATAL);
+		closesocket(s);
+		return -1;
+	}
+	Attach(s);
+	return s;
+}
+
+
+SOCKET UdpSocket::Bind6(port_t &port,int range)
+{
+	SOCKET s = CreateSocket6(SOCK_DGRAM, "udp");
+	if (s == -1)
+	{
+		return -1;
+	}
+
+	struct sockaddr_in6 sa;
+	socklen_t sa_len = sizeof(sa);
+
+	memset(&sa,0,sizeof(sa));
+	sa.sin6_family = AF_INET6; // hp -> h_addrtype;
+	sa.sin6_port = htons( port );
+	sa.sin6_flowinfo = 0;
+	sa.sin6_scope_id = 0;
+	// sa.sin6_addr is all 0's
+
+	int n = bind(s, (struct sockaddr *)&sa, sa_len);
+	int tries = range;
+	while (n == -1 && tries--)
+	{
+		sa.sin6_port = htons( ++port );
 		n = bind(s, (struct sockaddr *)&sa, sa_len);
 	}
 	if (n == -1)

@@ -32,13 +32,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "Parse.h"
 #include "SocketHandler.h"
 #include "SocketThread.h"
+#include "Utility.h"
 
 #include "Socket.h"
 
 #ifdef _DEBUG
 #define DEB(x) x
 #else
-#define DEB(x) 
+#define DEB(x)
 #endif
 
 
@@ -51,11 +52,13 @@ Socket::Socket(SocketHandler& h)
 ,m_tCreate(time(NULL))
 ,m_line_protocol(false)
 ,m_ssl_connecting(false)
-//,m_tActive(time(NULL))
-//,m_timeout(0)
+//, m_tActive(time(NULL))
+//, m_timeout(0)
 ,m_detach(false)
 ,m_detached(false)
 ,m_pThread(NULL)
+,m_ipv6(false)
+,m_sa_len(0)
 {
 }
 
@@ -86,6 +89,15 @@ void Socket::OnWrite()
 
 void Socket::OnException()
 {
+	// errno valid here?
+	int err;
+	socklen_t errlen = sizeof(err);
+#ifdef _WIN32
+	getsockopt(m_socket, SOL_SOCKET, SO_ERROR, (char *)&err, &errlen);
+#else
+	getsockopt(m_socket, SOL_SOCKET, SO_ERROR, &err, &errlen);
+#endif
+	Handler().LogError(this, "exception on select", errno, strerror(errno), LOG_LEVEL_FATAL);
 	SetCloseAndDelete();
 }
 
@@ -112,8 +124,9 @@ bool Socket::CheckConnect()
 #endif
 	if (err)
 	{
-		Handler().LogError(this,"connect failed",err,strerror(err),LOG_LEVEL_FATAL);
+		Handler().LogError(this, "connect failed", err, strerror(err), LOG_LEVEL_FATAL);
 		SetCloseAndDelete( true );
+		OnConnectFailed();
 		r = false;
 	}
 	SetConnecting(false);
@@ -132,27 +145,38 @@ int Socket::Close()
 	if (shutdown(m_socket, SHUT_RDWR) == -1)
 	{
 		// failed...
-		Handler().LogError(this, "shutdown", errno, strerror(errno),LOG_LEVEL_ERROR);
+		Handler().LogError(this, "shutdown", errno, strerror(errno), LOG_LEVEL_ERROR);
 	}
 	if ((n = closesocket(m_socket)) == -1)
 	{
 		// failed...
-		Handler().LogError(this, "close", errno, strerror(errno),LOG_LEVEL_ERROR);
+		Handler().LogError(this, "close", errno, strerror(errno), LOG_LEVEL_ERROR);
 	}
 	m_socket = -1;
 	return n;
 }
 
 
-SOCKET Socket::CreateSocket(int type)
+SOCKET Socket::CreateSocket4(int type, const std::string& protocol)
 {
+	struct protoent *p = NULL;
 	int optval;
 	SOCKET s;
 
-	s = socket(AF_INET, type, 0);
+	if (protocol.size())
+	{
+		p = getprotobyname( protocol.c_str() );
+		if (!p)
+		{
+			Handler().LogError(this, "getprotobyname", errno, strerror(errno), LOG_LEVEL_FATAL);
+			return -1;
+		}
+	}
+
+	s = socket(AF_INET, type, p ? p -> p_proto : 0);
 	if (s == -1)
 	{
-		Handler().LogError(this, "socket", errno, strerror(errno),LOG_LEVEL_FATAL);
+		Handler().LogError(this, "socket", errno, strerror(errno), LOG_LEVEL_FATAL);
 		return -1;
 	}
 
@@ -161,7 +185,7 @@ SOCKET Socket::CreateSocket(int type)
 		optval = 1;
 		if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, (char *)&optval, sizeof(optval)) == -1)
 		{
-			Handler().LogError(this, "setsockopt(SOL_SOCKET,SO_REUSEADDR)", errno, strerror(errno),LOG_LEVEL_FATAL);
+			Handler().LogError(this, "setsockopt(SOL_SOCKET, SO_REUSEADDR)", errno, strerror(errno), LOG_LEVEL_FATAL);
 			closesocket(s);
 			return -1;
 		}
@@ -169,7 +193,7 @@ SOCKET Socket::CreateSocket(int type)
 		optval = 1;
 		if (setsockopt(s, SOL_SOCKET, SO_KEEPALIVE, (char *)&optval, sizeof(optval)) == -1)
 		{
-			Handler().LogError(this, "setsockopt(SOL_SOCKET,SO_KEEPALIVE)", errno, strerror(errno), LOG_LEVEL_FATAL);
+			Handler().LogError(this, "setsockopt(SOL_SOCKET, SO_KEEPALIVE)", errno, strerror(errno), LOG_LEVEL_FATAL);
 			closesocket(s);
 			return -1;
 		}
@@ -179,8 +203,116 @@ SOCKET Socket::CreateSocket(int type)
 }
 
 
+SOCKET Socket::CreateSocket6(int type, const std::string& protocol)
+{
+	struct protoent *p = NULL;
+	int optval;
+	SOCKET s;
+
+	if (protocol.size())
+	{
+		p = getprotobyname( protocol.c_str() );
+		if (!p)
+		{
+			Handler().LogError(this, "getprotobyname", errno, strerror(errno), LOG_LEVEL_FATAL);
+			return -1;
+		}
+	}
+	s = socket(AF_INET6, type, p ? p -> p_proto : 0);
+	if (s == -1)
+	{
+		Handler().LogError(this, "socket", errno, strerror(errno), LOG_LEVEL_FATAL);
+		return -1;
+	}
+	if (type == SOCK_STREAM)
+	{
+		optval = 1;
+		if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, (char *)&optval, sizeof(optval)) == -1)
+		{
+			Handler().LogError(this, "setsockopt(SOL_SOCKET, SO_REUSEADDR)", errno, strerror(errno), LOG_LEVEL_FATAL);
+			closesocket(s);
+			return -1;
+		}
+
+		optval = 1;
+		if (setsockopt(s, SOL_SOCKET, SO_KEEPALIVE, (char *)&optval, sizeof(optval)) == -1)
+		{
+			Handler().LogError(this, "setsockopt(SOL_SOCKET, SO_KEEPALIVE)", errno, strerror(errno), LOG_LEVEL_FATAL);
+			closesocket(s);
+			return -1;
+		}
+	}
+	m_ipv6 = true;
+	return s;
+}
+
+
+/*
+Reference: http://compnetworking.about.com/library/weekly/aa042400a.htm
+
+IPv6 addresses are generally written in the following form:
+
+	hhhh:hhhh:hhhh:hhhh:hhhh:hhhh:hhhh:hhhh
+
+In this notation, pairs of IPv6 bytes are separated by a colon and each byte
+in turns is represented as an equivalent pair of hexadecimal numbers, like in
+the following example:
+
+	E3D7:0000:0000:0000:51F4:9BC8:C0A8:6420
+
+IPv6 addresses often contain many bytes with a zero value. Shorthand notation
+in IPv6 removes these values from the text representation (though the bytes
+are still present in the actual network address) as follows:
+
+	E3D7::51F4:9BC8:C0A8:6420
+
+Finally, many IPv6 addresses are extensions of IPv4 addresses. In these cases,
+the rightmost four bytes of an IPv6 address (the rightmost two byte pairs) may
+be rewritten in the IPv4 notation. Converting the above example to mixed
+notation yields
+
+	E3D7::51F4:9BC8:192.168.100.32
+*/
 bool Socket::isip(const std::string& str)
 {
+	if (m_ipv6)
+	{
+		size_t qc = 0;
+		size_t qd = 0;
+		for (size_t i = 0; i < str.size(); i++)
+		{
+			qc += (str[i] == ':') ? 1 : 0;
+			qd += (str[i] == '.') ? 1 : 0;
+		}
+		if (qc > 7)
+		{
+			return false;
+		}
+		if (qd && qd != 3)
+		{
+			return false;
+		}
+		Parse pa(str,":.");
+		std::string tmp = pa.getword();
+		while (tmp.size())
+		{
+			if (tmp.size() > 4)
+			{
+				return false;
+			}
+			for (size_t i = 0; i < tmp.size(); i++)
+			{
+				if (tmp[i] < '0' || (tmp[i] > '9' && tmp[i] < 'A') ||
+					(tmp[i] > 'F' && tmp[i] < 'a') || tmp[i] > 'f')
+				{
+					return false;
+				}
+			}
+			//
+			tmp = pa.getword();
+		}
+		return true;
+	}
 	for (size_t i = 0; i < str.size(); i++)
 		if (!isdigit(str[i]) && str[i] != '.')
 			return false;
@@ -190,9 +322,14 @@ bool Socket::isip(const std::string& str)
 
 bool Socket::u2ip(const std::string& str, ipaddr_t& l)
 {
+	if (m_ipv6)
+	{
+		Handler().LogError(this, "u2ip", 0, "converting to ipv4 on ipv6 socket", LOG_LEVEL_ERROR);
+		return false;
+	}
 	if (isip(str))
 	{
-		Parse pa((char *)str.c_str(),".");
+		Parse pa((char *)str.c_str(), ".");
 		union {
 			struct {
 				unsigned char b1;
@@ -207,7 +344,6 @@ bool Socket::u2ip(const std::string& str, ipaddr_t& l)
 		u.a.b3 = pa.getvalue();
 		u.a.b4 = pa.getvalue();
 		l = u.l;
-DEB(		printf("u2ip: %08lX\n",l);)
 		return true;
 	}
 	else
@@ -215,18 +351,99 @@ DEB(		printf("u2ip: %08lX\n",l);)
 		struct hostent *he = gethostbyname( str.c_str() );
 		if (!he)
 		{
+			Handler().LogError(this, "gethostbyname", errno, strerror(errno), LOG_LEVEL_WARNING);
 			return false;
 		}
-		memcpy(&l,he -> h_addr,4);
+		memcpy(&l, he -> h_addr, 4);
 		return true;
 	}
 	return false;
 }
 
 
-void Socket::l2ip(ipaddr_t ip,std::string& str)
+bool Socket::u2ip(const std::string& str, struct in6_addr& l)
 {
-DEB(	printf("l2ip: %08lX\n",ip);)
+	if (!m_ipv6)
+	{
+		Handler().LogError(this, "u2ip", 0, "converting to ipv6 on ipv4 socket", LOG_LEVEL_ERROR);
+		return false;
+	}
+	if (isip(str))
+	{
+		std::vector<std::string> vec;
+		size_t x = 0;
+		char s[100];
+		for (size_t i = 0; i <= str.size(); i++)
+		{
+			if (i == str.size() || str[i] == ':')
+			{
+				strncpy(s, str.substr(x,i - x).c_str(), i - x);
+				s[i - x] = 0;
+				//
+				if (strstr(s,".")) // x.x.x.x
+				{
+					Parse pa(s,".");
+					char slask[100];
+					unsigned long b0 = pa.getvalue();
+					unsigned long b1 = pa.getvalue();
+					unsigned long b2 = pa.getvalue();
+					unsigned long b3 = pa.getvalue();
+					sprintf(slask,"%x",b0 * 256 + b1);
+					vec.push_back(slask);
+					sprintf(slask,"%x",b2 * 256 + b3);
+					vec.push_back(slask);
+				}
+				else
+				{
+					vec.push_back(s);
+				}
+				//
+				x = i + 1;
+			}
+		}
+		size_t sz = vec.size(); // number of byte pairs
+		size_t i = 0; // index in in6_addr.in6_u.u6_addr16[] ( 0 .. 7 )
+		for (std::vector<std::string>::iterator it = vec.begin(); it != vec.end(); it++)
+		{
+			std::string bytepair = *it;
+			if (bytepair.size())
+			{
+				l.s6_addr16[i++] = htons(Utility::hex2unsigned(bytepair));
+			}
+			else
+			{
+				l.s6_addr16[i++] = 0;
+				while (sz++ < 8)
+				{
+					l.s6_addr16[i++] = 0;
+				}
+			}
+		}
+		return true;
+	}
+	else
+	{
+		struct hostent *he = gethostbyname2( str.c_str(), AF_INET6 );
+		if (!he)
+		{
+			Handler().LogError(this, "gethostbyname2", errno, strerror(errno), LOG_LEVEL_WARNING);
+			return false;
+		}
+		memcpy(&l,he -> h_addr_list[0],he -> h_length);
+		return true;
+	}
+	return false;
+}
+
+
+void Socket::l2ip(const ipaddr_t ip, std::string& str)
+{
+	if (m_ipv6)
+	{
+		Handler().LogError(this, "l2ip", 0, "converting to ipv4 on ipv6 socket", LOG_LEVEL_ERROR);
+		str = "";
+		return;
+	}
 	union {
 		struct {
 			unsigned char b1;
@@ -238,84 +455,152 @@ DEB(	printf("l2ip: %08lX\n",ip);)
 	} u;
 	u.l = ip;
 	char tmp[100];
-	sprintf(tmp,"%u.%u.%u.%u",u.a.b1,u.a.b2,u.a.b3,u.a.b4);
+	sprintf(tmp, "%u.%u.%u.%u", u.a.b1, u.a.b2, u.a.b3, u.a.b4);
 	str = tmp;
-DEB(	printf("    : %s\n",tmp);)
 }
 
 
-void Socket::Attach(SOCKET s) 
+void Socket::l2ip(const struct in6_addr& ip, std::string& str,bool mixed)
+{
+	if (!m_ipv6)
+	{
+		Handler().LogError(this, "l2ip", 0, "converting to ipv6 on ipv4 socket", LOG_LEVEL_ERROR);
+		str = "";
+		return;
+	}
+	char slask[100];
+	*slask = 0;
+	unsigned int prev = 0;
+	if (mixed)
+	{
+		unsigned int x;
+		for (size_t i = 0; i < 6; i++)
+		{
+			x = ntohs(ip.s6_addr16[i]);
+			if (*slask && (x || prev))
+				strcat(slask,":");
+			if (x)
+			{
+				sprintf(slask + strlen(slask),"%X", x);
+			}
+			prev = x;
+		}
+		x = ntohs(ip.s6_addr16[6]);
+		sprintf(slask + strlen(slask),":%u.%u",x / 256,x & 255);
+		x = ntohs(ip.s6_addr16[7]);
+		sprintf(slask + strlen(slask),".%u.%u",x / 256,x & 255);
+	}
+	else
+	{
+		for (size_t i = 0; i < 8; i++)
+		{
+			unsigned int x = ntohs(ip.s6_addr16[i]);
+			if (*slask && (x || prev))
+				strcat(slask,":");
+			if (x)
+			{
+				sprintf(slask + strlen(slask),"%X", x);
+			}
+			prev = x;
+		}
+	}
+	str = slask;
+}
+
+
+void Socket::Attach(SOCKET s)
 {
 	m_socket = s;
 }
 
 
-SOCKET Socket::GetSocket() 
+SOCKET Socket::GetSocket()
 {
 	return m_socket;
 }
 
 
-void Socket::SetDeleteByHandler(bool x) 
+void Socket::SetDeleteByHandler(bool x)
 {
 	m_bDel = x;
 }
 
 
-bool Socket::DeleteByHandler() 
+bool Socket::DeleteByHandler()
 {
 	return m_bDel;
 }
 
 
-void Socket::SetCloseAndDelete(bool x) 
+void Socket::SetCloseAndDelete(bool x)
 {
 	m_bClose = x;
 }
 
 
-bool Socket::CloseAndDelete() 
+bool Socket::CloseAndDelete()
 {
 	return m_bClose;
 }
 
 
-void Socket::SetConnecting(bool x) 
+void Socket::SetConnecting(bool x)
 {
 	m_bConnecting = x;
 	m_tConnect = time(NULL);
 }
 
 
-bool Socket::Connecting() 
+bool Socket::Connecting()
 {
 	return m_bConnecting;
 }
 
 
-void Socket::SetRemoteAddress(struct sockaddr* sa,socklen_t l) 
+void Socket::SetRemoteAddress(struct sockaddr* sa, socklen_t l)
 {
-	memcpy(&m_sa,sa,l);
+	memcpy(&m_sa, sa, l);
+	m_sa_len = l;
 }
 
 
-SocketHandler& Socket::Handler() 
+SocketHandler& Socket::Handler()
 {
 	return m_handler;
 }
 
 
-ipaddr_t Socket::GetRemoteIP()
+ipaddr_t Socket::GetRemoteIP4()
 {
 	ipaddr_t l = 0;
 	struct sockaddr_in* saptr = (struct sockaddr_in*)&m_sa;
-	memcpy(&l,&saptr -> sin_addr,4);
+	if (m_ipv6)
+	{
+		Handler().LogError(this, "GetRemoteIP4", 0, "get ipv4 address for ipv6 socket", LOG_LEVEL_WARNING);
+	}
+	memcpy(&l, &saptr -> sin_addr, 4);
 	return l;
+}
+
+
+struct in6_addr Socket::GetRemoteIP6()
+{
+	struct sockaddr_in6 *p = (struct sockaddr_in6 *)&m_sa;
+	if (!m_ipv6)
+	{
+		Handler().LogError(this, "GetRemoteIP6", 0, "get ipv6 address for ipv4 socket", LOG_LEVEL_WARNING);
+	}
+	return p -> sin6_addr;
 }
 
 
 port_t Socket::GetRemotePort()
 {
+	if (m_ipv6)
+	{
+		struct sockaddr_in6 *p = (struct sockaddr_in6 *)&m_sa;
+		return ntohs(p -> sin6_port);
+	}
 	struct sockaddr_in* saptr = (struct sockaddr_in*)&m_sa;
 	return ntohs(saptr -> sin_port);
 }
@@ -324,7 +609,14 @@ port_t Socket::GetRemotePort()
 std::string Socket::GetRemoteAddress()
 {
 	std::string str;
-	l2ip(GetRemoteIP(),str);
+	if (m_ipv6)
+	{
+		l2ip(GetRemoteIP6(), str);
+	}
+	else
+	{
+		l2ip(GetRemoteIP4(), str);
+	}
 	return str;
 }
 
@@ -332,12 +624,17 @@ std::string Socket::GetRemoteAddress()
 std::string Socket::GetRemoteHostname()
 {
 	std::string str;
-	long l = GetRemoteIP();
-#ifdef LINUX
-	struct hostent *he = gethostbyaddr(&l,sizeof(long),AF_INET);
-#else // _WIN32, MACOSX and SOLARIS
-	struct hostent *he = gethostbyaddr( (char *)&l,sizeof(long),AF_INET);
-#endif
+	if (m_ipv6)
+	{
+		Handler().LogError(this, "GetRemoteHostname", 0, "not implemented for ipv6", LOG_LEVEL_WARNING);
+		return GetRemoteAddress();
+	}
+	long l = GetRemoteIP4();
+//#ifdef LINUX
+//	struct hostent *he = gethostbyaddr(&l, sizeof(long), AF_INET);
+//#else // _WIN32, MACOSX and SOLARIS
+	struct hostent *he = gethostbyaddr( (char *)&l, sizeof(long), AF_INET);
+//#endif
 	if (!he)
 	{
 		return GetRemoteAddress();
@@ -365,7 +662,7 @@ bool Socket::SetNonblocking(bool bNb)
 	{
 		if (fcntl(m_socket, F_SETFL, O_NONBLOCK) == -1)
 		{
-			Handler().LogError(this, "fcntl(F_SETFL,O_NONBLOCK)", errno, strerror(errno), LOG_LEVEL_ERROR);
+			Handler().LogError(this, "fcntl(F_SETFL, O_NONBLOCK)", errno, strerror(errno), LOG_LEVEL_ERROR);
 			return false;
 		}
 	}
@@ -373,7 +670,7 @@ bool Socket::SetNonblocking(bool bNb)
 	{
 		if (fcntl(m_socket, F_SETFL, 0) == -1)
 		{
-			Handler().LogError(this, "fcntl(F_SETFL,0)", errno, strerror(errno), LOG_LEVEL_ERROR);
+			Handler().LogError(this, "fcntl(F_SETFL, 0)", errno, strerror(errno), LOG_LEVEL_ERROR);
 			return false;
 		}
 	}
@@ -382,7 +679,7 @@ bool Socket::SetNonblocking(bool bNb)
 }
 
 
-bool Socket::SetNonblocking(bool bNb,SOCKET s)
+bool Socket::SetNonblocking(bool bNb, SOCKET s)
 {
 #ifdef _WIN32
 	unsigned long l = bNb ? 1 : 0;
@@ -400,7 +697,7 @@ bool Socket::SetNonblocking(bool bNb,SOCKET s)
 	{
 		if (fcntl(s, F_SETFL, O_NONBLOCK) == -1)
 		{
-			Handler().LogError(this, "fcntl(F_SETFL,O_NONBLOCK)", errno, strerror(errno), LOG_LEVEL_ERROR);
+			Handler().LogError(this, "fcntl(F_SETFL, O_NONBLOCK)", errno, strerror(errno), LOG_LEVEL_ERROR);
 			return false;
 		}
 	}
@@ -408,7 +705,7 @@ bool Socket::SetNonblocking(bool bNb,SOCKET s)
 	{
 		if (fcntl(s, F_SETFL, 0) == -1)
 		{
-			Handler().LogError(this, "fcntl(F_SETFL,0)", errno, strerror(errno), LOG_LEVEL_ERROR);
+			Handler().LogError(this, "fcntl(F_SETFL, 0)", errno, strerror(errno), LOG_LEVEL_ERROR);
 			return false;
 		}
 	}
@@ -417,9 +714,9 @@ bool Socket::SetNonblocking(bool bNb,SOCKET s)
 }
 
 
-void Socket::Set(bool bRead,bool bWrite,bool bException)
+void Socket::Set(bool bRead, bool bWrite, bool bException)
 {
-	m_handler.Set(m_socket,bRead,bWrite,bException);
+	m_handler.Set(m_socket, bRead, bWrite, bException);
 }
 
 
@@ -454,6 +751,56 @@ void Socket::DetachSocket()
 {
 	m_pThread = new SocketThread(*this);
 	m_pThread -> SetRelease(true);
+}
+
+
+void Socket::OnLine(const std::string& ) 
+{
+}
+
+
+void Socket::OnSSLInitDone() 
+{
+}
+
+
+bool Socket::SSLCheckConnect() 
+{ 
+	return false; 
+}
+
+
+void Socket::SetSSLConnecting(bool x) 
+{ 
+	m_ssl_connecting = x; 
+}
+
+
+bool Socket::SSLConnecting() 
+{ 
+	return m_ssl_connecting; 
+}
+
+
+void Socket::SetLineProtocol(bool x) 
+{ 
+	m_line_protocol = x; 
+}
+
+
+bool Socket::LineProtocol() 
+{ 
+	return m_line_protocol; 
+}
+
+
+void Socket::ReadLine()
+{
+}
+
+
+void Socket::OnConnectFailed()
+{
 }
 
 
