@@ -3,9 +3,11 @@
  ** \author grymse@alhem.net
 **/
 /*
-Copyright (C) 2004-2008  Anders Hedstrom
+Copyright (C) 2004-2009  Anders Hedstrom
 
-This library is made available under the terms of the GNU GPL.
+This library is made available under the terms of the GNU GPL, with
+the additional exemption that compiling, linking, and/or using OpenSSL 
+is allowed.
 
 If you would like to use this library in a closed-source application,
 a separate license agreement is available. For information about 
@@ -366,6 +368,8 @@ public:
 	std::string GetSockAddress6();
 #endif
 #endif
+	socketuid_t UniqueIdentifier() { return m_uid; }
+
 	// --------------------------------------------------------------------------
 	/** @name IP options
 	   When an ip or socket option is available on all of the operating systems
@@ -700,6 +704,8 @@ private:
 	time_t m_timeout_start; ///< Set by SetTimeout
 	time_t m_timeout_limit; ///< Defined by SetTimeout
 	bool m_bLost; ///< connection lost
+static	socketuid_t m_next_uid;
+	socketuid_t m_uid;
 
 #ifdef _WIN32
 static	WSAInitializer m_winsock_init; ///< Winsock initialization singleton class

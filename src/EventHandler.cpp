@@ -3,9 +3,11 @@
  **	\author grymse@alhem.net
 **/
 /*
-Copyright (C) 2005-2008  Anders Hedstrom
+Copyright (C) 2005-2009  Anders Hedstrom
 
-This library is made available under the terms of the GNU GPL.
+This library is made available under the terms of the GNU GPL, with
+the additional exemption that compiling, linking, and/or using OpenSSL 
+is allowed.
 
 If you would like to use this library in a closed-source application,
 a separate license agreement is available. For information about 
@@ -100,7 +102,7 @@ void EventHandler::CheckEvents()
 		s != NULL    This is a Socket implementing IEventOwner, and we can check that the
 			     object instance still is valid using SocketHandler::Valid.
 		*/
-		if (!s || (s && Valid(s)))
+		if (!s || (s && Valid( e -> Data() )))
 		{
 			e -> GetFrom() -> OnEvent(e -> GetID());
 		}
@@ -119,7 +121,8 @@ void EventHandler::CheckEvents()
 
 long EventHandler::AddEvent(IEventOwner *from,long sec,long usec)
 {
-	Event *e = new Event(from, sec, usec);
+	Socket *s = dynamic_cast<Socket *>(from);
+	Event *e = new Event(from, sec, usec, s ? s -> UniqueIdentifier() : 0);
 	std::list<Event *>::iterator it = m_events.begin();
 	while (it != m_events.end() && *(*it) < *e)
 	{

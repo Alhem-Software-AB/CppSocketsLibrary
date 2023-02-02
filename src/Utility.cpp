@@ -3,9 +3,11 @@
  **	\author grymse@alhem.net
 **/
 /*
-Copyright (C) 2004-2008  Anders Hedstrom
+Copyright (C) 2004-2009  Anders Hedstrom
 
-This library is made available under the terms of the GNU GPL.
+This library is made available under the terms of the GNU GPL, with
+the additional exemption that compiling, linking, and/or using OpenSSL 
+is allowed.
 
 If you would like to use this library in a closed-source application,
 a separate license agreement is available. For information about 
@@ -38,6 +40,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #else
 #include <netdb.h>
 #include <pthread.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 #endif
 // --- stack
 #ifdef LINUX
@@ -1148,6 +1152,40 @@ Utility::Uri::Uri(const std::string& url) : m_url(url), m_port(0), m_path(url)
 }
 
 
+Utility::Path::Path(const std::string& _str)
+{
+	std::string str = _str;
+	for (size_t i = 0; i < str.size(); i++)
+	{
+#ifdef _WIN32
+		if (str[i] == '/')
+			str[i] = '\\';
+#else
+		if (str[i] == '\\')
+			str[i] = '/';
+#endif
+	}
+#ifndef _WIN32
+	struct stat st;
+	stat(str.c_str(), &st);
+	if (S_ISDIR(st.st_mode))
+	{
+		m_path = str;
+		return;
+	}
+#endif
+	size_t x = 0;
+	for (size_t i = 0; i < str.size(); i++)
+		if (str[i] == '/' || str[i] == '\\')
+			x = i + 1;
+	m_path = str.substr(0, x);
+	m_file = str.substr(x);
+	for (size_t i = 0; i < m_file.size(); i++)
+		if (m_file[i] == '.')
+			m_ext = m_file.substr(i + 1);
+}
+
+
 const std::string Utility::Stack()
 {
 #if defined LINUX
@@ -1245,6 +1283,55 @@ const std::string Utility::FromUtf8(const std::string& str)
 		}
 	}
 	return r;
+}
+
+// 110yyyxx 10xxxxxx	
+
+const std::string Utility::ToUtf8(const std::string& str)
+{
+	if (str.empty())
+		return "";
+	std::string r;
+	for (size_t i = 0; i < str.size(); i++)
+	{
+		if (((unsigned)str[i] & 0x80) == 0x80)
+		{
+			r += (str[i] >> 6) | 0xc0;
+			r += (str[i] & 0x3f) | 0x80;
+		}
+		else
+		{
+			r += str[i];
+		}
+	}
+	return r;
+}
+
+
+const Utility::Path Utility::GetCurrentDirectory()
+{
+#ifdef _WIN32
+#else
+	char slask[32000];
+	if (!getcwd(slask, 32000))
+	{
+		return Path(".");
+	}
+	return Path(slask);
+#endif
+}
+
+
+bool Utility::ChangeDirectory(const Utility::Path& to_dir)
+{
+#ifdef _WIN32
+#else
+	if (chdir( to_dir.GetPath().c_str() ) == -1)
+	{
+		return false;
+	}
+	return true;
+#endif
 }
 
 

@@ -3,9 +3,11 @@
  **	\author grymse@alhem.net
 **/
 /*
-Copyright (C) 2004-2008  Anders Hedstrom
+Copyright (C) 2004-2009  Anders Hedstrom
 
-This library is made available under the terms of the GNU GPL.
+This library is made available under the terms of the GNU GPL, with
+the additional exemption that compiling, linking, and/or using OpenSSL 
+is allowed.
 
 If you would like to use this library in a closed-source application,
 a separate license agreement is available. For information about 
@@ -118,6 +120,9 @@ public:
 
 	/** Check that a socket really is handled by this socket handler. */
 	virtual bool Valid(Socket *) = 0;
+	/** Preferred method - Check that a socket still is handled by this socket handler. */
+	virtual bool Valid(socketuid_t) = 0;
+
 	/** Return number of sockets handled by this handler.  */
 	virtual size_t GetCount() = 0;
 

@@ -3,9 +3,11 @@
  **	\author grymse@alhem.net
 **/
 /*
-Copyright (C) 2004-2008  Anders Hedstrom
+Copyright (C) 2004-2009  Anders Hedstrom
 
-This library is made available under the terms of the GNU GPL.
+This library is made available under the terms of the GNU GPL, with
+the additional exemption that compiling, linking, and/or using OpenSSL 
+is allowed.
 
 If you would like to use this library in a closed-source application,
 a separate license agreement is available. For information about 
@@ -41,6 +43,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
    in read operations - helps on ECOS */
 #define SOCKETS_DYNAMIC_TEMP
 
+/** define type to uniquely identify a socket instance. */
+typedef unsigned long socketuid_t;
 
 // platform specific stuff
 #if (defined(__unix__) || defined(unix)) && !defined(USG)

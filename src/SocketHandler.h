@@ -3,9 +3,11 @@
  **	\author grymse@alhem.net
 **/
 /*
-Copyright (C) 2004-2008  Anders Hedstrom
+Copyright (C) 2004-2009  Anders Hedstrom
 
-This library is made available under the terms of the GNU GPL.
+This library is made available under the terms of the GNU GPL, with
+the additional exemption that compiling, linking, and/or using OpenSSL 
+is allowed.
 
 If you would like to use this library in a closed-source application,
 a separate license agreement is available. For information about 
@@ -98,6 +100,7 @@ public:
 
 	/** Check that a socket really is handled by this socket handler. */
 	bool Valid(Socket *);
+	bool Valid(socketuid_t);
 
 	/** Return number of sockets handled by this handler.  */
 	size_t GetCount();
@@ -242,7 +245,7 @@ private:
 	int m_resolv_id; ///< Resolver id counter
 	ResolvServer *m_resolver; ///< Resolver thread pointer
 	port_t m_resolver_port; ///< Resolver listen port
-	std::map<Socket *, bool> m_resolve_q; ///< resolve queue
+	std::map<socketuid_t, bool> m_resolve_q; ///< resolve queue
 #endif
 #ifdef ENABLE_POOL
 	bool m_b_enable_pool; ///< Connection pool enabled if true

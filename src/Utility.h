@@ -3,9 +3,11 @@
  **	\author grymse@alhem.net
 **/
 /*
-Copyright (C) 2004-2008  Anders Hedstrom
+Copyright (C) 2004-2009  Anders Hedstrom
 
-This library is made available under the terms of the GNU GPL.
+This library is made available under the terms of the GNU GPL, with
+the additional exemption that compiling, linking, and/or using OpenSSL 
+is allowed.
 
 If you would like to use this library in a closed-source application,
 a separate license agreement is available. For information about 
@@ -93,6 +95,20 @@ public:
 		std::string m_host;
 		int m_port;
 		std::string m_path;
+		std::string m_ext;
+	};
+	class Path
+	{
+	public:
+		Path(const std::string& );
+
+		const std::string& GetPath() const { return m_path; }
+		const std::string& GetFilename() const { return m_file; }
+		const std::string& GetExtension() const { return m_ext; }
+
+	private:
+		std::string m_path;
+		std::string m_file;
 		std::string m_ext;
 	};
 public:
@@ -188,8 +204,13 @@ public:
 
 	static const std::string Stack();
 
-	/** Utf8 decrypt. */
+	/** Utf8 decrypt, encrypt. */
 	static const std::string FromUtf8(const std::string& );
+	static const std::string ToUtf8(const std::string&);
+
+	/** File system stuff */
+	static const Path GetCurrentDirectory();
+	static bool ChangeDirectory(const Path& to_dir);
 
 private:
 	static std::string m_host; ///< local hostname

@@ -3,9 +3,11 @@
  **	\author grymse@alhem.net
 **/
 /*
-Copyright (C) 2004-2008  Anders Hedstrom
+Copyright (C) 2004-2009  Anders Hedstrom
 
-This library is made available under the terms of the GNU GPL.
+This library is made available under the terms of the GNU GPL, with
+the additional exemption that compiling, linking, and/or using OpenSSL 
+is allowed.
 
 If you would like to use this library in a closed-source application,
 a separate license agreement is available. For information about 
@@ -502,6 +504,7 @@ DEB(			fprintf(stderr, "m_maxsock: %d\n", m_maxsock);
 		for (socket_v::iterator it2 = m_fds.begin(); it2 != m_fds.end() && n; it2++)
 		{
 			SOCKET i = *it2;
+			// ---------------------------------------------------------------------------------
 			if (FD_ISSET(i, &rfds))
 			{
 				socket_m::iterator itmp = m_sockets.find(i);
@@ -526,6 +529,7 @@ DEB(			fprintf(stderr, "m_maxsock: %d\n", m_maxsock);
 				}
 				n--;
 			}
+			// ---------------------------------------------------------------------------------
 			if (FD_ISSET(i, &wfds))
 			{
 				socket_m::iterator itmp = m_sockets.find(i);
@@ -550,6 +554,7 @@ DEB(			fprintf(stderr, "m_maxsock: %d\n", m_maxsock);
 				}
 				n--;
 			}
+			// ---------------------------------------------------------------------------------
 			if (FD_ISSET(i, &efds))
 			{
 				socket_m::iterator itmp = m_sockets.find(i);
@@ -564,6 +569,7 @@ DEB(			fprintf(stderr, "m_maxsock: %d\n", m_maxsock);
 				}
 				n--;
 			}
+			// ---------------------------------------------------------------------------------
 		} // m_fds loop
 		m_preverror = -1;
 	} // if (n > 0)
@@ -668,7 +674,6 @@ DEB(			fprintf(stderr, "m_maxsock: %d\n", m_maxsock);
 		if (tnow != m_tlast)
 		{
 			socket_v tmp = m_fds_timeout;
-DEB(			fprintf(stderr, "Checking %d socket(s) for timeout\n", tmp.size());)
 			for (socket_v::iterator it = tmp.begin(); it != tmp.end(); it++)
 			{
 				Socket *p = NULL;
@@ -696,6 +701,7 @@ DEB(			fprintf(stderr, "Checking %d socket(s) for timeout\n", tmp.size());)
 					if (p -> Timeout(tnow))
 					{
 						StreamSocket *scp = dynamic_cast<StreamSocket *>(p);
+DEB(						fprintf(stderr, "Checking %d socket(s) for timeout\n", tmp.size());)
 						p -> SetTimeout(0);
 						if (scp && scp -> Connecting())
 							p -> OnConnectTimeout();
@@ -1008,7 +1014,7 @@ DEB(							fprintf(stderr, "Close() before OnDelete\n");)
 #ifdef ENABLE_RESOLVER
 bool SocketHandler::Resolving(Socket *p0)
 {
-	std::map<Socket *, bool>::iterator it = m_resolve_q.find(p0);
+	std::map<socketuid_t, bool>::iterator it = m_resolve_q.find(p0 -> UniqueIdentifier());
 	return it != m_resolve_q.end();
 }
 #endif
@@ -1020,6 +1026,18 @@ bool SocketHandler::Valid(Socket *p0)
 	{
 		Socket *p = it -> second;
 		if (p0 == p)
+			return true;
+	}
+	return false;
+}
+
+
+bool SocketHandler::Valid(socketuid_t uid)
+{
+	for (socket_m::iterator it = m_sockets.begin(); it != m_sockets.end(); it++)
+	{
+		Socket *p = it -> second;
+		if (p -> UniqueIdentifier() == uid)
 			return true;
 	}
 	return false;
@@ -1083,7 +1101,7 @@ int SocketHandler::Resolve(Socket *p,const std::string& host,port_t port)
 		LogError(resolv, "Resolve", -1, "Can't connect to local resolve server", LOG_LEVEL_FATAL);
 	}
 	Add(resolv);
-	m_resolve_q[p] = true;
+	m_resolve_q[p -> UniqueIdentifier()] = true;
 DEB(	fprintf(stderr, " *** Resolve '%s:%d' id#%d  m_resolve_q size: %d  p: %p\n", host.c_str(), port, resolv -> GetId(), m_resolve_q.size(), p);)
 	return resolv -> GetId();
 }
@@ -1103,7 +1121,7 @@ int SocketHandler::Resolve6(Socket *p,const std::string& host,port_t port)
 		LogError(resolv, "Resolve", -1, "Can't connect to local resolve server", LOG_LEVEL_FATAL);
 	}
 	Add(resolv);
-	m_resolve_q[p] = true;
+	m_resolve_q[p -> UniqueIdentifier()] = true;
 	return resolv -> GetId();
 }
 #endif
@@ -1122,7 +1140,7 @@ int SocketHandler::Resolve(Socket *p,ipaddr_t a)
 		LogError(resolv, "Resolve", -1, "Can't connect to local resolve server", LOG_LEVEL_FATAL);
 	}
 	Add(resolv);
-	m_resolve_q[p] = true;
+	m_resolve_q[p -> UniqueIdentifier()] = true;
 	return resolv -> GetId();
 }
 
@@ -1141,7 +1159,7 @@ int SocketHandler::Resolve(Socket *p,in6_addr& a)
 		LogError(resolv, "Resolve", -1, "Can't connect to local resolve server", LOG_LEVEL_FATAL);
 	}
 	Add(resolv);
-	m_resolve_q[p] = true;
+	m_resolve_q[p -> UniqueIdentifier()] = true;
 	return resolv -> GetId();
 }
 #endif
@@ -1249,7 +1267,7 @@ bool SocketHandler::PoolEnabled()
 void SocketHandler::Remove(Socket *p)
 {
 #ifdef ENABLE_RESOLVER
-	std::map<Socket *, bool>::iterator it4 = m_resolve_q.find(p);
+	std::map<socketuid_t, bool>::iterator it4 = m_resolve_q.find(p -> UniqueIdentifier());
 	if (it4 != m_resolve_q.end())
 		m_resolve_q.erase(it4);
 #endif
@@ -1322,7 +1340,7 @@ void SocketHandler::CheckList(socket_v& ref,const std::string& listname)
 		}
 		if (!found)
 		{
-			fprintf(stderr, "CheckList failed for \"%s\": fd %d\n", listname.c_str(), s);
+DEB(			fprintf(stderr, "CheckList failed for \"%s\": fd %d\n", listname.c_str(), s);)
 		}
 	}
 }
@@ -1332,7 +1350,7 @@ void SocketHandler::AddList(SOCKET s,list_t which_one,bool add)
 {
 	if (s == INVALID_SOCKET)
 	{
-DEB(		fprintf(stderr, "AddList:  invalid_socket\n");)
+DEB(		fprintf(stderr, "AddList:  invalid_socket\n%s\n", Utility::Stack().c_str());)
 		return;
 	}
 	socket_v& ref =
@@ -1345,23 +1363,6 @@ DEB(		fprintf(stderr, "AddList:  invalid_socket\n");)
 		(which_one == LIST_CLOSE) ? m_fds_close : m_fds_close;
 	if (add)
 	{
-#ifdef ENABLE_DETACH
-DEB(	fprintf(stderr, "AddList;  %5d: %s: %s\n", s, (which_one == LIST_CALLONCONNECT) ? "CallOnConnect" :
-		(which_one == LIST_DETACH) ? "Detach" :
-		(which_one == LIST_TIMEOUT) ? "Timeout" :
-		(which_one == LIST_RETRY) ? "Retry" :
-		(which_one == LIST_CLOSE) ? "Close" : "<undef>",
-		add ? "Add" : "Remove");)
-#else
-DEB(	fprintf(stderr, "AddList;  %5d: %s: %s\n", s, (which_one == LIST_CALLONCONNECT) ? "CallOnConnect" :
-		(which_one == LIST_TIMEOUT) ? "Timeout" :
-		(which_one == LIST_RETRY) ? "Retry" :
-		(which_one == LIST_CLOSE) ? "Close" : "<undef>",
-		add ? "Add" : "Remove");)
-#endif
-	}
-	if (add)
-	{
 		for (socket_v::iterator it = ref.begin(); it != ref.end(); it++)
 		{
 			if (*it == s) // already there
@@ -1370,18 +1371,44 @@ DEB(	fprintf(stderr, "AddList;  %5d: %s: %s\n", s, (which_one == LIST_CALLONCONN
 			}
 		}
 		ref.push_back(s);
+#ifdef ENABLE_DETACH
+DEB(	fprintf(stderr, " ^^ Add file descriptor %5d to list %s  List size after operation %d\n", s, (which_one == LIST_CALLONCONNECT) ? "CallOnConnect" :
+		(which_one == LIST_DETACH) ? "Detach" :
+		(which_one == LIST_TIMEOUT) ? "Timeout" :
+		(which_one == LIST_RETRY) ? "Retry" :
+		(which_one == LIST_CLOSE) ? "Close" : "<undef>",
+		ref.size());)
+#else
+DEB(	fprintf(stderr, " ^^ Add file descriptor %5d to list %s  List size after operation %d\n", s, (which_one == LIST_CALLONCONNECT) ? "CallOnConnect" :
+		(which_one == LIST_TIMEOUT) ? "Timeout" :
+		(which_one == LIST_RETRY) ? "Retry" :
+		(which_one == LIST_CLOSE) ? "Close" : "<undef>",
+		ref.size());)
+#endif
 		return;
 	}
 	// remove
 	for (socket_v::iterator it = ref.begin(); it != ref.end(); it++)
 	{
-		if (*it == s)
+		while (it != ref.end() && *it == s)
 		{
-			ref.erase(it);
-			break;
+			it = ref.erase(it);
+#ifdef ENABLE_DETACH
+DEB(	fprintf(stderr, " ^^ Remove file descriptor %5d from list %s  List size after operation %d\n", s, (which_one == LIST_CALLONCONNECT) ? "CallOnConnect" :
+		(which_one == LIST_DETACH) ? "Detach" :
+		(which_one == LIST_TIMEOUT) ? "Timeout" :
+		(which_one == LIST_RETRY) ? "Retry" :
+		(which_one == LIST_CLOSE) ? "Close" : "<undef>",
+		ref.size());)
+#else
+DEB(	fprintf(stderr, " ^^ Remove file descriptor %5d from list %s  List size after operation %d\n", s, (which_one == LIST_CALLONCONNECT) ? "CallOnConnect" :
+		(which_one == LIST_TIMEOUT) ? "Timeout" :
+		(which_one == LIST_RETRY) ? "Retry" :
+		(which_one == LIST_CLOSE) ? "Close" : "<undef>",
+		ref.size());)
+#endif
 		}
 	}
-//DEB(	fprintf(stderr, "/AddList\n");)
 }
 
 

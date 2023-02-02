@@ -3,9 +3,11 @@
  **	\author grymse@alhem.net
 **/
 /*
-Copyright (C) 2004-2008  Anders Hedstrom
+Copyright (C) 2004-2009  Anders Hedstrom
 
-This library is made available under the terms of the GNU GPL.
+This library is made available under the terms of the GNU GPL, with
+the additional exemption that compiling, linking, and/or using OpenSSL 
+is allowed.
 
 If you would like to use this library in a closed-source application,
 a separate license agreement is available. For information about 
@@ -475,6 +477,13 @@ DEB(				fprintf(stderr, "SSL read problem, errcode = %d\n",n);)
 		else
 		if (!n)
 		{
+DEB(			n = SSL_get_error(m_ssl, n);
+			fprintf(stderr, "SSL_read returns 0, SSL_get_error: %d\n", n);
+			if (n == SSL_ERROR_SYSCALL)
+			{
+				fprintf(stderr, "ERR_get_error() returns %ld\n", ERR_get_error());
+				perror("errno: SSL_read");
+			})
 			OnDisconnect();
 			OnDisconnect(TCP_DISCONNECT_SSL, 0);
 			SetCloseAndDelete(true);
@@ -1064,7 +1073,6 @@ DEB(			fprintf(stderr, " m_ssl is NULL\n");)
 			SetCloseAndDelete(true);
 			return;
 		}
-		SSL_set_mode(m_ssl, SSL_MODE_AUTO_RETRY);
 		m_sbio = BIO_new_socket((int)GetSocket(), BIO_NOCLOSE);
 		if (!m_sbio)
 		{
@@ -1107,7 +1115,6 @@ DEB(			fprintf(stderr, " m_ssl is NULL\n");)
 			SetCloseAndDelete(true);
 			return;
 		}
-		SSL_set_mode(m_ssl, SSL_MODE_AUTO_RETRY);
 		m_sbio = BIO_new_socket((int)GetSocket(), BIO_NOCLOSE);
 		if (!m_sbio)
 		{
@@ -1243,7 +1250,7 @@ void TcpSocket::InitializeContext(const std::string& context, const SSL_METHOD *
 	{
 		SSL_METHOD *meth = meth_in ? const_cast<SSL_METHOD *>(meth_in) : SSLv3_method();
 		m_ssl_ctx = m_client_contexts[context] = SSL_CTX_new(meth);
-		SSL_CTX_set_mode(m_ssl_ctx, SSL_MODE_AUTO_RETRY);
+		SSL_CTX_set_mode(m_ssl_ctx, SSL_MODE_ENABLE_PARTIAL_WRITE);
 	}
 	else
 	{
@@ -1260,7 +1267,7 @@ void TcpSocket::InitializeContext(const std::string& context,const std::string& 
 	{
 		SSL_METHOD *meth = meth_in ? const_cast<SSL_METHOD *>(meth_in) : SSLv3_method();
 		m_ssl_ctx = m_server_contexts[context] = SSL_CTX_new(meth);
-		SSL_CTX_set_mode(m_ssl_ctx, SSL_MODE_AUTO_RETRY);
+		SSL_CTX_set_mode(m_ssl_ctx, SSL_MODE_ENABLE_PARTIAL_WRITE);
 		// session id
 		if (context.size())
 			SSL_CTX_set_session_id_context(m_ssl_ctx, (const unsigned char *)context.c_str(), (unsigned int)context.size());
@@ -1296,7 +1303,7 @@ void TcpSocket::InitializeContext(const std::string& context,const std::string& 
 	{
 		SSL_METHOD *meth = meth_in ? const_cast<SSL_METHOD *>(meth_in) : SSLv3_method();
 		m_ssl_ctx = m_server_contexts[context] = SSL_CTX_new(meth);
-		SSL_CTX_set_mode(m_ssl_ctx, SSL_MODE_AUTO_RETRY);
+		SSL_CTX_set_mode(m_ssl_ctx, SSL_MODE_ENABLE_PARTIAL_WRITE);
 		// session id
 		if (context.size())
 			SSL_CTX_set_session_id_context(m_ssl_ctx, (const unsigned char *)context.c_str(), (unsigned int)context.size());
