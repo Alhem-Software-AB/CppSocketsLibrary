@@ -115,6 +115,8 @@ protected:
 	Base64 m_b;
 	
 private:
+	MinderHandler(const MinderHandler& ) {}
+	MinderHandler& operator=(const MinderHandler& ) { return *this; }
 	std::string m_id;
 	std::string m_external_ip;
 	unsigned long m_message_id;

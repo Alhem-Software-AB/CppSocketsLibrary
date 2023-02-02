@@ -46,8 +46,6 @@ HttpsSocket::~HttpsSocket()
 }
 
 
-#define BUFSIZE TCP_BUFSIZE_READ
-
 void HttpsSocket::OnRead()
 {
 	SSLSocket::OnRead();
@@ -56,9 +54,9 @@ void HttpsSocket::OnRead()
 		if (ibuf.GetLength())
 		{
 			size_t n = ibuf.GetLength();
-			char tmp[BUFSIZE];
+			char tmp[TCP_BUFSIZE_READ];
 
-			n = (n >= BUFSIZE) ? BUFSIZE - 1 : n;
+			n = (n >= TCP_BUFSIZE_READ) ? TCP_BUFSIZE_READ - 1 : n;
 			ibuf.Read(tmp,n);
 			tmp[n] = 0;
 
@@ -73,9 +71,9 @@ void HttpsSocket::ReadLine()
 	if (ibuf.GetLength())
 	{
 		size_t n = ibuf.GetLength();
-		char tmp[BUFSIZE];
+		char tmp[TCP_BUFSIZE_READ];
 
-		n = (n >= BUFSIZE) ? BUFSIZE - 1 : n;
+		n = (n >= TCP_BUFSIZE_READ) ? TCP_BUFSIZE_READ - 1 : n;
 		ibuf.Read(tmp,n);
 		tmp[n] = 0;
 

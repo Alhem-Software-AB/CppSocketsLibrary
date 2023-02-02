@@ -196,3 +196,8 @@ Version 1.8.2
 49d48
 < sockets_test.cpp
 
+Version 1.8.3
+--------------------------
+48a49
+> sockets_test.cpp
+

@@ -30,6 +30,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #endif
 
 #include "Socket.h"
+#include "SocketHandler.h"
+#include "StdLog.h"
 
 
 template <class X>
@@ -280,15 +282,19 @@ public:
 			else
 				tmp = new X(Handler());
 			tmp -> SetIpv6();
-			tmp -> Init();
 			tmp -> SetParent(this);
 			tmp -> Attach(a_s);
+			tmp -> SetNonblocking(true);
 			tmp -> SetRemoteAddress( (struct sockaddr *)saptr, len);
+			tmp -> Init();
 			Handler().Add(tmp);
 			tmp -> SetDeleteByHandler(true);
 			if (Handler().OkToAccept())
 			{
-				tmp -> OnAccept();
+				if (tmp -> IsSSL()) // SSL Enabled socket
+					tmp -> OnSSLAccept();
+				else
+					tmp -> OnAccept();
 			}
 			else
 			{
@@ -313,15 +319,19 @@ public:
 			tmp = m_creator -> Create();
 		else
 			tmp = new X(Handler());
-		tmp -> Init();
 		tmp -> SetParent(this);
 		tmp -> Attach(a_s);
+		tmp -> SetNonblocking(true);
 		tmp -> SetRemoteAddress( (struct sockaddr *)saptr, len);
+		tmp -> Init();
 		Handler().Add(tmp);
 		tmp -> SetDeleteByHandler(true);
 		if (Handler().OkToAccept())
 		{
-			tmp -> OnAccept();
+			if (tmp -> IsSSL()) // SSL Enabled socket
+				tmp -> OnSSLAccept();
+			else
+				tmp -> OnAccept();
 		}
 		else
 		{

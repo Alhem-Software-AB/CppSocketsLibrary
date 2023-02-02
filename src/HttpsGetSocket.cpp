@@ -96,11 +96,7 @@ void HttpsGetSocket::OnSSLInitDone()
 		"Accept-Language: en-us,en;q=0.5\n"
 		"Accept-Encoding: gzip,deflate\n"
 		"Accept-Charset: ISO-8859-1,utf-8;q=0.7,*;q=0.7\n"
-#ifdef _VERSION
-		"User-agent: C++Sockets/" _VERSION "\n"
-#else
-		"User-agent: C++Sockets/1.1\n"
-#endif
+		"User-agent: C++ Sockets library\n"
 		"Host: " + m_host + ":" + Utility::l2string(m_port) + "\n"
 		"\n";
 	Send(str);

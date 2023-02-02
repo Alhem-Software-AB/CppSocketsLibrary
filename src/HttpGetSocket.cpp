@@ -32,6 +32,17 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "SocketHandler.h"
 #include "HttpGetSocket.h"
 
+#define DEB(x) x
+
+
+HttpGetSocket::HttpGetSocket(SocketHandler& h) : HTTPSocket(h)
+,m_fil(NULL)
+,m_bComplete(false)
+,m_content_length(0)
+,m_content_ptr(0)
+{
+}
+
 
 HttpGetSocket::HttpGetSocket(SocketHandler& h,const std::string& url_in,const std::string& filename)
 :HTTPSocket(h)
@@ -45,8 +56,7 @@ HttpGetSocket::HttpGetSocket(SocketHandler& h,const std::string& url_in,const st
 	{
 		m_to_file = filename;
 	}
-	SetLineProtocol();
-
+DEB(printf("HttpGetSocket using port: %d\n", m_port);)
 	if (!Open(m_host,m_port))
 	{
 		if (!Connecting())
@@ -69,8 +79,6 @@ HttpGetSocket::HttpGetSocket(SocketHandler& h,const std::string& host,port_t por
 ,m_content_length(0)
 ,m_content_ptr(0)
 {
-	SetLineProtocol();
-
 	if (!Open(m_host,m_port))
 	{
 		if (!Connecting())
@@ -97,12 +105,9 @@ void HttpGetSocket::OnConnect()
 	AddResponseHeader( "Accept-Language", "en-us,en;q=0.5");
 	AddResponseHeader( "Accept-Encoding", "gzip,deflate");
 	AddResponseHeader( "Accept-Charset", "ISO-8859-1,utf-8;q=0.7,*;q=0.7");
-#ifdef _VERSION
-	AddResponseHeader( "User-agent", "C++Sockets/" _VERSION "");
-#else
-	AddResponseHeader( "User-agent", "C++ Sockets library");
-#endif
-	if (m_port != 80)
+	AddResponseHeader( "User-agent", MyUseragent() );
+
+	if (m_port != 80 && m_port != 443)
 		AddResponseHeader( "Host", m_host + " " + Utility::l2string(m_port) );
 	else
 		AddResponseHeader( "Host", m_host );
@@ -211,13 +216,18 @@ void HttpGetSocket::OnData(const char *buf,size_t len)
 void HttpGetSocket::url_this(const std::string& url_in,std::string& host,port_t& port,std::string& url,std::string& file)
 {
 	Parse pa(url_in,"/");
-	pa.getword(); // http
+	std::string protocol = pa.getword(); // http
 	host = pa.getword();
 	if (strstr(host.c_str(),":"))
 	{
 		Parse pa(host,":");
 		pa.getword(host);
 		port = static_cast<port_t>(pa.getvalue());
+	}
+	else
+	if (!strcasecmp(protocol.c_str(), "https:"))
+	{
+		port = 443;
 	}
 	else
 	{
@@ -234,5 +244,19 @@ void HttpGetSocket::url_this(const std::string& url_in,std::string& host,port_t&
 		}
 	}
 } // url_this
+
+
+void HttpGetSocket::SetFilename(const std::string& filename)
+{
+	m_to_file = filename;
+}
+
+
+void HttpGetSocket::Url(const std::string& url,std::string& host,port_t& port)
+{
+	url_this(url,m_host,m_port,m_url,m_to_file);
+	host = m_host;
+	port = m_port;
+}
 
 

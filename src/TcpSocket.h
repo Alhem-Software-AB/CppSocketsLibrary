@@ -25,6 +25,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "Socket.h"
 #include "CircularBuffer.h"
+#ifdef HAVE_OPENSSL
+#include <openssl/ssl.h>
+#ifdef _WIN32
+// TODO: systray.exe??
+#define RANDOM "systray.exe"
+#else
+#define RANDOM "/dev/urandom"
+#endif
+#endif
 
 #define TCP_BUFSIZE_READ 16400
 
@@ -56,8 +65,10 @@ public:
 	bool Open(ipaddr_t,port_t,bool skip_socks = false);
 	bool Open(const std::string &host,port_t port);
 	bool Open6(const std::string& host,port_t port);
+	int Close();
 
 	void Send(const std::string &);
+	void Sendf(char *format, ...);
 
 	virtual void SendBuf(const char *,size_t);
 	virtual void OnRawData(const char *,size_t) {}
@@ -78,10 +89,23 @@ public:
 
 	void Resolved(int id,ipaddr_t a,port_t port);
 
+	// SSL
+	void OnSSLConnect();
+	void OnSSLAccept();
+	virtual void InitSSLClient();
+	virtual void InitSSLServer();
+
 protected:
 	TcpSocket(const TcpSocket& s);
 	void OnRead();
 	void OnWrite();
+	// SSL
+#ifdef HAVE_OPENSSL
+	void InitializeContext(SSL_METHOD * = NULL);
+	void InitializeContext(const std::string& keyfile,const std::string& password,SSL_METHOD * = NULL);
+static	int password_cb(char *buf,int num,int rwflag,void *userdata);
+#endif
+	bool SSLNegotiate();
 	//
 	CircularBuffer ibuf;
 	CircularBuffer obuf;
@@ -96,6 +120,14 @@ private:
 	unsigned short m_socks4_dstport;
 	unsigned long m_socks4_dstip;
 	int m_resolver_id;
+	// SSL
+#ifdef HAVE_OPENSSL
+	SSL_CTX *m_context;
+	SSL *m_ssl;
+	BIO *m_sbio;
+static	BIO *bio_err;
+static	std::string m_password;
+#endif
 };
 
 

@@ -163,7 +163,7 @@ void MinionSocket::OnLine(const std::string& line)
 			std::string remote_id;
 			pa.getword(id);
 			pa.getword(ipstr);
-			port_t port = pa.getvalue(); // remote listen port
+			port_t port = (port_t)pa.getvalue(); // remote listen port
 			pa.getword(remote_id);
 			long remote_host_id = pa.getvalue();
 			ipaddr_t ip;

@@ -1,4 +1,4 @@
-VERSION =	1.8.2
+VERSION =	1.8.3
 
 INCLUDE =	-I/usr/devel/include -I.
 PREFIX =	/usr/local
@@ -75,6 +75,7 @@ install:	all
 		cp libSocketsEx.a $(PREFIX)/lib
 		@mkdir -p $(PREFIX)/include/Sockets
 		cp -a *.h $(PREFIX)/include/Sockets
+		@mkdir -p $(PREFIX)/bin
 		install Sockets-config $(PREFIX)/bin
 
 clean:
@@ -86,7 +87,8 @@ clean:
 FILES =		*.h *.cpp Makefile Project/*.ds* \
 		README.macosx gpl.txt mkdot.sh \
 		Project.net/Sockets/*.vcproj Project.net/Sockets/*.sln \
-		Project.net/Test/*.vcproj
+		Project.net/Test/*.vcproj \
+		DevCpp/*.dev DevCpp/*.cpp
 
 tar:		clean
 		rm -f Mutex.*
@@ -94,10 +96,8 @@ tar:		clean
 		rm -f uuid.h
 		rm -f Stdin.*
 		rm -f ListenSocketBase.*
-		./mkdot.sh
 		tar czf Sockets-$(VERSION).tar.gz $(FILES)
 		zip -l Sockets-$(VERSION).zip $(FILES)
-		doxygen doxygen.cfg
 		/usr/local/bin/tarfix.sh Sockets-$(VERSION)
 		cp Sockets-$(VERSION).tar.gz /usr/local/apache/www.libsockets.net/htdocs
 		cp Sockets-$(VERSION).zip /usr/local/apache/www.alhem.net/htdocs/Sockets

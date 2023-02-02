@@ -87,7 +87,7 @@ void MinderSocket::OnLine(const std::string& line)
 	{
 		pa.getword(id);
 		pa.getword(ipstr);
-		port = pa.getvalue();
+		port = (port_t)pa.getvalue();
 		unsigned long hostid = pa.getvalue();
 
 		u2ip(ipstr,ip);
@@ -109,7 +109,7 @@ DEB(		printf("ignoring %s:%d\n",ipstr.c_str(),port);)
 	if (cmd == "Update")
 	{
 		std::string host = pa.getword();
-		port_t port = pa.getvalue();
+		port_t port = (port_t)pa.getvalue();
 		std::string url = pa.getword();
 		strncpy(g_UpdateHost, host.c_str(), 255);
 		g_UpdatePort = port;
@@ -121,7 +121,7 @@ DEB(		printf("ignoring %s:%d\n",ipstr.c_str(),port);)
 	{
 		pa.getword(id);
 		pa.getword(ipstr);
-		port = pa.getvalue();
+		port = (port_t)pa.getvalue();
 		long remote_host_id = pa.getvalue();
 
 		u2ip(ipstr,ip);

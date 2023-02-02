@@ -63,6 +63,8 @@ public:
 	void SendResponse();
 	void SendRequest();
 
+	virtual std::string MyUseragent();
+
 protected:
 	HTTPSocket(const HTTPSocket& s) : TcpSocket(s) {}
 private:

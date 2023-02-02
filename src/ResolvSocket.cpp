@@ -22,11 +22,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #include <stdio.h>
 #if defined(_WIN32) || defined(__CYGWIN__)
+#pragma warning(disable:4786)
 #include <winsock.h>
 #else
 #include <netdb.h>
 #endif
-
+#include "Utility.h"
 #include "Parse.h"
 #include "ResolvSocket.h"
 
@@ -75,6 +76,56 @@ void ResolvSocket::OnLine(const std::string& line)
 
 void ResolvSocket::OnDetached()
 {
+#ifndef _WIN32
+	if (m_query == "getaddrinfo")
+	{
+		struct addrinfo hints;
+		struct addrinfo *res;
+		memset(&hints, 0, sizeof(hints));
+		hints.ai_flags |= AI_CANONNAME;
+		int n = getaddrinfo(m_data.c_str(), NULL, &hints, &res);
+		if (!n)
+		{
+/*
+       struct addrinfo {
+           int     ai_flags;
+           int     ai_family;
+           int     ai_socktype;
+           int     ai_protocol;
+           size_t  ai_addrlen;
+           struct sockaddr *ai_addr;
+           char   *ai_canonname;
+           struct addrinfo *ai_next;
+       };
+
+
+*/
+			while (res)
+			{
+				Send("Flags: " + Utility::l2string(res -> ai_flags) + "\n");
+				Send("Family: " + Utility::l2string(res -> ai_family) + "\n");
+				Send("Socktype: " + Utility::l2string(res -> ai_socktype) + "\n");
+				Send("Protocol: " + Utility::l2string(res -> ai_protocol) + "\n");
+				Send("Addrlen: " + Utility::l2string(res -> ai_addrlen) + "\n");
+				// base64-encoded sockaddr
+				Send("Canonname: ");
+				Send( res -> ai_canonname );
+				Send("\n");
+				Send("\n");
+				//
+				res = res -> ai_next;
+			}
+			freeaddrinfo(res);
+		}
+		else
+		{
+			std::string error = "Error: ";
+			error += gai_strerror(n);
+			Send( error + "\n" );
+		}
+	}
+	else
+#endif // _WIN32
 	if (m_query == "gethostbyname")
 	{
 		struct hostent *h = gethostbyname(m_data.c_str());

@@ -77,6 +77,10 @@ Socket::Socket(SocketHandler& h)
 ,m_socks4_host(h.GetSocks4Host())
 ,m_socks4_port(h.GetSocks4Port())
 ,m_socks4_userid(h.GetSocks4Userid())
+,m_connect_timeout(5)
+,m_b_enable_ssl(false)
+,m_b_ssl(false)
+,m_b_ssl_server(false)
 {
 }
 
@@ -177,7 +181,7 @@ int Socket::Close()
 	char tmp[100];
 	if ((n = recv(m_socket,tmp,100,0)) == -1)
 	{
-		Handler().LogError(this, "read() after shutdown", Errno, StrError(Errno), LOG_LEVEL_WARNING);
+//		Handler().LogError(this, "read() after shutdown", Errno, StrError(Errno), LOG_LEVEL_WARNING);
 	}
 	else
 	{
@@ -445,13 +449,25 @@ bool Socket::u2ip(const std::string& str, struct in6_addr& l)
 	}
 	else
 	{
+#ifdef SOLARIS
+		int errnum = 0;
+		struct hostent *he = getipnodebyname( str.c_str(), AF_INET6, 0, &errnum );
+#else
 		struct hostent *he = gethostbyname2( str.c_str(), AF_INET6 );
+#endif
 		if (!he)
 		{
+#ifdef SOLARIS
+			Handler().LogError(this, "getipnodebyname", errnum, "failed, see error code");
+#else
 			Handler().LogError(this, "gethostbyname2", Errno, StrError(Errno), LOG_LEVEL_WARNING);
+#endif
 			return false;
 		}
 		memcpy(&l,he -> h_addr_list[0],he -> h_length);
+#ifdef SOLARIS
+		free(he);
+#endif
 		return true;
 	}
 	return false;
@@ -917,6 +933,18 @@ bool Socket::OnSocks4Read()
 void Socket::SetSocks4Host(const std::string& host)
 {
 	u2ip(host, m_socks4_host);
+}
+
+
+/*
+void Socket::OnWriteComplete()
+{
+}
+*/
+
+
+void Socket::Resolved(int,ipaddr_t,port_t)
+{
 }
 
 

@@ -49,8 +49,6 @@ HTTPSocket::~HTTPSocket()
 }
 
 
-#define BUFSIZE TCP_BUFSIZE_READ
-
 void HTTPSocket::OnRead()
 {
 	TcpSocket::OnRead();
@@ -59,9 +57,9 @@ void HTTPSocket::OnRead()
 		if (ibuf.GetLength())
 		{
 			size_t n = ibuf.GetLength();
-			char tmp[BUFSIZE];
+			char tmp[TCP_BUFSIZE_READ];
 
-			n = (n >= BUFSIZE) ? BUFSIZE - 1 : n;
+			n = (n >= TCP_BUFSIZE_READ) ? TCP_BUFSIZE_READ - 1 : n;
 			ibuf.Read(tmp,n);
 			tmp[n] = 0;
 
@@ -76,9 +74,9 @@ void HTTPSocket::ReadLine()
 	if (ibuf.GetLength())
 	{
 		size_t n = ibuf.GetLength();
-		char tmp[BUFSIZE];
+		char tmp[TCP_BUFSIZE_READ];
 
-		n = (n >= BUFSIZE) ? BUFSIZE - 1 : n;
+		n = (n >= TCP_BUFSIZE_READ) ? TCP_BUFSIZE_READ - 1 : n;
 		ibuf.Read(tmp,n);
 		tmp[n] = 0;
 
@@ -202,6 +200,16 @@ void HTTPSocket::SendRequest()
 	}
 	msg += "\r\n";
 	Send( msg );
+}
+
+
+std::string HTTPSocket::MyUseragent() 
+{
+	std::string version = "C++Sockets/";
+#ifdef _VERSION
+	version += _VERSION;
+#endif
+	return version;
 }
 
 

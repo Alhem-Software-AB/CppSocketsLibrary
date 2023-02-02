@@ -1,9 +1,68 @@
+/**
+ **	File ......... socket_include.h
+ **	Published ....  2005-04-12
+ **	Author ....... grymse@alhem.net
+**/
+/*
+Copyright (C) 2004  Anders Hedstrom
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+*/
 #ifndef _SOCKET_INCLUDE_H
 #define _SOCKET_INCLUDE_H
 
 #if (defined(__unix__) || defined(unix)) && !defined(USG)
 #include <sys/param.h>
 #endif
+
+
+#ifndef _WIN32 
+// ----------------------------------------
+// common unix includes / defines
+#include <unistd.h>
+#include <sys/time.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <netdb.h>
+#define Errno errno
+#define StrError strerror
+
+// WIN32 adapt
+#define closesocket close
+#define INVALID_SOCKET -1
+#define SOCKET_ERROR -1
+typedef int SOCKET;
+
+#ifndef INADDR_NONE
+#define INADDR_NONE ((unsigned long) -1)
+#endif // INADDR_NONE
+
+#endif // _WIN32
+
+
+// ----------------------------------------
+// Generic
+#ifndef SOL_IP
+#define SOL_IP IPPROTO_IP
+#endif
+
+
+// ----------------------------------------
+// OS specific adaptions
 
 #ifdef SOLARIS 
 // ----------------------------------------
@@ -80,36 +139,6 @@ typedef unsigned long ipaddr_t;
 typedef unsigned short port_t;
 
 #endif
-
-// ----------------------------------------
-// Generic
-#ifndef SOL_IP
-#define SOL_IP IPPROTO_IP
-#endif
-
-#ifndef _WIN32 
-// ----------------------------------------
-// common unix includes / defines
-#include <unistd.h>
-#include <sys/time.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <netdb.h>
-#define Errno errno
-#define StrError strerror
-
-// WIN32 adapt
-#define closesocket close
-#define INVALID_SOCKET -1
-#define SOCKET_ERROR -1
-typedef int SOCKET;
-
-#ifndef INADDR_NONE
-#define INADDR_NONE ((unsigned long) -1)
-#endif // INADDR_NONE
-
-#endif // _WIN32
 
 
 #endif // _SOCKET_INCLUDE_H

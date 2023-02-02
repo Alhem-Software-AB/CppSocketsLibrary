@@ -245,12 +245,22 @@ DEB(		printf("slave: %s\n",m_slave ? "YES" : "NO");
 			{
 				if (p -> CallOnConnect() && p -> Ready() )
 				{
+					if (p -> IsSSL()) // SSL Enabled socket
+						p -> OnSSLConnect();
+					else
 					if (p -> Socks4())
 						p -> OnSocks4Connect();
 					else
 						p -> OnConnect();
 					p -> SetCallOnConnect( false );
 				}
+				// new SSL negotiate method
+				if (p -> IsSSLNegotiate())
+				{
+					p -> SSLNegotiate();
+				}
+				else
+				// old SSL method...
 				if (p -> SSLConnecting())
 				{
 					if (p -> SSLCheckConnect())
@@ -264,6 +274,9 @@ DEB(		printf("slave: %s\n",m_slave ? "YES" : "NO");
 					if (FD_ISSET(i, &rfds))
 					{
 						TcpSocket *tcp = dynamic_cast<TcpSocket *>(p);
+						// LockWrite (save total output buffer size)
+						// Sockets with write lock won't call OnWrite in SendBuf
+						// That will happen in UnlockWrite, if necessary
 						p -> OnRead();
 						bool need_more = false;
 						while (tcp && p -> Socks4() && tcp -> GetInputLength() && !need_more && !p -> CloseAndDelete())
@@ -278,6 +291,7 @@ DEB(		printf("slave: %s\n",m_slave ? "YES" : "NO");
 							}
 //							p -> Touch();
 						}
+						// UnlockWrite (call OnWrite if saved size == 0 && total output buffer size > 0)
 					}
 					if (FD_ISSET(i, &wfds))
 					{
@@ -285,6 +299,9 @@ DEB(		printf("slave: %s\n",m_slave ? "YES" : "NO");
 						{
 							if (p -> CheckConnect())
 							{
+								if (p -> IsSSL()) // SSL Enabled socket
+									p -> OnSSLConnect();
+								else
 								if (p -> Socks4())
 									p -> OnSocks4Connect();
 								else
@@ -345,7 +362,7 @@ DEB(		printf("slave: %s\n",m_slave ? "YES" : "NO");
 					p -> SetCloseAndDelete();
 				}
 */
-				if (p && p -> Connecting() && p -> GetConnectTime() > 5)
+				if (p && p -> Connecting() && p -> GetConnectTime() > p -> GetConnectTimeout() )
 				{
 					LogError(p, "connect", -1, "connect timeout", LOG_LEVEL_FATAL);
 					if (p -> Socks4())
@@ -492,7 +509,7 @@ const std::string& SocketHandler::GetLocalAddress6()
 
 PoolSocket *SocketHandler::FindConnection(int type,const std::string& protocol,ipaddr_t a,port_t port)
 {
-	for (socket_m::iterator it = m_sockets.begin(); it != m_sockets.end(); it++)
+	for (socket_m::iterator it = m_sockets.begin(); it != m_sockets.end() && m_sockets.size(); it++)
 	{
 		PoolSocket *pools = dynamic_cast<PoolSocket *>((*it).second);
 		if (pools)

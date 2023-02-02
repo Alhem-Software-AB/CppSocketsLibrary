@@ -83,6 +83,7 @@ protected:
 	void OnLine(const std::string& );
 
 private:
+	MinionSocket& operator=(const MinionSocket& ) { return *this; }
 	std::string 	m_remote_id;
 	ipaddr_t 	m_ip;
 	port_t 		m_port;

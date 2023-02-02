@@ -41,10 +41,21 @@ class Socket
 {
 	friend class SocketHandler;
 public:
+	/** "Default" constructor */
 	Socket(SocketHandler&);
 	virtual ~Socket();
 
+	/** Socket class instantiation method. Used when a "non-standard" constructor
+	 * needs to be used for the socket class. Note: the socket class still needs
+	 * the "default" constructor with one SocketHandler& as input parameter.
+	 */
 	virtual Socket *Create() { return NULL; }
+	/** Init: CTcpSocket uses this to create its ICrypt member variable.
+	 * The ICrypt member variable is created by a virtual method, therefore
+	 * it can't be called directly from the CTcpSocket constructor.
+	 * Also used to determine if incoming HTTP connection is normal (port 80)
+	 * or ssl (port 443).
+	 */
 	virtual void Init();
 
 	void Attach(SOCKET s);
@@ -55,26 +66,52 @@ public:
 	void Set(bool bRead,bool bWrite,bool bException = true);
 	bool Ready();
 
+	/** Called when there is something to be read from the file descriptor. */
 	virtual void OnRead();
+	/** Called when there is room for another write on the file descriptor. */
 	virtual void OnWrite();
+	/** Called on socket exception. */
 	virtual void OnException();
+	/** Called before a socket class is deleted by the SocketHandler. */
 	virtual void OnDelete();
+	/** Called when a connection has completed. */
 	virtual void OnConnect();
+	/** Called when an incoming connection has been completed. */
 	virtual void OnAccept();
+	/** Called when a complete line has been read and the socket is in
+	 * line protocol mode. */
 	virtual void OnLine(const std::string& );
+	/** Used internally by SSLSocket. */
 	virtual void OnSSLInitDone();
+	/** Called on connect timeout (5s). */
 	virtual void OnConnectFailed();
+	/** Called when a socket is created, to set socket options. */
 	virtual void OnOptions(int family,int type,int protocol,SOCKET);
+	/** Socks4 client support internal use. @see TcpSocket */
 	virtual void OnSocks4Connect();
+	/** Socks4 client support internal use. @see TcpSocket */
 	virtual void OnSocks4ConnectFailed();
+	/** Socks4 client support internal use. @see TcpSocket */
 	virtual bool OnSocks4Read();
+	/** Called when the last write caused the tcp output buffer to 
+	 * become empty. */
+//	virtual void OnWriteComplete();
+	/** SSL client/server support - internal use. @see TcpSocket */
+	virtual void OnSSLConnect() {}
+	/** SSL client/server support - internal use. @see TcpSocket */
+	virtual void OnSSLAccept() {}
 
 	virtual bool CheckConnect();
 	virtual void ReadLine();
+	/** OLD SSL support. */
 	virtual bool SSLCheckConnect();
+	/** new SSL support */
+	virtual bool SSLNegotiate() { return false; }
 
 	void SetSSLConnecting(bool = true);
 	bool SSLConnecting();
+	/** Enable the OnLine callback. Do not create your own OnRead
+	 * callback when using this. */
 	void SetLineProtocol(bool = true);
 	bool LineProtocol();
 	void SetDeleteByHandler(bool = true);
@@ -138,8 +175,13 @@ public:
 	void SetIpv6(bool x = true) { m_ipv6 = x; }
 	bool IsIpv6() { return m_ipv6; }
 
+	/** Returns pointer to ListenSocket that created this instance
+	 * on an incoming connections. */
 	Socket *GetParent();
+	/** Used by ListenSocket to set parent pointer of newly created
+	 * socket instance. */
 	void SetParent(Socket *);
+	/** Get listening port from ListenSocket<>. */
 	virtual port_t GetPort();
 
 	// pooling
@@ -167,7 +209,7 @@ public:
 
 	// dns
 	int Resolve(const std::string& host,port_t port);
-	virtual void Resolved(int id,ipaddr_t,port_t) {}
+	virtual void Resolved(int id,ipaddr_t,port_t);
 
 	/** socket still in socks4 negotiation mode */
 	bool Socks4() { return m_bSocks4; }
@@ -181,11 +223,26 @@ public:
 	port_t GetSocks4Port() { return m_socks4_port; }
 	const std::string& GetSocks4Userid() { return m_socks4_userid; }
 
+	void SetConnectTimeout(int x) { m_connect_timeout = x; }
+	int GetConnectTimeout() { return m_connect_timeout; }
+
+	/** SSL Enabled */
+	bool IsSSL() { return m_b_enable_ssl; }
+	void EnableSSL(bool x = true) { m_b_enable_ssl = x; }
+	/** Still negotiating ssl connection */
+	bool IsSSLNegotiate() { return m_b_ssl; }
+	void SetSSLNegotiate(bool x = true) { m_b_ssl = x; }
+	/** OnAccept called with SSL Enabled */
+	bool IsSSLServer() { return m_b_ssl_server; }
+	void SetSSLServer(bool x = true) { m_b_ssl_server = x; }
+
 protected:
 	Socket(const Socket& ); // do not allow use of copy constructor
 	void DetachSocket(); // protected, friend class SocketHandler;
 
 private:
+	/** default constructor not available */
+	Socket() : m_handler(Handler()) {}
 #ifdef _WIN32
 static	WSAInitializer m_winsock_init;
 #endif
@@ -224,6 +281,10 @@ static	WSAInitializer m_winsock_init;
 	ipaddr_t m_socks4_host;
 	port_t m_socks4_port;
 	std::string m_socks4_userid;
+	int m_connect_timeout;
+	bool m_b_enable_ssl;
+	bool m_b_ssl; // ssl negotiation mode (TcpSocket)
+	bool m_b_ssl_server;
 };
 
 

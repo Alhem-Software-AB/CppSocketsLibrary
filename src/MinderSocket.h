@@ -56,6 +56,7 @@ protected:
 	void OnSSLInitDone();
 
 private:
+	MinderSocket& operator=(const MinderSocket& ) { return *this; }
 	std::string m_app;
 	std::string local_ip;
 	port_t local_port;

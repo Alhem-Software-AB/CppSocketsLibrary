@@ -152,7 +152,7 @@ void HttpPostSocket::OnConnect()
 		SetMethod("POST");
 		SetHttpVersion( "HTTP/1.1" );
 		AddResponseHeader( "Host", m_host ); // oops - this is actually a request header that we're adding..
-		AddResponseHeader( "User-agent", "C++ Sockets library" );
+		AddResponseHeader( "User-agent", MyUseragent());
 		AddResponseHeader( "Accept", "text/html, text/plain, */*;q=0.01" );
 		AddResponseHeader( "Connection", "close" );
 		AddResponseHeader( "Content-type", "application/x-www-form-urlencoded" );
@@ -214,7 +214,7 @@ void HttpPostSocket::DoMultipartPost()
 	SetMethod("POST");
 	SetHttpVersion( "HTTP/1.1" );
 	AddResponseHeader( "Host", m_host ); // oops - this is actually a request header that we're adding..
-	AddResponseHeader( "User-agent", "C++ Sockets library" );
+	AddResponseHeader( "User-agent", MyUseragent());
 	AddResponseHeader( "Accept", "text/html, text/plain, */*;q=0.01" );
 	AddResponseHeader( "Connection", "close" );
 	AddResponseHeader( "Content-type", "multipart/form-data; boundary=" + m_boundary );

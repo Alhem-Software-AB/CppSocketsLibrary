@@ -243,3 +243,16 @@ void Base64::decode(const std::string& input, unsigned char *output, size_t& sz)
 }
 
 
+size_t Base64::decode_length(const std::string& str64)
+{
+	if (!str64.size() || str64.size() % 4)
+		return 0;
+	size_t l = 3 * (str64.size() / 4 - 1) + 1;
+	if (str64[str64.size() - 2] != '=')
+		l++;
+	if (str64[str64.size() - 1] != '=')
+		l++;
+	return l;
+}
+
+

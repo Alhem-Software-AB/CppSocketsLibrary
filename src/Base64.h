@@ -40,6 +40,8 @@ public:
 	void decode(const std::string&, std::string& );
 	void decode(const std::string&, unsigned char *, size_t&);
 
+	size_t decode_length(const std::string& );
+
 private:
 	Base64(const Base64& ) {}
 	Base64& operator=(const Base64& ) { return *this; }

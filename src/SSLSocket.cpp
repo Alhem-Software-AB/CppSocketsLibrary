@@ -231,15 +231,13 @@ D2(		printf("SSLSocket::SSLCheckConnect() is_NOTHING!!!!!!\n");)
 }
 
 
-#define BUFSIZE TCP_BUFSIZE_READ
-
 void SSLSocket::OnRead()
 {
 D2(	printf("SSLSocket::OnRead()\n");)
 	if (!Ready())
 		return;
-	char buf[BUFSIZE + 1];
-	int n = SSL_read(m_ssl, buf, BUFSIZE);
+	char buf[TCP_BUFSIZE_READ + 1];
+	int n = SSL_read(m_ssl, buf, TCP_BUFSIZE_READ);
 	if (n == -1)
 	{
 		n = SSL_get_error(m_ssl, n);
