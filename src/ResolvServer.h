@@ -23,7 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef _RESOLVSERVER_H
 #define _RESOLVSERVER_H
 
-#include <Thread.h>
+#include "Thread.h"
 
 
 class ResolvServer : public Thread

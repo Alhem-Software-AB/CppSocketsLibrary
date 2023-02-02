@@ -23,8 +23,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef _RESOLVSOCKET_H
 #define _RESOLVSOCKET_H
 
-#include <SocketHandler.h>
-#include <TcpSocket.h>
+#include "SocketHandler.h"
+#include "TcpSocket.h"
 
 
 class ResolvSocket : public TcpSocket
