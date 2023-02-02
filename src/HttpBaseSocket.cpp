@@ -31,6 +31,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 namespace SOCKETS_NAMESPACE {
 #endif
 
+#ifdef _DEBUG
+#define DEB(x) x
+#else
+#define DEB(x)
+#endif
+
 
 HttpBaseSocket::HttpBaseSocket(ISocketHandler& h)
 :HTTPSocket(h)
@@ -46,17 +52,27 @@ HttpBaseSocket::~HttpBaseSocket()
 
 void HttpBaseSocket::OnFirst()
 {
+DEB(fprintf(stderr, "  %s %s %s\n", GetMethod().c_str(), GetUri().c_str(), GetHttpVersion().c_str());)
 	m_req.SetHttpMethod( GetMethod() );
 	m_req.SetUri( GetUri() );
 	m_req.SetHttpVersion( GetHttpVersion() );
 
 	m_req.SetAttribute("query_string", GetQueryString() );
+
+	m_req.SetRemoteAddr( GetRemoteAddress() );
+	m_req.SetRemoteHost( "" ); // %!
+	m_req.SetServerName( GetSockAddress() );
+	m_req.SetServerPort( GetSockPort() );
 }
 
 
 void HttpBaseSocket::OnHeader(const std::string& key,const std::string& value)
 {
-	m_req.SetHeader(key, value);
+DEB(fprintf(stderr, "  (request)OnHeader %s: %s\n", key.c_str(), value.c_str());)
+	if (Utility::ToLower(key) == "cookie")
+		m_req.AddCookie(value);
+	else
+		m_req.SetHeader(key, value);
 }
 
 
@@ -100,8 +116,12 @@ void HttpBaseSocket::Respond()
 	{
 		AddResponseHeader( it -> first, it -> second );
 	}
+	std::list<std::string> vec = m_res.CookieNames();
+	for (std::list<std::string>::iterator it2 = vec.begin(); it2 != vec.end(); it2++)
+	{
+		AppendResponseHeader( "set-cookie", m_res.Cookie(*it2) );
+	}
 	SendResponse();
-
 	{
 		char msg[32768];
 		size_t n = m_res.GetFile().fread(msg, 1, 32768);

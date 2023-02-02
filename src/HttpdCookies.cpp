@@ -38,6 +38,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 namespace SOCKETS_NAMESPACE {
 #endif
 
+#ifdef _DEBUG
+#define DEB(x) x; fflush(stderr);
+#else
+#define DEB(x)
+#endif
+
 
 HttpdCookies::HttpdCookies()
 {
@@ -47,6 +53,25 @@ HttpdCookies::HttpdCookies(const std::string& s)
 {
 	Parse *pa = new Parse(s,";");
 
+	std::string slask = pa -> getword();
+	while (slask.size())
+	{
+		Parse *pa2 = new Parse(slask,"=");
+		std::string name = pa2 -> getword();
+		std::string value = pa2 -> getword();
+		delete pa2;
+		COOKIE *c = new COOKIE(name,value);
+		m_cookies.push_back(c);
+		//
+		slask = pa -> getword();
+	}
+	delete pa;
+}
+
+void HttpdCookies::add(const std::string& s)
+{
+	Parse *pa = new Parse(s,";");
+DEB(fprintf(stderr, "Parse cookie: %s\n", s.c_str());)
 	std::string slask = pa -> getword();
 	while (slask.size())
 	{

@@ -25,7 +25,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "sockets-config.h"
 #include <pthread.h>
+#ifdef MACOSX
+#include <sys/semaphore.h>
+#else
 #include <semaphore.h>
+#endif
 
 
 #ifdef SOCKETS_NAMESPACE

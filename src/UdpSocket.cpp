@@ -444,10 +444,13 @@ void UdpSocket::OnRead()
 		socklen_t sa_len = sizeof(sa);
 		if (m_b_read_ts)
 		{
-#ifndef _WIN32
 			struct timeval ts;
-			memset(&ts, 0, sizeof(struct timeval));
+			Utility::GetTime(&ts);
+#ifdef _WIN32
+			int n = recvfrom(GetSocket(), m_ibuf, m_ibufsz, 0, (struct sockaddr *)&sa, &sa_len);
+#else
 			int n = ReadTS(m_ibuf, m_ibufsz, (struct sockaddr *)&sa, sa_len, &ts);
+#endif
 			if (n > 0)
 			{
 				this -> OnRawData(m_ibuf, n, (struct sockaddr *)&sa, sa_len, &ts);
@@ -462,7 +465,6 @@ void UdpSocket::OnRead()
 #endif
 					Handler().LogError(this, "recvfrom", Errno, StrError(Errno), LOG_LEVEL_ERROR);
 			}
-#endif
 			return;
 		}
 		int n = recvfrom(GetSocket(), m_ibuf, m_ibufsz, 0, (struct sockaddr *)&sa, &sa_len);
@@ -496,10 +498,13 @@ void UdpSocket::OnRead()
 	socklen_t sa_len = sizeof(sa);
 	if (m_b_read_ts)
 	{
-#ifndef _WIN32
 		struct timeval ts;
-		memset(&ts, 0, sizeof(struct timeval));
+		Utility::GetTime(&ts);
+#ifdef _WIN32
+		int n = recvfrom(GetSocket(), m_ibuf, m_ibufsz, 0, (struct sockaddr *)&sa, &sa_len);
+#else
 		int n = ReadTS(m_ibuf, m_ibufsz, (struct sockaddr *)&sa, sa_len, &ts);
+#endif
 		if (n > 0)
 		{
 			this -> OnRawData(m_ibuf, n, (struct sockaddr *)&sa, sa_len, &ts);
@@ -514,7 +519,6 @@ void UdpSocket::OnRead()
 #endif
 				Handler().LogError(this, "recvfrom", Errno, StrError(Errno), LOG_LEVEL_ERROR);
 		}
-#endif
 		return;
 	}
 	int n = recvfrom(GetSocket(), m_ibuf, m_ibufsz, 0, (struct sockaddr *)&sa, &sa_len);
@@ -826,12 +830,10 @@ int UdpSocket::GetLastSizeWritten()
 }
 
 
-#ifndef _WIN32
 void UdpSocket::SetTimestamp(bool x)
 {
 	m_b_read_ts = x;
 }
-#endif
 
 
 #ifdef SOCKETS_NAMESPACE

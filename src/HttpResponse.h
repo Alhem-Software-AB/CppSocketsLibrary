@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define _SOCKETS_HttpResponse_H
 
 #include "HttpTransaction.h"
+#include <list>
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
@@ -47,6 +48,10 @@ public:
 	void SetHttpStatusMsg(const std::string& value);
 	const std::string& HttpStatusMsg() const;
 
+	void SetCookie(const std::string& value);
+	const std::string Cookie(const std::string& name) const;
+	std::list<std::string> CookieNames() const;
+
 	void Write( const std::string& str );
 	void Write( const char *buf, size_t sz );
 	void Writef( const char *format, ... );
@@ -60,6 +65,7 @@ private:
 	HttpRequest& m_req;
 	int m_http_status_code;
 	std::string m_http_status_msg;
+	std::map<std::string, std::string> m_cookie;
 	IFile *m_file;
 
 }; // end of class

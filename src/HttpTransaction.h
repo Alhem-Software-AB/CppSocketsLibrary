@@ -63,12 +63,6 @@ public:
 	void SetContentLength(long value);
 	long ContentLength() const;
 
-	void SetCookie(const std::string& value);
-	const std::string& Cookie() const;
-
-	void SetCookie2(const std::string& value);
-	const std::string& Cookie2() const;
-
 	void SetHost(const std::string& value);
 	const std::string& Host() const;
 

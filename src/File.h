@@ -59,6 +59,9 @@ public:
 	off_t size() const;
 	bool eof() const;
 
+	void reset_read() const;
+	void reset_write();
+
 private:
 	File(const File& ) {} // copy constructor
 	File& operator=(const File& ) { return *this; } // assignment operator
@@ -66,6 +69,8 @@ private:
 	std::string m_path;
 	std::string m_mode;
 	FILE *m_fil;
+	mutable long m_rptr;
+	long m_wptr;
 };
 
 

@@ -175,6 +175,10 @@ void HTTPSocket::SendResponse()
 		std::string val = (*it).second;
 		msg += key + ": " + val + "\r\n";
 	}
+	for (std::list<std::pair<std::string, std::string> >::iterator it2 = m_response_header_append.begin(); it2 != m_response_header_append.end(); ++it2)
+	{
+		msg += it2 -> first + ": " + it2 -> second + "\r\n";
+	}
 	msg += "\r\n";
 	Send( msg );
 }
@@ -325,6 +329,12 @@ void HTTPSocket::SetStatusText(const std::string& x)
 void HTTPSocket::AddResponseHeader(const std::string& x,const std::string& y)
 {
 	m_response_header[x] = y;
+}
+
+
+void HTTPSocket::AppendResponseHeader(const std::string& x,const std::string& y)
+{
+	m_response_header_append.push_back(std::pair<std::string, std::string>(x,y));
 }
 
 

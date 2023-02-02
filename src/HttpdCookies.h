@@ -66,6 +66,8 @@ public:
 	HttpdCookies(const std::string& query_string);
 	~HttpdCookies();
 
+	void add(const std::string& s);
+
 	bool getvalue(const std::string&,std::string&) const;
 	void replacevalue(const std::string& ,const std::string& );
 	void replacevalue(const std::string& ,long);

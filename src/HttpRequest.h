@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define _SOCKETS_HttpRequest_H
 
 #include "HttpTransaction.h"
+#include "HttpdCookies.h"
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
@@ -31,7 +32,6 @@ namespace SOCKETS_NAMESPACE {
 
 
 class HttpdForm;
-class HttpdCookies;
 class IFile;
 
 class HttpRequest : public HttpTransaction
@@ -73,6 +73,10 @@ public:
 
 	const std::map<std::string, std::string>& Attributes() const;
 
+	/** Cookies */
+	void AddCookie(const std::string& );
+	const std::map<std::string, std::string>& CookieMap() const { return m_cookie; }
+
 	/** Open file for body data */
 	void InitBody( size_t sz );
 
@@ -86,6 +90,8 @@ public:
 
 	const HttpdForm& Form() const;
 	const HttpdCookies& Cookies() const;
+
+	const IFile *BodyFile() const { return m_body_file; }
 
 private:
 	HttpRequest(const HttpRequest&);
@@ -103,7 +109,8 @@ private:
 	std::string m_null;
 	IFile *m_body_file;
 	HttpdForm *m_form;
-	HttpdCookies *m_cookies;
+	HttpdCookies m_cookies;
+	std::map<std::string, std::string> m_cookie;
 
 }; // end of class
 

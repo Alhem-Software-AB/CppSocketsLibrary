@@ -56,6 +56,10 @@ public:
 
 	virtual off_t size() const = 0;
 	virtual bool eof() const = 0;
+
+	virtual void reset_read() const = 0;
+	virtual void reset_write() = 0;
+
 };
 
 

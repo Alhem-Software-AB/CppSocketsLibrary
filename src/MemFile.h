@@ -34,7 +34,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <map>
 #include "IFile.h"
 
-#define BLOCKSIZE 32768
+#define BLOCKSIZE 60000
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
@@ -69,6 +69,9 @@ public:
 
 	off_t size() const;
 	bool eof() const;
+
+	void reset_read() const;
+	void reset_write();
 
 private:
 	MemFile(const MemFile& ) {} // copy constructor

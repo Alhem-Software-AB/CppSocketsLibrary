@@ -168,7 +168,10 @@ void Ajp13Socket::ReceiveForwardRequest( const char *buf, size_t sz )
 		default: // string
 			key = get_string(buf, ptr);
 		}
-		m_req.SetHeader(key, get_string(buf, ptr));
+		if (Utility::ToLower(key) == "cookie" || Utility::ToLower(key) == "cookie2")
+			m_req.AddCookie(get_string(buf, ptr));
+		else
+			m_req.SetHeader(key, get_string(buf, ptr));
 	} // for
 
 	// size left to read from web server
@@ -283,6 +286,22 @@ void Ajp13Socket::Respond()
 				put_string(msg, ptr, it -> first);
 			}
 			put_string(msg, ptr, it -> second);
+		}
+		std::list<std::string> vec = m_res.CookieNames();
+		{
+			for (std::list<std::string>::iterator it = vec.begin(); it != vec.end(); it++)
+			{
+				std::map<std::string, int>::const_iterator it2 = Init.ResponseHeader.find( "set-cookie" );
+				if (it2 != Init.ResponseHeader.end())
+				{
+					put_integer(msg, ptr, it2 -> second);
+				}
+				else
+				{
+					put_string(msg, ptr, "set-cookie");
+				}
+				put_string(msg, ptr, m_res.Cookie(*it) );
+			}
 		}
 
 		short len = htons( ptr - 4 );

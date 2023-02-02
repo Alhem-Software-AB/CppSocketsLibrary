@@ -79,7 +79,7 @@ FILES =		*.h *.cpp Makefile Makefile.* Project/*.ds* \
 		Project.net/Sockets/*.vcproj Project.net/Sockets/*.sln \
 		Project.net/Test/*.vcproj \
 		DevCpp/*.dev tests/Makefile tests/*.cpp \
-		OSX/*.* OSX/*/project.*
+		OSX.zip
 
 tar:		clean
 		rm -f MinderSocket_T.h

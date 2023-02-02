@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #endif
 #include "HttpTransaction.h"
 #include "Utility.h"
+#include "Parse.h"
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
@@ -173,34 +174,6 @@ void HttpTransaction::SetContentLength(long value)
 long HttpTransaction::ContentLength() const
 {
 	return atol(Header("content-length").c_str());
-}
-
-
-
-// --------------------------------------------------------------------------------------
-void HttpTransaction::SetCookie(const std::string& value)
-{
-	SetHeader("cookie", value);
-}
-
-
-const std::string& HttpTransaction::Cookie() const
-{
-	return Header("cookie");
-}
-
-
-
-// --------------------------------------------------------------------------------------
-void HttpTransaction::SetCookie2(const std::string& value)
-{
-	SetHeader("cookie2", value);
-}
-
-
-const std::string& HttpTransaction::Cookie2() const
-{
-	return Header("cookie2");
 }
 
 

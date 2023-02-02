@@ -31,10 +31,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifdef _MSC_VER
 #pragma warning(disable:4786)
 #endif
-#include <stdlib.h>
-#else
-#include <errno.h>
 #endif
+#include <stdlib.h>
+#include <errno.h>
 
 #include "SocketHandler.h"
 #include "UdpSocket.h"
@@ -344,14 +343,6 @@ DEB(		fprintf(stderr, "Trying to add fd %d,  m_add.size() %d,  ignore %d\n", (in
 		if (!p -> CloseAndDelete())
 		{
 			StreamSocket *scp = dynamic_cast<StreamSocket *>(p);
-DEB(
-printf("Add Socket\n");
-printf("  StreamSocket: %s\n", scp ? "yes" : "no");
-printf("  Connecting:   %s\n", scp && scp -> Connecting() ? "yes" : "no");
-printf("  SSL:          %s\n", p -> IsSSL() ? "yes" : "no");
-printf("  IsConnected:  %s\n", p -> IsConnected() ? "yes" : "no");
-printf("  IsSSLNegotiate: %s\n", p -> IsSSLNegotiate() ? "yes" : "no");
-printf("\n");)
 			if (scp && scp -> Connecting()) // 'Open' called before adding socket
 			{
 				Set(s,false,true);

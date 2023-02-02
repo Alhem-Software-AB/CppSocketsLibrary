@@ -28,6 +28,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "MemFile.h"
 #include "HttpdForm.h"
 #include "HttpdCookies.h"
+#include "Parse.h"
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
@@ -46,7 +47,6 @@ HttpRequest::HttpRequest() : HttpTransaction()
 , m_is_ssl(false)
 , m_body_file(NULL)
 , m_form(NULL)
-, m_cookies(NULL)
 {
 }
 
@@ -61,10 +61,6 @@ HttpRequest::~HttpRequest()
 	if (m_form)
 	{
 		delete m_form;
-	}
-	if (m_cookies)
-	{
-		delete m_cookies;
 	}
 }
 
@@ -224,6 +220,23 @@ const std::map<std::string, std::string>& HttpRequest::Attributes() const
 
 
 // --------------------------------------------------------------------------------------
+void HttpRequest::AddCookie(const std::string& str)
+{
+	m_cookies.add( str );
+	Parse pa(str, ";");
+	std::string lstr = pa.getword();
+	while (!lstr.empty())
+	{
+		Parse pa2(lstr, "=");
+		std::string name = pa2.getword();
+		m_cookie[name] = lstr;
+DEB(fprintf(stderr, " *** AddCookie '%s' = '%s'\n", name.c_str(), lstr.c_str());)
+		lstr = pa.getword();
+	}
+}
+
+
+// --------------------------------------------------------------------------------------
 void HttpRequest::InitBody( size_t sz )
 {
 	if (!m_body_file)
@@ -272,7 +285,6 @@ void HttpRequest::ParseBody()
 		// dummy
 		m_form = new HttpdForm( "", 0 );
 	}
-	m_cookies = new HttpdCookies( Cookie() );
 }
 
 
@@ -286,7 +298,7 @@ const HttpdForm& HttpRequest::Form() const
 // --------------------------------------------------------------------------------------
 const HttpdCookies& HttpRequest::Cookies() const
 {
-	return *m_cookies;
+	return m_cookies;
 }
 
 

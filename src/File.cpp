@@ -43,6 +43,8 @@ namespace SOCKETS_NAMESPACE {
 
 File::File()
 :m_fil(NULL)
+,m_rptr(0)
+,m_wptr(0)
 {
 }
 
@@ -75,20 +77,41 @@ void File::fclose()
 
 size_t File::fread(char *ptr, size_t size, size_t nmemb) const
 {
-	return m_fil ? ::fread(ptr, size, nmemb, m_fil) : 0;
+	size_t r = 0;
+	if (m_fil)
+	{
+		fseek(m_fil, m_rptr, SEEK_SET);
+		r = ::fread(ptr, size, nmemb, m_fil);
+		m_rptr = ftell(m_fil);
+	}
+	return r;
 }
 
 
 size_t File::fwrite(const char *ptr, size_t size, size_t nmemb)
 {
-	return m_fil ? ::fwrite(ptr, size, nmemb, m_fil) : 0;
+	size_t r = 0;
+	if (m_fil)
+	{
+		fseek(m_fil, m_wptr, SEEK_SET);
+		r = ::fwrite(ptr, size, nmemb, m_fil);
+		m_wptr = ftell(m_fil);
+	}
+	return r;
 }
 
 
 
 char *File::fgets(char *s, int size) const
 {
-	return m_fil ? ::fgets(s, size, m_fil) : NULL;
+	char *r = NULL;
+	if (m_fil)
+	{
+		fseek(m_fil, m_rptr, SEEK_SET);
+		r = ::fgets(s, size, m_fil);
+		m_rptr = ftell(m_fil);
+	}
+	return r;
 }
 
 
@@ -98,7 +121,9 @@ void File::fprintf(const char *format, ...)
 		return;
 	va_list ap;
 	va_start(ap, format);
+	fseek(m_fil, m_rptr, SEEK_SET);
 	vfprintf(m_fil, format, ap);
+	m_rptr = ftell(m_fil);
 	va_end(ap);
 }
 
@@ -122,6 +147,18 @@ bool File::eof() const
 			return true;
 	}
 	return false;
+}
+
+
+void File::reset_read() const
+{
+	m_rptr = 0;
+}
+
+
+void File::reset_write()
+{
+	m_wptr = 0;
 }
 
 

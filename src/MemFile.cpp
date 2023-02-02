@@ -121,7 +121,7 @@ size_t MemFile::fread(char *ptr, size_t size, size_t nmemb) const
 	else
 	{
 		size_t sz1 = BLOCKSIZE - p;
-		size_t sz2 = size - sz1;
+		size_t sz2 = sz - sz1;
 		memcpy(ptr, m_current_read -> data + p, sz1);
 		m_read_ptr += sz1;
 		if (m_current_read -> next)
@@ -154,9 +154,16 @@ size_t MemFile::fwrite(const char *ptr, size_t size, size_t nmemb)
 		size_t sz1 = BLOCKSIZE - p; // size left
 		size_t sz2 = sz - sz1;
 		memcpy(m_current_write -> data + p, ptr, sz1);
-		block_t *next = new block_t;
-		m_current_write -> next = next;
-		m_current_write = next;
+		if (m_current_write -> next)
+		{
+			m_current_write = m_current_write -> next;
+		}
+		else
+		{
+			block_t *next = new block_t;
+			m_current_write -> next = next;
+			m_current_write = next;
+		}
 		memcpy(m_current_write -> data, ptr + sz1, sz2);
 		m_write_ptr += sz;
 	}
@@ -211,6 +218,20 @@ off_t MemFile::size() const
 bool MemFile::eof() const
 {
 	return m_b_read_caused_eof; //(m_read_ptr < m_write_ptr) ? false : true;
+}
+
+
+void MemFile::reset_read() const
+{
+	m_read_ptr = 0;
+	m_current_read = m_base;
+}
+
+
+void MemFile::reset_write()
+{
+	m_write_ptr = 0;
+	m_current_write = m_base;
 }
 
 

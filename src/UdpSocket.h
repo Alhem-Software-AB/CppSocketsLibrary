@@ -182,10 +182,8 @@ public:
 
 	int GetLastSizeWritten();
 
-#ifndef _WIN32
 	/** Also read timestamp information from incoming message */
 	void SetTimestamp(bool = true);
-#endif
 
 protected:
 	UdpSocket(const UdpSocket& s) : Socket(s) {}
