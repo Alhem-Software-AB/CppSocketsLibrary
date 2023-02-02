@@ -32,7 +32,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #pragma warning(disable:4786)
 #endif
 #include "Parse.h"
-#include "Utility.h"
 #include "HTTPSocket.h"
 #include "HttpdCookies.h"
 
@@ -93,7 +92,7 @@ HttpdCookies::~HttpdCookies()
 
 bool HttpdCookies::getvalue(const std::string& name,std::string& buffer) const
 {
-	for (cookie_v::const_iterator it = m_cookies.begin(); it != m_cookies.end(); it++)
+	for (cookie_v::const_iterator it = m_cookies.begin(); it != m_cookies.end(); ++it)
 	{
 		const std::pair<std::string, std::string>& ref = *it;
 		if (!strcasecmp(ref.first.c_str(),name.c_str()))
@@ -108,7 +107,7 @@ bool HttpdCookies::getvalue(const std::string& name,std::string& buffer) const
 
 void HttpdCookies::replacevalue(const std::string& name,const std::string& value)
 {
-	for (cookie_v::iterator it = m_cookies.begin(); it != m_cookies.end(); it++)
+	for (cookie_v::iterator it = m_cookies.begin(); it != m_cookies.end(); ++it)
 	{
 		std::pair<std::string, std::string>& ref = *it;
 		if (!strcasecmp(ref.first.c_str(),name.c_str()))
@@ -133,7 +132,7 @@ void HttpdCookies::replacevalue(const std::string& name,int i)
 
 size_t HttpdCookies::getlength(const std::string& name) const
 {
-	for (cookie_v::const_iterator it = m_cookies.begin(); it != m_cookies.end(); it++)
+	for (cookie_v::const_iterator it = m_cookies.begin(); it != m_cookies.end(); ++it)
 	{
 		const std::pair<std::string, std::string>& ref = *it;
 		if (!strcasecmp(ref.first.c_str(),name.c_str()))

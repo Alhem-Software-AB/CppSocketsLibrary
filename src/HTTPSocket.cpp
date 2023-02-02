@@ -35,7 +35,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "HTTPSocket.h"
 #include "Parse.h"
 #include "ISocketHandler.h"
-#include "Utility.h"
 #include <stdarg.h>
 
 #ifdef SOCKETS_NAMESPACE
@@ -271,7 +270,7 @@ void HTTPSocket::SendResponse()
 {
 	std::string msg;
 	msg = m_http_version + " " + m_status + " " + m_status_text + "\r\n";
-	for (string_m::iterator it = m_response_header.begin(); it != m_response_header.end(); it++)
+	for (string_m::iterator it = m_response_header.begin(); it != m_response_header.end(); ++it)
 	{
 		std::string key = (*it).first;
 		std::string val = (*it).second;
@@ -307,7 +306,7 @@ void HTTPSocket::SendRequest()
 {
 	std::string msg;
 	msg = m_method + " " + m_url + " " + m_http_version + "\r\n";
-	for (string_m::iterator it = m_response_header.begin(); it != m_response_header.end(); it++)
+	for (string_m::iterator it = m_response_header.begin(); it != m_response_header.end(); ++it)
 	{
 		std::string key = (*it).first;
 		std::string val = (*it).second;
@@ -496,7 +495,7 @@ bool HTTPSocket::ResponseHeaderIsSet(const std::string& name)
 		return true;
 	}
 	std::list<std::pair<std::string, std::string> >::iterator it2;
-	for (it2 = m_response_header_append.begin(); it2 != m_response_header_append.end(); it2++)
+	for (it2 = m_response_header_append.begin(); it2 != m_response_header_append.end(); ++it2)
 	{
 		std::pair<std::string, std::string>& ref = *it2;
 		if (!strcasecmp(ref.first.c_str(), name.c_str()) )

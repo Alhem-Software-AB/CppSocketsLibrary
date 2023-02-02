@@ -36,7 +36,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #else
 #include <errno.h>
 #endif
-#include "Utility.h"
 #include "ISocketHandler.h"
 #include "HttpGetSocket.h"
 

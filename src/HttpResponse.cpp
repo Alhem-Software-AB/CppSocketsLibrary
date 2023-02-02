@@ -41,7 +41,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "MemFile.h"
 #include "File.h"
 #include "Parse.h"
-#include "Utility.h"
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
@@ -165,7 +164,7 @@ std::list<std::string> HttpResponse::CookieNames() const
 {
 	std::list<std::string> vec;
 	DEB(fprintf(stderr, "HttpResponse::CookieNames; ");)
-	for (Utility::ncmap<std::string>::const_iterator it = m_cookie.begin(); it != m_cookie.end(); it++)
+	for (Utility::ncmap<std::string>::const_iterator it = m_cookie.begin(); it != m_cookie.end(); ++it)
 	{
 		DEB(fprintf(stderr, " %s", it -> first.c_str());)
 		vec.push_back(it -> first);

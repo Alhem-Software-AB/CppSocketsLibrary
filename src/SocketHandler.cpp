@@ -453,7 +453,7 @@ DEB(			fprintf(stderr, "m_maxsock: %d\n", m_maxsock);
 		FD_ZERO(&rfds);
 		FD_ZERO(&wfds);
 		FD_ZERO(&efds);
-		for (socket_m::iterator it = m_sockets.begin(); it != m_sockets.end(); it++)
+		for (socket_m::iterator it = m_sockets.begin(); it != m_sockets.end(); ++it)
 		{
 			SOCKET s = it -> first;
 			Socket *p = it -> second;
@@ -501,7 +501,7 @@ DEB(			fprintf(stderr, "m_maxsock: %d\n", m_maxsock);
 	else
 	if (n > 0)
 	{
-		for (socket_v::iterator it2 = m_fds.begin(); it2 != m_fds.end() && n; it2++)
+		for (socket_v::iterator it2 = m_fds.begin(); it2 != m_fds.end() && n; ++it2)
 		{
 			SOCKET i = *it2;
 			// ---------------------------------------------------------------------------------
@@ -578,7 +578,7 @@ DEB(			fprintf(stderr, "m_maxsock: %d\n", m_maxsock);
 	if (m_fds_callonconnect.size())
 	{
 		socket_v tmp = m_fds_callonconnect;
-		for (socket_v::iterator it = tmp.begin(); it != tmp.end(); it++)
+		for (socket_v::iterator it = tmp.begin(); it != tmp.end(); ++it)
 		{
 			Socket *p = NULL;
 			{
@@ -637,7 +637,7 @@ DEB(			fprintf(stderr, "m_maxsock: %d\n", m_maxsock);
 	if (!m_slave && m_fds_detach.size())
 	{
 		// %! why not using tmp list here??!?
-		for (socket_v::iterator it = m_fds_detach.begin(); it != m_fds_detach.end(); it++)
+		for (socket_v::iterator it = m_fds_detach.begin(); it != m_fds_detach.end(); ++it)
 		{
 			Socket *p = NULL;
 			{
@@ -674,7 +674,7 @@ DEB(			fprintf(stderr, "m_maxsock: %d\n", m_maxsock);
 		if (tnow != m_tlast)
 		{
 			socket_v tmp = m_fds_timeout;
-			for (socket_v::iterator it = tmp.begin(); it != tmp.end(); it++)
+			for (socket_v::iterator it = tmp.begin(); it != tmp.end(); ++it)
 			{
 				Socket *p = NULL;
 				{
@@ -717,7 +717,7 @@ DEB(						fprintf(stderr, "Checking %d socket(s) for timeout\n", tmp.size());)
 	if (m_fds_retry.size())
 	{
 		socket_v tmp = m_fds_retry;
-		for (socket_v::iterator it = tmp.begin(); it != tmp.end(); it++)
+		for (socket_v::iterator it = tmp.begin(); it != tmp.end(); ++it)
 		{
 			Socket *p = NULL;
 			{
@@ -760,7 +760,7 @@ DEB(					fprintf(stderr, "Close() before retry client connect\n");)
 	{
 		socket_v tmp = m_fds_close;
 DEB(		fprintf(stderr, "m_fds_close.size() == %d\n", (int)m_fds_close.size());)
-		for (socket_v::iterator it = tmp.begin(); it != tmp.end(); it++)
+		for (socket_v::iterator it = tmp.begin(); it != tmp.end(); ++it)
 		{
 			Socket *p = NULL;
 			{
@@ -880,7 +880,7 @@ DEB(							fprintf(stderr, "Close() before OnDelete\n");)
 		SOCKET nn = *it;
 #ifdef ENABLE_DETACH
 		{
-			for (socket_v::iterator it = m_fds_detach.begin(); it != m_fds_detach.end(); it++)
+			for (socket_v::iterator it = m_fds_detach.begin(); it != m_fds_detach.end(); ++it)
 			{
 				if (*it == nn)
 				{
@@ -891,7 +891,7 @@ DEB(							fprintf(stderr, "Close() before OnDelete\n");)
 		}
 #endif
 		{
-			for (socket_v::iterator it = m_fds.begin(); it != m_fds.end(); it++)
+			for (socket_v::iterator it = m_fds.begin(); it != m_fds.end(); ++it)
 			{
 				if (*it == nn)
 				{
@@ -923,13 +923,13 @@ DEB(							fprintf(stderr, "Close() before OnDelete\n");)
 					do
 					{
 						again = false;
-						for (std::map<int, Socket *>::iterator it = m_trigger_src.begin(); it != m_trigger_src.end(); it++)
+						for (std::map<int, Socket *>::iterator it = m_trigger_src.begin(); it != m_trigger_src.end(); ++it)
 						{
 							int id = it -> first;
 							Socket *src = it -> second;
 							if (src == p)
 							{
-								for (std::map<Socket *, bool>::iterator it = m_trigger_dst[id].begin(); it != m_trigger_dst[id].end(); it++)
+								for (std::map<Socket *, bool>::iterator it = m_trigger_dst[id].begin(); it != m_trigger_dst[id].end(); ++it)
 								{
 									Socket *dst = it -> first;
 									if (Valid(dst))
@@ -957,7 +957,7 @@ DEB(							fprintf(stderr, "Close() before OnDelete\n");)
 	if (check_max_fd)
 	{
 		m_maxsock = 0;
-		for (socket_v::iterator it = m_fds.begin(); it != m_fds.end(); it++)
+		for (socket_v::iterator it = m_fds.begin(); it != m_fds.end(); ++it)
 		{
 			SOCKET s = *it;
 			m_maxsock = s > m_maxsock ? s : m_maxsock;
@@ -982,13 +982,13 @@ DEB(							fprintf(stderr, "Close() before OnDelete\n");)
 			do
 			{
 				again = false;
-				for (std::map<int, Socket *>::iterator it = m_trigger_src.begin(); it != m_trigger_src.end(); it++)
+				for (std::map<int, Socket *>::iterator it = m_trigger_src.begin(); it != m_trigger_src.end(); ++it)
 				{
 					int id = it -> first;
 					Socket *src = it -> second;
 					if (src == p)
 					{
-						for (std::map<Socket *, bool>::iterator it = m_trigger_dst[id].begin(); it != m_trigger_dst[id].end(); it++)
+						for (std::map<Socket *, bool>::iterator it = m_trigger_dst[id].begin(); it != m_trigger_dst[id].end(); ++it)
 						{
 							Socket *dst = it -> first;
 							if (Valid(dst))
@@ -1022,7 +1022,7 @@ bool SocketHandler::Resolving(Socket *p0)
 
 bool SocketHandler::Valid(Socket *p0)
 {
-	for (socket_m::iterator it = m_sockets.begin(); it != m_sockets.end(); it++)
+	for (socket_m::iterator it = m_sockets.begin(); it != m_sockets.end(); ++it)
 	{
 		Socket *p = it -> second;
 		if (p0 == p)
@@ -1034,7 +1034,7 @@ bool SocketHandler::Valid(Socket *p0)
 
 bool SocketHandler::Valid(socketuid_t uid)
 {
-	for (socket_m::iterator it = m_sockets.begin(); it != m_sockets.end(); it++)
+	for (socket_m::iterator it = m_sockets.begin(); it != m_sockets.end(); ++it)
 	{
 		Socket *p = it -> second;
 		if (p -> UniqueIdentifier() == uid)
@@ -1231,7 +1231,7 @@ port_t SocketHandler::GetResolverPort()
 #ifdef ENABLE_POOL
 ISocketHandler::PoolSocket *SocketHandler::FindConnection(int type,const std::string& protocol,SocketAddress& ad)
 {
-	for (socket_m::iterator it = m_sockets.begin(); it != m_sockets.end() && m_sockets.size(); it++)
+	for (socket_m::iterator it = m_sockets.begin(); it != m_sockets.end() && m_sockets.size(); ++it)
 	{
 		PoolSocket *pools = dynamic_cast<PoolSocket *>(it -> second);
 		if (pools)
@@ -1275,7 +1275,7 @@ void SocketHandler::Remove(Socket *p)
 	{
 		return;
 	}
-	for (socket_m::iterator it = m_sockets.begin(); it != m_sockets.end(); it++)
+	for (socket_m::iterator it = m_sockets.begin(); it != m_sockets.end(); ++it)
 	{
 		if (it -> second == p)
 		{
@@ -1284,7 +1284,7 @@ void SocketHandler::Remove(Socket *p)
 			return;
 		}
 	}
-	for (socket_m::iterator it2 = m_add.begin(); it2 != m_add.end(); it2++)
+	for (socket_m::iterator it2 = m_add.begin(); it2 != m_add.end(); ++it2)
 	{
 		if (it2 -> second == p)
 		{
@@ -1293,7 +1293,7 @@ void SocketHandler::Remove(Socket *p)
 			return;
 		}
 	}
-	for (std::list<Socket *>::iterator it3 = m_delete.begin(); it3 != m_delete.end(); it3++)
+	for (std::list<Socket *>::iterator it3 = m_delete.begin(); it3 != m_delete.end(); ++it3)
 	{
 		if (*it3 == p)
 		{
@@ -1321,7 +1321,7 @@ void SocketHandler::CheckSanity()
 
 void SocketHandler::CheckList(socket_v& ref,const std::string& listname)
 {
-	for (socket_v::iterator it = ref.begin(); it != ref.end(); it++)
+	for (socket_v::iterator it = ref.begin(); it != ref.end(); ++it)
 	{
 		SOCKET s = *it;
 		if (m_sockets.find(s) != m_sockets.end())
@@ -1329,7 +1329,7 @@ void SocketHandler::CheckList(socket_v& ref,const std::string& listname)
 		if (m_add.find(s) != m_add.end())
 			continue;
 		bool found = false;
-		for (std::list<Socket *>::iterator it = m_delete.begin(); it != m_delete.end(); it++)
+		for (std::list<Socket *>::iterator it = m_delete.begin(); it != m_delete.end(); ++it)
 		{
 			Socket *p = *it;
 			if (p -> GetSocket() == s)
@@ -1363,7 +1363,7 @@ DEB(		fprintf(stderr, "AddList:  invalid_socket\n%s\n", Utility::Stack().c_str()
 		(which_one == LIST_CLOSE) ? m_fds_close : m_fds_close;
 	if (add)
 	{
-		for (socket_v::iterator it = ref.begin(); it != ref.end(); it++)
+		for (socket_v::iterator it = ref.begin(); it != ref.end(); ++it)
 		{
 			if (*it == s) // already there
 			{
@@ -1388,7 +1388,7 @@ DEB(	fprintf(stderr, " ^^ Add file descriptor %5d to list %s  List size after op
 		return;
 	}
 	// remove
-	for (socket_v::iterator it = ref.begin(); it != ref.end(); it++)
+	for (socket_v::iterator it = ref.begin(); it != ref.end(); ++it)
 	{
 		while (it != ref.end() && *it == s)
 		{
@@ -1407,6 +1407,10 @@ DEB(	fprintf(stderr, " ^^ Remove file descriptor %5d from list %s  List size aft
 		(which_one == LIST_CLOSE) ? "Close" : "<undef>",
 		ref.size());)
 #endif
+		}
+		if (it == ref.end())
+		{
+			break;
 		}
 	}
 }
@@ -1462,7 +1466,7 @@ void SocketHandler::Trigger(int id, Socket::TriggerData& data, bool erase)
 	if (m_trigger_src.find(id) != m_trigger_src.end())
 	{
 		data.SetSource( m_trigger_src[id] );
-		for (std::map<Socket *, bool>::iterator it = m_trigger_dst[id].begin(); it != m_trigger_dst[id].end(); it++)
+		for (std::map<Socket *, bool>::iterator it = m_trigger_dst[id].begin(); it != m_trigger_dst[id].end(); ++it)
 		{
 			Socket *dst = it -> first;
 			if (Valid(dst))

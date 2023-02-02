@@ -33,6 +33,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define _SOCKETS_Thread_H
 
 #include "sockets-config.h"
+#ifdef _WIN32
+#else
+#include <pthread.h>
+#endif
+
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
 #endif
@@ -46,7 +51,6 @@ typedef unsigned threadfunc_t;
 typedef void * threadparam_t;
 #define STDPREFIX __stdcall
 #else
-#include <pthread.h>
 
 typedef void * threadfunc_t;
 typedef void * threadparam_t;

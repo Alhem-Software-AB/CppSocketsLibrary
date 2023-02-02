@@ -231,7 +231,7 @@ std::string Utility::bigint2string(uint64_t l)
 uint64_t Utility::atoi64(const std::string& str) 
 {
 	uint64_t l = 0;
-	for (size_t i = 0; i < str.size(); i++)
+	for (size_t i = 0; i < str.size(); ++i)
 	{
 		l = l * 10 + str[i] - 48;
 	}
@@ -242,7 +242,7 @@ uint64_t Utility::atoi64(const std::string& str)
 unsigned int Utility::hex2unsigned(const std::string& str)
 {
 	unsigned int r = 0;
-	for (size_t i = 0; i < str.size(); i++)
+	for (size_t i = 0; i < str.size(); ++i)
 	{
 		r = r * 16 + str[i] - 48 - ((str[i] >= 'A') ? 7 : 0) - ((str[i] >= 'a') ? 32 : 0);
 	}
@@ -258,7 +258,7 @@ std::string Utility::rfc1738_encode(const std::string& src)
 {
 static	char hex[] = "0123456789ABCDEF";
 	std::string dst;
-	for (size_t i = 0; i < src.size(); i++)
+	for (size_t i = 0; i < src.size(); ++i)
 	{
 		if (isalnum(src[i]))
 		{
@@ -288,7 +288,7 @@ static	char hex[] = "0123456789ABCDEF";
 std::string Utility::rfc1738_decode(const std::string& src)
 {
 	std::string dst;
-	for (size_t i = 0; i < src.size(); i++)
+	for (size_t i = 0; i < src.size(); ++i)
 	{
 		if (src[i] == '%' && isxdigit(src[i + 1]) && isxdigit(src[i + 2]))
 		{
@@ -316,7 +316,7 @@ bool Utility::isipv4(const std::string& str)
 {
 	int dots = 0;
 	// %! ignore :port?
-	for (size_t i = 0; i < str.size(); i++)
+	for (size_t i = 0; i < str.size(); ++i)
 	{
 		if (str[i] == '.')
 			dots++;
@@ -334,7 +334,7 @@ bool Utility::isipv6(const std::string& str)
 {
 	size_t qc = 0;
 	size_t qd = 0;
-	for (size_t i = 0; i < str.size(); i++)
+	for (size_t i = 0; i < str.size(); ++i)
 	{
 		qc += (str[i] == ':') ? 1 : 0;
 		qd += (str[i] == '.') ? 1 : 0;
@@ -355,7 +355,7 @@ bool Utility::isipv6(const std::string& str)
 		{
 			return false;
 		}
-		for (size_t i = 0; i < tmp.size(); i++)
+		for (size_t i = 0; i < tmp.size(); ++i)
 		{
 			if (tmp[i] < '0' || (tmp[i] > '9' && tmp[i] < 'A') ||
 				(tmp[i] > 'F' && tmp[i] < 'a') || tmp[i] > 'f')
@@ -426,7 +426,7 @@ void Utility::l2ip(const struct in6_addr& ip, std::string& str,bool mixed)
 		unsigned short x;
 		unsigned short addr16[8];
 		memcpy(addr16, &ip, sizeof(addr16));
-		for (size_t i = 0; i < 6; i++)
+		for (size_t i = 0; i < 6; ++i)
 		{
 			x = ntohs(addr16[i]);
 			if (*slask && (x || !ok_to_skip || prev))
@@ -463,7 +463,7 @@ void Utility::l2ip(const struct in6_addr& ip, std::string& str,bool mixed)
 
 int Utility::in6_addr_compare(in6_addr a,in6_addr b)
 {
-	for (size_t i = 0; i < 16; i++)
+	for (size_t i = 0; i < 16; ++i)
 	{
 		if (a.s6_addr[i] < b.s6_addr[i])
 			return -1;
@@ -756,7 +756,7 @@ bool Utility::u2ip(const std::string& host, struct sockaddr_in6& sa, int ai_flag
 	{
 		std::list<std::string> vec;
 		size_t x = 0;
-		for (size_t i = 0; i <= host.size(); i++)
+		for (size_t i = 0; i <= host.size(); ++i)
 		{
 			if (i == host.size() || host[i] == ':')
 			{
@@ -786,7 +786,7 @@ bool Utility::u2ip(const std::string& host, struct sockaddr_in6& sa, int ai_flag
 		size_t sz = vec.size(); // number of byte pairs
 		size_t i = 0; // index in in6_addr.in6_u.u6_addr16[] ( 0 .. 7 )
 		unsigned short addr16[8];
-		for (std::list<std::string>::iterator it = vec.begin(); it != vec.end(); it++)
+		for (std::list<std::string>::iterator it = vec.begin(); it != vec.end(); ++it)
 		{
 			std::string bytepair = *it;
 			if (bytepair.size())
@@ -918,7 +918,7 @@ bool Utility::reverse(struct sockaddr *sa, socklen_t sa_len, std::string& hostna
 				unsigned short addr16[8];
 				struct sockaddr_in6 *sa_in6 = (struct sockaddr_in6 *)sa;
 				memcpy(addr16, &sa_in6 -> sin6_addr, sizeof(addr16));
-				for (size_t i = 0; i < 8; i++)
+				for (size_t i = 0; i < 8; ++i)
 				{
 					unsigned short x = ntohs(addr16[i]);
 					if (*slask && (x || !ok_to_skip || prev))
@@ -1028,7 +1028,7 @@ unsigned long Utility::ThreadID()
 std::string Utility::ToLower(const std::string& str)
 {
 	std::string r;
-	for (size_t i = 0; i < str.size(); i++)
+	for (size_t i = 0; i < str.size(); ++i)
 	{
 		if (str[i] >= 'A' && str[i] <= 'Z')
 			r += str[i] | 32;
@@ -1042,7 +1042,7 @@ std::string Utility::ToLower(const std::string& str)
 std::string Utility::ToUpper(const std::string& str)
 {
 	std::string r;
-	for (size_t i = 0; i < str.size(); i++)
+	for (size_t i = 0; i < str.size(); ++i)
 	{
 		if (str[i] >= 'a' && str[i] <= 'z')
 			r += (char)(str[i] - 32);
@@ -1071,7 +1071,7 @@ static	Utility::Rng generator( (unsigned long)time(NULL) );
 Utility::Rng::Rng(unsigned long seed) : m_value( 0 )
 {
 	m_tmp[0] = seed & 0xffffffffUL;
-	for (int i = 1; i < TWIST_LEN; i++)
+	for (int i = 1; i < TWIST_LEN; ++i)
 	{
 		m_tmp[i] = (1812433253UL * (m_tmp[i - 1] ^ (m_tmp[i - 1] >> 30)) + i);
 	}
@@ -1144,7 +1144,7 @@ Utility::Uri::Uri(const std::string& url) : m_url(url), m_port(0), m_path(url)
 		m_uri = m_path;
 	}
 	pos = std::string::npos;
-	for (size_t i = 0; i < m_uri.size(); i++)
+	for (size_t i = 0; i < m_uri.size(); ++i)
 		if (m_uri[i] == '.')
 			pos = i;
 	if (pos != std::string::npos)
@@ -1155,7 +1155,7 @@ Utility::Uri::Uri(const std::string& url) : m_url(url), m_port(0), m_path(url)
 Utility::Path::Path(const std::string& _str)
 {
 	std::string str = _str;
-	for (size_t i = 0; i < str.size(); i++)
+	for (size_t i = 0; i < str.size(); ++i)
 	{
 #ifdef _WIN32
 		if (str[i] == '/')
@@ -1175,12 +1175,12 @@ Utility::Path::Path(const std::string& _str)
 	}
 #endif
 	size_t x = 0;
-	for (size_t i = 0; i < str.size(); i++)
+	for (size_t i = 0; i < str.size(); ++i)
 		if (str[i] == '/' || str[i] == '\\')
 			x = i + 1;
 	m_path = str.substr(0, x);
 	m_file = str.substr(x);
-	for (size_t i = 0; i < m_file.size(); i++)
+	for (size_t i = 0; i < m_file.size(); ++i)
 		if (m_file[i] == '.')
 			m_ext = m_file.substr(i + 1);
 }
@@ -1194,7 +1194,7 @@ const std::string Utility::Stack()
 	int n = backtrace(buffer, BFSIZE);
 	char **res = backtrace_symbols(buffer, n);
 	std::string tmp;
-	for (int i = 0; i < n; i++)
+	for (int i = 0; i < n; ++i)
 	{
 		std::string x = res[i];
 		std::string plus;
@@ -1268,7 +1268,7 @@ const std::string Utility::FromUtf8(const std::string& str)
 	if (!str.size())
 		return "";
 	std::string r;
-	for (size_t i = 0; i < str.size(); i++)
+	for (size_t i = 0; i < str.size(); ++i)
 	{
 		if (i < str.size() - 1 && (str[i] & 0xe0) == 0xc0 && (str[i + 1] & 0xc0) == 0x80)
 		{
@@ -1292,7 +1292,7 @@ const std::string Utility::ToUtf8(const std::string& str)
 	if (str.empty())
 		return "";
 	std::string r;
-	for (size_t i = 0; i < str.size(); i++)
+	for (size_t i = 0; i < str.size(); ++i)
 	{
 		if (((unsigned)str[i] & 0x80) == 0x80)
 		{

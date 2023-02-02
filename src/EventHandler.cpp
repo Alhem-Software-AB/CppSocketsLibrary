@@ -35,7 +35,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "EventHandler.h"
 #include "IEventOwner.h"
 #include "Event.h"
-#include "Socket.h"
 #include "TcpSocket.h"
 #include "ListenSocket.h"
 
@@ -126,7 +125,7 @@ long EventHandler::AddEvent(IEventOwner *from,long sec,long usec)
 	std::list<Event *>::iterator it = m_events.begin();
 	while (it != m_events.end() && *(*it) < *e)
 	{
-		it++;
+		++it;
 	}
 	m_events.insert(it, e);
 	if (m_socket)
@@ -143,7 +142,7 @@ void EventHandler::ClearEvents(IEventOwner *from)
 	do
 	{
 		repeat = false;
-		for (std::list<Event *>::iterator it = m_events.begin(); it != m_events.end(); it++)
+		for (std::list<Event *>::iterator it = m_events.begin(); it != m_events.end(); ++it)
 		{
 			Event *e = *it;
 			if (e -> GetFrom() == from)
@@ -184,7 +183,7 @@ void EventHandler::SetQuit(bool x)
 
 void EventHandler::RemoveEvent(IEventOwner *from, long eid)
 {
-	for (std::list<Event *>::iterator it = m_events.begin(); it != m_events.end(); it++)
+	for (std::list<Event *>::iterator it = m_events.begin(); it != m_events.end(); ++it)
 	{
 		Event *e = *it;
 		if (from == e -> GetFrom() && eid == e -> GetID())

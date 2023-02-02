@@ -39,7 +39,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "HttpdForm.h"
 #include "IFileUpload.h"
 #include "IStream.h"
-#include "Debug.h"
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
@@ -57,13 +56,11 @@ HttpdForm::HttpdForm(IFile *infil, const std::string& content_type, size_t conte
 , m_file_upload(NULL)
 , m_upload_stream(NULL)
 {
-DEB(	Debug deb("HttpdForm");)
 	CGI *cgi = NULL;
 	size_t extra = 2;
 	int cl = (int)content_length;
 
 	m_current = m_cgi.end();
-DEB(	deb << "Content-Type: " << content_type << Debug::endl();)
 
 	if (content_type.size() >= 19 && content_type.substr(0, 19) == "multipart/form-data")
 	{
@@ -86,7 +83,6 @@ DEB(	deb << "Content-Type: " << content_type << Debug::endl();)
 		}
 		if (!m_strBoundary.empty())
 		{
-DEB(			Debug deb("HttpdForm; parsing, boundary = " + m_strBoundary);)
 			std::string content_type;
 			std::string current_name;
 			std::string current_filename;
@@ -118,18 +114,15 @@ DEB(			Debug deb("HttpdForm; parsing, boundary = " + m_strBoundary);)
 					{
 						slask[strlen(slask) - 1] = 0;
 					}
-DEB(					deb << "Parsing header, line = " << slask << Debug::endl();)
 					while (cl >= 0 && !infil -> eof() && *slask)
 					{
 						Parse pa(slask,":");
 						std::string h = pa.getword();
 						std::string h2 = pa.getrest();
-DEB(						deb << "KEY:" << h << "  REST:" << h2 << Debug::endl();)
 						if (!strcasecmp(h.c_str(),"Content-type"))
 						{
 							Parse pa(h2, ";");
 							content_type = pa.getword();
-DEB(							deb << "Found Content-Type: " << content_type << Debug::endl();)
 						}
 						else
 						if (!strcasecmp(h.c_str(),"Content-Disposition"))
@@ -138,7 +131,6 @@ DEB(							deb << "Found Content-Type: " << content_type << Debug::endl();)
 							h = pa.getword();
 							if (!strcmp(h.c_str(),"form-data"))
 							{
-DEB(								deb << "Found Content-Disposition: form-data, parsing" << Debug::endl();)
 								pa.EnableQuote(true);
 								h = pa.getword();
 								while (!h.empty())
@@ -156,7 +148,6 @@ DEB(								deb << "Found Content-Disposition: form-data, parsing" << Debug::end
 										{
 											current_name = h;
 										}
-DEB(										deb << "  Found name = " << current_name << Debug::endl();)
 									}
 									else
 									if (!strcmp(name.c_str(),"filename"))
@@ -179,7 +170,6 @@ DEB(										deb << "  Found name = " << current_name << Debug::endl();)
 										{
 											current_filename = current_filename.substr(x);
 										}
-DEB(										deb << "  Found filename = " << current_filename << Debug::endl();)
 									}
 									h = pa.getword();
 								}
@@ -212,7 +202,6 @@ DEB(										deb << "  Found filename = " << current_filename << Debug::endl();
 						}
 						cgi = new CGI(current_name, val);
 						m_cgi.push_back(cgi);
-DEB(						deb << current_name << ": " << val << Debug::endl();)
 						if (!cl)
 						{
 							break;
@@ -463,7 +452,7 @@ HttpdForm::~HttpdForm()
 {
 	CGI *cgi = NULL; //,*tmp;
 
-	for (cgi_v::iterator it = m_cgi.begin(); it != m_cgi.end(); it++)
+	for (cgi_v::iterator it = m_cgi.begin(); it != m_cgi.end(); ++it)
 	{
 		cgi = *it;
 		delete cgi;
@@ -565,7 +554,7 @@ int HttpdForm::getvalue(const std::string& n,std::string& v) const
 	CGI *cgi = NULL;
 	int r = 0;
 
-	for (cgi_v::const_iterator it = m_cgi.begin(); it != m_cgi.end(); it++)
+	for (cgi_v::const_iterator it = m_cgi.begin(); it != m_cgi.end(); ++it)
 	{
 		cgi = *it;
 		if (cgi -> name == n)
@@ -595,7 +584,7 @@ int HttpdForm::getvalue(const std::string& n,std::string& v) const
 
 std::string HttpdForm::getvalue(const std::string& n) const
 {
-	for (cgi_v::const_iterator it = m_cgi.begin(); it != m_cgi.end(); it++)
+	for (cgi_v::const_iterator it = m_cgi.begin(); it != m_cgi.end(); ++it)
 	{
 		CGI *cgi = *it;
 		if (cgi -> name == n)
@@ -612,7 +601,7 @@ size_t HttpdForm::getlength(const std::string& n) const
 	CGI *cgi = NULL;
 	size_t l;
 
-	for (cgi_v::const_iterator it = m_cgi.begin(); it != m_cgi.end(); it++)
+	for (cgi_v::const_iterator it = m_cgi.begin(); it != m_cgi.end(); ++it)
 	{
 		cgi = *it;
 		if (cgi -> name == n)

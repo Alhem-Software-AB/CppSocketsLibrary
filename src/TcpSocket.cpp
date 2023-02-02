@@ -745,39 +745,50 @@ int TcpSocket::TryWrite(const char *buf, size_t len)
 #ifdef HAVE_OPENSSL
 	if (IsSSL())
 	{
-		n = SSL_write(m_ssl, buf, (int)len);
-		if (n == -1)
+		// check that file descriptor is ready for write before calling SSL_write
+		fd_set wfds;
+		FD_ZERO(&wfds);
+		FD_SET(GetSocket(), &wfds);
+		struct timeval tv;
+		tv.tv_sec = 0;
+		tv.tv_usec = 0;
+		n = select(GetSocket() + 1, NULL, &wfds, NULL, &tv);
+		if (n > 0 && FD_ISSET(GetSocket(), &wfds))
 		{
-			int errnr = SSL_get_error(m_ssl, n);
-			if ( errnr != SSL_ERROR_WANT_READ && errnr != SSL_ERROR_WANT_WRITE )
+			n = SSL_write(m_ssl, buf, (int)len);
+			if (n == -1)
+			{
+				int errnr = SSL_get_error(m_ssl, n);
+				if ( errnr != SSL_ERROR_WANT_READ && errnr != SSL_ERROR_WANT_WRITE )
+				{
+					OnDisconnect();
+					OnDisconnect(TCP_DISCONNECT_WRITE|TCP_DISCONNECT_ERROR|TCP_DISCONNECT_SSL, errnr);
+					SetCloseAndDelete(true);
+					SetFlushBeforeClose(false);
+					SetLost();
+					{
+						char errbuf[256];
+						ERR_error_string_n(errnr, errbuf, 256);
+						Handler().LogError(this, "OnWrite/SSL_write", errnr, errbuf, LOG_LEVEL_FATAL);
+					}
+				}
+				return 0;
+			}
+			else
+			if (!n)
 			{
 				OnDisconnect();
-				OnDisconnect(TCP_DISCONNECT_WRITE|TCP_DISCONNECT_ERROR|TCP_DISCONNECT_SSL, errnr);
+				OnDisconnect(TCP_DISCONNECT_WRITE|TCP_DISCONNECT_SSL, 0);
 				SetCloseAndDelete(true);
 				SetFlushBeforeClose(false);
 				SetLost();
-				{
+DEB(				{
+					int errnr = SSL_get_error(m_ssl, n);
 					char errbuf[256];
 					ERR_error_string_n(errnr, errbuf, 256);
-					Handler().LogError(this, "OnWrite/SSL_write", errnr, errbuf, LOG_LEVEL_FATAL);
-				}
+					fprintf(stderr, "SSL_write() returns 0: %d : %s\n",errnr, errbuf);
+				})
 			}
-			return 0;
-		}
-		else
-		if (!n)
-		{
-			OnDisconnect();
-			OnDisconnect(TCP_DISCONNECT_WRITE|TCP_DISCONNECT_SSL, 0);
-			SetCloseAndDelete(true);
-			SetFlushBeforeClose(false);
-			SetLost();
-DEB(			{
-				int errnr = SSL_get_error(m_ssl, n);
-				char errbuf[256];
-				ERR_error_string_n(errnr, errbuf, 256);
-				fprintf(stderr, "SSL_write() returns 0: %d : %s\n",errnr, errbuf);
-			})
 		}
 	}
 	else

@@ -1,7 +1,7 @@
 MAJOR =		2
-MINOR =		3.6
+MINOR =		3.7
 VERSION =	$(MAJOR).$(MINOR)
-DIFF_VERSION =	2.3.5
+DIFF_VERSION =	2.3.6
 
 # Sockets
 OBJS =		\

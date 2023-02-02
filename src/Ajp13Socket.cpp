@@ -35,10 +35,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #endif
 #include "Ajp13Socket.h"
 #include "ajp13.h"
-#include "HttpRequest.h"
-#include "HttpResponse.h"
-#include "IFile.h"
-#include "Utility.h"
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
@@ -300,7 +296,7 @@ void Ajp13Socket::Respond(const HttpResponse& res)
 		}
 		std::list<std::string> vec = m_res.CookieNames();
 		{
-			for (std::list<std::string>::iterator it = vec.begin(); it != vec.end(); it++)
+			for (std::list<std::string>::iterator it = vec.begin(); it != vec.end(); ++it)
 			{
 				Utility::ncmap<int>::const_iterator it2 = Init.ResponseHeader.find( "set-cookie" );
 				if (it2 != Init.ResponseHeader.end())

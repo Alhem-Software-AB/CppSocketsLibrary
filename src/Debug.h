@@ -2,9 +2,7 @@
 #define _SOCKETS_Debug_H
 
 #include "sockets-config.h"
-#include <string>
 #include "Utility.h"
-#include <map>
 #include <stdio.h>
 
 

@@ -1,6 +1,16 @@
 diff for next release always available @ http://www.alhem.net/Sockets/latest_diff.html
 
-next
+2.3.7
+------
+Moved some #include's outside the sockets namespace definition.
+Fix code to avoid an increment on an stl iterator that has reached end.
+Helping compilers deal with it++ when result is not used, changed all it++
+to ++it where appropriate.
+Doing an extra select on write readiness on file descriptor before calling
+SSL_write. Prevents a hang situation when the remote end drops the
+connection.
+
+2.3.6
 ------
 Added improved Valid() method using unique socket instance identifier. Using
 this identifier internally for events and resolver. Added optional data
@@ -12,7 +22,6 @@ Using SSL_MODE_ENABLE_PARTIAL_WRITE because the library supports this.
 Renamed EventHandler() method in IEventOwner to GetEventHandler().
 Added file system path abstraction methods to Utility.
 Reset file descriptor after successful close of a ListenSocket.
-
 
 2.3.5
 ------
