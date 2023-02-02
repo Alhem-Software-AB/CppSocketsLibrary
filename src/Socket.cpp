@@ -842,7 +842,7 @@ bool Socket::Detach()
 		return false;
 	if (m_detached)
 		return false;
-	m_detach = true;
+	SetDetach();
 	return true;
 }
 
@@ -1323,13 +1323,6 @@ bool Socket::IsConnected()
 	return m_connected;
 }
 
-
-#ifdef _THREADSAFE_SOCKETS
-Mutex& Socket::GetMutex()
-{
-	return m_rwmutex;
-}
-#endif
 
 void Socket::SetFlushBeforeClose(bool x)
 {

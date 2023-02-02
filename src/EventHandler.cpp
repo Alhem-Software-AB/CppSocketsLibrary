@@ -63,7 +63,7 @@ bool EventHandler::GetTimeUntilNextEvent(struct timeval *tv)
 	std::list<Event *>::iterator it = m_events.begin();
 	if (it != m_events.end())
 	{
-		Time now;
+		EventTime now;
 		mytime_t diff = (*it) -> GetTime() - now;
 		tv -> tv_sec = static_cast<long>(diff / 1000000);
 		tv -> tv_usec = static_cast<long>(diff % 1000000);
@@ -75,7 +75,7 @@ bool EventHandler::GetTimeUntilNextEvent(struct timeval *tv)
 
 void EventHandler::CheckEvents()
 {
-	Time now;
+	EventTime now;
 	std::list<Event *>::iterator it = m_events.begin();
 	while (it != m_events.end() && (*it) -> GetTime() < now)
 	{

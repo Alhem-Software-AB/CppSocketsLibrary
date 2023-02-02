@@ -34,7 +34,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #else
 #include <sys/select.h>
 #endif
-#include "Time.h"
+#include "EventTime.h"
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
@@ -53,14 +53,14 @@ public:
 
 	bool operator<(Event&);
 	long GetID();
-	const Time& GetTime() const;
+	const EventTime& GetTime() const;
 	IEventOwner *GetFrom();
 
 private:
 	Event(const Event& ) {} // copy constructor
 	Event& operator=(const Event& ) { return *this; } // assignment operator
 	IEventOwner *m_from;
-	Time m_time;
+	EventTime m_time;
 	static long m_unique_id;
 	long m_id;
 };

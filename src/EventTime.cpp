@@ -1,4 +1,4 @@
-/** \file Time.h
+/** \file EventTime.cpp
  **	\date  2005-12-07
  **	\author grymse@alhem.net
 **/
@@ -27,49 +27,74 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
-#ifndef _SOCKETS_TIME_H
-#define _SOCKETS_TIME_H
+#include <stdio.h>
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <sys/select.h>
+#include <sys/time.h>
+#endif
+
+#include "EventTime.h"
+
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
 #endif
 
 
-#ifdef _WIN32
-typedef __int64 mytime_t;
-#else
-#include <inttypes.h> // int64_t
-typedef int64_t mytime_t;
-#endif
-
-
-/** \defgroup timer Timer event handling */
-
-/** Time primitive, returns current time as a 64-bit number.
-	\ingroup timer */
-class Time
+EventTime::EventTime() : m_time(Tick())
 {
-public:
-	Time();
-	Time(mytime_t sec,long usec);
-	~Time();
+}
 
-	static mytime_t Tick();
 
-	operator mytime_t () { return m_time; }
-	Time operator - (const Time& x) const;
-	bool operator < (const Time& x) const;
+EventTime::EventTime(mytime_t sec,long usec) : m_time(Tick())
+{
+	m_time += sec * 1000000 + usec;
+}
 
-private:
-	Time(const Time& ) {} // copy constructor
-	Time& operator=(const Time& ) { return *this; } // assignment operator
-	mytime_t m_time;
-};
 
+EventTime::~EventTime()
+{
+}
+
+
+mytime_t EventTime::Tick()
+{
+	mytime_t t;
+#ifdef _WIN32
+	FILETIME ft;
+	GetSystemTimeAsFileTime(&ft);
+	t = ft.dwHighDateTime;
+	t = t << 32;
+	t += ft.dwLowDateTime;
+	t /= 10; // us
+#else
+	struct timeval tv;
+	struct timezone tz;
+	gettimeofday(&tv, &tz);
+	t = tv.tv_sec;
+	t *= 1000000;
+	t += tv.tv_usec;
+#endif
+	return t;
+}
+
+
+EventTime EventTime::operator - (const EventTime& x) const
+{
+	EventTime t;
+	t.m_time = m_time - x.m_time;
+	return t;
+}
+
+
+bool EventTime::operator < (const EventTime& x) const
+{
+	return m_time < x.m_time;
+}
 
 
 #ifdef SOCKETS_NAMESPACE
 }
 #endif
-
-#endif // _SOCKETS_TIME_H

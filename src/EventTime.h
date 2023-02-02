@@ -1,4 +1,4 @@
-/** \file Time.cpp
+/** \file EventTime.h
  **	\date  2005-12-07
  **	\author grymse@alhem.net
 **/
@@ -27,74 +27,49 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
-#include <stdio.h>
-#ifdef _WIN32
-#include <windows.h>
-#else
-#include <sys/select.h>
-#include <sys/time.h>
-#endif
-
-#include "Time.h"
-
+#ifndef _SOCKETS_TIME_H
+#define _SOCKETS_TIME_H
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
 #endif
 
 
-Time::Time() : m_time(Tick())
-{
-}
-
-
-Time::Time(mytime_t sec,long usec) : m_time(Tick())
-{
-	m_time += sec * 1000000 + usec;
-}
-
-
-Time::~Time()
-{
-}
-
-
-mytime_t Time::Tick()
-{
-	mytime_t t;
 #ifdef _WIN32
-	FILETIME ft;
-	GetSystemTimeAsFileTime(&ft);
-	t = ft.dwHighDateTime;
-	t = t << 32;
-	t += ft.dwLowDateTime;
-	t /= 10; // us
+typedef __int64 mytime_t;
 #else
-	struct timeval tv;
-	struct timezone tz;
-	gettimeofday(&tv, &tz);
-	t = tv.tv_sec;
-	t *= 1000000;
-	t += tv.tv_usec;
+#include <inttypes.h> // int64_t
+typedef int64_t mytime_t;
 #endif
-	return t;
-}
 
 
-Time Time::operator - (const Time& x) const
+/** \defgroup timer EventTimer event handling */
+
+/** EventTime primitive, returns current time as a 64-bit number.
+	\ingroup timer */
+class EventTime
 {
-	Time t;
-	t.m_time = m_time - x.m_time;
-	return t;
-}
+public:
+	EventTime();
+	EventTime(mytime_t sec,long usec);
+	~EventTime();
 
+	static mytime_t Tick();
 
-bool Time::operator < (const Time& x) const
-{
-	return m_time < x.m_time;
-}
+	operator mytime_t () { return m_time; }
+	EventTime operator - (const EventTime& x) const;
+	bool operator < (const EventTime& x) const;
+
+private:
+	EventTime(const EventTime& ) {} // copy constructor
+	EventTime& operator=(const EventTime& ) { return *this; } // assignment operator
+	mytime_t m_time;
+};
+
 
 
 #ifdef SOCKETS_NAMESPACE
 }
 #endif
+
+#endif // _SOCKETS_TIME_H

@@ -41,6 +41,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "ResolvSocket.h"
 #include "ResolvServer.h"
 #include "TcpSocket.h"
+#include "Mutex.h"
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
@@ -69,7 +70,35 @@ SocketHandler::SocketHandler(StdLog *p)
 ,m_resolv_id(0)
 ,m_resolver(NULL)
 ,m_b_enable_pool(false)
+,m_mutex(m_mutex) // yum
+,m_b_use_mutex(false)
 {
+	FD_ZERO(&m_rfds);
+	FD_ZERO(&m_wfds);
+	FD_ZERO(&m_efds);
+}
+
+
+SocketHandler::SocketHandler(Mutex& mutex,StdLog *p)
+:m_stdlog(p)
+,m_maxsock(0)
+,m_host("")
+,m_ip(0)
+#ifdef _WIN32
+,m_preverror(-1)
+#endif
+,m_slave(false)
+,m_local_resolved(false)
+,m_socks4_host(0)
+,m_socks4_port(0)
+,m_bTryDirect(false)
+,m_resolv_id(0)
+,m_resolver(NULL)
+,m_b_enable_pool(false)
+,m_mutex(mutex)
+,m_b_use_mutex(true)
+{
+	m_mutex.Lock();
 	FD_ZERO(&m_rfds);
 	FD_ZERO(&m_wfds);
 	FD_ZERO(&m_efds);
@@ -110,6 +139,10 @@ SocketHandler::~SocketHandler()
 	if (m_resolver)
 	{
 		delete m_resolver;
+	}
+	if (m_b_use_mutex)
+	{
+		m_mutex.Unlock();
 	}
 }
 
@@ -245,10 +278,16 @@ int SocketHandler::Select(struct timeval *tsel)
 		}
 		else
 		{
+			TcpSocket *tcp = dynamic_cast<TcpSocket *>(p);
+			bool bWrite = tcp ? tcp -> GetOutputLength() != 0 : false;
 			if (p -> IsDisableRead())
-				Set(s, false, false);
+			{
+				Set(s, false, bWrite);
+			}
 			else
-				Set(s,true,false);
+			{
+				Set(s, true, bWrite);
+			}
 		}
 		m_maxsock = (s > m_maxsock) ? s : m_maxsock;
 		m_fds.push_back(s);
@@ -268,7 +307,17 @@ int SocketHandler::Select(struct timeval *tsel)
 	fd_set wfds = m_wfds;
 	fd_set efds = m_efds;
 #endif
-	int n = select( (int)(m_maxsock + 1),&rfds,&wfds,&efds,tsel);
+	int n;
+	if (m_b_use_mutex)
+	{
+		m_mutex.Unlock();
+		n = select( (int)(m_maxsock + 1),&rfds,&wfds,&efds,tsel);
+		m_mutex.Lock();
+	}
+	else
+	{
+		n = select( (int)(m_maxsock + 1),&rfds,&wfds,&efds,tsel);
+	}
 	if (n == -1)
 	{
 		LogError(NULL, "select", Errno, StrError(Errno));
@@ -409,181 +458,6 @@ DEB(
 		}
 	} // if (n > 0)
 
-/*
-	for (socket_m::iterator it3 = m_sockets.begin(); it3 != m_sockets.end(); it3++)
-	{
-		Socket *p = (*it3).second;
-		if (p)
-		{
-			if (p -> CallOnConnect() && p -> Ready() )
-			{
-				if (p -> IsSSL()) // SSL Enabled socket
-					p -> OnSSLConnect();
-				else
-				if (p -> Socks4())
-					p -> OnSocks4Connect();
-				else
-				{
-					TcpSocket *tcp = dynamic_cast<TcpSocket *>(p);
-					if (tcp)
-					{
-						p -> SetConnected();
-						if (tcp -> GetOutputLength())
-						{
-							p -> OnWrite();
-						}
-					}
-					if (tcp && tcp -> IsReconnect())
-						p -> OnReconnect();
-					else
-					{
-						LogError(p, "Calling OnConnect", 0, "Because CallOnConnect", LOG_LEVEL_INFO);
-						p -> OnConnect();
-					}
-				}
-				p -> SetCallOnConnect( false );
-			}
-			if (!m_slave && p -> IsDetach())
-			{
-				Set(p -> GetSocket(), false, false, false);
-				p -> DetachSocket();
-				m_fds_erase.push_back(p -> GetSocket());
-//				m_sockets.erase(it3);
-//				repeat = true;
-//				break;
-				continue;
-			}
-//			if (p && p -> Timeout() && p -> Inactive() > p -> Timeout())
-//			{
-//				p -> SetCloseAndDelete();
-//			}
-			if (p -> Connecting() && p -> GetConnectTime() >= p -> GetConnectTimeout() )
-			{
-				TcpSocket *tcp = dynamic_cast<TcpSocket *>(p);
-				LogError(p, "connect", -1, "connect timeout", LOG_LEVEL_FATAL);
-				if (p -> Socks4())
-				{
-					p -> OnSocks4ConnectFailed();
-					// retry direct connection
-				}
-				else
-				if (tcp && (tcp -> GetConnectionRetry() == -1 ||
-					(tcp -> GetConnectionRetry() &&
-					 tcp -> GetConnectionRetries() < tcp -> GetConnectionRetry() )))
-				{
-					tcp -> IncreaseConnectionRetries();
-					if (p -> OnConnectRetry())
-					{
-						p -> SetRetryClientConnect();
-					}
-					else
-					{
-						p -> SetCloseAndDelete( true );
-						p -> OnConnectFailed();
-					}
-				}
-				else
-				{
-					p -> SetCloseAndDelete(true);
-					p -> OnConnectFailed();
-				}
-			}
-			if (p -> RetryClientConnect())
-			{
-				TcpSocket *tcp = dynamic_cast<TcpSocket *>(p);
-				SOCKET nn = (*it3).first;
-				p -> SetRetryClientConnect(false);
-				p -> Close();
-#ifdef IPPROTO_IPV6
-				if (p -> IsIpv6())
-				{
-					tcp -> Open(p -> GetClientRemoteAddr6(), p -> GetClientRemotePort());
-				}
-				else
-#endif
-				{
-					tcp -> Open(p -> GetClientRemoteAddr(), p -> GetClientRemotePort());
-				}
-//					m_sockets.erase(it3); // remove old SOCKET/Socket* pair
-				Add(p);
-//					repeat = true;
-//					break;
-				m_fds_erase.push_back(nn);
-				continue;
-			}
-			if (p -> CloseAndDelete() )
-			{
-				TcpSocket *tcp = dynamic_cast<TcpSocket *>(p);
-				if (tcp && tcp -> GetOutputLength() && 
-					tcp -> GetFlushBeforeClose() && 
-					!tcp -> IsSSL() &&
-					tcp -> CheckSendTimeoutCount() < 100 // magic number of cycles
-					) // wait until all data sent
-				{
-					LogError(p, "Closing", (int)tcp -> GetOutputLength(), "Sending all data before closing", LOG_LEVEL_INFO);
-				}
-				else
-				if (tcp && p -> IsConnected() && tcp -> Reconnect())
-				{
-					SOCKET nn = (*it3).first;
-					p -> SetCloseAndDelete(false);
-					tcp -> SetIsReconnect();
-					p -> SetConnected(false);
-					p -> Close(); // dispose of old file descriptor (Open creates a new)
-					p -> OnDisconnect();
-#ifdef IPPROTO_IPV6
-					if (p -> IsIpv6())
-					{
-						tcp -> Open(p -> GetClientRemoteAddr6(), p -> GetClientRemotePort());
-					}
-					else
-#endif
-					{
-						tcp -> Open(p -> GetClientRemoteAddr(), p -> GetClientRemotePort());
-					}
-					tcp -> ResetConnectionRetries();
-//						m_sockets.erase(it3); // remove old SOCKET/Socket* pair
-					Add(p);
-//						repeat = true;
-//						break;
-					m_fds_erase.push_back(nn);
-					continue;
-				}
-				else
-				{
-					SOCKET nn = (*it3).first;
-					if (tcp && tcp -> GetOutputLength())
-					{
-						LogError(p, "Closing", (int)tcp -> GetOutputLength(), "Closing socket while data still left to send", LOG_LEVEL_WARNING);
-					}
-					if (p -> Retain() && !p -> Lost())
-					{
-						PoolSocket *p2 = new PoolSocket(*this, p);
-						p2 -> SetDeleteByHandler();
-						Add(p2);
-					}
-					else
-					{
-						Set(p -> GetSocket(),false,false,false);
-						p -> Close();
-					}
-					p -> OnDelete();
-//						m_sockets.erase(it3);
-					if (p -> DeleteByHandler())
-					{
-						p -> SetErasedByHandler();
-						delete p;
-					}
-//						repeat = true;
-//						break;
-					m_fds_erase.push_back(nn);
-					continue;
-				}
-			}
-		} // if (p)
-	}
-*/
-
 	// check CallOnConnect
 	if (m_fds_callonconnect.size())
 	{
@@ -628,8 +502,7 @@ DEB(
 	// if (!m_slave) check Detach
 	if (!m_slave && m_fds_detach.size())
 	{
-		socket_v tmp = m_fds_detach;
-		for (socket_v::iterator it = tmp.begin(); it != tmp.end(); it++)
+		for (socket_v::iterator it = m_fds_detach.begin(); it != m_fds_detach.end(); it++)
 		{
 //printf("Check fd detach: %d\n", *it);
 			Socket *p = m_sockets[*it];
@@ -638,10 +511,12 @@ DEB(
 				if (p -> IsDetach())
 				{
 					Set(p -> GetSocket(), false, false, false);
+					// After DetachSocket(), all calls to Handler() will return a reference
+					// to the new slave SocketHandler running in the new thread.
 					p -> DetachSocket();
+					// Adding the file descriptor to m_fds_erase will now also remove the
+					// socket from the detach queue - tnx knightmad
 					m_fds_erase.push_back(p -> GetSocket());
-					//
-					p -> SetDetach(false); // added
 				}
 			}
 		}
@@ -802,11 +677,21 @@ DEB(
 	}
 
 	// check erased sockets
-	bool repeat = false;
+	bool check_max_fd = false;
 	while (m_fds_erase.size())
 	{
 		socket_v::iterator it = m_fds_erase.begin();
 		SOCKET nn = *it;
+		{
+			for (socket_v::iterator it = m_fds_detach.begin(); it != m_fds_detach.end(); it++)
+			{
+				if (*it == nn)
+				{
+					m_fds_detach.erase(it);
+					break;
+				}
+			}
+		}
 		{
 			for (socket_v::iterator it = m_fds.begin(); it != m_fds.end(); it++)
 			{
@@ -828,9 +713,9 @@ DEB(
 			}
 		}
 		m_fds_erase.erase(it);
-		repeat = true;
+		check_max_fd = true;
 	}
-	if (repeat)
+	if (check_max_fd)
 	{
 		m_maxsock = 0;
 		for (socket_v::iterator it = m_fds.begin(); it != m_fds.end(); it++)
@@ -1179,6 +1064,14 @@ socket_v& SocketHandler::GetFdsRetry()
 socket_v& SocketHandler::GetFdsClose()
 {
 	return m_fds_close;
+}
+
+
+Mutex& SocketHandler::GetMutex() const
+{
+//	if (!m_b_use_mutex)
+//		LogError(NULL, "GetMutex", 0, "SocketHandler not created with an external mutex reference", LOG_LEVEL_WARNING);
+	return m_mutex;
 }
 
 

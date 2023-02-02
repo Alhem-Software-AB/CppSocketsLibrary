@@ -493,9 +493,6 @@ DEB(			printf("TcpSocket(SSL) OnRead read %d bytes\n",n);)
 
 void TcpSocket::OnWrite()
 {
-#ifdef _THREADSAFE_SOCKETS
-	Lock lock(m_rwmutex);
-#endif
 	if (IsSSL())
 	{
 #ifdef HAVE_OPENSSL
@@ -640,9 +637,6 @@ void TcpSocket::SendBuf(const char *buf,size_t len,int)
 {
 	int n;
 	{
-#ifdef _THREADSAFE_SOCKETS
-	Lock lock(m_rwmutex);
-#endif
 	n = (int)obuf.GetLength();
 	if (!IsConnected())
 	{

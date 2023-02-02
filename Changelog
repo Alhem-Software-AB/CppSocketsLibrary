@@ -453,3 +453,12 @@ Version 1.9.10rc2
 Version 1.9.10rc3
 --------------------------
 
+Version 1.9.10rc4
+--------------------------
+10a11,12
+> EventTime.cpp
+> EventTime.h
+77,78d78
+< Time.cpp
+< Time.h
+

@@ -1,4 +1,4 @@
-VERSION =	1.9.10rc3
+VERSION =	1.9.10rc4
 DIFF_VERSION =	1.9.9
 
 INCLUDE =	-I.
@@ -15,6 +15,7 @@ CXX =		g++
 # SocketHandler/Socket derivatives becomes thread safe unfortunately.
 # It merely enables a small fix to sync writing to the socket
 # output buffer / internal reading from that output buffer.
+# 2006-01-26: obsolete
 #CFLAGS +=	-D_THREADSAFE_SOCKETS
 
 # uncomment depending on your operating system
@@ -75,7 +76,7 @@ OBJS =		CircularBuffer.o \
 		socket_include.o \
 		Mutex.o \
 		Lock.o \
-		Time.o Event.o IEventOwner.o EventHandler.o
+		EventTime.o Event.o IEventOwner.o EventHandler.o
 
 libSockets.a:	$(OBJS)
 		ar cru $@ $(OBJS)

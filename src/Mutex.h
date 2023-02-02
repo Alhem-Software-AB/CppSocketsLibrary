@@ -49,9 +49,9 @@ public:
 	Mutex();
 	~Mutex();
 
-private:
 	void Lock();
 	void Unlock();
+private:
 #ifdef _WIN32
 	HANDLE m_mutex;
 #else

@@ -379,13 +379,6 @@ public:
 	/** Common interface for Send used by Tcp and Udp sockets. */
 	virtual void Send(const std::string&,int = 0);
 
-	//
-#ifdef _THREADSAFE_SOCKETS
-	/** Returns read/write mutex in threadsafe mode.
-		\sa OnWrite
-		\sa SendBuf */
-	Mutex& GetMutex();
-#endif
 	/** Set connected status. */
 	void SetConnected(bool = true);
 	/** Check connected status.
@@ -424,9 +417,6 @@ protected:
 	Socket(const Socket& ); ///< do not allow use of copy constructor
 	/** Create new thread for this socket to run detached in. */
 	void DetachSocket();
-#ifdef _THREADSAFE_SOCKETS
-	Mutex m_rwmutex; ///< read/write mutex
-#endif
 
 private:
 	/** default constructor not available */

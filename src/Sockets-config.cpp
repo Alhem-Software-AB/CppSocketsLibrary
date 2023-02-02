@@ -40,7 +40,7 @@ int main()
 #ifdef _DEBUG
 	printf(" -D_DEBUG");
 #endif
-#ifdef _THREADSAFE_SOCKETS
+#ifdef _THREADSAFE_SOCKETS // obsolete
 	printf(" -D_THREADSAFE_SOCKETS");
 #endif
 

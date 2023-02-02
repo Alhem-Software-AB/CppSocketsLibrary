@@ -68,7 +68,7 @@ long Event::GetID()
 }
 
 
-const Time& Event::GetTime() const
+const EventTime& Event::GetTime() const
 {
 	return m_time;
 }

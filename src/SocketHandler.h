@@ -44,6 +44,7 @@ namespace SOCKETS_NAMESPACE {
 class Socket;
 class PoolSocket;
 class ResolvServer;
+class Mutex;
 
 /** Socket container class, event generator. 
 	\ingroup basic */
@@ -56,6 +57,10 @@ public:
 	/** SocketHandler constructor.
 		\param log Optional log class pointer */
 	SocketHandler(StdLog *log = NULL);
+	/** SocketHandler threadsafe constructor.
+		\param mutex Externally declared mutex variable
+		\param log Optional log class pointer */
+	SocketHandler(Mutex& mutex,StdLog *log = NULL);
 	virtual ~SocketHandler();
 
 	/** Register StdLog object for error callback. 
@@ -173,13 +178,16 @@ public:
 	/** Get checklist: Close and delete */
 	socket_v& GetFdsClose();
 
+	/** Get mutex reference for threadsafe operations. */
+	Mutex& GetMutex() const;
+
 protected:
 	socket_m m_sockets; ///< Active sockets list
 	socket_m m_add; ///< Sockets to be added to sockets list
 	std::list<Socket *> m_delete; ///< Sockets to be deleted (failed when Add)
 
 private:
-	SocketHandler(const SocketHandler& ) {}
+	SocketHandler(const SocketHandler& h) : m_mutex(h.GetMutex()) {}
 	SocketHandler& operator=(const SocketHandler& ) { return *this; }
 	StdLog *m_stdlog; ///< Registered log class, or NULL
 	SOCKET m_maxsock; ///< Highest file descriptor + 1 in active sockets list
@@ -213,6 +221,8 @@ private:
 	socket_v m_fds_connecting; ///< checklist Connecting
 	socket_v m_fds_retry; ///< checklist retry client connect
 	socket_v m_fds_close; ///< checklist close and delete
+	Mutex& m_mutex; ///< Thread safety mutex
+	bool m_b_use_mutex; ///< Mutex correctly initialized
 };
 
 

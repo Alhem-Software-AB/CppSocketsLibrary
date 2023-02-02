@@ -218,11 +218,6 @@ namespace SOCKETS_NAMESPACE {
 
 #endif
 
-#ifdef _THREADSAFE_SOCKETS
-#include "Mutex.h"
-#include "Lock.h"
-#endif
-
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
 #endif
