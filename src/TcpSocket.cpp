@@ -319,7 +319,7 @@ void TcpSocket::OnRead()
 DEB(		printf("TcpSocket(SSL)::OnRead()\n");)
 		if (!Ready())
 			return;
-		char buf[TCP_BUFSIZE_READ + 1];
+		char buf[TCP_BUFSIZE_READ];
 		int n = SSL_read(m_ssl, buf, TCP_BUFSIZE_READ);
 		if (n == -1)
 		{
@@ -582,9 +582,8 @@ void TcpSocket::ReadLine()
 		size_t n = ibuf.GetLength();
 		char tmp[TCP_BUFSIZE_READ];
 
-		n = (n >= TCP_BUFSIZE_READ) ? TCP_BUFSIZE_READ - 1 : n;
+		n = (n >= TCP_BUFSIZE_READ) ? TCP_BUFSIZE_READ : n;
 		ibuf.Read(tmp,n);
-		tmp[n] = 0;
 
 		for (size_t i = 0; i < n; i++)
 		{

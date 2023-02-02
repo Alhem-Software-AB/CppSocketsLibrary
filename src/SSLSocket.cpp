@@ -236,7 +236,7 @@ void SSLSocket::OnRead()
 D2(	printf("SSLSocket::OnRead()\n");)
 	if (!Ready())
 		return;
-	char buf[TCP_BUFSIZE_READ + 1];
+	char buf[TCP_BUFSIZE_READ];
 	int n = SSL_read(m_ssl, buf, TCP_BUFSIZE_READ);
 	if (n == -1)
 	{

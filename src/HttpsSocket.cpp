@@ -56,9 +56,8 @@ void HttpsSocket::OnRead()
 			size_t n = ibuf.GetLength();
 			char tmp[TCP_BUFSIZE_READ];
 
-			n = (n >= TCP_BUFSIZE_READ) ? TCP_BUFSIZE_READ - 1 : n;
+			n = (n >= TCP_BUFSIZE_READ) ? TCP_BUFSIZE_READ : n;
 			ibuf.Read(tmp,n);
-			tmp[n] = 0;
 
 			OnData(tmp,n);
 		}
@@ -73,9 +72,8 @@ void HttpsSocket::ReadLine()
 		size_t n = ibuf.GetLength();
 		char tmp[TCP_BUFSIZE_READ];
 
-		n = (n >= TCP_BUFSIZE_READ) ? TCP_BUFSIZE_READ - 1 : n;
+		n = (n >= TCP_BUFSIZE_READ) ? TCP_BUFSIZE_READ : n;
 		ibuf.Read(tmp,n);
-		tmp[n] = 0;
 
 		for (size_t i = 0; i < n; i++)
 		{

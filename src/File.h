@@ -1,6 +1,6 @@
 /**
- **	File ......... Thread.h
- **	Published ....  2004-10-30
+ **	File ......... File.h
+ **	Published ....  2005-04-25
  **	Author ....... grymse@alhem.net
 **/
 /*
@@ -20,50 +20,40 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
-#ifndef _THREAD_H
-#define _THREAD_H
+#ifndef _FILE_H
+#define _FILE_H
 
-#ifdef _WIN32
-// to be
-typedef DWORD  threadfunc_t;
-typedef LPVOID threadparam_t;
-#define STDPREFIX WINAPI
-#else
-#include <pthread.h>
-
-typedef void * threadfunc_t;
-typedef void * threadparam_t;
-#define STDPREFIX
-#endif
+#include "IFile.h"
 
 
-class Thread
+class File : public IFile
 {
 public:
-	Thread(bool release = true);
-	virtual ~Thread();
+	File();
+	~File();
 
-	static threadfunc_t STDPREFIX StartThread(threadparam_t);
+	bool fopen(const std::string&, const std::string&);
+	void fclose();
 
-	virtual void Run() = 0;
+	size_t fread(char *, size_t, size_t);
+	size_t fwrite(const char *, size_t, size_t);
 
-	bool IsRunning();
-	void SetRunning(bool x);
-	bool IsReleased();
-	void SetRelease(bool x);
+	char *fgets(char *, int);
+	void fprintf(char *format, ...);
+
+	off_t size();
+	bool eof();
 
 private:
-	Thread(const Thread& ) {}
-	Thread& operator=(const Thread& ) { return *this; }
-#ifdef _WIN32
-	HANDLE m_thread;
-	DWORD m_dwThreadId;
-#else
-	pthread_t m_thread;
-#endif
-	bool m_running;
-	bool m_release;
+	File(const File& ) {} // copy constructor
+	File& operator=(const File& ) { return *this; } // assignment operator
+
+	std::string m_path;
+	std::string m_mode;
+	FILE *m_fil;
 };
 
 
-#endif // _THREAD_H
+
+
+#endif // _FILE_H

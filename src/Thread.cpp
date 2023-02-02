@@ -36,6 +36,7 @@ Thread::Thread(bool release)
 ,m_release(false)
 {
 #ifdef _WIN32
+	m_thread = ::CreateThread(NULL, 0, StartThread, NULL, 0, &m_dwThreadId);
 #else
 	pthread_attr_t attr;
 
@@ -65,6 +66,7 @@ Thread::~Thread()
 		tv.tv_sec = 0;
 		tv.tv_usec = 100000;
 		select(0,NULL,NULL,NULL,&tv);
+		::CloseHandle(m_thread);
 #else
 		sleep(1);
 #endif
@@ -72,7 +74,7 @@ Thread::~Thread()
 }
 
 
-threadfunc_t Thread::StartThread(void *zz)
+threadfunc_t STDPREFIX Thread::StartThread(threadparam_t zz)
 {
 	Thread *pclThread = (Thread *)zz;
 
@@ -92,7 +94,7 @@ threadfunc_t Thread::StartThread(void *zz)
 		pclThread -> Run();
 	}
 	pclThread -> SetRunning(false); // if return
-	return zz;
+	return (threadfunc_t)zz;
 }
 
 

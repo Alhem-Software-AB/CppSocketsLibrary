@@ -201,3 +201,22 @@ Version 1.8.3
 48a49
 > sockets_test.cpp
 
+Version 1.8.4
+--------------------------
+6a7,8
+> File.cpp
+> File.h
+7a10,11
+> HttpdCookies.cpp
+> HttpdCookies.h
+9a14,17
+> HttpdForm.cpp
+> HttpdForm.h
+> HttpdSocket.cpp
+> HttpdSocket.h
+22a31
+> IFile.h
+24a34,35
+> MemFile.cpp
+> MemFile.h
+

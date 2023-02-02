@@ -1,4 +1,4 @@
-VERSION =	1.8.3
+VERSION =	1.8.4
 
 INCLUDE =	-I/usr/devel/include -I.
 PREFIX =	/usr/local
@@ -55,6 +55,11 @@ OBJS =		CircularBuffer.o \
 		PoolSocket.o \
 		ResolvServer.o \
 		ResolvSocket.o \
+		HttpdSocket.o \
+		HttpdCookies.o \
+		HttpdForm.o \
+		File.o \
+		MemFile.o \
 		socket_include.o
 
 libSockets.a:	$(OBJS)

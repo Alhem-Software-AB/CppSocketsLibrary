@@ -184,7 +184,7 @@ int main()
 {
 	StdoutLog log;
 	MyHandler h(&log);
-//	h.EnableResolver(9999);
+	h.EnableResolver(9999);
 /*
 	h.SetSocks4Host("127.0.0.1");
 	h.SetSocks4Port(1080);
