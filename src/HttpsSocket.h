@@ -43,7 +43,7 @@ public:
 
 	void OnRead();
 	void ReadLine();
-	void OnLine(const std::string& );
+	void OnLine(const std::string& line);
 
 	virtual void OnFirst() = 0;
 	virtual void OnHeader(const std::string& ,const std::string& ) = 0;

@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define _SOCKETHANDLER_H
 
 #include <map>
+#include <list>
 
 #include "socket_include.h"
 #include "StdLog.h"
@@ -80,12 +81,14 @@ public:
 	/** Returns local ip number as string.
 		\sa ResolveLocal */
 	const std::string& GetLocalAddress();
+#ifdef IPPROTO_IPV6
 	/** Returns local ipv6 ip.
 		\sa ResolveLocal */
 	const struct in6_addr& GetLocalIP6();
 	/** Returns local ipv6 address.
 		\sa ResolveLocal */
 	const std::string& GetLocalAddress6();
+#endif
 
 	/** Return number of sockets handled by this handler.  */
 	size_t GetCount();
@@ -93,54 +96,90 @@ public:
 	void SetSlave(bool x = true);
 	/** Find available open connection (used by connection pool). */
 	PoolSocket *FindConnection(int type,const std::string& protocol,ipaddr_t,port_t);
+#ifdef IPPROTO_IPV6
+	/** Find available open connection (used by connection pool). */
+	PoolSocket *FindConnection(int type,const std::string& protocol,in6_addr,port_t);
+#endif
 
-	/** Enable transparent Socks4 client support. */
+	/** Set socks4 server ip that all new tcp sockets should use. */
 	void SetSocks4Host(ipaddr_t);
+	/** Set socks4 server hostname that all new tcp sockets should use. */
 	void SetSocks4Host(const std::string& );
+	/** Set socks4 server port number that all new tcp sockets should use. */
 	void SetSocks4Port(port_t);
+	/** Set optional socks4 userid. */
 	void SetSocks4Userid(const std::string& );
 	/** If connection to socks4 server fails, immediately try direct connection to final host. */
-	void SetSocks4TryDirect(bool x = true) { m_bTryDirect = x; }
-	ipaddr_t GetSocks4Host() { return m_socks4_host; }
-	port_t GetSocks4Port() { return m_socks4_port; }
-	const std::string& GetSocks4Userid() { return m_socks4_userid; }
-	bool Socks4TryDirect() { return m_bTryDirect; }
+	void SetSocks4TryDirect(bool x = true);
+	/** Get socks4 server ip. 
+		\return socks4 server ip */
+	ipaddr_t GetSocks4Host();
+	/** Get socks4 port number.
+		\return socks4 port number */
+	port_t GetSocks4Port();
+	/** Get socks4 userid (optional).
+		\return socks4 userid */
+	const std::string& GetSocks4Userid();
+	/** Check status of socks4 try direct flag.
+		\return true if direct connection should be tried if connection to socks4 server fails */
+	bool Socks4TryDirect();
 
-	/** Enable asynchronous DNS. */
+	/** Enable asynchronous DNS. 
+		\param port Listen port of asynchronous dns server */
 	void EnableResolver(port_t port = 16667);
-	bool ResolverEnabled() { return m_resolver ? true : false; }
+	/** Check resolver status.
+		\return true if resolver is enabled */
+	bool ResolverEnabled();
+	/** Queue a dns request. */
 	int Resolve(Socket *,const std::string& host,port_t);
-	port_t GetResolverPort() { return m_resolver_port; }
+	/** Get listen port of asynchronous dns server. */
+	port_t GetResolverPort();
+	/** Resolver thread ready for queries. */
+	bool ResolverReady();
+
+#ifdef IPPROTO_IPV6
+	/** ipv6 address compare. */
+	int in6_addr_compare(in6_addr,in6_addr);
+#endif
+	/** Enable connection pool (by default disabled). */
+	void EnablePool(bool x = true);
+	/** Check pool status. 
+		\return true if connection pool is enabled */
+	bool PoolEnabled();
 
 protected:
-	socket_m m_sockets;
-	socket_m m_add;
+	socket_m m_sockets; ///< Active sockets list
+	socket_m m_add; ///< Sockets to be added to sockets list
+	std::list<Socket *> m_delete; ///< Sockets to be deleted (failed when Add)
 
 private:
 	SocketHandler(const SocketHandler& ) {}
 	SocketHandler& operator=(const SocketHandler& ) { return *this; }
-	StdLog *m_stdlog;
-	SOCKET m_maxsock;
-	std::string m_host; ///< local
-	ipaddr_t m_ip; ///< local
-	std::string m_addr; ///< local
-	fd_set m_rfds;
-	fd_set m_wfds;
-	fd_set m_efds;
-	int m_preverror;
-	bool m_slave;
-#ifdef IPPROTO_IPV6
-	struct in6_addr m_local_ip6;
+	StdLog *m_stdlog; ///< Registered log class, or NULL
+	SOCKET m_maxsock; ///< Highest file descriptor + 1 in active sockets list
+	std::string m_host; ///< local hostname
+	ipaddr_t m_ip; ///< local ip address
+	std::string m_addr; ///< local ip address in string format
+	fd_set m_rfds; ///< file descriptor set monitored for read events
+	fd_set m_wfds; ///< file descriptor set monitored for write events
+	fd_set m_efds; ///< file descriptor set monitored for exceptions
+#ifdef _WIN32
+	int m_preverror; ///< debug select() error
 #endif
-	std::string m_local_addr6;
-	bool m_local_resolved;
-	ipaddr_t m_socks4_host;
-	port_t m_socks4_port;
-	std::string m_socks4_userid;
-	bool m_bTryDirect;
-	int m_resolv_id;
-	ResolvServer *m_resolver;
-	port_t m_resolver_port;
+	bool m_slave; ///< Indicates that this is a SocketHandler run in SocketThread
+#ifdef IPPROTO_IPV6
+	struct in6_addr m_local_ip6; ///< local ipv6 address
+#endif
+	std::string m_local_addr6; ///< local ipv6 address in string format
+	bool m_local_resolved; ///< ResolveLocal has been called if true
+	ipaddr_t m_socks4_host; ///< Socks4 server host ip
+	port_t m_socks4_port; ///< Socks4 server port number
+	std::string m_socks4_userid; ///< Socks4 userid
+	bool m_bTryDirect; ///< Try direct connection if socks4 server fails
+	int m_resolv_id; ///< Resolver id counter
+	ResolvServer *m_resolver; ///< Resolver thread pointer
+	port_t m_resolver_port; ///< Resolver listen port
+	bool m_b_enable_pool; ///< Connection pool enabled if true
 };
 
 

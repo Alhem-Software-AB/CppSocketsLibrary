@@ -139,58 +139,31 @@ size_t CircularBuffer::GetLength()
 
 char *CircularBuffer::GetStart()
 {
-/*
-#ifdef _THREADSAFE_SOCKETS
-	char *r;
-	{
-		Lock(m_owner.GetMutex());
-		r = buf + m_b;
-	}
-	return r;
-#else
-*/
 	return buf + m_b;
-//#endif
 }
 
 
 size_t CircularBuffer::GetL()
 {
-/*
-#ifdef _THREADSAFE_SOCKETS
-	size_t r;
-	{
-		Lock(m_owner.GetMutex());
-		r = (m_b + m_q > m_max) ? m_max - m_b : m_q;
-	}
-	return r;
-#else
-*/
 	return (m_b + m_q > m_max) ? m_max - m_b : m_q;
-//#endif
 }
 
 
 size_t CircularBuffer::Space()
 {
-/*
-#ifdef _THREADSAFE_SOCKETS
-	size_t r;
-	{
-		Lock(m_owner.GetMutex());
-		r = m_max - m_q;
-	}
-	return r;
-#else
-*/
 	return m_max - m_q;
-//#endif
 }
 
 
 unsigned long CircularBuffer::ByteCounter()
 {
 	return m_count;
+}
+
+
+Socket& CircularBuffer::GetOwner() const 
+{ 
+	return m_owner; 
 }
 
 

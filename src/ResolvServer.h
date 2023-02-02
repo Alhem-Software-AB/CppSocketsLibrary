@@ -41,12 +41,15 @@ public:
 	void Run();
 	void Quit();
 
+	bool Ready();
+
 private:
 	ResolvServer(const ResolvServer& ) {} // copy constructor
 	ResolvServer& operator=(const ResolvServer& ) { return *this; } // assignment operator
 
 	bool m_quit;
 	port_t m_port;
+	bool m_ready;
 };
 
 

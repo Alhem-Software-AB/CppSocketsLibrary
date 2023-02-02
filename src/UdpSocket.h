@@ -34,40 +34,87 @@ namespace SOCKETS_NAMESPACE {
 class UdpSocket : public Socket
 {
 public:
-	UdpSocket(SocketHandler& ,int ibufsz = 16384);
+	/** Constructor.
+		\param h SocketHandler reference
+		\param ibufsz Maximum size of receive message (extra bytes will be truncated)
+		\param ipv6 'true' if this is an ipv6 socket */
+	UdpSocket(SocketHandler& h,int ibufsz = 16384,bool ipv6 = false);
 	~UdpSocket();
 
-	/** new callback */
-	virtual void OnRawData(const char *,size_t,struct sockaddr *,socklen_t) {}
+	/** Called when incoming data has been received.
+		\param buf Pointer to data
+		\param len Length of data
+		\param sa Pointer to sockaddr struct of sender
+		\param sa_len Length of sockaddr struct */
+	virtual void OnRawData(const char *buf,size_t len,struct sockaddr *sa,socklen_t sa_len);
 
-	/** to receive incoming data, call Bind to setup an incoming port */
-	SOCKET Bind(port_t& port,int range);
-	SOCKET Bind6(port_t& port,int range);
+	/** To receive incoming data, call Bind to setup an incoming port.
+		\param port Incoming port number
+		\param range Port range to try if ports already in use 
+		\return 0 if bind succeeded */
+	int Bind(port_t& port,int range = 1);
+	/** To receive data on a specific interface:port, use this.
+		\param intf Interface ip/hostname
+		\param port Port number
+		\param range Port range 
+		\return 0 if bind succeeded */
+	int Bind(const std::string& intf,port_t& port,int range = 1);
+	/** To receive data on a specific interface:port, use this.
+		\param a Ip address
+		\param port Port number
+		\param range Port range 
+		\return 0 if bind succeeded */
+	int Bind(ipaddr_t a,port_t& port,int range = 1);
+#ifdef IPPROTO_IPV6
+	/** To receive data on a specific interface:port, use this.
+		\param a Ipv6 address
+		\param port Port number
+		\param range Port range 
+		\return 0 if bind succeeded */
+	int Bind(in6_addr a,port_t& port,int range = 1);
+#endif
 
-	/** if you wish to use Send, first Open a connection */
-	bool Open(ipaddr_t,port_t);
+	/** Define remote host.
+		\param l Address of remote host
+		\param port Port of remote host */
+	bool Open(ipaddr_t l,port_t port);
+	/** Define remote host.
+		\param host Hostname
+		\param port Port number */
 	bool Open(const std::string& host,port_t port);
-	bool Open6(struct in6_addr&,port_t);
-	bool Open6(const std::string& host,port_t port);
+#ifdef IPPROTO_IPV6
+	/** Define remote host.
+		\param a Address of remote host, ipv6
+		\param port Port of remote host */
+	bool Open(struct in6_addr& a,port_t port);
+#endif
 
-	/** create before using sendto methods */
-	void CreateConnection();
-	void CreateConnection6(); // ipv6
-
-	/** send to specified address */
+	/** Send to specified host */
 	void SendToBuf(const std::string& ,port_t,const char *data,int len,int flags = 0);
+	/** Send to specified address */
 	void SendToBuf(ipaddr_t,port_t,const char *data,int len,int flags = 0);
-	void SendToBuf6(const std::string& ,port_t,const char *data,int len,int flags = 0);
+#ifdef IPPROTO_IPV6
+	/** Send to specified ipv6 address */
+	void SendToBuf(in6_addr,port_t,const char *data,int len,int flags = 0);
+#endif
+	/** Send string to specified host */
 	void SendTo(const std::string&,port_t,const std::string&,int flags = 0);
+	/** Send string to specified address */
 	void SendTo(ipaddr_t,port_t,const std::string&,int flags = 0);
-	void SendTo6(const std::string&,port_t,const std::string&,int flags = 0);
+#ifdef IPPROTO_IPV6
+	/** Send string to specified ipv6 address */
+	void SendTo(in6_addr,port_t,const std::string&,int flags = 0);
+#endif
 
-	/** send to connected address */
+	/** Send to connected address */
 	void SendBuf(const char *data,size_t,int flags = 0);
+	/** Send string to connected address. */
 	void Send(const std::string& ,int flags = 0);
 
-	/** broadcast */
+	/** Set broadcast */
 	void SetBroadcast(bool b = true);
+	/** Check broadcast flag.
+		\return true broadcast is enabled. */
 	bool IsBroadcast();
 
 	/** multicast */
@@ -77,22 +124,32 @@ public:
 	bool IsMulticastLoop();
 	void AddMulticastMembership(const std::string& group,const std::string& intf = "0.0.0.0",int if_index = 0);
 	void DropMulticastMembership(const std::string& group,const std::string& intf = "0.0.0.0",int if_index = 0);
-	/** multicast, ipv6 */
+#ifdef IPPROTO_IPV6
+	/** multicast, ipv6 only */
 	void SetMulticastHops(int = -1);
+	/** multicast, ipv6 only */
 	int GetMulticastHops();
+#endif
+	/** Returns true if Open completed successfully. */
 	bool IsConnected();
+	/** Returns true if Bind succeeded. */
+	bool IsBound();
+	/** Return Bind port number */
+	port_t GetPort();
 
 protected:
 	UdpSocket(const UdpSocket& s) : Socket(s) {}
 	void OnRead();
 
-// int  recvfrom(int  s,  void *buf, int len, int flags, struct sockaddr *from, socklen_t *fromlen);
-// int  sendto(int  s,  const  void  *msg, int len, int flags, const struct sockaddr *to, socklen_t tolen);
 private:
 	UdpSocket& operator=(const UdpSocket& ) { return *this; }
-	bool m_connected;
-	char *m_ibuf;
-	int m_ibufsz;
+	/** create before using sendto methods */
+	void CreateConnection();
+	bool m_connected; ///< Open completed successfully
+	char *m_ibuf; ///< Input buffer
+	int m_ibufsz; ///< Size of input buffer
+	bool m_bind_ok; ///< Bind completed successfully
+	port_t m_port; ///< Bind port number
 };
 
 

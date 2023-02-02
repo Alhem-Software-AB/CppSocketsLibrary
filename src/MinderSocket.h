@@ -57,7 +57,7 @@ static	port_t g_UpdatePort;
 static	char g_UpdateUrl[256];
 
 protected:
-	void OnLine(const std::string& );
+	void OnLine(const std::string& line);
 	void OnSSLInitDone();
 
 private:

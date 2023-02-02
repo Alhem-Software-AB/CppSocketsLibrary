@@ -1,4 +1,4 @@
-VERSION =	1.9.4
+VERSION =	1.9.5
 
 INCLUDE =	-I/usr/devel/include -I.
 PREFIX =	/usr/local
@@ -25,9 +25,8 @@ CFLAGS =	-Wall -g -O2 $(INCLUDE) -MD -D_VERSION='"$(VERSION)"'
 CFLAGS += 	-DHAVE_OPENSSL
 
 # uncomment these three lines if the library should be in its own namespace
-#NAMESPACE = 	sock
-#CFLAGS +=	-DSOCKETS_NAMESPACE=$(NAMESPACE)
-#CFLAGS +=	-DSOCKETS_NAMESPACE_STR='"$(NAMESPACE)"'
+#CFLAGS +=	-DSOCKETS_NAMESPACE=sockets
+#CFLAGS +=	-DSOCKETS_NAMESPACE_STR='"sockets"'
 
 CPPFLAGS =	$(CFLAGS) 
 
@@ -102,7 +101,7 @@ FILES =		*.h *.cpp Makefile Project/*.ds* \
 		README.macosx gpl.txt mkdot.sh \
 		Project.net/Sockets/*.vcproj Project.net/Sockets/*.sln \
 		Project.net/Test/*.vcproj \
-		DevCpp/*.dev DevCpp/*.cpp
+		DevCpp/*.dev 
 
 tar:		clean
 		rm -f MinderSocket_T.h

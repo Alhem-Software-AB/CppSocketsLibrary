@@ -78,7 +78,7 @@ void ResolvSocket::OnLine(const std::string& line)
 	{
 		ipaddr_t l;
 		u2ip(value, l); // ip2ipaddr_t
-		m_parent -> Resolved(m_resolv_id, l, m_resolv_port);
+		m_parent -> OnResolved(m_resolv_id, l, m_resolv_port);
 		m_parent = NULL; // always use first ip in case there are several
 	}
 }
@@ -99,7 +99,7 @@ void ResolvSocket::OnDetached()
 /*
        struct addrinfo {
            int     ai_flags;
-           int     ai_family;
+           int     ai_family; // PF_INET, PF_INET6
            int     ai_socktype;
            int     ai_protocol;
            size_t  ai_addrlen;
@@ -117,6 +117,10 @@ void ResolvSocket::OnDetached()
 				Send("Socktype: " + Utility::l2string(res -> ai_socktype) + "\n");
 				Send("Protocol: " + Utility::l2string(res -> ai_protocol) + "\n");
 				Send("Addrlen: " + Utility::l2string(res -> ai_addrlen) + "\n");
+				std::string tmp;
+				Base64 bb;
+				bb.encode( (unsigned char *)res -> ai_addr, res -> ai_addrlen, tmp, false);
+				Send("Address: " + tmp + "\n");
 				// base64-encoded sockaddr
 				Send("Canonname: ");
 				Send( res -> ai_canonname );
@@ -132,6 +136,7 @@ void ResolvSocket::OnDetached()
 			std::string error = "Error: ";
 			error += gai_strerror(n);
 			Send( error + "\n" );
+			Send("\n");
 		}
 	}
 	else

@@ -42,7 +42,7 @@ public:
 	~Uid();
 
 	std::string GetUid();
-	const unsigned char *GetBuf() { return m_bufuid; }
+	const unsigned char *GetBuf();
 
 private:
 	Uid(const Uid& ) {}

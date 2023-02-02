@@ -60,7 +60,7 @@ public:
 	unsigned long ByteCounter();
 
 private:
-	Socket& GetOwner() const { return m_owner; }
+	Socket& GetOwner() const;
 	CircularBuffer(const CircularBuffer& s) : m_owner( s.GetOwner() ) {}
 	CircularBuffer& operator=(const CircularBuffer& ) { return *this; }
 	Socket& m_owner;

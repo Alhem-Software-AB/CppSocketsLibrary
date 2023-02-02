@@ -47,9 +47,9 @@ public:
 
 	virtual void Exec() = 0;
 
-	const std::string& GetHttpDate() { return m_http_date; }
-	HttpdCookies *GetCookies() { return m_cookies; }
-	HttpdForm *GetForm() { return m_form; }
+	const std::string& GetHttpDate();
+	HttpdCookies *GetCookies();
+	HttpdForm *GetForm();
 
 protected:
 	void Send64(const std::string& str64, const std::string& type);

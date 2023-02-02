@@ -208,7 +208,7 @@ void HTTPSocket::SendRequest()
 }
 
 
-std::string HTTPSocket::MyUseragent() 
+std::string HTTPSocket::MyUseragent()
 {
 	std::string version = "C++Sockets/";
 #ifdef _VERSION
@@ -232,6 +232,97 @@ void HTTPSocket::Reset()
         }
 
 }
+
+
+const std::string& HTTPSocket::GetMethod()
+{
+	return m_method;
+}
+
+
+void HTTPSocket::SetMethod(const std::string& x)
+{
+	m_method = x;
+}
+
+
+const std::string& HTTPSocket::GetUrl()
+{
+	return m_url;
+}
+
+
+void HTTPSocket::SetUrl(const std::string& x)
+{
+	m_url = x;
+}
+
+
+const std::string& HTTPSocket::GetUri()
+{
+	return m_uri;
+}
+
+
+const std::string& HTTPSocket::GetQueryString()
+{
+	return m_query_string;
+}
+
+
+const std::string& HTTPSocket::GetHttpVersion()
+{
+	return m_http_version;
+}
+
+
+const std::string& HTTPSocket::GetStatus()
+{
+	return m_status;
+}
+
+
+const std::string& HTTPSocket::GetStatusText()
+{
+	return m_status_text;
+}
+
+
+bool HTTPSocket::IsRequest()
+{
+	return m_request;
+}
+
+
+bool HTTPSocket::IsResponse()
+{
+	return m_response;
+}
+
+
+void HTTPSocket::SetHttpVersion(const std::string& x)
+{
+	m_http_version = x;
+}
+
+
+void HTTPSocket::SetStatus(const std::string& x)
+{
+	m_status = x;
+}
+
+
+void HTTPSocket::SetStatusText(const std::string& x)
+{
+	m_status_text = x;
+}
+
+
+void HTTPSocket::AddResponseHeader(const std::string& x,const std::string& y)
+{
+	m_response_header[x] = y;
+}
+
 
 
 #ifdef SOCKETS_NAMESPACE

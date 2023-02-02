@@ -212,7 +212,7 @@ int Socket::Close()
 }
 
 
-SOCKET Socket::CreateSocket4(int type, const std::string& protocol)
+SOCKET Socket::CreateSocket(int af,int type, const std::string& protocol)
 {
 	struct protoent *p = NULL;
 	int optval;
@@ -226,18 +226,20 @@ SOCKET Socket::CreateSocket4(int type, const std::string& protocol)
 		if (!p)
 		{
 			Handler().LogError(this, "getprotobyname", Errno, StrError(Errno), LOG_LEVEL_FATAL);
+			SetCloseAndDelete();
 			return INVALID_SOCKET;
 		}
 	}
 	int protno = p ? p -> p_proto : 0;
 
-	s = socket(AF_INET, type, protno);
+	s = socket(af, type, protno);
 	if (s == INVALID_SOCKET)
 	{
 		Handler().LogError(this, "socket", Errno, StrError(Errno), LOG_LEVEL_FATAL);
+		SetCloseAndDelete();
 		return INVALID_SOCKET;
 	}
-	OnOptions(AF_INET, type, protno, s);
+	OnOptions(af, type, protno, s);
 	if (type == SOCK_STREAM)
 	{
 		optval = m_opt_reuse ? 1 : 0;
@@ -245,6 +247,7 @@ SOCKET Socket::CreateSocket4(int type, const std::string& protocol)
 		{
 			Handler().LogError(this, "setsockopt(SOL_SOCKET, SO_REUSEADDR)", Errno, StrError(Errno), LOG_LEVEL_FATAL);
 			closesocket(s);
+			SetCloseAndDelete();
 			return INVALID_SOCKET;
 		}
 
@@ -253,63 +256,12 @@ SOCKET Socket::CreateSocket4(int type, const std::string& protocol)
 		{
 			Handler().LogError(this, "setsockopt(SOL_SOCKET, SO_KEEPALIVE)", Errno, StrError(Errno), LOG_LEVEL_FATAL);
 			closesocket(s);
+			SetCloseAndDelete();
 			return INVALID_SOCKET;
 		}
 	}
-
 	return s;
 }
-
-
-#ifdef IPPROTO_IPV6
-SOCKET Socket::CreateSocket6(int type, const std::string& protocol)
-{
-	struct protoent *p = NULL;
-	int optval;
-	SOCKET s;
-
-	m_socket_type = type;
-	m_socket_protocol = protocol;
-	if (protocol.size())
-	{
-		p = getprotobyname( protocol.c_str() );
-		if (!p)
-		{
-			Handler().LogError(this, "getprotobyname", Errno, StrError(Errno), LOG_LEVEL_FATAL);
-			return INVALID_SOCKET;
-		}
-	}
-	int protno = p ? p -> p_proto : 0;
-
-	s = socket(AF_INET6, type, protno);
-	if (s == INVALID_SOCKET)
-	{
-		Handler().LogError(this, "socket", Errno, StrError(Errno), LOG_LEVEL_FATAL);
-		return INVALID_SOCKET;
-	}
-	OnOptions(AF_INET6, type, protno, s);
-	if (type == SOCK_STREAM)
-	{
-		optval = m_opt_reuse ? 1 : 0;
-		if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, (char *)&optval, sizeof(optval)) == -1)
-		{
-			Handler().LogError(this, "setsockopt(SOL_SOCKET, SO_REUSEADDR)", Errno, StrError(Errno), LOG_LEVEL_FATAL);
-			closesocket(s);
-			return INVALID_SOCKET;
-		}
-
-		optval = m_opt_keepalive ? 1 : 0;
-		if (setsockopt(s, SOL_SOCKET, SO_KEEPALIVE, (char *)&optval, sizeof(optval)) == -1)
-		{
-			Handler().LogError(this, "setsockopt(SOL_SOCKET, SO_KEEPALIVE)", Errno, StrError(Errno), LOG_LEVEL_FATAL);
-			closesocket(s);
-			return INVALID_SOCKET;
-		}
-	}
-	m_ipv6 = true;
-	return s;
-}
-#endif
 
 
 bool Socket::isip(const std::string& str)
@@ -363,8 +315,7 @@ bool Socket::u2ip(const std::string& str, ipaddr_t& l)
 {
 	if (m_ipv6)
 	{
-		Handler().LogError(this, "u2ip", 0, "converting to ipv4 on ipv6 socket", LOG_LEVEL_ERROR);
-		return false;
+		Handler().LogError(this, "u2ip", 0, "converting to ipv4 on ipv6 socket", LOG_LEVEL_WARNING);
 	}
 	if (isip(str))
 	{
@@ -405,8 +356,7 @@ bool Socket::u2ip(const std::string& str, struct in6_addr& l)
 {
 	if (!m_ipv6)
 	{
-		Handler().LogError(this, "u2ip", 0, "converting to ipv6 on ipv4 socket", LOG_LEVEL_ERROR);
-		return false;
+		Handler().LogError(this, "u2ip", 0, "converting to ipv6 on ipv4 socket", LOG_LEVEL_WARNING);
 	}
 	if (isip(str))
 	{
@@ -833,43 +783,43 @@ void Socket::DetachSocket()
 }
 
 
-void Socket::OnLine(const std::string& ) 
+void Socket::OnLine(const std::string& )
 {
 }
 
 
-void Socket::OnSSLInitDone() 
+void Socket::OnSSLInitDone()
 {
 }
 
 
-bool Socket::SSLCheckConnect() 
-{ 
-	return false; 
+bool Socket::SSLCheckConnect()
+{
+	return false;
 }
 
 
-void Socket::SetSSLConnecting(bool x) 
-{ 
-	m_ssl_connecting = x; 
+void Socket::SetSSLConnecting(bool x)
+{
+	m_ssl_connecting = x;
 }
 
 
-bool Socket::SSLConnecting() 
-{ 
-	return m_ssl_connecting; 
+bool Socket::SSLConnecting()
+{
+	return m_ssl_connecting;
 }
 
 
-void Socket::SetLineProtocol(bool x) 
-{ 
-	m_line_protocol = x; 
+void Socket::SetLineProtocol(bool x)
+{
+	m_line_protocol = x;
 }
 
 
-bool Socket::LineProtocol() 
-{ 
-	return m_line_protocol; 
+bool Socket::LineProtocol()
+{
+	return m_line_protocol;
 }
 
 
@@ -910,8 +860,16 @@ port_t Socket::GetPort()
 void Socket::CopyConnection(Socket *sock)
 {
 	Attach( sock -> GetSocket() );
+	SetIpv6( sock -> IsIpv6() );
 	SetSocketType( sock -> GetSocketType() );
 	SetSocketProtocol( sock -> GetSocketProtocol() );
+#ifdef IPPROTO_IPV6
+	if (IsIpv6())
+	{
+		SetClientRemoteAddr( sock -> GetClientRemoteAddr6() );
+	}
+	else
+#endif
 	SetClientRemoteAddr( sock -> GetClientRemoteAddr() );
 	SetClientRemotePort( sock -> GetClientRemotePort() );
 
@@ -972,10 +930,344 @@ void Socket::OnWriteComplete()
 */
 
 
-void Socket::Resolved(int,ipaddr_t,port_t)
+void Socket::OnResolved(int,ipaddr_t,port_t)
 {
 }
 
+
+Socket *Socket::Create()
+{
+	return NULL;
+}
+
+
+void Socket::OnSSLConnect()
+{
+}
+
+
+void Socket::OnSSLAccept()
+{
+}
+
+
+bool Socket::OnConnectRetry()
+{
+	return true;
+}
+
+
+void Socket::OnReconnect()
+{
+}
+
+
+bool Socket::SSLNegotiate()
+{
+	return false;
+}
+
+
+time_t Socket::Uptime()
+{
+	return time(NULL) - m_tCreate;
+}
+
+
+void Socket::OnDetached()
+{
+}
+
+
+void Socket::SetDetach(bool x)
+{
+	m_detach = x;
+}
+
+
+bool Socket::IsDetach()
+{
+	return m_detach;
+}
+
+
+void Socket::SetDetached(bool x)
+{
+	m_detached = x;
+}
+
+
+bool Socket::IsDetached()
+{
+	return m_detached;
+}
+
+
+void Socket::SetIpv6(bool x)
+{
+	m_ipv6 = x;
+}
+
+
+bool Socket::IsIpv6()
+{
+	return m_ipv6;
+}
+
+
+void Socket::SetIsClient()
+{
+	m_bClient = true;
+}
+
+
+void Socket::SetSocketType(int x)
+{
+	m_socket_type = x;
+}
+
+
+int Socket::GetSocketType()
+{
+	return m_socket_type;
+}
+
+
+void Socket::SetSocketProtocol(const std::string& x)
+{
+	m_socket_protocol = x;
+}
+
+
+const std::string& Socket::GetSocketProtocol()
+{
+	return m_socket_protocol;
+}
+
+
+void Socket::SetClientRemoteAddr(ipaddr_t a)
+{
+	m_client_remote_addr = a;
+}
+
+
+#ifdef IPPROTO_IPV6
+void Socket::SetClientRemoteAddr(in6_addr a)
+{
+	m_client_remote_addr6 = a;
+}
+
+
+in6_addr& Socket::GetClientRemoteAddr6()
+{
+	return m_client_remote_addr6;
+}
+
+
+#endif
+ipaddr_t& Socket::GetClientRemoteAddr()
+{
+	return m_client_remote_addr;
+}
+
+
+void Socket::SetClientRemotePort(port_t p)
+{
+	m_client_remote_port = p;
+}
+
+
+port_t Socket::GetClientRemotePort()
+{
+	return m_client_remote_port;
+}
+
+
+void Socket::SetRetain()
+{
+	if (m_bClient) m_bRetain = true;
+}
+
+
+bool Socket::Retain()
+{
+	return m_bRetain;
+}
+
+
+void Socket::SetLost()
+{
+	m_bLost = true;
+}
+
+
+bool Socket::Lost()
+{
+	return m_bLost;
+}
+
+
+void Socket::SetCallOnConnect(bool x)
+{
+	m_call_on_connect = x;
+}
+
+
+bool Socket::CallOnConnect()
+{
+	return m_call_on_connect;
+}
+
+
+void Socket::SetReuse(bool x)
+{
+	m_opt_reuse = x;
+}
+
+
+void Socket::SetKeepalive(bool x)
+{
+	m_opt_keepalive = x;
+}
+
+
+bool Socket::Socks4()
+{
+	return m_bSocks4;
+}
+
+
+void Socket::SetSocks4(bool x)
+{
+	m_bSocks4 = x;
+}
+
+
+void Socket::SetSocks4Host(ipaddr_t a)
+{
+	m_socks4_host = a;
+}
+
+
+void Socket::SetSocks4Port(port_t p)
+{
+	m_socks4_port = p;
+}
+
+
+void Socket::SetSocks4Userid(const std::string& x)
+{
+	m_socks4_userid = x;
+}
+
+
+ipaddr_t Socket::GetSocks4Host()
+{
+	return m_socks4_host;
+}
+
+
+port_t Socket::GetSocks4Port()
+{
+	return m_socks4_port;
+}
+
+
+const std::string& Socket::GetSocks4Userid()
+{
+	return m_socks4_userid;
+}
+
+
+void Socket::SetConnectTimeout(int x)
+{
+	m_connect_timeout = x;
+}
+
+
+int Socket::GetConnectTimeout()
+{
+	return m_connect_timeout;
+}
+
+
+bool Socket::IsSSL()
+{
+	return m_b_enable_ssl;
+}
+
+
+void Socket::EnableSSL(bool x)
+{
+	m_b_enable_ssl = x;
+}
+
+
+bool Socket::IsSSLNegotiate()
+{
+	return m_b_ssl;
+}
+
+
+void Socket::SetSSLNegotiate(bool x)
+{
+	m_b_ssl = x;
+}
+
+
+bool Socket::IsSSLServer()
+{
+	return m_b_ssl_server;
+}
+
+
+void Socket::SetSSLServer(bool x)
+{
+	m_b_ssl_server = x;
+}
+
+
+void Socket::DisableRead(bool x)
+{
+	m_b_disable_read = x;
+}
+
+
+bool Socket::IsDisableRead()
+{
+	return m_b_disable_read;
+}
+
+
+void Socket::SetRetryClientConnect(bool x)
+{
+	m_b_retry_connect = x;
+}
+
+
+bool Socket::RetryClientConnect()
+{
+	return m_b_retry_connect;
+}
+
+
+void Socket::SendBuf(const char *,size_t,int)
+{
+}
+
+
+void Socket::Send(const std::string&,int)
+{
+}
+
+
+
+#ifdef _THREADSAFE_SOCKETS
+Mutex& Socket::GetMutex()
+{
+	return m_rwmutex;
+}
+#endif
 
 #ifdef SOCKETS_NAMESPACE
 }

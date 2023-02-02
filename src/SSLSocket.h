@@ -65,8 +65,8 @@ public:
 
 protected:
 	SSLSocket(const SSLSocket& s) : TcpSocket(s) {}
-	void InitializeContext(SSL_METHOD * = NULL);
-	void InitializeContext(const std::string& keyfile,const std::string& password,SSL_METHOD * = NULL);
+	void InitializeContext(SSL_METHOD *meth_in = NULL);
+	void InitializeContext(const std::string& keyfile,const std::string& password,SSL_METHOD *meth_in = NULL);
 	SSL_CTX *GetSslContext() { return m_context; }
 	SSL *GetSsl() { return m_ssl; }
 

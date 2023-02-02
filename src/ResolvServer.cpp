@@ -39,6 +39,7 @@ ResolvServer::ResolvServer(port_t port)
 :Thread()
 ,m_quit(false)
 ,m_port(port)
+,m_ready(false)
 {
 }
 
@@ -60,6 +61,8 @@ void ResolvServer::Run()
 	}
 	h.Add(&l);
 
+	h.Select(0,0);
+	m_ready = true;
 	while (!m_quit && IsRunning() )
 	{
 		h.Select(1,0);
@@ -71,6 +74,12 @@ void ResolvServer::Run()
 void ResolvServer::Quit()
 {
 	m_quit = true;
+}
+
+
+bool ResolvServer::Ready()
+{
+	return m_ready;
 }
 
 

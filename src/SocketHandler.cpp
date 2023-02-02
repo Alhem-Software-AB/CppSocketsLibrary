@@ -41,7 +41,7 @@ namespace SOCKETS_NAMESPACE {
 #ifdef _DEBUG
 #define DEB(x) x
 #else
-#define DEB(x) 
+#define DEB(x)
 #endif
 
 
@@ -50,7 +50,9 @@ SocketHandler::SocketHandler(StdLog *p)
 ,m_maxsock(0)
 ,m_host("")
 ,m_ip(0)
+#ifdef _WIN32
 ,m_preverror(-1)
+#endif
 ,m_slave(false)
 ,m_local_resolved(false)
 ,m_socks4_host(0)
@@ -58,6 +60,7 @@ SocketHandler::SocketHandler(StdLog *p)
 ,m_bTryDirect(false)
 ,m_resolv_id(0)
 ,m_resolver(NULL)
+,m_b_enable_pool(false)
 {
 DEB(printf("SocketHandler()\n");)
 	FD_ZERO(&m_rfds);
@@ -125,7 +128,11 @@ void SocketHandler::Add(Socket *p)
 {
 	if (p -> GetSocket() == INVALID_SOCKET)
 	{
-		LogError(p, "Add", -1, "Invalid socket", LOG_LEVEL_FATAL);
+		LogError(p, "Add", -1, "Invalid socket", LOG_LEVEL_WARNING);
+		if (p -> CloseAndDelete())
+		{
+			m_delete.push_back(p);
+		}
 		return;
 	}
 	m_add[p -> GetSocket()] = p;
@@ -135,7 +142,7 @@ void SocketHandler::Add(Socket *p)
 		socket_m::iterator it = m_add.begin();
 		SOCKET s = (*it).first;
 		Socket *p = (*it).second;
-DEB(printf("adding file descriptor %d ptr 0x%08x\n", s, p);)
+DEB(printf("adding file descriptor %d ptr 0x%08x\n", s, (unsigned long)p);)
 		// call Open before Add'ing a socket...
 		if (p -> Connecting())
 		{
@@ -358,18 +365,8 @@ DEB(		printf("slave: %s\n",m_slave ? "YES" : "NO");
 								{
 									// even though the connection failed at once, only retry after
 									// the connection timeout
-/*
-									tcp -> IncreaseConnectionRetries();
-									if (p -> OnConnectRetry())
-									{
-										p -> SetRetryClientConnect();
-									}
-									else
-									{
-										p -> SetCloseAndDelete( true );
-										p -> OnConnectFailed();
-									}
-*/
+									// should we even try to connect again, when CheckConnect returns
+									// false it's because of a connection error - not a timeout...
 								}
 								else
 								{
@@ -454,6 +451,13 @@ DEB(		printf("slave: %s\n",m_slave ? "YES" : "NO");
 				{
 					p -> SetRetryClientConnect(false);
 					p -> Close();
+#ifdef IPPROTO_IPV6
+					if (p -> IsIpv6())
+					{
+						tcp -> Open(p -> GetClientRemoteAddr6(), p -> GetClientRemotePort());
+					}
+					else
+#endif
 					tcp -> Open(p -> GetClientRemoteAddr(), p -> GetClientRemotePort());
 					m_sockets.erase(it3); // remove old SOCKET/Socket* pair
 					Add(p);
@@ -468,6 +472,13 @@ DEB(		printf("slave: %s\n",m_slave ? "YES" : "NO");
 						tcp -> SetIsReconnect();
 						tcp -> SetConnected(false);
 						p -> Close(); // dispose of old file descriptor (Open creates a new)
+#ifdef IPPROTO_IPV6
+						if (p -> IsIpv6())
+						{
+							tcp -> Open(p -> GetClientRemoteAddr6(), p -> GetClientRemotePort());
+						}
+						else
+#endif
 						tcp -> Open(p -> GetClientRemoteAddr(), p -> GetClientRemotePort());
 						tcp -> ResetConnectionRetries();
 						m_sockets.erase(it3); // remove old SOCKET/Socket* pair
@@ -517,6 +528,17 @@ DEB(		printf("slave: %s\n",m_slave ? "YES" : "NO");
 			}
 		}
 	} while (repeat);
+	while (m_delete.size())
+	{
+		std::list<Socket *>::iterator it = m_delete.begin();
+		Socket *p = *it;
+		p -> OnDelete();
+		if (p -> DeleteByHandler())
+		{
+			delete p;
+		}
+		m_delete.erase(it);
+	}
 	return n;
 }
 
@@ -597,7 +619,6 @@ const struct in6_addr& SocketHandler::GetLocalIP6()
 		LogError(NULL, "GetLocalHostname", 0, "local address not resolved");
 	return m_local_ip6;
 }
-#endif
 
 
 const std::string& SocketHandler::GetLocalAddress6()
@@ -606,6 +627,7 @@ const std::string& SocketHandler::GetLocalAddress6()
 		LogError(NULL, "GetLocalHostname", 0, "local address not resolved");
 	return m_local_addr6;
 }
+#endif
 
 
 PoolSocket *SocketHandler::FindConnection(int type,const std::string& protocol,ipaddr_t a,port_t port)
@@ -630,6 +652,32 @@ DEB(printf("FindConnection() successful\n");)
 DEB(printf("FindConnection() NOT successful\n");)
 	return NULL;
 }
+
+
+#ifdef IPPROTO_IPV6
+PoolSocket *SocketHandler::FindConnection(int type,const std::string& protocol,in6_addr a,port_t port)
+{
+	for (socket_m::iterator it = m_sockets.begin(); it != m_sockets.end() && m_sockets.size(); it++)
+	{
+		PoolSocket *pools = dynamic_cast<PoolSocket *>((*it).second);
+		if (pools)
+		{
+			if (pools -> GetSocketType() == type &&
+			    pools -> GetSocketProtocol() == protocol &&
+			    !in6_addr_compare(pools -> GetClientRemoteAddr6(), a) &&
+			    pools -> GetClientRemotePort() == port)
+			{
+DEB(printf("FindConnection() successful\n");)
+				m_sockets.erase(it);
+				pools -> SetRetain(); // avoid Close in Socket destructor
+				return pools; // Caller is responsible that this socket is deleted
+			}
+		}
+	}
+DEB(printf("FindConnection() NOT successful\n");)
+	return NULL;
+}
+#endif
 
 
 void SocketHandler::SetSocks4Host(ipaddr_t a)
@@ -683,6 +731,81 @@ void SocketHandler::EnableResolver(port_t port)
 		m_resolver_port = port;
 		m_resolver = new ResolvServer(port);
 	}
+}
+
+
+#ifdef IPPROTO_IPV6
+int SocketHandler::in6_addr_compare(in6_addr a,in6_addr b)
+{
+	for (size_t i = 0; i < 16; i++)
+	{
+		if (a.s6_addr[i] < b.s6_addr[i])
+			return -1;
+		if (a.s6_addr[i] > b.s6_addr[i])
+			return 1;
+	}
+	return 0;
+}
+#endif
+
+
+bool SocketHandler::ResolverReady()
+{
+	return m_resolver ? m_resolver -> Ready() : false;
+}
+
+
+void SocketHandler::EnablePool(bool x)
+{
+	m_b_enable_pool = x;
+}
+
+
+void SocketHandler::SetSocks4TryDirect(bool x)
+{
+	m_bTryDirect = x;
+}
+
+
+ipaddr_t SocketHandler::GetSocks4Host()
+{
+	return m_socks4_host;
+}
+
+
+port_t SocketHandler::GetSocks4Port()
+{
+	return m_socks4_port;
+}
+
+
+const std::string& SocketHandler::GetSocks4Userid()
+{
+	return m_socks4_userid;
+}
+
+
+bool SocketHandler::Socks4TryDirect()
+{
+	return m_bTryDirect;
+}
+
+
+bool SocketHandler::ResolverEnabled() 
+{ 
+	return m_resolver ? true : false; 
+}
+
+
+port_t SocketHandler::GetResolverPort() 
+{ 
+	return m_resolver_port; 
+}
+
+
+bool SocketHandler::PoolEnabled() 
+{ 
+	return m_b_enable_pool; 
 }
 
 

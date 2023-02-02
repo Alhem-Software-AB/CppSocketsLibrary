@@ -191,11 +191,19 @@ public:
 		printf("TestSocket connected, sending QUIT\n");
 		Send( "quit\n" );
 	}
+	void OnConnectFailed() {
+		printf("TestSocket::OnConnectFailed\n");
+		SetCloseAndDelete();
+	}
 	void OnLine(const std::string& line) {
 		printf("TestSocket: %s\n", line.c_str());
 	}
 	void OnDelete() {
 		printf("TestSocket::OnDelete()\n");
+	}
+	void OnResolved(int id,ipaddr_t a,port_t port) {
+		printf("TestSocket::OnResolved():  %d,  %08x:%d\n", id, a, port);
+		TcpSocket::OnResolved(id,a,port);
 	}
 };
 
@@ -206,6 +214,9 @@ int main()
 	MyHandler h(&log);
 
 	h.EnableResolver(9999);
+	h.ResolveLocal();
+	printf(" *** My hostname: %s\n", h.GetLocalHostname().c_str());
+	printf(" *** My local IP: %s\n", h.GetLocalAddress().c_str());
 /*
 	h.SetSocks4Host("127.0.0.1");
 	h.SetSocks4Port(1080);
@@ -218,32 +229,54 @@ int main()
 
 	// first server
 	ListenSocket<MySocket> l1(h);
-	l1.Bind(1024);
+	if (l1.Bind(1024))
+	{
+		printf("Bind 1024 failed\n");
+		exit(-1);
+	}
 	h.Add(&l1);
 
 	// second server
 	ListenSocket<MySocket> l2(h);
-	l2.Bind(1025);
+	if (l2.Bind(1025))
+	{
+		printf("Bind 1025 failed\n");
+		exit(-1);
+	}
 	h.Add(&l2);
 
 	// line server
 	ListenSocket<OrderSocket> l3(h);
-//	OrderSocket base(h);
-//	ListenSocketBase l3(h, base);
-	l3.Bind(1026);
+	if (l3.Bind(1026))
+	{
+		printf("Bind 1026 failed\n");
+		exit(-1);
+	}
 	h.Add(&l3);
 
 	// http debug
 	ListenSocket<HttpDebugSocket> l4(h);
-	l4.Bind(8080);
+	if (l4.Bind(8080))
+	{
+		printf("Bind 8080 failed\n");
+		exit(-1);
+	}
 	h.Add(&l4);
 
-	h.Select(1, 0);
+	// wait for resolver to really start
+	printf("Waiting for resolver ...");
+	while (!h.ResolverReady())
+		;
+	printf(" resolver ready!\n");
 
 	TestSocket ts(h);
+printf(">>> TestSocket.Open\n");
 	ts.Open("localhost", 1026);
+printf(">>> Adding TestSocket\n");
 	h.Add(&ts);
 
+printf(">>> mainloop\n");
+	h.Select(0,0);
 	while (!h.Quit())
 	{
 		h.Select(1,0);

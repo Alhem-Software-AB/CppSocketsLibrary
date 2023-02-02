@@ -20,7 +20,6 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
-#include "SocketHandler.h"
 #ifdef _WIN32
 #pragma warning(disable:4786)
 #define strcasecmp stricmp
@@ -28,6 +27,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #else
 #include <errno.h>
 #endif
+#include "SocketHandler.h"
 #include <stdio.h>
 #include <fcntl.h>
 #include <assert.h>
@@ -47,13 +47,12 @@ namespace SOCKETS_NAMESPACE {
 #ifdef _DEBUG
 #define DEB(x) x
 #else
-#define DEB(x)  
+#define DEB(x) 
 #endif
 
 
 #ifdef HAVE_OPENSSL
 BIO *TcpSocket::bio_err = NULL;
-std::string TcpSocket::m_password;
 #endif
 
 // thanks, q
@@ -131,19 +130,22 @@ bool TcpSocket::Open(ipaddr_t ip,port_t port,bool skip_socks)
 	SetConnecting(false);
 	SetSocks4(false);
 	// check for pooling
-	PoolSocket *pools = Handler().FindConnection(SOCK_STREAM, "tcp", ip, port);
-	if (pools)
+	if (Handler().PoolEnabled())
 	{
-		CopyConnection( pools );
-		delete pools;
+		PoolSocket *pools = Handler().FindConnection(SOCK_STREAM, "tcp", ip, port);
+		if (pools)
+		{
+			CopyConnection( pools );
+			delete pools;
 
-		SetIsClient();
-		SetCallOnConnect(); // SocketHandler must call OnConnect
+			SetIsClient();
+			SetCallOnConnect(); // SocketHandler must call OnConnect
 DEB(printf("Reusing connection\n");)
-		return true;
+			return true;
+		}
 	}
 	// if not, create new connection
-	SOCKET s = CreateSocket4(SOCK_STREAM, "tcp");
+	SOCKET s = CreateSocket(AF_INET, SOCK_STREAM, "tcp");
 	if (s == INVALID_SOCKET)
 	{
 		return false;
@@ -151,6 +153,7 @@ DEB(printf("Reusing connection\n");)
 	// socket must be nonblocking for async connect
 	if (!SetNonblocking(true, s))
 	{
+		SetCloseAndDelete();
 		closesocket(s);
 		return false;
 	}
@@ -205,6 +208,7 @@ DEB(printf("Reusing connection\n");)
 		else
 		{
 			Handler().LogError(this, "connect: failed", Errno, StrError(Errno), LOG_LEVEL_FATAL);
+			SetCloseAndDelete();
 			closesocket(s);
 			return false;
 		}
@@ -223,13 +227,111 @@ DEB(printf("Reusing connection\n");)
 }
 
 
+#ifdef IPPROTO_IPV6
+bool TcpSocket::Open(in6_addr ip,port_t port,bool skip_socks)
+{
+	SetConnecting(false);
+	SetSocks4(false);
+	// check for pooling
+	if (Handler().PoolEnabled())
+	{
+		PoolSocket *pools = Handler().FindConnection(SOCK_STREAM, "tcp", ip, port);
+		if (pools)
+		{
+			CopyConnection( pools );
+			delete pools;
+
+			SetIsClient();
+			SetCallOnConnect(); // SocketHandler must call OnConnect
+DEB(printf("Reusing connection\n");)
+			return true;
+		}
+	}
+	// if not, create new connection
+	SOCKET s = CreateSocket(AF_INET6, SOCK_STREAM, "tcp");
+	if (s == INVALID_SOCKET)
+	{
+		return false;
+	}
+	// socket must be nonblocking for async connect
+	if (!SetNonblocking(true, s))
+	{
+		SetCloseAndDelete();
+		closesocket(s);
+		return false;
+	}
+	SetIsClient(); // client because we connect
+	SetClientRemoteAddr(ip);
+	SetClientRemotePort(port);
+
+	struct sockaddr_in6 sa;
+	socklen_t sa_len = sizeof(sa);
+
+	memset(&sa,0,sizeof(sa));
+	sa.sin6_family = AF_INET6;
+	sa.sin6_port = htons( port );
+	sa.sin6_flowinfo = 0;
+	sa.sin6_scope_id = 0;
+	sa.sin6_addr = ip;
+
+	// try connect
+	int n = connect(s, (struct sockaddr *)&sa, sa_len);
+	if (n == -1)
+	{
+		// check error code that means a connect is in progress
+#ifdef _WIN32
+		if (Errno == WSAEWOULDBLOCK)
+#else
+		if (Errno == EINPROGRESS)
+#endif
+		{
+			Handler().LogError(this, "connect: connection pending", Errno, StrError(Errno), LOG_LEVEL_INFO);
+			SetConnecting( true ); // this flag will control fd_set's
+		}
+		else
+		{
+			Handler().LogError(this, "connect: failed", Errno, StrError(Errno), LOG_LEVEL_FATAL);
+			SetCloseAndDelete();
+			closesocket(s);
+			return false;
+		}
+	}
+	else
+	{
+		Handler().LogError(this, "connect", 0, "connection established", LOG_LEVEL_INFO);
+		SetCallOnConnect(); // SocketHandler must call OnConnect
+	}
+	SetRemoteAddress( (struct sockaddr *)&sa,sa_len);
+	Attach(s);
+
+	// 'true' means connected or connecting(not yet connected)
+	// 'false' means something failed
+	return true; //!Connecting();
+}
+#endif
+
+
 bool TcpSocket::Open(const std::string &host,port_t port)
 {
+#ifdef IPPROTO_IPV6
+	if (IsIpv6())
+	{
+		in6_addr a;
+		// %! enable ipv6 resolver
+		if (!u2ip(host, a))
+		{
+			SetCloseAndDelete();
+			return false;
+		}
+		return Open(a, port);
+	}
+#endif
 	if (!Handler().ResolverEnabled() || isip(host) )
 	{
 		ipaddr_t l;
 		if (!u2ip(host,l))
 		{
+			SetCloseAndDelete();
 			return false;
 		}
 		return Open(l, port);
@@ -240,91 +342,32 @@ bool TcpSocket::Open(const std::string &host,port_t port)
 }
 
 
-void TcpSocket::Resolved(int id,ipaddr_t a,port_t port)
+void TcpSocket::OnResolved(int id,ipaddr_t a,port_t port)
 {
 	if (id == m_resolver_id)
 	{
 		if (a && port)
 		{
-			Open(a, port);
-			if (!Handler().Valid(this))
+			if (Open(a, port))
 			{
-				Handler().Add(this);
+				if (!Handler().Valid(this))
+				{
+					Handler().Add(this);
+				}
 			}
-			return;
 		}
 		else
 		{
-			Handler().LogError(this, "Resolved", 0, "Resolver failed", LOG_LEVEL_FATAL);
+			Handler().LogError(this, "OnResolved", 0, "Resolver failed", LOG_LEVEL_FATAL);
+			SetCloseAndDelete();
 		}
 	}
 	else
 	{
-		Handler().LogError(this, "Resolved", id, "Resolver returned wrong job id", LOG_LEVEL_FATAL);
+		Handler().LogError(this, "OnResolved", id, "Resolver returned wrong job id", LOG_LEVEL_FATAL);
+		SetCloseAndDelete();
 	}
-	SetCloseAndDelete();
 }
-
-
-// halfbaked IPV6 code
-#ifdef IPPROTO_IPV6
-bool TcpSocket::Open6(const std::string &host,port_t port)
-{
-	// check for pooling
-
-	// if not, create new connection
-	SOCKET s = CreateSocket6(SOCK_STREAM, "tcp");
-	if (s == INVALID_SOCKET)
-	{
-		return false;
-	}
-	struct in6_addr a;
-	if (u2ip(host,a))
-	{
-		struct sockaddr_in6 sa;
-		socklen_t sa_len = sizeof(sa);
-
-		memset(&sa,0,sizeof(sa));
-		sa.sin6_family = AF_INET6;
-		sa.sin6_port = htons( port );
-		sa.sin6_flowinfo = 0;
-		sa.sin6_scope_id = 0;
-		sa.sin6_addr = a;
-
-		if (!SetNonblocking(true, s))
-		{
-			closesocket(s);
-			return false;
-		}
-		int n = connect(s, (struct sockaddr *)&sa, sa_len);
-		if (n == -1)
-		{
-#ifdef _WIN32
-			if (Errno != WSAEWOULDBLOCK)
-#else
-			if (Errno != EINPROGRESS)
-#endif
-			{
-				Handler().LogError(this, "connect", Errno, StrError(Errno), LOG_LEVEL_FATAL);
-				closesocket(s);
-				return false;
-			}
-			else
-			{
-				SetConnecting(true);
-			}
-		}
-		else
-		{
-			SetCallOnConnect(); // SocketHandler must call OnConnect
-		}
-		SetRemoteAddress((struct sockaddr *)&sa,sa_len);
-		Attach(s);
-		return true; //!Connecting();
-	}
-	return false; // u2ip failed
-}
-#endif
 
 
 void TcpSocket::OnRead()
@@ -356,8 +399,8 @@ DEB(				printf("SSL read problem, errcode = %d\n",n);)
 		else
 		if (!n)
 		{
+			Handler().LogError(this, "SSL_read", 0, "read returns 0", LOG_LEVEL_FATAL);
 			SetCloseAndDelete(true);
-DEB(			printf("read() returns 0\n");)
 		}
 		else
 		{
@@ -365,7 +408,7 @@ DEB(			printf("TcpSocket(SSL) OnRead read %d bytes\n",n);)
 			if (!ibuf.Write(buf,n))
 			{
 				// overflow
-DEB(				printf(" *** overflow ibuf Write\n");)
+				Handler().LogError(this, "OnRead(ssl)", 0, "ibuf overflow", LOG_LEVEL_WARNING);
 			}
 		}
 		return;
@@ -374,8 +417,6 @@ DEB(				printf(" *** overflow ibuf Write\n");)
 DEB(printf("TcpSocket::OnRead()\n");)
 	int n = (int)ibuf.Space();
 	char buf[TCP_BUFSIZE_READ];
-//	if (!n)
-//		return; // bad
 	n = TCP_BUFSIZE_READ; // %! patch away
 	n = recv(GetSocket(),buf,(n < TCP_BUFSIZE_READ) ? n : TCP_BUFSIZE_READ,MSG_NOSIGNAL);
 	if (n == -1)
@@ -397,7 +438,7 @@ DEB(printf("TcpSocket::OnRead()\n");)
 		if (!ibuf.Write(buf,n))
 		{
 			// overflow
-			Handler().LogError(this, "read", 0, "ibuf overflow", LOG_LEVEL_WARNING);
+			Handler().LogError(this, "OnRead", 0, "ibuf overflow", LOG_LEVEL_WARNING);
 		}
 	}
 }
@@ -419,7 +460,7 @@ void TcpSocket::OnWrite()
 	*/
 DEB(		printf("TcpSocket(SSL)::OnWrite()\n");)
 		// TODO: check MES buffer
-		int n = SSL_write(m_ssl,obuf.GetStart(),obuf.GetL());
+		int n = SSL_write(m_ssl,obuf.GetStart(),(int)obuf.GetL());
 DEB(		printf("OnWrite: %d bytes sent\n",n);)
 		if (n == -1)
 		{
@@ -487,7 +528,7 @@ signal is not sent when the write call specified the MSG_NOSIGNAL flag.
 #else
 		if (Errno != EWOULDBLOCK)
 #endif
-		{	 
+		{	
 			Handler().LogError(this, "write", Errno, StrError(Errno), LOG_LEVEL_FATAL);
 			SetCloseAndDelete(true); // %!
 			SetLost();
@@ -658,10 +699,10 @@ void TcpSocket::ReadLine()
 #ifdef _WIN32
 #pragma warning(disable:4355)
 #endif
-TcpSocket::TcpSocket(const TcpSocket& s) 
+TcpSocket::TcpSocket(const TcpSocket& s)
 :Socket(s)
 ,ibuf(*this,0)
-,obuf(*this,0) 
+,obuf(*this,0)
 {
 }
 #ifdef _WIN32
@@ -795,7 +836,7 @@ DEB(		printf("InitSSLClient()\n");)
 		{
 DEB(			printf(" m_ssl is NULL\n");)
 		}
-		m_sbio = BIO_new_socket(GetSocket(), BIO_NOCLOSE);
+		m_sbio = BIO_new_socket((int)GetSocket(), BIO_NOCLOSE);
 		if (!m_sbio)
 		{
 DEB(			printf(" m_sbio is NULL\n");)
@@ -834,7 +875,7 @@ DEB(			printf("SSL Context already initialized - closing socket\n");)
 		{
 DEB(			printf(" m_ssl is NULL\n");)
 		}
-		m_sbio = BIO_new_socket(GetSocket(), BIO_NOCLOSE);
+		m_sbio = BIO_new_socket((int)GetSocket(), BIO_NOCLOSE);
 		if (!m_sbio)
 		{
 DEB(			printf(" m_sbio is NULL\n");)
@@ -968,7 +1009,7 @@ DEB(		printf("Couldn't read CA list\n");)
 	{
 DEB(		printf("Couldn't load randomness\n");)
 	}
-		 
+		
 }
 
 
@@ -999,6 +1040,7 @@ DEB(		printf("Couldn't read certificate file\n");)
 
 	m_password = password;
 	SSL_CTX_set_default_passwd_cb(m_context, password_cb);
+	SSL_CTX_set_default_passwd_cb_userdata(m_context, this);
 	if (!(SSL_CTX_use_PrivateKey_file(m_context, keyfile.c_str(), SSL_FILETYPE_PEM)))
 	{
 DEB(		printf("Couldn't read key file\n");)
@@ -1019,19 +1061,22 @@ DEB(		printf("Couldn't read CA list\n");)
 	{
 DEB(		printf("Couldn't load randomness\n");)
 	}
-		 
+		
 }
 
 
 // static
 int TcpSocket::password_cb(char *buf,int num,int rwflag,void *userdata)
 {
-	if ( (size_t)num < m_password.size() + 1)
+	Socket *p0 = static_cast<Socket *>(userdata);
+	TcpSocket *p = dynamic_cast<TcpSocket *>(p0);
+	std::string pw = p ? p -> GetPassword() : "";
+	if ( (size_t)num < pw.size() + 1)
 	{
 		return 0;
 	}
-	strcpy(buf,m_password.c_str());
-	return m_password.size();
+	strcpy(buf,pw.c_str());
+	return (int)pw.size();
 }
 #endif // HAVE_OPENSSL
 
@@ -1091,6 +1136,77 @@ int TcpSocket::GetConnectionRetries()
 void TcpSocket::SetReconnect(bool x)
 {
 	m_b_reconnect = x;
+}
+
+
+void TcpSocket::OnRawData(const char *buf,size_t len)
+{
+}
+
+
+size_t TcpSocket::GetInputLength()
+{
+	return ibuf.GetLength();
+}
+
+
+size_t TcpSocket::GetOutputLength()
+{
+	return obuf.GetLength();
+}
+
+
+unsigned long TcpSocket::GetBytesReceived()
+{
+	return ibuf.ByteCounter();
+}
+
+
+unsigned long TcpSocket::GetBytesSent()
+{
+	return obuf.ByteCounter();
+}
+
+
+int TcpSocket::GetConnectionRetry()
+{
+	return m_connection_retry;
+}
+
+
+void TcpSocket::IncreaseConnectionRetries()
+{
+	m_retries++;
+}
+
+
+void TcpSocket::ResetConnectionRetries()
+{
+	m_retries = 0;
+}
+
+
+bool TcpSocket::Reconnect()
+{
+	return m_b_reconnect;
+}
+
+
+void TcpSocket::SetIsReconnect(bool x)
+{
+	m_b_is_reconnect = x;
+}
+
+
+bool TcpSocket::IsReconnect()
+{
+	return m_b_is_reconnect;
+}
+
+
+const std::string& TcpSocket::GetPassword()
+{
+	return m_password;
 }
 
 

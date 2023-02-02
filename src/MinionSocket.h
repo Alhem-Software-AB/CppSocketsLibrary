@@ -86,7 +86,7 @@ public:
 protected:
 	void OnDelete();
 	void OnConnect();
-	void OnLine(const std::string& );
+	void OnLine(const std::string& line);
 
 private:
 	MinionSocket& operator=(const MinionSocket& ) { return *this; }

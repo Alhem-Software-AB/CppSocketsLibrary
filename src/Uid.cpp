@@ -115,6 +115,12 @@ std::string Uid::GetUid()
 }
 
 
+const unsigned char *Uid::GetBuf() 
+{ 
+	return m_bufuid; 
+}
+
+
 #ifdef SOCKETS_NAMESPACE
 }
 #endif

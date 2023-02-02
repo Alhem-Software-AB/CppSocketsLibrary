@@ -333,6 +333,25 @@ void HttpdSocket::Reset()
 }
 
 
+const std::string& HttpdSocket::GetHttpDate() 
+{
+	return m_http_date; 
+}
+
+
+HttpdCookies *HttpdSocket::GetCookies() 
+{
+	return m_cookies; 
+}
+
+
+HttpdForm *HttpdSocket::GetForm() 
+{
+	return m_form; 
+}
+
+
+
 #ifdef SOCKETS_NAMESPACE
 }
 #endif

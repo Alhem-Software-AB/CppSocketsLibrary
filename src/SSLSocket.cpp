@@ -96,7 +96,7 @@ DEB(		printf("InitAsClient()\n");)
 		{
 DEB(			printf(" m_ssl is NULL\n");)
 		}
-		m_sbio = BIO_new_socket(GetSocket(), BIO_NOCLOSE);
+		m_sbio = BIO_new_socket((int)GetSocket(), BIO_NOCLOSE);
 		if (!m_sbio)
 		{
 DEB(			printf(" m_sbio is NULL\n");)
@@ -143,7 +143,7 @@ DEB(			printf("SSL Context already initialized - closing socket\n");)
 		{
 DEB(			printf(" m_ssl is NULL\n");)
 		}
-		m_sbio = BIO_new_socket(GetSocket(), BIO_NOCLOSE);
+		m_sbio = BIO_new_socket((int)GetSocket(), BIO_NOCLOSE);
 		if (!m_sbio)
 		{
 DEB(			printf(" m_sbio is NULL\n");)
@@ -294,7 +294,7 @@ void SSLSocket::OnWrite()
 		return;
 */
 D2(	printf("SSLSocket::OnWrite()\n");)
-	int n = SSL_write(m_ssl,obuf.GetStart(),obuf.GetL());
+	int n = SSL_write(m_ssl,obuf.GetStart(),(int)obuf.GetL());
 DEB(	printf("OnWrite: %d bytes sent\n",n);)
 	if (n == -1)
 	{
@@ -443,7 +443,7 @@ int SSLSocket::password_cb(char *buf,int num,int rwflag,void *userdata)
 		return(0);
 
 	strcpy(buf,m_password.c_str());
-	return(m_password.size());
+	return (int)m_password.size();
 }
 
 

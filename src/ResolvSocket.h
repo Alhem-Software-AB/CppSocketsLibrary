@@ -38,7 +38,7 @@ public:
 	~ResolvSocket();
 
 	void OnAccept() { m_bServer = true; }
-	void OnLine(const std::string& );
+	void OnLine(const std::string& line);
 	void OnDetached();
 
 	void SetId(int x) { m_resolv_id = x; }

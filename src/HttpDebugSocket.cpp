@@ -55,6 +55,7 @@ void HttpDebugSocket::OnFirst()
 	Send(
 		"<html><head><title>Echo Request</title></head>"
 		"<body><h3>Request Header</h3><pre style='background: #e0e0e0'>");
+	Send(GetMethod() + " " + GetUrl() + " " + GetHttpVersion() + "\n");
 }
 
 

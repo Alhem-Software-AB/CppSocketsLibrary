@@ -42,7 +42,7 @@ public:
 
 	void OnRead();
 	void ReadLine();
-	void OnLine(const std::string& );
+	void OnLine(const std::string& line);
 
 	/** Callback executes when first line has been received.
 		GetMethod, GetUrl/GetUri, and GetHttpVersion are valid when this callback is executed. */
@@ -56,22 +56,22 @@ public:
 	/** Chunk of http body data recevied. */
 	virtual void OnData(const char *,size_t) = 0;
 
-	const std::string& GetMethod() { return m_method; }
-	void SetMethod(const std::string& x) { m_method = x; }
-	const std::string& GetUrl() { return m_url; }
-	void SetUrl(const std::string& x) { m_url = x; }
-	const std::string& GetUri() { return m_uri; }
-	const std::string& GetQueryString() { return m_query_string; }
-	const std::string& GetHttpVersion() { return m_http_version; }
-	const std::string& GetStatus() { return m_status; }
-	const std::string& GetStatusText() { return m_status_text; }
-	bool IsRequest() { return m_request; }
-	bool IsResponse() { return m_response; }
+	const std::string& GetMethod();
+	void SetMethod(const std::string& x);
+	const std::string& GetUrl();
+	void SetUrl(const std::string& x);
+	const std::string& GetUri();
+	const std::string& GetQueryString();
+	const std::string& GetHttpVersion();
+	const std::string& GetStatus();
+	const std::string& GetStatusText();
+	bool IsRequest();
+	bool IsResponse();
 
-	void SetHttpVersion(const std::string& x) { m_http_version = x; }
-	void SetStatus(const std::string& x) { m_status = x; }
-	void SetStatusText(const std::string& x) { m_status_text = x; }
-	void AddResponseHeader(const std::string& x,const std::string& y) { m_response_header[x] = y; }
+	void SetHttpVersion(const std::string& x);
+	void SetStatus(const std::string& x);
+	void SetStatusText(const std::string& x);
+	void AddResponseHeader(const std::string& x,const std::string& y);
 	void AddResponseHeader(const std::string& x,char *format, ...);
 	void SendResponse();
 	void SendRequest();

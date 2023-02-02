@@ -63,52 +63,89 @@ class TcpSocket : public Socket
 		size_t len;
 		size_t ptr;
 	};
+	/** Dynamic output buffer list. */
 	typedef std::list<MES *> ucharp_v;
 
 public:
+	/** Contructor with standard values on input/output buffers. */
 	TcpSocket(SocketHandler& );
-	TcpSocket(SocketHandler& ,size_t isize,size_t osize);
+	/** Constructor with custom values for i/o buffer. 
+		\param h SocketHandler reference
+		\param isize Input buffer size
+		\param osize Output buffer size */
+	TcpSocket(SocketHandler& h,size_t isize,size_t osize);
 	~TcpSocket();
 
 	/** Open a connection to a remote server.
 	    If you want your socket to connect to a server, 
 	    always call Open before Add'ing a socket to the sockethandler.
 	    If not, the connection attempt will not be monitored by the
-	    socket handler... */
-	bool Open(ipaddr_t,port_t,bool skip_socks = false);
+	    socket handler... 
+		\param ip IP address
+		\param port Port number
+		\param skip_socks Do not use socks4 even if configured */
+	bool Open(ipaddr_t ip,port_t port,bool skip_socks = false);
+#ifdef IPPROTO_IPV6
+	/** Open connection. 
+		\param ip Ipv6 address
+		\param port Port number
+		\param skip_socks Do not use socks4 even if configured */
+	bool Open(in6_addr ip,port_t port,bool skip_socks = false);
+#endif
+	/** Open connection. 
+		\param host Hostname
+		\param port Port number */
 	bool Open(const std::string &host,port_t port);
-	bool Open6(const std::string& host,port_t port);
+	/** Close file descriptor - internal use only. 
+		\sa SetCloseAndDelete */
 	int Close();
 
-	void Send(const std::string &,int = 0);
+	/** Send a string. 
+		\param s String to send 
+		\param f Dummy flags -- not used */
+	void Send(const std::string &s,int f = 0);
+	/** Send string using printf formatting. */
 	void Sendf(char *format, ...);
-
-	void SendBuf(const char *,size_t,int = 0);
+	/** Send buffer of bytes.
+		\param buf Buffer pointer
+		\param len Length of data
+		\param f Dummy flags -- not used */
+	void SendBuf(const char *buf,size_t len,int f = 0);
 	/** This callback is executed after a successful read from the socket.
 		\param buf Pointer to the data
 		\param len Length of the data */
-	virtual void OnRawData(const char *buf,size_t len) {}
+	virtual void OnRawData(const char *buf,size_t len);
 
 	/** Number of bytes in input buffer. */
-	size_t GetInputLength() { return ibuf.GetLength(); }
+	size_t GetInputLength();
 	/** Number of bytes in output buffer. */
-	size_t GetOutputLength() { return obuf.GetLength(); }
+	size_t GetOutputLength();
 
+	/** Callback used when socket is in line protocol mode.
+		\sa SetLineProtocol */
 	void ReadLine();
-	void OnLine(const std::string& );
+	/** Callback fires when a socket in line protocol has read one full line. 
+		\param line Line read */
+	void OnLine(const std::string& line);
+	/** Get counter of number of bytes received. */
+	unsigned long GetBytesReceived();
+	/** Get counter of number of bytes sent. */
+	unsigned long GetBytesSent();
 
-	unsigned long GetBytesReceived() { return ibuf.ByteCounter(); }
-	unsigned long GetBytesSent() { return obuf.ByteCounter(); }
-
+	/** Socks4 specific callback. */
 	void OnSocks4Connect();
+	/** Socks4 specific callback. */
 	void OnSocks4ConnectFailed();
-	/** returns 'need_more' */
+	/** Socks4 specific callback.
+		\return 'need_more' */
 	bool OnSocks4Read();
 
-	void Resolved(int id,ipaddr_t a,port_t port);
+	/** Callback executed when resolver thread has finished a resolve request. */
+	void OnResolved(int id,ipaddr_t a,port_t port);
 
-	// SSL
+	/** Callback for 'New' ssl support - replaces SSLSocket. Internal use. */
 	void OnSSLConnect();
+	/** Callback for 'New' ssl support - replaces SSLSocket. Internal use. */
 	void OnSSLAccept();
 	/** This method must be implemented to initialize 
 		the ssl context for an outgoing connection. */
@@ -119,22 +156,34 @@ public:
 
 	/** Flag that indicates a successful connection. */
 	bool IsConnected();
+	/** Set flag indicating connected status. */
 	void SetConnected(bool = true);
-	/** n = 0 - no retry
+	/** Define number of connection retries.
+	    n = 0 - no retry
 	    n > 0 - number of retries
 	    n = -1 - unlimited retries */
 	void SetConnectionRetry(int n);
-	int GetConnectionRetry() { return m_connection_retry; }
-	/** number of connection retries */
-	void IncreaseConnectionRetries() { m_retries++; }
+	/** Get number of maximum connection retries. */
+	int GetConnectionRetry();
+	/** Increase number of actual connection retries */
+	void IncreaseConnectionRetries();
+	/** Get number of actual connection retries. */
 	int GetConnectionRetries();
-	void ResetConnectionRetries() { m_retries = 0; }
+	/** Reset actual connection retries. */
+	void ResetConnectionRetries();
 	/** Flag that says a broken connection will try to reconnect. */
 	void SetReconnect(bool = true);
-	bool Reconnect() { return m_b_reconnect; }
+	/** Check reconnect on lost connection flag status. */
+	bool Reconnect();
 	/** Flag to determine if a reconnect is in progress. */
-	void SetIsReconnect(bool x = true) { m_b_is_reconnect = x; }
-	bool IsReconnect() { return m_b_is_reconnect; }
+	void SetIsReconnect(bool x = true);
+	/** Socket is reconnecting. */
+	bool IsReconnect();
+
+#ifdef HAVE_OPENSSL
+	/** Get ssl password */
+	const std::string& GetPassword();
+#endif
 
 protected:
 	TcpSocket(const TcpSocket& s);
@@ -142,41 +191,51 @@ protected:
 	void OnWrite();
 	// SSL
 #ifdef HAVE_OPENSSL
-	void InitializeContext(SSL_METHOD * = NULL);
-	void InitializeContext(const std::string& keyfile,const std::string& password,SSL_METHOD * = NULL);
+	/** Initialize ssl context for a client socket. 
+		\param meth_in SSL method */
+	void InitializeContext(SSL_METHOD *meth_in = NULL);
+	/** Initialize ssl context for a server socket. 
+		\param keyfile Combined private key/certificate file 
+		\param password Password for private key 
+		\param meth_in SSL method */
+	void InitializeContext(const std::string& keyfile,const std::string& password,SSL_METHOD *meth_in = NULL);
+	/** SSL Password callback method. */
 static	int password_cb(char *buf,int num,int rwflag,void *userdata);
+	/** Get pointer to ssl context structure. */
 	virtual SSL_CTX *GetSslContext();
+	/** Get pointer to ssl structure. */
 	virtual SSL *GetSsl();
 #endif
+	/** ssl still negotiating connection. */
 	bool SSLNegotiate();
 	//
-	CircularBuffer ibuf;
-	CircularBuffer obuf;
-	std::string m_line;
-	ucharp_v m_mes; // overflow protection
+	CircularBuffer ibuf; ///< Circular input buffer
+	CircularBuffer obuf; ///< Circular output buffer
+	std::string m_line; ///< Current line in line protocol mode
+	ucharp_v m_mes; ///< overflow protection, dynamic output buffer
 
 private:
 	TcpSocket& operator=(const TcpSocket& ) { return *this; }
-	int m_socks4_state;
-	char m_socks4_vn;
-	char m_socks4_cd;
-	unsigned short m_socks4_dstport;
-	unsigned long m_socks4_dstip;
-	int m_resolver_id;
+	int m_socks4_state; ///< socks4 support
+	char m_socks4_vn; ///< socks4 support, temporary variable
+	char m_socks4_cd; ///< socks4 support, temporary variable
+	unsigned short m_socks4_dstport; ///< socks4 support
+	unsigned long m_socks4_dstip; ///< socks4 support
+	int m_resolver_id; ///< Resolver id (if any) for current Open call
 	// SSL
 #ifdef HAVE_OPENSSL
-	SSL_CTX *m_context;
-	SSL *m_ssl;
-	BIO *m_sbio;
-static	BIO *bio_err;
-static	std::string m_password;
+	SSL_CTX *m_context; ///< ssl context
+	SSL *m_ssl; ///< ssl 'socket'
+	BIO *m_sbio; ///< ssl bio
+static	BIO *bio_err; ///< ssl bio err
+	std::string m_password; ///< ssl password
 #endif
 	// state flags
-	bool m_b_connected;
-	int m_connection_retry;
-	int m_retries;
-	bool m_b_reconnect;
-	bool m_b_is_reconnect;
+	bool m_b_connected; ///< Connected state
+	int m_connection_retry; ///< Maximum connection retries
+	int m_retries; ///< Actual number of connection retries
+	bool m_b_reconnect; ///< Reconnect on lost connection flag
+	bool m_b_is_reconnect; ///< Trying to reconnect
 };
 
 

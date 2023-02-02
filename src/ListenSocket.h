@@ -45,6 +45,9 @@ template <class X>
 class ListenSocket : public Socket
 {
 public:
+	/** Constructor.
+		\param h SocketHandler reference
+		\param use_creator Optional use of creator (default true) */
 	ListenSocket(SocketHandler& h,bool use_creator = true) : Socket(h), m_port(0), m_depth(0), m_creator(NULL)
 	,m_bHasCreate(false) {
 		if (use_creator)
@@ -68,22 +71,70 @@ public:
 		}
 	}
 
-	/** bind() to port 0 - a random port */
-	int Bind()
-	{
-		int depth = 3; // think of maybe increasing this value if needed
-		ipaddr_t l = 0;
+	/** Bind and listen to any interface.
+		\param port Port (0 is random)
+		\param depth Listen queue depth */
+	int Bind(port_t port,int depth = 20) {
+#ifdef IPPROTO_IPV6
+		if (IsIpv6())
+		{
+			in6_addr a;
+			memset(&a, 0, sizeof(in6_addr));
+			return Bind(a, port, depth);
+		}
+		else
+#endif
+		{
+			ipaddr_t a = 0;
+			return Bind(a, port, depth);
+		}
+	}
+
+	/** Bind and listen to specific interface.
+		\param intf Interface hostname
+		\param port Port (0 is random)
+		\param depth Listen queue depth */
+	int Bind(const std::string& intf,port_t port,int depth = 20) {
+#ifdef IPPROTO_IPV6
+		if (IsIpv6())
+		{
+			in6_addr a;
+			if (u2ip(intf, a))
+			{
+				return Bind(a, port, depth);
+			}
+			Handler().LogError(this, "Bind", 0, "name resolution of interface name failed", LOG_LEVEL_FATAL);
+			return -1;
+		}
+		else
+#endif
+		{
+			ipaddr_t a;
+			if (u2ip(intf, a))
+			{
+				return Bind(a, port, depth);
+			}
+			Handler().LogError(this, "Bind", 0, "name resolution of interface name failed", LOG_LEVEL_FATAL);
+			return -1;
+		}
+	}
+
+	/** Bind and listen to ipv4 interface.
+		\param a Ipv4 interface address
+		\param port Port (0 is random)
+		\param depth Listen queue depth */
+	int Bind(ipaddr_t a,port_t port,int depth = 20) {
 		struct sockaddr_in sa;
 		SOCKET s;
 
-		if ( (s = CreateSocket4(SOCK_STREAM)) == INVALID_SOCKET)
+		if ( (s = CreateSocket(AF_INET, SOCK_STREAM)) == INVALID_SOCKET)
 		{
 			return -1;
 		}
 		memset(&sa, 0, sizeof(sa));
 		sa.sin_family = AF_INET;
-		sa.sin_port = htons(0); // choose any port
-		memcpy(&sa.sin_addr, &l, 4);
+		sa.sin_port = htons( port );
+		memcpy(&sa.sin_addr, &a, 4);
 		if (bind(s, (struct sockaddr *)&sa, sizeof(sa)) == -1)
 		{
 			Handler().LogError(this, "bind", Errno, StrError(Errno), LOG_LEVEL_FATAL);
@@ -96,7 +147,6 @@ public:
 			closesocket(s);
 			return -1;
 		}
-		// Find out what port was choosen
 		int sockaddr_length = sizeof(sockaddr);
 		getsockname(s, (struct sockaddr *)&sa, (socklen_t*)&sockaddr_length);
 		m_port = ntohs(sa.sin_port);
@@ -105,21 +155,25 @@ public:
 		return 0;
 	}
 
-	/** bind to port with optional listen queue length (depth) */
-	int Bind(port_t port, int depth = 3)
-	{
-		ipaddr_t l = 0;
-		struct sockaddr_in sa;
+#ifdef IPPROTO_IPV6
+	/** Bind and listen to ipv6 interface.
+		\param a Ipv6 interface address
+		\param port Port (0 is random)
+		\param depth Listen queue depth */
+	int Bind(in6_addr a,port_t port,int depth = 20) {
+		struct sockaddr_in6 sa;
 		SOCKET s;
 
-		if ( (s = CreateSocket4(SOCK_STREAM)) == INVALID_SOCKET)
+		if ( (s = CreateSocket(AF_INET6, SOCK_STREAM)) == INVALID_SOCKET)
 		{
 			return -1;
 		}
 		memset(&sa, 0, sizeof(sa));
-		sa.sin_family = AF_INET;
-		sa.sin_port = htons( port );
-		memcpy(&sa.sin_addr, &l, 4);
+		sa.sin6_family = AF_INET6;
+		sa.sin6_port = htons( port );
+		sa.sin6_flowinfo = 0;
+		sa.sin6_scope_id = 0;
+		sa.sin6_addr = a;
 		if (bind(s, (struct sockaddr *)&sa, sizeof(sa)) == -1)
 		{
 			Handler().LogError(this, "bind", Errno, StrError(Errno), LOG_LEVEL_FATAL);
@@ -132,214 +186,46 @@ public:
 			closesocket(s);
 			return -1;
 		}
-		m_port = port;
+		int sockaddr_length = sizeof(sockaddr);
+		getsockname(s, (struct sockaddr *)&sa, (socklen_t*)&sockaddr_length);
+		m_port = ntohs(sa.sin6_port);
 		m_depth = depth;
 		Attach(s);
 		return 0;
 	}
-
-	/** bind to port on a specified address */
-	int Bind(const std::string& adapter, port_t port, int depth = 3)
-	{
-		ipaddr_t l = 0;
-		ipaddr_t tmp;
-		if (u2ip(adapter, tmp))
-		{
-			l = tmp;
-		}
-		struct sockaddr_in sa;
-		SOCKET s;
-
-		if ( (s = CreateSocket4(SOCK_STREAM)) == INVALID_SOCKET)
-		{
-			return -1;
-		}
-		memset(&sa, 0, sizeof(sa));
-		sa.sin_family = AF_INET;
-		sa.sin_port = htons( port );
-		memcpy(&sa.sin_addr, &l, 4);
-		if (bind(s, (struct sockaddr *)&sa, sizeof(sa)) == -1)
-		{
-			Handler().LogError(this, "bind", Errno, StrError(Errno), LOG_LEVEL_FATAL);
-			closesocket(s);
-			return -1;
-		}
-		if (listen(s, depth) == -1)
-		{
-			Handler().LogError(this, "listen", Errno, StrError(Errno), LOG_LEVEL_FATAL);
-			closesocket(s);
-			return -1;
-		}
-		m_port = port;
-		m_depth = depth;
-		Attach(s);
-		return 0;
-	}
-
-	/** ipv6 bind to port with optional listen queue length (depth) */
-#ifdef IPPROTO_IPV6
-	int Bind6(port_t port, int depth = 3)
-	{
-		struct sockaddr_in6 sa;
-		SOCKET s;
-
-		if ( (s = CreateSocket6(SOCK_STREAM)) != INVALID_SOCKET)
-		{
-			memset(&sa, 0, sizeof(sa));
-			sa.sin6_family = AF_INET6;
-			sa.sin6_port = htons( port );
-			sa.sin6_flowinfo = 0;
-			sa.sin6_scope_id = 0;
-			// sa.sin6_addr is all 0
-			if (bind(s, (struct sockaddr *)&sa, sizeof(sa)) != -1)
-			{
-				if (listen(s, depth) != -1)
-				{
-					m_port = port;
-					m_depth = depth;
-					Attach(s);
-					return 0;
-				}
-				else
-				{
-					Handler().LogError(this, "listen", Errno, StrError(Errno), LOG_LEVEL_FATAL);
-				}
-			}
-			else
-			{
-				Handler().LogError(this, "bind", Errno, StrError(Errno), LOG_LEVEL_FATAL);
-			}
-			closesocket(s);
-		}
-		return -1;
-	}
 #endif
 
-	/** ipv6 bind to port on a specified address */
-#ifdef IPPROTO_IPV6
-	int Bind6(const std::string& address, port_t port, int depth = 3)
-	{
-		struct sockaddr_in6 sa;
-		SOCKET s;
-
-		if ( (s = CreateSocket6(SOCK_STREAM)) != INVALID_SOCKET)
-		{
-			struct in6_addr a;
-			memset(&sa, 0, sizeof(sa));
-			sa.sin6_family = AF_INET6;
-			sa.sin6_port = htons( port );
-			sa.sin6_flowinfo = 0;
-			sa.sin6_scope_id = 0;
-			// sa.sin6_addr is all 0
-			if (u2ip(address, a))
-			{
-				sa.sin6_addr = a;
-			}
-			if (bind(s, (struct sockaddr *)&sa, sizeof(sa)) != -1)
-			{
-				if (listen(s, depth) != -1)
-				{
-					m_port = port;
-					m_depth = depth;
-					Attach(s);
-					return 0;
-				}
-				else
-				{
-					Handler().LogError(this, "listen", Errno, StrError(Errno), LOG_LEVEL_FATAL);
-				}
-			}
-			else
-			{
-				Handler().LogError(this, "bind", Errno, StrError(Errno), LOG_LEVEL_FATAL);
-			}
-			closesocket(s);
-		}
-		return -1;
-	}
-#endif
-
+	/** Return assigned port number. */
 	port_t GetPort()
 	{
 		return m_port;
 	}
 
+	/** Return listen queue depth. */
 	int GetDepth()
 	{
 		return m_depth;
 	}
 
+	/** OnRead on a ListenSocket receives an incoming connection. */
 	void OnRead()
 	{
-		socklen_t len;
-		struct sockaddr *saptr;
-		socklen_t *lenptr = &len;
-		SOCKET a_s;
+		struct sockaddr sa;
+		socklen_t sa_len = sizeof(sa);
+		SOCKET a_s = accept(GetSocket(), &sa, &sa_len);
 
-#ifdef IPPROTO_IPV6
-		if (IsIpv6())
-		{
-			struct sockaddr_in6 sa;
-
-			saptr = (struct sockaddr *)&sa;
-			*lenptr = sizeof(struct sockaddr_in6);
-			a_s = accept(GetSocket(), saptr, lenptr);
-			if (a_s == INVALID_SOCKET)
-			{
-				Handler().LogError(this, "accept", Errno, StrError(Errno), LOG_LEVEL_ERROR);
-				return;
-			}
-			Socket *tmp;
-			if (m_bHasCreate)
-				tmp = m_creator -> Create();
-			else
-				tmp = new X(Handler());
-			TcpSocket *tcp = dynamic_cast<TcpSocket *>(tmp);
-			tmp -> SetIpv6();
-			tmp -> SetParent(this);
-			tmp -> Attach(a_s);
-			tmp -> SetNonblocking(true);
-			tmp -> SetRemoteAddress( (struct sockaddr *)saptr, len);
-			if (tcp)
-				tcp -> SetConnected(true);
-			tmp -> Init();
-			Handler().Add(tmp);
-			tmp -> SetDeleteByHandler(true);
-			if (Handler().OkToAccept())
-			{
-				if (tmp -> IsSSL()) // SSL Enabled socket
-					tmp -> OnSSLAccept();
-				else
-					tmp -> OnAccept();
-			}
-			else
-			{
-				Handler().LogError(this, "accept", -1, "Not OK to accept", LOG_LEVEL_FATAL);
-				tmp -> SetCloseAndDelete();
-			}
-			return;
-		}
-#endif
-		struct sockaddr_in sa;
-
-		saptr = (struct sockaddr *)&sa;
-		*lenptr = sizeof(struct sockaddr_in);
-		a_s = accept(GetSocket(), saptr, lenptr);
 		if (a_s == INVALID_SOCKET)
 		{
 			Handler().LogError(this, "accept", Errno, StrError(Errno), LOG_LEVEL_ERROR);
 			return;
 		}
-		Socket *tmp;
-		if (m_bHasCreate)
-			tmp = m_creator -> Create();
-		else
-			tmp = new X(Handler());
+		Socket *tmp = m_bHasCreate ? m_creator -> Create() : new X(Handler());
 		TcpSocket *tcp = dynamic_cast<TcpSocket *>(tmp);
+		tmp -> SetIpv6( IsIpv6() );
 		tmp -> SetParent(this);
 		tmp -> Attach(a_s);
 		tmp -> SetNonblocking(true);
-		tmp -> SetRemoteAddress( (struct sockaddr *)saptr, len);
+		tmp -> SetRemoteAddress( &sa, sa_len);
 		if (tcp)
 			tcp -> SetConnected(true);
 		tmp -> Init();
@@ -357,6 +243,7 @@ public:
 			Handler().LogError(this, "accept", -1, "Not OK to accept", LOG_LEVEL_FATAL);
 			tmp -> SetCloseAndDelete();
 		}
+
 	}
 
 //	X *GetCreator() { return m_creator; }

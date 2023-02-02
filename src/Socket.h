@@ -56,7 +56,7 @@ public:
 	 * needs to be used for the socket class. Note: the socket class still needs
 	 * the "default" constructor with one SocketHandler& as input parameter.
 	 */
-	virtual Socket *Create() { return NULL; }
+	virtual Socket *Create();
 
 	/** CTcpSocket uses this to create its ICrypt member variable.
 	 * The ICrypt member variable is created by a virtual method, therefore
@@ -74,14 +74,11 @@ public:
 	/** Close connection immediately - internal use.
 		\sa SetCloseAndDelete */
 	virtual int Close();
-	/** Create an ipv4 socket file descriptor. 
-		\param type SOCK_STREAM / SOCK_DGRAM / etc
-		\param protocol "tcp" / "udp" / etc */
-	SOCKET CreateSocket4(int type,const std::string& protocol = "");
-	/** Create an ipv6 socket file descriptor. 
-		\param type Socket type
-		\param protocol Socket protocol */
-	SOCKET CreateSocket6(int type,const std::string& protocol = "");
+	/** Create a socket file descriptor. 
+		\param af Address family AF_INET / AF_INET6 / ...
+		\param type SOCK_STREAM / SOCK_DGRAM / ...
+		\param protocol "tcp" / "udp" / ... */
+	SOCKET CreateSocket(int af,int type,const std::string& protocol = "");
 	/** Add file descriptor to sockethandler fd_set's. */
 	void Set(bool bRead,bool bWrite,bool bException = true);
 	/** Returns true when socket file descriptor is valid,
@@ -120,13 +117,13 @@ public:
 	 * become empty. */
 //	virtual void OnWriteComplete();
 	/** SSL client/server support - internal use. @see TcpSocket */
-	virtual void OnSSLConnect() {}
+	virtual void OnSSLConnect();
 	/** SSL client/server support - internal use. @see TcpSocket */
-	virtual void OnSSLAccept() {}
+	virtual void OnSSLAccept();
 	/** Connection retry callback - return false to abort connection attempts */
-	virtual bool OnConnectRetry() { return true; }
+	virtual bool OnConnectRetry();
 	/** a reconnect has been made */
-	virtual void OnReconnect() {}
+	virtual void OnReconnect();
 
 	/** Check whether a connection has been established. */
 	virtual bool CheckConnect();
@@ -136,7 +133,7 @@ public:
 	/** OLD SSL support. */
 	virtual bool SSLCheckConnect();
 	/** new SSL support */
-	virtual bool SSLNegotiate() { return false; }
+	virtual bool SSLNegotiate();
 
 	/** OLD SSL support, used by SSLSocket. */
 	void SetSSLConnecting(bool = true);
@@ -207,8 +204,8 @@ public:
 	/** Set socket non-block operation. */
 	bool SetNonblocking(bool, SOCKET);
 
-	/** Another uptime. Interesting. */
-	time_t Uptime() { return time(NULL) - m_tCreate; }
+	/** Total lifetime of instance. */
+	time_t Uptime();
 /*
 	void SetTimeout(time_t x) { m_timeout = x; }
 	time_t Timeout() { return m_timeout; }
@@ -218,26 +215,26 @@ public:
 	/** Callback fires when a new socket thread has started and this
 		socket is ready for operation again. 
 		\sa ResolvSocket */
-	virtual void OnDetached() {} // Threading
+	virtual void OnDetached();
 	/** Internal use. */
-	void SetDetach(bool x = true) { m_detach = x; }
+	void SetDetach(bool x = true);
 	/** Check detach flag.
 		\return true if the socket should detach to its own thread */
-	bool IsDetach() { return m_detach; }
+	bool IsDetach();
 	/** Internal use. */
-	void SetDetached(bool x = true) { m_detached = x; }
+	void SetDetached(bool x = true);
 	/** Check detached flag.
 		\return true if the socket runs in its own thread. */
-	bool IsDetached() { return m_detached; }
+	bool IsDetached();
 	/** Order this socket to start its own thread and call OnDetached
 		when ready for operation. */
 	bool Detach();
 
 	/** Enable ipv6 for this socket. */
-	void SetIpv6(bool x = true) { m_ipv6 = x; }
+	void SetIpv6(bool x = true);
 	/** Check ipv6 socket.
 		\return true if this is an ipv6 socket */
-	bool IsIpv6() { return m_ipv6; }
+	bool IsIpv6();
 
 	/** Returns pointer to ListenSocket that created this instance
 	 * on an incoming connection. */
@@ -250,48 +247,54 @@ public:
 
 	// pooling
 	/** Client = connecting TcpSocket. */
-	void SetIsClient() { m_bClient = true; }
+	void SetIsClient();
 	/** Socket type from socket() call. */
-	void SetSocketType(int x) { m_socket_type = x; }
+	void SetSocketType(int x);
 	/** Socket type from socket() call. */
-	int GetSocketType() { return m_socket_type; }
+	int GetSocketType();
 	/** Protocol type from socket() call. */
-	void SetSocketProtocol(const std::string& x) { m_socket_protocol = x; }
+	void SetSocketProtocol(const std::string& x);
 	/** Protocol type from socket() call. */
-	const std::string& GetSocketProtocol() { return m_socket_protocol; }
+	const std::string& GetSocketProtocol();
 	/** Set address of last connect() call. */
-	void SetClientRemoteAddr(ipaddr_t a) { m_client_remote_addr = a; }
+	void SetClientRemoteAddr(ipaddr_t a);
+#ifdef IPPROTO_IPV6
+	/** IPV6: Set address of last connect() call. */
+	void SetClientRemoteAddr(in6_addr a);
+	/** IPV6: Returns address of last connect() call. */
+	in6_addr& GetClientRemoteAddr6();
+#endif
 	/** Returns address of last connect() call. */
-	ipaddr_t& GetClientRemoteAddr() { return m_client_remote_addr; }
+	ipaddr_t& GetClientRemoteAddr();
 	/** Set port of last connect() call. */
-	void SetClientRemotePort(port_t p) { m_client_remote_port = p; }
+	void SetClientRemotePort(port_t p);
 	/** Returns port number of last connect() call. */
-	port_t GetClientRemotePort() { return m_client_remote_port; }
+	port_t GetClientRemotePort();
 	/** Instruct a client socket to stay open in the connection pool after use. */
-	void SetRetain() { if (m_bClient) m_bRetain = true; }
+	void SetRetain();
 	/** Check retain flag.
 		\return true if the socket should be moved to connection pool after use */
-	bool Retain() { return m_bRetain; }
+	bool Retain();
 	/** Connection lost - error while reading/writing from a socket. */
-	void SetLost() { m_bLost = true; }
+	void SetLost();
 	/** Check connection lost status flag.
 		\return true if there was an error while r/w causing the socket to close */
-	bool Lost() { return m_bLost; }
+	bool Lost();
 	/** Instruct socket to call OnConnect callback next sockethandler cycle. */
-	void SetCallOnConnect(bool x = true) { m_call_on_connect = x; }
+	void SetCallOnConnect(bool x = true);
 	/** Check call on connect flag.
 		\return true if OnConnect() should be called a.s.a.p */
-	bool CallOnConnect() { return m_call_on_connect; }
+	bool CallOnConnect();
 
 	/** Copy connection parameters from sock. */
 	void CopyConnection(Socket *sock);
 
 	/** Socket option SO_REUSEADDR.
 		\sa OnOptions */
-	void SetReuse(bool x) { m_opt_reuse = x; }
+	void SetReuse(bool x);
 	/** Socket option SO_KEEPALIVE.
 		\sa OnOptions */
-	void SetKeepalive(bool x) { m_opt_keepalive = x; }
+	void SetKeepalive(bool x);
 
 	/** Request an asynchronous dns resolution. 
 		\param host hostname to be resolved
@@ -302,77 +305,77 @@ public:
 		\param id Resolve ID from Resolve call
 		\param a resolved ip address
 		\param port port number passed to Resolve */
-	virtual void Resolved(int id,ipaddr_t a,port_t port);
+	virtual void OnResolved(int id,ipaddr_t a,port_t port);
 
 	/** socket still in socks4 negotiation mode */
-	bool Socks4() { return m_bSocks4; }
+	bool Socks4();
 	/** Set flag indicating Socks4 handshaking in progress */
-	void SetSocks4(bool x = true) { m_bSocks4 = x; }
+	void SetSocks4(bool x = true);
 
 	/** Set socks4 server host address to use */
-	void SetSocks4Host(ipaddr_t a) { m_socks4_host = a; }
+	void SetSocks4Host(ipaddr_t a);
 	/** Set socks4 server hostname to use. */
 	void SetSocks4Host(const std::string& );
 	/** Socks4 server port to use. */
-	void SetSocks4Port(port_t p) { m_socks4_port = p; }
+	void SetSocks4Port(port_t p);
 	/** Provide a socks4 userid if required by the socks4 server. */
-	void SetSocks4Userid(const std::string& x) { m_socks4_userid = x; }
+	void SetSocks4Userid(const std::string& x);
 	/** Get the ip address of socks4 server to use.
 		\return socks4 server host address */
-	ipaddr_t GetSocks4Host() { return m_socks4_host; }
+	ipaddr_t GetSocks4Host();
 	/** Get the socks4 server port to use.
 		\return socks4 server port */
-	port_t GetSocks4Port() { return m_socks4_port; }
+	port_t GetSocks4Port();
 	/** Get socks4 userid.
 		\return Socks4 userid */
-	const std::string& GetSocks4Userid() { return m_socks4_userid; }
+	const std::string& GetSocks4Userid();
 
 	/** Set timeout to use for connection attempt.
 		\param x Timeout in seconds */
-	void SetConnectTimeout(int x) { m_connect_timeout = x; }
+	void SetConnectTimeout(int x);
 	/** Return number of seconds to wait for a connection.
 		\return Connection timeout (seconds) */
-	int GetConnectTimeout() { return m_connect_timeout; }
+	int GetConnectTimeout();
 
 	/** Check if SSL is Enabled for this TcpSocket.
 		\return true if this is a TcpSocket with SSL enabled */
-	bool IsSSL() { return m_b_enable_ssl; }
+	bool IsSSL();
 	/** Enable SSL operation for a TcpSocket. */
-	void EnableSSL(bool x = true) { m_b_enable_ssl = x; }
+	void EnableSSL(bool x = true);
 	/** Still negotiating ssl connection.
 		\return true if ssl negotiating is still in progress */
-	bool IsSSLNegotiate() { return m_b_ssl; }
+	bool IsSSLNegotiate();
 	/** Set flag indicating ssl handshaking still in progress. */
-	void SetSSLNegotiate(bool x = true) { m_b_ssl = x; }
+	void SetSSLNegotiate(bool x = true);
 	/** OnAccept called with SSL Enabled.
 		\return true if this is a TcpSocket with an incoming SSL connection */
-	bool IsSSLServer() { return m_b_ssl_server; }
+	bool IsSSLServer();
 	/** Set flag indicating that this is a TcpSocket with incoming SSL connection. */
-	void SetSSLServer(bool x = true) { m_b_ssl_server = x; }
+	void SetSSLServer(bool x = true);
 
 	/** Ignore read events for an output only socket. */
-	void DisableRead(bool x = true) { m_b_disable_read = x; }
+	void DisableRead(bool x = true);
 	/** Check ignore read events flag.
 		\return true if read events should be ignored */
-	bool IsDisableRead() { return m_b_disable_read; }
+	bool IsDisableRead();
 
 	/** Set flag to initiate a connection attempt after a connection timeout. */
-	void SetRetryClientConnect(bool x = true) { m_b_retry_connect = x; }
+	void SetRetryClientConnect(bool x = true);
 	/** Check if a connection attempt should be made.
 		\return true when another attempt should be made */
-	bool RetryClientConnect() { return m_b_retry_connect; }
+	bool RetryClientConnect();
 
 	/** Common interface for SendBuf used by Tcp and Udp sockets. */
-	virtual void SendBuf(const char *,size_t,int = 0) {}
+	virtual void SendBuf(const char *,size_t,int = 0);
 	/** Common interface for Send used by Tcp and Udp sockets. */
-	virtual void Send(const std::string&,int = 0) {}
+	virtual void Send(const std::string&,int = 0);
 
 	//
 #ifdef _THREADSAFE_SOCKETS
 	/** Returns read/write mutex in threadsafe mode. 
 		\sa OnWrite
 		\sa SendBuf */
-	Mutex& GetMutex() { return m_rwmutex; }
+	Mutex& GetMutex();
 #endif
 
 protected:
@@ -431,6 +434,9 @@ static	WSAInitializer m_winsock_init; ///< Winsock initialization singleton clas
 	bool m_b_ssl_server; ///< True if this is an incoming ssl TcpSocket connection
 	bool m_b_disable_read; ///< Disable checking for read events
 	bool m_b_retry_connect; ///< Try another connection attempt next SocketHandler cycle
+#ifdef IPPROTO_IPV6
+	in6_addr m_client_remote_addr6; ///< Address used by connect() ipv6
+#endif
 };
 
 #ifdef SOCKETS_NAMESPACE
