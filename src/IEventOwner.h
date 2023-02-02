@@ -46,7 +46,17 @@ public:
 	IEventOwner(IEventHandler& h);
 	virtual ~IEventOwner();
 
-	int AddEvent(long sec,long usec);
+	/** Schedule event.
+		\param sec Seconds until event
+		\param usec Microseconds until event
+		\return Event ID */
+	long AddEvent(long sec,long usec);
+	/** Clear all events scheduled by this owner. */
+	void ClearEvents();
+	/** Remove one event scheduled by this owner.
+		\param eid Event ID to remove */
+	void RemoveEvent(long eid);
+	/** Event callback will fire when time is up. */
 	virtual void OnEvent(int) = 0;
 
 	IEventHandler& EventHandler();

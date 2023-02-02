@@ -41,6 +41,13 @@ namespace SOCKETS_NAMESPACE {
 #endif
 
 
+#ifdef _DEBUG
+#define DEB(x) x
+#else
+#define DEB(x)
+#endif
+
+
 EventHandler::EventHandler(StdLog *p) : SocketHandler(p), m_quit(false)
 {
 }
@@ -53,6 +60,14 @@ EventHandler::EventHandler(Mutex& m,StdLog *p) : SocketHandler(m, p), m_quit(fal
 
 EventHandler::~EventHandler()
 {
+DEB(	printf("~EventHandler()\n");)
+	while (m_events.size())
+	{
+		std::list<Event *>::iterator it = m_events.begin();
+		Event *e = *it;
+		delete e;
+		m_events.erase(it);
+	}
 }
 
 
@@ -92,7 +107,7 @@ void EventHandler::CheckEvents()
 }
 
 
-int EventHandler::AddEvent(IEventOwner *from,long sec,long usec)
+long EventHandler::AddEvent(IEventOwner *from,long sec,long usec)
 {
 	Event *e = new Event(from, sec, usec);
 	std::list<Event *>::iterator it = m_events.begin();
@@ -150,6 +165,23 @@ void EventHandler::SetQuit(bool x)
 }
 
 
+void EventHandler::RemoveEvent(IEventOwner *from, long eid)
+{
+	for (std::list<Event *>::iterator it = m_events.begin(); it != m_events.end(); it++)
+	{
+		Event *e = *it;
+		if (from == e -> GetFrom() && eid == e -> GetID())
+		{
+			delete e;
+			m_events.erase(it);
+			break;
+		}
+	}
+}
+
+
 #ifdef SOCKETS_NAMESPACE
 }
 #endif
+
+

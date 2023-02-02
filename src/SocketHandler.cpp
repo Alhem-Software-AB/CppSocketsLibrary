@@ -102,6 +102,7 @@ SocketHandler::SocketHandler(Mutex& mutex,StdLog *p)
 
 SocketHandler::~SocketHandler()
 {
+DEB(	printf("~SocketHandler()\n");)
 	if (m_resolver)
 	{
 		m_resolver -> Quit();
@@ -111,7 +112,7 @@ SocketHandler::~SocketHandler()
 		while (m_sockets.size())
 		{
 			socket_m::iterator it = m_sockets.begin();
-			Socket *p = (*it).second;
+			Socket *p = it -> second;
 			if (p)
 			{
 				p -> Close();
@@ -155,7 +156,7 @@ void SocketHandler::Add(Socket *p)
 	}
 	for (socket_m::iterator it = m_add.begin(); it != m_add.end(); it++)
 	{
-		if ((*it).first == p -> GetSocket())
+		if (it -> first == p -> GetSocket())
 		{
 			LogError(p, "Add", (int)p -> GetSocket(), "Attempt to add socket already in add queue", LOG_LEVEL_FATAL);
 			m_delete.push_back(p);
@@ -252,14 +253,14 @@ int SocketHandler::Select(struct timeval *tsel)
 			break;
 		}
 		socket_m::iterator it = m_add.begin();
-		SOCKET s = (*it).first;
-		Socket *p = (*it).second;
+		SOCKET s = it -> first;
+		Socket *p = it -> second;
 		//
 		{
 			bool dup = false;
 			for (socket_m::iterator it = m_sockets.begin(); it != m_sockets.end(); it++)
 			{
-				if ((*it).first == p -> GetSocket())
+				if (it -> first == p -> GetSocket())
 				{
 					LogError(p, "Add", (int)p -> GetSocket(), "Attempt to add socket already in controlled queue", LOG_LEVEL_FATAL);
 					m_delete.push_back(p);
@@ -352,9 +353,17 @@ DEB(
 			SOCKET i = *it2;
 			if (FD_ISSET(i, &rfds))
 			{
-				Socket *p = GetSocket(i); //m_sockets[i];
+				Socket *p = NULL; //GetSocket(i); //m_sockets[i];
+				{
+					socket_m::iterator itmp = m_sockets.find(i);
+					if (itmp != m_sockets.end()) // found
+					{
+						p = itmp -> second;
+					}
+				}
 				if (!p)
 				{
+					LogError(p, "GetSocket/handler/1", (int)i, "Did not find expected socket using file descriptor", LOG_LEVEL_WARNING);
 					n--;
 					continue;
 				}
@@ -392,9 +401,17 @@ DEB(
 			}
 			if (FD_ISSET(i, &wfds))
 			{
-				Socket *p = GetSocket(i); //m_sockets[i];
+				Socket *p = NULL; //GetSocket(i); //m_sockets[i];
+				{
+					socket_m::iterator itmp = m_sockets.find(i);
+					if (itmp != m_sockets.end()) // found
+					{
+						p = itmp -> second;
+					}
+				}
 				if (!p)
 				{
+					LogError(p, "GetSocket/handler/2", (int)i, "Did not find expected socket using file descriptor", LOG_LEVEL_WARNING);
 					n--;
 					continue;
 				}
@@ -449,9 +466,17 @@ DEB(
 			}
 			if (FD_ISSET(i, &efds))
 			{
-				Socket *p = GetSocket(i); //m_sockets[i];
+				Socket *p = NULL; //GetSocket(i); //m_sockets[i];
+				{
+					socket_m::iterator itmp = m_sockets.find(i);
+					if (itmp != m_sockets.end()) // found
+					{
+						p = itmp -> second;
+					}
+				}
 				if (!p)
 				{
+					LogError(p, "GetSocket/handler/3", (int)i, "Did not find expected socket using file descriptor", LOG_LEVEL_WARNING);
 					n--;
 					continue;
 				}
@@ -467,7 +492,18 @@ DEB(
 		socket_v tmp = m_fds_callonconnect;
 		for (socket_v::iterator it = tmp.begin(); it != tmp.end(); it++)
 		{
-			Socket *p = GetSocket(*it); //m_sockets[*it];
+			Socket *p = NULL; //GetSocket(*it); //m_sockets[*it];
+			{
+				socket_m::iterator itmp = m_sockets.find(*it);
+				if (itmp != m_sockets.end()) // found
+				{
+					p = itmp -> second;
+				}
+				else
+				{
+					LogError(p, "GetSocket/handler/4", (int)*it, "Did not find expected socket using file descriptor", LOG_LEVEL_WARNING);
+				}
+			}
 			if (p)
 			{
 				if (p -> CallOnConnect() && p -> Ready() )
@@ -506,7 +542,18 @@ DEB(
 	{
 		for (socket_v::iterator it = m_fds_detach.begin(); it != m_fds_detach.end(); it++)
 		{
-			Socket *p = GetSocket(*it); //m_sockets[*it];
+			Socket *p = NULL; //GetSocket(*it); //m_sockets[*it];
+			{
+				socket_m::iterator itmp = m_sockets.find(*it);
+				if (itmp != m_sockets.end()) // found
+				{
+					p = itmp -> second;
+				}
+				else
+				{
+					LogError(p, "GetSocket/handler/5", (int)*it, "Did not find expected socket using file descriptor", LOG_LEVEL_WARNING);
+				}
+			}
 			if (p)
 			{
 				if (p -> IsDetach())
@@ -528,7 +575,19 @@ DEB(
 		socket_v tmp = m_fds_connecting;
 		for (socket_v::iterator it = tmp.begin(); it != tmp.end(); it++)
 		{
-			Socket *p = GetSocket(*it); //m_sockets[*it];
+			Socket *p = NULL; //GetSocket(*it); //m_sockets[*it];
+			{
+				socket_m::iterator itmp = m_sockets.find(*it);
+				if (itmp != m_sockets.end()) // found
+				{
+					p = itmp -> second;
+				}
+				else
+				{
+					// %! this one fires from time to time
+//					LogError(p, "GetSocket/handler/6", (int)*it, "Did not find expected socket using file descriptor", LOG_LEVEL_WARNING);
+				}
+			}
 			if (p)
 			{
 				if (p -> Connecting() && p -> GetConnectTime() >= p -> GetConnectTimeout() )
@@ -573,7 +632,18 @@ DEB(
 		socket_v tmp = m_fds_retry;
 		for (socket_v::iterator it = tmp.begin(); it != tmp.end(); it++)
 		{
-			Socket *p = GetSocket(*it); //m_sockets[*it];
+			Socket *p = NULL; //GetSocket(*it); //m_sockets[*it];
+			{
+				socket_m::iterator itmp = m_sockets.find(*it);
+				if (itmp != m_sockets.end()) // found
+				{
+					p = itmp -> second;
+				}
+				else
+				{
+					LogError(p, "GetSocket/handler/7", (int)*it, "Did not find expected socket using file descriptor", LOG_LEVEL_WARNING);
+				}
+			}
 			if (p)
 			{
 				if (p -> RetryClientConnect())
@@ -604,7 +674,18 @@ DEB(
 		socket_v tmp = m_fds_close;
 		for (socket_v::iterator it = tmp.begin(); it != tmp.end(); it++)
 		{
-			Socket *p = GetSocket(*it); //m_sockets[*it];
+			Socket *p = NULL; //GetSocket(*it); //m_sockets[*it];
+			{
+				socket_m::iterator itmp = m_sockets.find(*it);
+				if (itmp != m_sockets.end()) // found
+				{
+					p = itmp -> second;
+				}
+				else
+				{
+					LogError(p, "GetSocket/handler/8", (int)*it, "Did not find expected socket using file descriptor", LOG_LEVEL_WARNING);
+				}
+			}
 			if (p)
 			{
 				if (p -> CloseAndDelete() )
@@ -712,9 +793,9 @@ DEB(
 		{
 			for (socket_m::iterator it = m_sockets.begin(); it != m_sockets.end(); it++)
 			{
-				if ((*it).first == nn)
+				if (it -> first == nn)
 				{
-					Socket *p = (*it).second;
+					Socket *p = it -> second;
 					if (p -> ErasedByHandler())
 					{
 						delete p;
@@ -757,7 +838,7 @@ bool SocketHandler::Valid(Socket *p0)
 {
 	for (socket_m::iterator it = m_sockets.begin(); it != m_sockets.end(); it++)
 	{
-		Socket *p = (*it).second;
+		Socket *p = it -> second;
 		if (p0 == p)
 			return true;
 	}
@@ -802,7 +883,7 @@ PoolSocket *SocketHandler::FindConnection(int type,const std::string& protocol,i
 {
 	for (socket_m::iterator it = m_sockets.begin(); it != m_sockets.end() && m_sockets.size(); it++)
 	{
-		PoolSocket *pools = dynamic_cast<PoolSocket *>((*it).second);
+		PoolSocket *pools = dynamic_cast<PoolSocket *>(it -> second);
 		if (pools)
 		{
 			if (pools -> GetSocketType() == type &&
@@ -825,7 +906,7 @@ PoolSocket *SocketHandler::FindConnection(int type,const std::string& protocol,i
 {
 	for (socket_m::iterator it = m_sockets.begin(); it != m_sockets.end() && m_sockets.size(); it++)
 	{
-		PoolSocket *pools = dynamic_cast<PoolSocket *>((*it).second);
+		PoolSocket *pools = dynamic_cast<PoolSocket *>(it -> second);
 		if (pools)
 		{
 			if (pools -> GetSocketType() == type &&
@@ -965,7 +1046,7 @@ void SocketHandler::Remove(Socket *p)
 	}
 	for (socket_m::iterator it = m_sockets.begin(); it != m_sockets.end(); it++)
 	{
-		if ((*it).second == p)
+		if (it -> second == p)
 		{
 			LogError(p, "Remove", -1, "Socket destructor called while still in use", LOG_LEVEL_WARNING);
 			m_sockets.erase(it);
@@ -1033,12 +1114,10 @@ Mutex& SocketHandler::GetMutex() const
 
 Socket *SocketHandler::GetSocket(SOCKET n)
 {
-	for (socket_m::iterator it = m_sockets.begin(); it != m_sockets.end(); it++)
+	socket_m::iterator it = m_sockets.find(n);
+	if (it != m_sockets.end())
 	{
-		if ((*it).first == n)
-		{
-			return (*it).second;
-		}
+		return it -> second;
 	}
 	// TODO: why do we sometimes get here?
 	return NULL;

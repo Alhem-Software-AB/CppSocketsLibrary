@@ -35,6 +35,13 @@ namespace SOCKETS_NAMESPACE {
 #endif
 
 
+#ifdef _DEBUG
+#define DEB(x) x
+#else
+#define DEB(x)
+#endif
+
+
 // statics
 std::string Utility::m_host;
 bool Utility::m_local_resolved = false;
@@ -248,12 +255,26 @@ bool Utility::u2ip(const std::string& str, ipaddr_t& l)
 	}
 	else
 	{
+#ifdef _WIN32
 		struct hostent *he = gethostbyname( str.c_str() );
 		if (!he)
 		{
 			return false;
 		}
 		memcpy(&l, he -> h_addr, 4);
+#else
+		struct hostent he;
+		struct hostent *result;
+		int myerrno;
+		char buf[2000];
+		int n = gethostbyname_r(str.c_str(), &he, buf, sizeof(buf), &result, &myerrno);
+		if (n)
+		{
+DEB(printf("Resolve strerror: %s\n", strerror(myerrno));)
+			return false;
+		}
+		memcpy(&l, he.h_addr, 4);
+#endif
 		return true;
 	}
 	return false;

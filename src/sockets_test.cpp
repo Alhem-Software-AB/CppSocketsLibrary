@@ -117,7 +117,7 @@ public:
 		return new OrderSocket(Handler());
 	}
 	void OnAccept() {
-		Send("Cmd (get,quit,list,stop)>");
+		Send("Cmd (get,quit,list,stop,detach,count,resolve <name>)>");
 	}
 	void OnLine(const std::string& line) {
 		Parse pa(line);
@@ -152,6 +152,17 @@ public:
 		if (cmd == "resolve")
 		{
 			//Resolve( arg );
+			ipaddr_t a;
+			if (Utility::u2ip(arg, a))
+			{
+				std::string tmp;
+				Utility::l2ip(a, tmp);
+				Send("Resolved: " + tmp + "\n");
+			}
+			else
+			{
+				Send("Resolve failed: " + arg + "\n");
+			}
 		}
 		else
 		if (cmd == "detach")

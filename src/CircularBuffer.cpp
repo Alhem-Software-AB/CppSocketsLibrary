@@ -167,6 +167,21 @@ Socket& CircularBuffer::GetOwner() const
 }
 
 
+std::string CircularBuffer::ReadString(size_t l)
+{
+	char *sz = new char[l + 1];
+	if (!Read(sz, l)) // failed, debug printout in Read() method
+	{
+		delete[] sz;
+		return "";
+	}
+	sz[l] = 0;
+	std::string tmp = sz;
+	delete[] sz;
+	return tmp;
+}
+
+
 #ifdef SOCKETS_NAMESPACE
 }
 #endif

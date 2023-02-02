@@ -1,5 +1,5 @@
-VERSION =	2.0.5
-DIFF_VERSION =	2.0.4a
+VERSION =	2.0.6
+DIFF_VERSION =	2.0.5
 
 INCLUDE =	-I.
 PREFIX =	/usr/local
@@ -15,7 +15,7 @@ CFLAGS =	-Wall -g $(INCLUDE) -MD -D_VERSION='"$(VERSION)"'
 CFLAGS +=	-O2
 
 # Enable insane amounts of debug output to stdout/stderr:
-#CFLAGS +=	-D_DEBUG
+CFLAGS +=	-D_DEBUG
 
 # Define SOCKETS_DYNAMIC_TEMP to use dynamically allocated buffers
 # in read operations - helps on ECOS

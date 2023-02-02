@@ -8,7 +8,7 @@ Copyright (C) 2004,2005  Anders Hedstrom
 This library is made available under the terms of the GNU GPL.
 
 If you would like to use this library in a closed-source application,
-a separate license agreement is available. For information about 
+a separate license agreement is available. For information about
 the closed-source license agreement for the C++ sockets library,
 please visit http://www.alhem.net/Sockets/license.html and/or
 email license@alhem.net.
@@ -103,20 +103,6 @@ void ResolvSocket::OnDetached()
 		int n = getaddrinfo(m_data.c_str(), NULL, &hints, &res);
 		if (!n)
 		{
-/*
-       struct addrinfo {
-           int     ai_flags;
-           int     ai_family; // PF_INET, PF_INET6
-           int     ai_socktype;
-           int     ai_protocol;
-           size_t  ai_addrlen;
-           struct sockaddr *ai_addr;
-           char   *ai_canonname;
-           struct addrinfo *ai_next;
-       };
-
-
-*/
 			while (res)
 			{
 				Send("Flags: " + Utility::l2string(res -> ai_flags) + "\n");
@@ -150,25 +136,57 @@ void ResolvSocket::OnDetached()
 #endif // _WIN32
 	if (m_query == "gethostbyname")
 	{
+#ifndef _WIN32
+		struct hostent he;
+		struct hostent *result;
+		int myerrno;
+		char buf[2000];
+		// solaris safe?
+		int n = gethostbyname_r(m_data.c_str(), &he, buf, sizeof(buf), &result, &myerrno);
+		if (!n)
+		{
+			Send("Name: " + (std::string)he.h_name);
+			size_t i = 0;
+			while (he.h_aliases[i])
+			{
+				Send("Alias: " + (std::string)he.h_aliases[i] + "\n");
+				i++;
+			}
+			Send("AddrType: " + Utility::l2string(he.h_addrtype) + "\n");
+			Send("Length: " + Utility::l2string(he.h_length) + "\n");
+			i = 0;
+			while (he.h_addr_list[i])
+			{
+				// let's assume 4 byte IPv4 addresses
+				char ip[40];
+				*ip = 0;
+				for (int j = 0; j < 4; j++)
+				{
+					if (*ip)
+						strcat(ip,".");
+					sprintf(ip + strlen(ip),"%u",(unsigned char)he.h_addr_list[i][j]);
+				}
+				Send("A: " + (std::string)ip + "\n");
+				i++;
+			}
+		}
+		else
+		{
+			Send("Failed\n");
+		}
+		Send("\n");
+#else
 		struct hostent *h = gethostbyname(m_data.c_str());
 		if (h)
 		{
-//			sprintf(slask, "Name: %s\n", h -> h_name);
-//			Send( slask );
 			Send("Name: " + (std::string)h -> h_name + "\n");
 			size_t i = 0;
 			while (h -> h_aliases[i])
 			{
-//				sprintf(slask, "Alias: %s\n", h -> h_aliases[i]);
-//				Send( slask );
 				Send("Alias: " + (std::string)h -> h_aliases[i] + "\n");
 				i++;
 			}
-//			sprintf(slask, "AddrType: %d\n", h -> h_addrtype);
-//			Send( slask );
 			Send("AddrType: " + Utility::l2string(h -> h_addrtype) + "\n");
-//			sprintf(slask, "Length: %d\n", h -> h_length);
-//			Send( slask );
 			Send("Length: " + Utility::l2string(h -> h_length) + "\n");
 			i = 0;
 			while (h -> h_addr_list[i])
@@ -182,8 +200,6 @@ void ResolvSocket::OnDetached()
 						strcat(ip,".");
 					sprintf(ip + strlen(ip),"%u",(unsigned char)h -> h_addr_list[i][j]);
 				}
-//				sprintf(slask, "A: %s\n", ip);
-//				Send( slask );
 				Send("A: " + (std::string)ip + "\n");
 				i++;
 			}
@@ -193,6 +209,7 @@ void ResolvSocket::OnDetached()
 			Send("Failed\n");
 		}
 		Send( "\n" );
+#endif
 	}
 	else
 	if (m_query == "gethostbyaddr")

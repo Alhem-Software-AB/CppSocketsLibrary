@@ -53,6 +53,8 @@ public:
 	bool Read(char *dest,size_t l);
 	/** skip l bytes from buffer */
 	bool Remove(size_t l);
+	/** read l bytes from buffer, returns as string. */
+	std::string ReadString(size_t l);
 
 	/** total buffer length */
 	size_t GetLength();

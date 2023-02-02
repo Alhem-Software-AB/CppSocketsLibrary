@@ -52,9 +52,21 @@ IEventHandler& IEventOwner::EventHandler()
 }
 
 
-int IEventOwner::AddEvent(long sec,long usec)
+long IEventOwner::AddEvent(long sec,long usec)
 {
 	return m_event_handler.AddEvent(this, sec, usec);
+}
+
+
+void IEventOwner::ClearEvents()
+{
+	m_event_handler.ClearEvents(this);
+}
+
+
+void IEventOwner::RemoveEvent(long eid)
+{
+	m_event_handler.RemoveEvent(this, eid);
 }
 
 

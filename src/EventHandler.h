@@ -51,12 +51,15 @@ public:
 	EventHandler(Mutex&,StdLog * = NULL);
 	~EventHandler();
 
-	bool GetTimeUntilNextEvent(struct timeval *);
+	bool GetTimeUntilNextEvent(struct timeval *tv);
 	void CheckEvents();
-	int AddEvent(IEventOwner *,long sec,long usec);
-	void ClearEvents(IEventOwner *);
+	long AddEvent(IEventOwner *from,long sec,long usec);
+	void ClearEvents(IEventOwner *from);
+	void RemoveEvent(IEventOwner *from,long eid);
 
+	/** SocketHandler while() loop implemented with event functionality. */
 	void EventLoop();
+	/** Stop event loop. */
 	void SetQuit(bool = true);
 
 private:
