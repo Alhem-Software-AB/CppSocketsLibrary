@@ -35,7 +35,7 @@ namespace SOCKETS_NAMESPACE
 #endif
 
 
-SctpSocket::SctpSocket(ISocketHandler& h,int type) : Socket(h)
+SctpSocket::SctpSocket(ISocketHandler& h,int type) : StreamSocket(h)
 ,m_type(type)
 ,m_buf(new char[SCTP_BUFSIZE_READ])
 {
@@ -362,11 +362,20 @@ void SctpSocket::OnWrite()
 {
 	if (Connecting())
 	{
-		if (CheckConnect())
+		int err = SoError();
+
+		// don't reset connecting flag on error here, we want the OnConnectFailed timeout later on
+		/// \todo add to read fd_set here
+		if (!err) // ok
 		{
+			Set(!IsDisableRead(), false);
+			SetConnecting(false);
 			SetCallOnConnect();
 			return;
 		}
+		Handler().LogError(this, "sctp: connect failed", err, StrError(err), LOG_LEVEL_FATAL);
+		Set(false, false); // no more monitoring because connection failed
+
 		// failed
 #ifdef ENABLE_SOCKS4
 		if (Socks4())
@@ -390,6 +399,86 @@ void SctpSocket::OnWrite()
 		OnConnectFailed();
 		return;
 	}
+}
+
+
+void SctpSocket::OnConnectTimeout()
+{
+	Handler().LogError(this, "connect", -1, "connect timeout", LOG_LEVEL_FATAL);
+#ifdef ENABLE_SOCKS4
+	if (Socks4())
+	{
+		OnSocks4ConnectFailed();
+		// retry direct connection
+	}
+	else
+#endif
+	if (GetConnectionRetry() == -1 ||
+		(GetConnectionRetry() && GetConnectionRetries() < GetConnectionRetry()) )
+	{
+		IncreaseConnectionRetries();
+		// ask socket via OnConnectRetry callback if we should continue trying
+		if (OnConnectRetry())
+		{
+			SetRetryClientConnect();
+		}
+		else
+		{
+			SetCloseAndDelete( true );
+			/// \todo state reason why connect failed
+			OnConnectFailed();
+		}
+	}
+	else
+	{
+		SetCloseAndDelete(true);
+		/// \todo state reason why connect failed
+		OnConnectFailed();
+	}
+	//
+	SetConnecting(false);
+}
+
+
+#ifdef _WIN32
+void SctpSocket::OnException()
+{
+	if (Connecting())
+	{
+#ifdef ENABLE_SOCKS4
+		if (Socks4())
+			OnSocks4ConnectFailed();
+		else
+#endif
+		if (GetConnectionRetry() == -1 ||
+			(GetConnectionRetry() &&
+			 GetConnectionRetries() < GetConnectionRetry() ))
+		{
+			// even though the connection failed at once, only retry after
+			// the connection timeout
+			// should we even try to connect again, when CheckConnect returns
+			// false it's because of a connection error - not a timeout...
+		}
+		else
+		{
+			SetConnecting(false); // tnx snibbe
+			SetCloseAndDelete();
+			OnConnectFailed();
+		}
+		return;
+	}
+	// %! exception doesn't always mean something bad happened, this code should be reworked
+	// errno valid here?
+	int err = SoError();
+	Handler().LogError(this, "exception on select", err, StrError(err), LOG_LEVEL_FATAL);
+	SetCloseAndDelete();
+}
+#endif // _WIN32
+
+
+int SctpSocket::Protocol()
+{
+	return IPPROTO_SCTP;
 }
 
 

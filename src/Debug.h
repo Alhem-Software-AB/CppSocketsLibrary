@@ -3,6 +3,9 @@
 
 #include "sockets-config.h"
 #include <string>
+#include "Utility.h"
+#include <map>
+
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
@@ -11,34 +14,41 @@ namespace SOCKETS_NAMESPACE {
 
 class Debug
 {
+static	const char *colors[];
+
 public:
 	Debug(const std::string& x) : m_id(0), m_text(x) {
-		for (int i = 0; i < m_level; i++)
+		fprintf(stderr, "%s", colors[Utility::ThreadID() % 16 + 1]);
+		for (int i = 0; i < m_level[Utility::ThreadID()]; i++)
 			fprintf(stderr, "  ");
-		fprintf(stderr, "%s\n", x.c_str());
-		m_level++;
+		fprintf(stderr, "%s%s\n", x.c_str(), colors[0]);
+		m_level[Utility::ThreadID()]++;
 	}
 	Debug(int id, const std::string& x) : m_id(id), m_text(x) {
-		for (int i = 0; i < m_level; i++)
+		fprintf(stderr, "%s", colors[Utility::ThreadID() % 16 + 1]);
+		for (int i = 0; i < m_level[Utility::ThreadID()]; i++)
 			fprintf(stderr, "  ");
-		fprintf(stderr, "%d> %s\n", m_id, x.c_str());
-		m_level++;
+		fprintf(stderr, "%d> %s%s\n", m_id, x.c_str(), colors[0]);
+		m_level[Utility::ThreadID()]++;
 	}
 	~Debug() {
-		if (m_level)
-			m_level--;
-		for (int i = 0; i < m_level; i++)
+		if (m_level[Utility::ThreadID()])
+			m_level[Utility::ThreadID()]--;
+		fprintf(stderr, "%s", colors[Utility::ThreadID() % 16 + 1]);
+		for (int i = 0; i < m_level[Utility::ThreadID()]; i++)
 			fprintf(stderr, "  ");
 		if (m_id)
-			fprintf(stderr, "%d> /%s\n", m_id, m_text.c_str());
+			fprintf(stderr, "%d> /%s%s\n", m_id, m_text.c_str(), colors[0]);
 		else
-			fprintf(stderr, "/%s\n", m_text.c_str());
+			fprintf(stderr, "/%s%s\n", m_text.c_str(), colors[0]);
 		fflush(stderr);
 	}
+static	void Print(const char *format, ...);
+
 private:
 	int m_id;
 	std::string m_text;
-static	int m_level;
+static	std::map<unsigned long, int> m_level;
 };
 
 

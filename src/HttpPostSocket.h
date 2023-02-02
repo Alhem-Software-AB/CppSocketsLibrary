@@ -32,6 +32,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "sockets-config.h"
 #include "HttpClientSocket.h"
+#include "Mutex.h"
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
@@ -80,6 +81,8 @@ private:
 	std::map<std::string,long> m_content_length;
 	std::map<std::string,std::string> m_content_type;
 	bool m_bMultipart;
+static	int m_boundary_count;
+static	Mutex m_boundary_mutex;
 };
 
 

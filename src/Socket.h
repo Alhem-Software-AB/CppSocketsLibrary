@@ -42,7 +42,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <time.h>
 #include "Utility.h"
 #include "SocketAddress.h"
-#include "RandomNumber.h"
 #include "Thread.h"
 
 
@@ -98,6 +97,44 @@ public:
 	};
 #endif // ENABLE_TRIGGERS
 
+	/** Socket mode flags. */
+/*
+	enum {
+		// Socket
+		SOCK_DEL = 			0x01, ///< Delete by handler flag
+		SOCK_CLOSE = 			0x02, ///< Close and delete flag
+		SOCK_DISABLE_READ = 		0x04, ///< Disable checking for read events
+		SOCK_CONNECTED = 		0x08, ///< Socket is connected (tcp/udp)
+
+		SOCK_ERASED_BY_HANDLER = 	0x10, ///< Set by handler before delete
+		// HAVE_OPENSSL
+		SOCK_ENABLE_SSL = 		0x20, ///< Enable SSL for this TcpSocket
+		SOCK_SSL = 			0x40, ///< ssl negotiation mode (TcpSocket)
+		SOCK_SSL_SERVER = 		0x80, ///< True if this is an incoming ssl TcpSocket connection
+
+		// ENABLE_IPV6
+		SOCK_IPV6 = 			0x0100, ///< This is an ipv6 socket if this one is true
+		// ENABLE_POOL
+		SOCK_CLIENT = 			0x0200, ///< only client connections are pooled
+		SOCK_RETAIN = 			0x0400, ///< keep connection on close
+		SOCK_LOST = 			0x0800, ///< connection lost
+
+		// ENABLE_SOCKS4
+		SOCK_SOCKS4 = 			0x1000, ///< socks4 negotiation mode (TcpSocket)
+		// ENABLE_DETACH
+		SOCK_DETACH = 			0x2000, ///< Socket ordered to detach flag
+		SOCK_DETACHED = 		0x4000, ///< Socket has been detached
+		// StreamSocket
+		STREAMSOCK_CONNECTING =		0x8000, ///< Flag indicating connection in progress
+
+		STREAMSOCK_FLUSH_BEFORE_CLOSE = 0x010000L, ///< Send all data before closing (default true)
+		STREAMSOCK_CALL_ON_CONNECT =	0x020000L, ///< OnConnect will be called next ISocketHandler cycle if true
+		STREAMSOCK_RETRY_CONNECT =	0x040000L, ///< Try another connection attempt next ISocketHandler cycle
+		STREAMSOCK_LINE_PROTOCOL =	0x080000L, ///< Line protocol mode flag
+
+	};
+*/
+
 public:
 	/** "Default" constructor */
 	Socket(ISocketHandler&);
@@ -110,7 +147,19 @@ public:
 	 */
 	virtual Socket *Create() { return NULL; }
 
-	/** CTcpSocket uses this to create its ICrypt member variable.
+	/** Returns reference to sockethandler that owns the socket. 
+	If the socket is detached, this is a reference to the slave sockethandler.
+	*/
+	ISocketHandler& Handler() const;
+
+	/** Returns reference to sockethandler that owns the socket. 
+	This one always returns the reference to the original sockethandler,
+	even if the socket is detached.
+	*/
+	ISocketHandler& MasterHandler() const;
+
+	/** Called by ListenSocket after accept but before socket is added to handler.
+	 * CTcpSocket uses this to create its ICrypt member variable.
 	 * The ICrypt member variable is created by a virtual method, therefore
 	 * it can't be called directly from the CTcpSocket constructor.
 	 * Also used to determine if incoming HTTP connection is normal (port 80)
@@ -118,25 +167,81 @@ public:
 	 */
 	virtual void Init();
 
-	/** Assign this socket a file descriptor created
-		by a call to socket() or otherwise. */
-	void Attach(SOCKET s);
-	/** Return file descriptor assigned to this socket. */
-	SOCKET GetSocket();
-	/** Close connection immediately - internal use.
-		\sa SetCloseAndDelete */
-	virtual int Close();
 	/** Create a socket file descriptor.
 		\param af Address family AF_INET / AF_INET6 / ...
 		\param type SOCK_STREAM / SOCK_DGRAM / ...
 		\param protocol "tcp" / "udp" / ... */
 	SOCKET CreateSocket(int af,int type,const std::string& protocol = "");
+
+	/** Assign this socket a file descriptor created
+		by a call to socket() or otherwise. */
+	void Attach(SOCKET s);
+
+	/** Return file descriptor assigned to this socket. */
+	SOCKET GetSocket();
+
+	/** Close connection immediately - internal use.
+		\sa SetCloseAndDelete */
+	virtual int Close();
+
 	/** Add file descriptor to sockethandler fd_set's. */
 	void Set(bool bRead,bool bWrite,bool bException = true);
-	/** Returns true when socket file descriptor is valid,
-		socket connection is established, and socket is not about to
-		be closed. */
-	bool Ready();
+
+	/** Returns true when socket file descriptor is valid
+		and socket is not about to be closed. */
+	virtual bool Ready();
+
+	/** Returns pointer to ListenSocket that created this instance
+	 * on an incoming connection. */
+	Socket *GetParent();
+
+	/** Used by ListenSocket to set parent pointer of newly created
+	 * socket instance. */
+	void SetParent(Socket *);
+
+	/** Get listening port from ListenSocket<>. */
+	virtual port_t GetPort();
+
+	/** Set socket non-block operation. */
+	bool SetNonblocking(bool);
+
+	/** Set socket non-block operation. */
+	bool SetNonblocking(bool, SOCKET);
+
+	/** Total lifetime of instance. */
+	time_t Uptime();
+
+	/** Set address/port of last connect() call. */
+	void SetClientRemoteAddress(SocketAddress&);
+
+	/** Get address/port of last connect() call. */
+	std::auto_ptr<SocketAddress> GetClientRemoteAddress();
+
+	/** Common interface for SendBuf used by Tcp and Udp sockets. */
+	virtual void SendBuf(const char *,size_t,int = 0);
+
+	/** Common interface for Send used by Tcp and Udp sockets. */
+	virtual void Send(const std::string&,int = 0);
+
+	/** Outgoing traffic counter. */
+	virtual uint64_t GetBytesSent(bool clear = false);
+
+	/** Incoming traffic counter. */
+	virtual uint64_t GetBytesReceived(bool clear = false);
+
+	// LIST_TIMEOUT
+
+	/** Enable timeout control. 0=disable timeout check. */
+	void SetTimeout(time_t secs);
+
+	/** Check timeout. \return true if time limit reached */
+	bool Timeout(time_t tnow);
+
+	/** Used by ListenSocket. ipv4 and ipv6 */
+	void SetRemoteAddress(SocketAddress&);
+
+	/** \name Event callbacks */
+	//@{
 
 	/** Called when there is something to be read from the file descriptor. */
 	virtual void OnRead();
@@ -170,17 +275,14 @@ public:
 	/** When a socket is set to reconnect, and a disconnect has been detected. */
 	virtual void OnDisconnect();
 #endif
+	/** Timeout callback. */
+	virtual void OnTimeout();
+	/** Connection timeout. */
+	virtual void OnConnectTimeout();
+	//@}
 
-	/** Check whether a connection has been established. */
-	virtual bool CheckConnect();
-	/** Called after OnRead if socket is in line protocol mode.
-		\sa SetLineProtocol */
-	/** Enable the OnLine callback. Do not create your own OnRead
-	 * callback when using this. */
-	virtual void SetLineProtocol(bool = true);
-	/** Check line protocol mode.
-		\return true if socket is in line protocol mode */
-	bool LineProtocol();
+	/** \name Socket mode flags, set/reset */
+	//@{
 	/** Set delete by handler true when you want the sockethandler to
 		delete the socket instance after use. */
 	void SetDeleteByHandler(bool = true);
@@ -188,7 +290,7 @@ public:
 		\return true if this instance should be deleted by the sockethandler */
 	bool DeleteByHandler();
 
-	// LIST_CLOSE
+	// LIST_CLOSE - conditional event queue
 
 	/** Set close and delete to terminate the connection. */
 	void SetCloseAndDelete(bool = true);
@@ -196,19 +298,30 @@ public:
 		\return true if this socket should be closed and the instance removed */
 	bool CloseAndDelete();
 
-	// LIST_CONNECTING
+	/** Return number of seconds since socket was ordered to close. \sa SetCloseAndDelete */
+	time_t TimeSinceClose();
 
-	/** Socket should call CheckConnect on next write event from select(). */
-	void SetConnecting(bool = true);
-	/** Check connecting flag.
-		\return true if the socket is still trying to connect */
-	bool Connecting();
+	/** Ignore read events for an output only socket. */
+	void DisableRead(bool x = true);
+	/** Check ignore read events flag.
+		\return true if read events should be ignored */
+	bool IsDisableRead();
 
-	/** Number of seconds the socket has been connected. */
-	time_t GetConnectTime();
+	/** Set connected status. */
+	void SetConnected(bool = true);
+	/** Check connected status.
+		\return true if connected */
+	bool IsConnected();
 
-	/** Used by ListenSocket. ipv4 and ipv6 */
-	void SetRemoteAddress(SocketAddress&);
+	/** Set flag indicating the socket is being actively deleted by the sockethandler. */
+	void SetErasedByHandler(bool x = true);
+	/** Get value of flag indicating socket is deleted by sockethandler. */
+	bool ErasedByHandler();
+
+	//@}
+
+	/** \name Information about remote connection */
+	//@{
 	/** Returns address of remote end. */
 	std::auto_ptr<SocketAddress> GetRemoteSocketAddress();
 	/** Returns address of remote end: ipv4. */
@@ -225,125 +338,7 @@ public:
 	std::string GetRemoteAddress();
 	/** ipv4 and ipv6(not implemented) */
 	std::string GetRemoteHostname();
-
-	/** Returns reference to sockethandler that owns the socket. 
-	If the socket is detached, this is a reference to the slave sockethandler.
-	*/
-	ISocketHandler& Handler() const;
-	/** Returns reference to sockethandler that owns the socket. 
-	This one always returns the reference to the original sockethandler,
-	even if the socket is detached.
-	*/
-	ISocketHandler& MasterHandler() const;
-	/** Set socket non-block operation. */
-	bool SetNonblocking(bool);
-	/** Set socket non-block operation. */
-	bool SetNonblocking(bool, SOCKET);
-
-	/** Total lifetime of instance. */
-	time_t Uptime();
-/*
-	void SetTimeout(time_t x) { m_timeout = x; }
-	time_t Timeout() { return m_timeout; }
-	void Touch() { m_tActive = time(NULL); }
-	time_t Inactive() { return time(NULL) - m_tActive; }
-*/
-#ifdef ENABLE_IPV6
-	/** Enable ipv6 for this socket. */
-	void SetIpv6(bool x = true);
-	/** Check ipv6 socket.
-		\return true if this is an ipv6 socket */
-	bool IsIpv6();
-#endif
-	/** Returns pointer to ListenSocket that created this instance
-	 * on an incoming connection. */
-	Socket *GetParent();
-	/** Used by ListenSocket to set parent pointer of newly created
-	 * socket instance. */
-	void SetParent(Socket *);
-	/** Get listening port from ListenSocket<>. */
-	virtual port_t GetPort();
-
-	/** Set address/port of last connect() call. */
-	void SetClientRemoteAddress(SocketAddress&);
-	/** Get address/port of last connect() call. */
-	std::auto_ptr<SocketAddress> GetClientRemoteAddress();
-
-	// LIST_CALLONCONNECT
-
-	/** Instruct socket to call OnConnect callback next sockethandler cycle. */
-	void SetCallOnConnect(bool x = true);
-	/** Check call on connect flag.
-		\return true if OnConnect() should be called a.s.a.p */
-	bool CallOnConnect();
-
-	/** Set timeout to use for connection attempt.
-		\param x Timeout in seconds */
-	void SetConnectTimeout(int x);
-	/** Return number of seconds to wait for a connection.
-		\return Connection timeout (seconds) */
-	int GetConnectTimeout();
-	/** Ignore read events for an output only socket. */
-	void DisableRead(bool x = true);
-	/** Check ignore read events flag.
-		\return true if read events should be ignored */
-	bool IsDisableRead();
-
-	// LIST_RETRY
-
-	/** Set flag to initiate a connection attempt after a connection timeout. */
-	void SetRetryClientConnect(bool x = true);
-	/** Check if a connection attempt should be made.
-		\return true when another attempt should be made */
-	bool RetryClientConnect();
-
-	/** Common interface for SendBuf used by Tcp and Udp sockets. */
-	virtual void SendBuf(const char *,size_t,int = 0);
-	/** Common interface for Send used by Tcp and Udp sockets. */
-	virtual void Send(const std::string&,int = 0);
-
-	/** Set connected status. */
-	void SetConnected(bool = true);
-	/** Check connected status.
-		\return true if connected */
-	bool IsConnected();
-
-	/** Set flush before close to make a tcp socket completely empty its
-		output buffer before closing the connection. */
-	void SetFlushBeforeClose(bool = true);
-	/** Check flush before status.
-		\return true if the socket should send all data before closing */
-	bool GetFlushBeforeClose();
-
-	/** Define number of connection retries (tcp only).
-	    n = 0 - no retry
-	    n > 0 - number of retries
-	    n = -1 - unlimited retries */
-	void SetConnectionRetry(int n);
-	/** Get number of maximum connection retries (tcp only). */
-	int GetConnectionRetry();
-	/** Increase number of actual connection retries (tcp only). */
-	void IncreaseConnectionRetries();
-	/** Get number of actual connection retries (tcp only). */
-	int GetConnectionRetries();
-	/** Reset actual connection retries (tcp only). */
-	void ResetConnectionRetries();
-	/** Set flag indicating the socket is being actively deleted by the sockethandler. */
-	void SetErasedByHandler(bool x = true);
-	/** Get value of flag indicating socket is deleted by sockethandler. */
-	bool ErasedByHandler();
-
-	/** Return number of seconds since socket was ordered to close. */
-	time_t TimeSinceClose();
-
-	/** Set shutdown status. */
-	void SetShutdown(int);
-	/** Get shutdown status. */
-	int GetShutdown();
-	virtual uint64_t GetBytesSent(bool clear = false);
-	virtual uint64_t GetBytesReceived(bool clear = false);
-
-	unsigned long int Random();
+	//@}
 
 	// --------------------------------------------------------------------------
 	/** @name IP options
@@ -492,6 +487,14 @@ public:
 	virtual SSL *GetSsl() { return NULL; }
 	//@}
 #endif // HAVE_OPENSSL
+
+#ifdef ENABLE_IPV6
+	/** Enable ipv6 for this socket. */
+	void SetIpv6(bool x = true);
+	/** Check ipv6 socket.
+		\return true if this is an ipv6 socket */
+	bool IsIpv6();
+#endif
 
 #ifdef ENABLE_POOL
 	/** @name Connection Pool */
@@ -646,55 +649,48 @@ public:
 #endif
 
 protected:
+	/** default constructor not available */
+	Socket() : m_handler(m_handler) {}
 	/** copy constructor not available */
 	Socket(const Socket& s) : m_handler(s.m_handler) {}
-	//
-	RandomNumber m_prng; ///< Random number generator
+
+	/** assignment operator not available. */
+	Socket& operator=(const Socket& ) { return *this; }
+
 	/** All traffic will be written to this IFile, if set. */
 	IFile *GetTrafficMonitor() { return m_traffic_monitor; }
 
+//	unsigned long m_flags; ///< boolean flags, replacing old 'bool' members
+
 private:
-	/** default constructor not available */
-	Socket() : m_handler(m_handler) {}
-#ifdef _WIN32
-static	WSAInitializer m_winsock_init; ///< Winsock initialization singleton class
-#endif
-	/** assignment operator not available. */
-	Socket& operator=(const Socket& ) { return *this; }
-	//
 	ISocketHandler& m_handler; ///< Reference of ISocketHandler in control of this socket
 	SOCKET m_socket; ///< File descriptor
 	bool m_bDel; ///< Delete by handler flag
 	bool m_bClose; ///< Close and delete flag
-	bool m_bConnecting; ///< Flag indicating connection in progress
-	time_t m_tConnect; ///< Time in seconds when connection was established
 	time_t m_tCreate; ///< Time in seconds when this socket was created
-	bool m_line_protocol; ///< Line protocol mode flag
-//	time_t m_tActive;
-//	time_t m_timeout;
-#ifdef ENABLE_IPV6
-	bool m_ipv6; ///< This is an ipv6 socket if this one is true
-#endif
 	Socket *m_parent; ///< Pointer to ListenSocket class, valid for incoming sockets
-	bool m_call_on_connect; ///< OnConnect will be called next ISocketHandler cycle if true
-	int m_connect_timeout; ///< Connection timeout (seconds)
 	bool m_b_disable_read; ///< Disable checking for read events
-	bool m_b_retry_connect; ///< Try another connection attempt next ISocketHandler cycle
 	bool m_connected; ///< Socket is connected (tcp/udp)
-	bool m_flush_before_close; ///< Send all data before closing (default true)
-	int m_connection_retry; ///< Maximum connection retries (tcp)
-	int m_retries; ///< Actual number of connection retries (tcp)
 	bool m_b_erased_by_handler; ///< Set by handler before delete
 	time_t m_tClose; ///< Time in seconds when ordered to close
-	int m_shutdown; ///< Shutdown status
 	std::auto_ptr<SocketAddress> m_client_remote_address; ///< Address of last connect()
 	std::auto_ptr<SocketAddress> m_remote_address; ///< Remote end address
 	IFile *m_traffic_monitor;
+	time_t m_timeout_start; ///< Set by SetTimeout
+	time_t m_timeout_limit; ///< Defined by SetTimeout
+
+#ifdef _WIN32
+static	WSAInitializer m_winsock_init; ///< Winsock initialization singleton class
+#endif
 
 #ifdef HAVE_OPENSSL
 	bool m_b_enable_ssl; ///< Enable SSL for this TcpSocket
 	bool m_b_ssl; ///< ssl negotiation mode (TcpSocket)
 	bool m_b_ssl_server; ///< True if this is an incoming ssl TcpSocket connection
+#endif
+
+#ifdef ENABLE_IPV6
+	bool m_ipv6; ///< This is an ipv6 socket if this one is true
 #endif
 
 #ifdef ENABLE_POOL

@@ -43,7 +43,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 
 /* Ipv6 support. */
-#define ENABLE_IPV6
+//#define ENABLE_IPV6
 
 
 /* SCTP support. */
@@ -52,15 +52,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 /* Define NO_GETADDRINFO if your operating system does not support
    the "getaddrinfo" and "getnameinfo" function calls. */
-//#define NO_GETADDRINFO
+#define NO_GETADDRINFO
 
 
 /* Connection pool support. */
-#define ENABLE_POOL
+//#define ENABLE_POOL
 
 
 /* Socks4 client support. */
-#define ENABLE_SOCKS4
+//#define ENABLE_SOCKS4
 
 
 /* Asynchronous resolver. Needs ENABLE_TRIGGERS. */
@@ -79,7 +79,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 
 /* Enable socket to socket triggers. Used by resolver. */
-#define ENABLE_TRIGGERS
+//#define ENABLE_TRIGGERS
 
 
 /* Resolver uses the detach function so either enable both or disable both. */
@@ -89,4 +89,3 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 
 #endif // _SOCKETS_CONFIG_H
-

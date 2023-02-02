@@ -71,7 +71,7 @@ SSLInitializer TcpSocket::m_ssl_init;
 #ifdef _WIN32
 #pragma warning(disable:4355)
 #endif
-TcpSocket::TcpSocket(ISocketHandler& h) : Socket(h)
+TcpSocket::TcpSocket(ISocketHandler& h) : StreamSocket(h)
 ,ibuf(*this, TCP_BUFSIZE_READ)
 ,obuf(*this, 32768)
 ,m_b_input_buffer_disabled(false)
@@ -106,7 +106,7 @@ TcpSocket::TcpSocket(ISocketHandler& h) : Socket(h)
 #ifdef _WIN32
 #pragma warning(disable:4355)
 #endif
-TcpSocket::TcpSocket(ISocketHandler& h,size_t isize,size_t osize) : Socket(h)
+TcpSocket::TcpSocket(ISocketHandler& h,size_t isize,size_t osize) : StreamSocket(h)
 ,ibuf(*this, isize)
 ,obuf(*this, osize)
 ,m_b_input_buffer_disabled(false)
@@ -618,15 +618,24 @@ void TcpSocket::OnWrite()
 {
 	if (Connecting())
 	{
-		if (CheckConnect())
+		int err = SoError();
+
+		// don't reset connecting flag on error here, we want the OnConnectFailed timeout later on
+		if (!err) // ok
 		{
+			Set(!IsDisableRead(), false);
+			SetConnecting(false);
 			SetCallOnConnect();
 			return;
 		}
+		Handler().LogError(this, "tcp: connect failed", err, StrError(err), LOG_LEVEL_FATAL);
+		Set(false, false); // no more monitoring because connection failed
+
 		// failed
 #ifdef ENABLE_SOCKS4
 		if (Socks4())
 		{
+			// %! leave 'Connecting' flag set?
 			OnSocks4ConnectFailed();
 			return;
 		}
@@ -853,7 +862,7 @@ void TcpSocket::OnLine(const std::string& )
 #pragma warning(disable:4355)
 #endif
 TcpSocket::TcpSocket(const TcpSocket& s)
-:Socket(s)
+:StreamSocket(s)
 ,ibuf(*this,0)
 ,obuf(*this,0)
 {
@@ -1252,6 +1261,30 @@ int TcpSocket::SSL_password_cb(char *buf,int num,int rwflag,void *userdata)
 
 int TcpSocket::Close()
 {
+	if (GetSocket() == INVALID_SOCKET) // this could happen
+	{
+		Handler().LogError(this, "Socket::Close", 0, "file descriptor invalid", LOG_LEVEL_WARNING);
+		return 0;
+	}
+	int n;
+	SetNonblocking(true);
+	if (IsConnected() && !(GetShutdown() & SHUT_WR))
+	{
+		if (shutdown(GetSocket(), SHUT_WR) == -1)
+		{
+			// failed...
+			Handler().LogError(this, "shutdown", Errno, StrError(Errno), LOG_LEVEL_ERROR);
+		}
+	}
+	//
+	char tmp[1000];
+	if ((n = recv(GetSocket(),tmp,1000,0)) >= 0)
+	{
+		if (n)
+		{
+			Handler().LogError(this, "read() after shutdown", n, "bytes read", LOG_LEVEL_WARNING);
+		}
+	}
 #ifdef HAVE_OPENSSL
 	if (IsSSL() && m_ssl)
 		SSL_shutdown(m_ssl);
@@ -1372,7 +1405,7 @@ DEB(	fprintf(stderr, "Socket::OnOptions()\n");)
 
 void TcpSocket::SetLineProtocol(bool x)
 {
-	Socket::SetLineProtocol(x);
+	StreamSocket::SetLineProtocol(x);
 	DisableInputBuffer(x);
 }
 
@@ -1540,6 +1573,86 @@ std::string TcpSocket::CircularBuffer::ReadString(size_t l)
 	std::string tmp = sz;
 	delete[] sz;
 	return tmp;
+}
+
+
+void TcpSocket::OnConnectTimeout()
+{
+	Handler().LogError(this, "connect", -1, "connect timeout", LOG_LEVEL_FATAL);
+#ifdef ENABLE_SOCKS4
+	if (Socks4())
+	{
+		OnSocks4ConnectFailed();
+		// retry direct connection
+	}
+	else
+#endif
+	if (GetConnectionRetry() == -1 ||
+		(GetConnectionRetry() && GetConnectionRetries() < GetConnectionRetry()) )
+	{
+		IncreaseConnectionRetries();
+		// ask socket via OnConnectRetry callback if we should continue trying
+		if (OnConnectRetry())
+		{
+			SetRetryClientConnect();
+		}
+		else
+		{
+			SetCloseAndDelete( true );
+			/// \todo state reason why connect failed
+			OnConnectFailed();
+		}
+	}
+	else
+	{
+		SetCloseAndDelete(true);
+		/// \todo state reason why connect failed
+		OnConnectFailed();
+	}
+	//
+	SetConnecting(false);
+}
+
+
+#ifdef _WIN32
+void TcpSocket::OnException()
+{
+	if (Connecting())
+	{
+#ifdef ENABLE_SOCKS4
+		if (Socks4())
+			OnSocks4ConnectFailed();
+		else
+#endif
+		if (GetConnectionRetry() == -1 ||
+			(GetConnectionRetry() &&
+			 GetConnectionRetries() < GetConnectionRetry() ))
+		{
+			// even though the connection failed at once, only retry after
+			// the connection timeout
+			// should we even try to connect again, when CheckConnect returns
+			// false it's because of a connection error - not a timeout...
+		}
+		else
+		{
+			SetConnecting(false); // tnx snibbe
+			SetCloseAndDelete();
+			OnConnectFailed();
+		}
+		return;
+	}
+	// %! exception doesn't always mean something bad happened, this code should be reworked
+	// errno valid here?
+	int err = SoError();
+	Handler().LogError(this, "exception on select", err, StrError(err), LOG_LEVEL_FATAL);
+	SetCloseAndDelete();
+}
+#endif // _WIN32
+
+
+int TcpSocket::Protocol()
+{
+	return IPPROTO_TCP;
 }
 
 

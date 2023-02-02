@@ -627,3 +627,11 @@ Version 2.1.5
 < Uid.cpp
 < Uid.h
 
+Version 2.1.6
+--------------------------
+40d39
+< ISocketHandler.cpp
+80a80,81
+> StreamSocket.cpp
+> StreamSocket.h
+

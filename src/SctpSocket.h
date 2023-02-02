@@ -25,7 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "sockets-config.h"
 
 #include <map>
-#include "Socket.h"
+#include "StreamSocket.h"
 #ifdef USE_SCTP
 #include <netinet/sctp.h>
 
@@ -38,7 +38,7 @@ namespace SOCKETS_NAMESPACE {
 class SocketAddress;
 
 
-class SctpSocket : public Socket
+class SctpSocket : public StreamSocket
 {
 public:
 	/** SctpSocket constructor.
@@ -61,6 +61,13 @@ public:
 	int Open(const std::string&,port_t);
 	int Open(SocketAddress&);
 
+	/** Connect timeout callback. */
+	void OnConnectTimeout();
+#ifdef _WIN32
+	/** Connection failed reported as exception on win32 */
+	void OnException();
+#endif
+
 #ifndef SOLARIS
 	/** sctp_connectx() */
 	int AddConnection(const std::string&,port_t);
@@ -80,8 +87,10 @@ public:
 
 	void OnOptions(int,int,int,SOCKET) {}
 
+	virtual int Protocol();
+
 protected:
-	SctpSocket(const SctpSocket& s) : Socket(s) {}
+	SctpSocket(const SctpSocket& s) : StreamSocket(s) {}
 	void OnRead();
 	void OnWrite();
 

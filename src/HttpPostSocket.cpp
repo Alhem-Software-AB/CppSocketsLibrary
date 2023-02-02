@@ -39,6 +39,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <sys/stat.h>
 #include "Parse.h"
 #include "Utility.h"
+#include "Lock.h"
 
 #include "HttpPostSocket.h"
 
@@ -46,6 +47,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
 #endif
+
+
+int HttpPostSocket::m_boundary_count = 0;
+Mutex HttpPostSocket::m_boundary_mutex;
 
 
 HttpPostSocket::HttpPostSocket(ISocketHandler& h) : HttpClientSocket(h)
@@ -57,16 +62,17 @@ HttpPostSocket::HttpPostSocket(ISocketHandler& h) : HttpClientSocket(h)
 HttpPostSocket::HttpPostSocket(ISocketHandler& h,const std::string& url_in) : HttpClientSocket(h, url_in)
 ,m_bMultipart(false)
 {
+	Lock lock(m_boundary_mutex);
+
 	m_boundary = "----";
 	for (int i = 0; i < 12; i++)
 	{
-		char c = 0;
+		char c = m_boundary_count++ % 128;
 		while (!isalnum(c))
-		{
-			c = (char)(Random() % 96 + 32);
-		}
+			c = m_boundary_count++ % 128;
 		m_boundary += c;
 	}
+	m_boundary += "__" + Utility::l2string(m_boundary_count++);
 }
 
 

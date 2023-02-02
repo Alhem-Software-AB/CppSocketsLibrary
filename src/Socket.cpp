@@ -63,29 +63,17 @@ WSAInitializer Socket::m_winsock_init;
 
 
 Socket::Socket(ISocketHandler& h)
-:m_prng( true )
-,m_handler(h)
+//:m_flags(0)
+:m_handler(h)
 ,m_socket( INVALID_SOCKET )
 ,m_bDel(false)
 ,m_bClose(false)
-,m_bConnecting(false)
 ,m_tCreate(time(NULL))
-,m_line_protocol(false)
-#ifdef ENABLE_IPV6
-,m_ipv6(false)
-#endif
 ,m_parent(NULL)
-,m_call_on_connect(false)
-,m_connect_timeout(5)
 ,m_b_disable_read(false)
-,m_b_retry_connect(false)
 ,m_connected(false)
-,m_flush_before_close(true)
-,m_connection_retry(0)
-,m_retries(0)
 ,m_b_erased_by_handler(false)
 ,m_tClose(0)
-,m_shutdown(0)
 ,m_client_remote_address(NULL)
 ,m_remote_address(NULL)
 ,m_traffic_monitor(NULL)
@@ -93,6 +81,9 @@ Socket::Socket(ISocketHandler& h)
 ,m_b_enable_ssl(false)
 ,m_b_ssl(false)
 ,m_b_ssl_server(false)
+#endif
+#ifdef ENABLE_IPV6
+,m_ipv6(false)
 #endif
 #ifdef ENABLE_POOL
 ,m_socket_type(0)
@@ -147,32 +138,6 @@ void Socket::OnWrite()
 
 void Socket::OnException()
 {
-#ifdef _WIN32
-	if (Connecting())
-	{
-#ifdef ENABLE_SOCKS4
-		if (Socks4())
-			OnSocks4ConnectFailed();
-		else
-#endif
-		if (GetConnectionRetry() == -1 ||
-			(GetConnectionRetry() &&
-			 GetConnectionRetries() < GetConnectionRetry() ))
-		{
-			// even though the connection failed at once, only retry after
-			// the connection timeout
-			// should we even try to connect again, when CheckConnect returns
-			// false it's because of a connection error - not a timeout...
-		}
-		else
-		{
-			SetConnecting(false); // tnx snibbe
-			SetCloseAndDelete();
-			OnConnectFailed();
-		}
-		return;
-	}
-#endif
 	// %! exception doesn't always mean something bad happened, this code should be reworked
 	// errno valid here?
 	int err = SoError();
@@ -191,24 +156,6 @@ void Socket::OnConnect()
 }
 
 
-bool Socket::CheckConnect()
-{
-	int err = SoError();
-
-	// don't reset connecting flag on error here, we want the OnConnectFailed timeout later on
-	/// \todo add to read fd_set here
-	if (!err) // ok
-	{
-		Set(!IsDisableRead(), false);
-		SetConnecting(false);
-		return true;
-	}
-	Handler().LogError(this, "connect failed", err, StrError(err), LOG_LEVEL_FATAL);
-	Set(false, false); // no more monitoring because connection failed
-	return false;
-}
-
-
 void Socket::OnAccept()
 {
 }
@@ -216,50 +163,26 @@ void Socket::OnAccept()
 
 int Socket::Close()
 {
-DEB(	fprintf(stderr, " fd %d\n", m_socket);)
 	if (m_socket == INVALID_SOCKET) // this could happen
 	{
 		Handler().LogError(this, "Socket::Close", 0, "file descriptor invalid", LOG_LEVEL_WARNING);
 		return 0;
 	}
 	int n;
-	SetNonblocking(true);
-	if (IsConnected() && !(GetShutdown() & SHUT_WR))
-	{
-		if (shutdown(m_socket, SHUT_WR) == -1)
-		{
-			// failed...
-			Handler().LogError(this, "shutdown", Errno, StrError(Errno), LOG_LEVEL_ERROR);
-		}
-	}
-	//
-	char tmp[100];
-	if ((n = recv(m_socket,tmp,100,0)) == -1)
-	{
-//		Handler().LogError(this, "read() after shutdown", Errno, StrError(Errno), LOG_LEVEL_WARNING);
-	}
-	else
-	{
-		if (n)
-		{
-			Handler().LogError(this, "read() after shutdown", n, "bytes read", LOG_LEVEL_WARNING);
-		}
-	}
 	if ((n = closesocket(m_socket)) == -1)
 	{
 		// failed...
 		Handler().LogError(this, "close", Errno, StrError(Errno), LOG_LEVEL_ERROR);
 	}
-	Set(false, false, false); // remove from fd_set's
+	Handler().Set(m_socket, false, false, false); // remove from fd_set's
 	Handler().AddList(m_socket, LIST_CALLONCONNECT, false);
 #ifdef ENABLE_DETACH
 	Handler().AddList(m_socket, LIST_DETACH, false);
 #endif
-	Handler().AddList(m_socket, LIST_CONNECTING, false);
+	Handler().AddList(m_socket, LIST_TIMEOUT, false);
 	Handler().AddList(m_socket, LIST_RETRY, false);
 	Handler().AddList(m_socket, LIST_CLOSE, false);
 	m_socket = INVALID_SOCKET;
-DEB(	fprintf(stderr, " fd %d\n", m_socket);)
 	return n;
 }
 
@@ -340,26 +263,6 @@ void Socket::SetCloseAndDelete(bool x)
 bool Socket::CloseAndDelete()
 {
 	return m_bClose;
-}
-
-
-void Socket::SetConnecting(bool x)
-{
-	if (x != m_bConnecting)
-	{
-		Handler().AddList(m_socket, LIST_CONNECTING, x);
-		m_bConnecting = x;
-		if (x)
-		{
-			m_tConnect = time(NULL);
-		}
-	}
-}
-
-
-bool Socket::Connecting()
-{
-	return m_bConnecting;
 }
 
 
@@ -536,15 +439,9 @@ void Socket::Set(bool bRead, bool bWrite, bool bException)
 }
 
 
-time_t Socket::GetConnectTime()
-{
-	return time(NULL) - m_tConnect;
-}
-
-
 bool Socket::Ready()
 {
-	if (m_socket != INVALID_SOCKET && !Connecting() && !CloseAndDelete())
+	if (m_socket != INVALID_SOCKET && !CloseAndDelete())
 		return true;
 	return false;
 }
@@ -552,18 +449,6 @@ bool Socket::Ready()
 
 void Socket::OnLine(const std::string& )
 {
-}
-
-
-void Socket::SetLineProtocol(bool x)
-{
-	m_line_protocol = x;
-}
-
-
-bool Socket::LineProtocol()
-{
-	return m_line_protocol;
 }
 
 
@@ -624,31 +509,6 @@ bool Socket::IsIpv6()
 #endif
 
 
-void Socket::SetCallOnConnect(bool x)
-{
-	Handler().AddList(m_socket, LIST_CALLONCONNECT, x);
-	m_call_on_connect = x;
-}
-
-
-bool Socket::CallOnConnect()
-{
-	return m_call_on_connect;
-}
-
-
-void Socket::SetConnectTimeout(int x)
-{
-	m_connect_timeout = x;
-}
-
-
-int Socket::GetConnectTimeout()
-{
-	return m_connect_timeout;
-}
-
-
 void Socket::DisableRead(bool x)
 {
 	m_b_disable_read = x;
@@ -658,19 +518,6 @@ void Socket::DisableRead(bool x)
 bool Socket::IsDisableRead()
 {
 	return m_b_disable_read;
-}
-
-
-void Socket::SetRetryClientConnect(bool x)
-{
-	Handler().AddList(m_socket, LIST_RETRY, x);
-	m_b_retry_connect = x;
-}
-
-
-bool Socket::RetryClientConnect()
-{
-	return m_b_retry_connect;
 }
 
 
@@ -696,48 +543,6 @@ bool Socket::IsConnected()
 }
 
 
-void Socket::SetFlushBeforeClose(bool x)
-{
-	m_flush_before_close = x;
-}
-
-
-bool Socket::GetFlushBeforeClose()
-{
-	return m_flush_before_close;
-}
-
-
-int Socket::GetConnectionRetry()
-{
-	return m_connection_retry;
-}
-
-
-void Socket::SetConnectionRetry(int x)
-{
-	m_connection_retry = x;
-}
-
-
-int Socket::GetConnectionRetries()
-{
-	return m_retries;
-}
-
-
-void Socket::IncreaseConnectionRetries()
-{
-	m_retries++;
-}
-
-
-void Socket::ResetConnectionRetries()
-{
-	m_retries = 0;
-}
-
-
 #ifdef ENABLE_RECONNECT
 void Socket::OnDisconnect()
 {
@@ -760,18 +565,6 @@ bool Socket::ErasedByHandler()
 time_t Socket::TimeSinceClose()
 {
 	return time(NULL) - m_tClose;
-}
-
-
-void Socket::SetShutdown(int x)
-{
-	m_shutdown = x;
-}
-
-
-int Socket::GetShutdown()
-{
-	return m_shutdown;
 }
 
 
@@ -804,12 +597,6 @@ uint64_t Socket::GetBytesSent(bool)
 uint64_t Socket::GetBytesReceived(bool)
 {
 	return 0;
-}
-
-
-unsigned long int Socket::Random()
-{
-	return m_prng.next();
 }
 
 
@@ -1960,6 +1747,37 @@ void Socket::OnCancelled(int)
 {
 }
 #endif
+
+
+void Socket::SetTimeout(time_t secs)
+{
+	if (!secs)
+	{
+		Handler().AddList(m_socket, LIST_TIMEOUT, false);
+		return;
+	}
+	Handler().AddList(m_socket, LIST_TIMEOUT, true);
+	m_timeout_start = time(NULL);
+	m_timeout_limit = secs;
+}
+
+
+void Socket::OnTimeout()
+{
+}
+
+
+void Socket::OnConnectTimeout()
+{
+}
+
+
+bool Socket::Timeout(time_t tnow)
+{
+	if (tnow - m_timeout_start > m_timeout_limit)
+		return true;
+	return false;
+}
 
 
 #ifdef SOCKETS_NAMESPACE

@@ -1,9 +1,10 @@
-VERSION =	2.1.5
-DIFF_VERSION =	2.1.4
+VERSION =	2.1.6
+DIFF_VERSION =	2.1.5
 
 # Sockets
 OBJS =		Socket.o \
 		SocketHandler.o \
+		StreamSocket.o \
 		TcpSocket.o \
 		UdpSocket.o \
 		Parse.o \
@@ -29,7 +30,6 @@ OBJS =		Socket.o \
 		EventTime.o Event.o IEventOwner.o EventHandler.o \
 		HttpClientSocket.o \
 		SctpSocket.o \
-		ISocketHandler.o \
 		Ipv4Address.o Ipv6Address.o \
 		Semaphore.o \
 		RandomNumber.o \

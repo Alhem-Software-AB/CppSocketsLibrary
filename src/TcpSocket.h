@@ -30,7 +30,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef _SOCKETS_TcpSocket_H
 #define _SOCKETS_TcpSocket_H
 #include "sockets-config.h"
-#include "Socket.h"
+#include "StreamSocket.h"
 #ifdef HAVE_OPENSSL
 #include <openssl/ssl.h>
 #include "SSLInitializer.h"
@@ -49,7 +49,7 @@ class SocketAddress;
 
 /** Socket implementation for TCP. 
 	\ingroup basic */
-class TcpSocket : public Socket
+class TcpSocket : public StreamSocket
 {
 	/** \defgroup internal Internal utility */
 protected:
@@ -148,6 +148,14 @@ public:
 		\param host Hostname
 		\param port Port number */
 	bool Open(const std::string &host,port_t port);
+
+	/** Connect timeout callback. */
+	void OnConnectTimeout();
+#ifdef _WIN32
+	/** Connection failed reported as exception on win32 */
+	void OnException();
+#endif
+
 	/** Close file descriptor - internal use only. 
 		\sa SetCloseAndDelete */
 	int Close();
@@ -228,6 +236,8 @@ public:
 
 	// TCP options
 	bool SetTcpNodelay(bool = true);
+
+	virtual int Protocol();
 
 protected:
 	TcpSocket(const TcpSocket& );

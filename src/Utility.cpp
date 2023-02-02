@@ -593,7 +593,7 @@ bool Utility::u2ip(const std::string& host, struct sockaddr_in& sa, int ai_flags
 	int n = getaddrinfo(host.c_str(), NULL, &hints, &res);
 	if (!n)
 	{
-		RandomNumber prng( true );
+		static RandomNumber prng( true );
 		std::vector<struct addrinfo *> vec;
 		struct addrinfo *ai = res;
 		while (ai)
@@ -710,7 +710,7 @@ bool Utility::u2ip(const std::string& host, struct sockaddr_in6& sa, int ai_flag
 	int n = getaddrinfo(host.c_str(), NULL, &hints, &res);
 	if (!n)
 	{
-		RandomNumber prng( true );
+		static RandomNumber prng( true );
 		std::vector<struct addrinfo *> vec;
 		struct addrinfo *ai = res;
 		while (ai)
