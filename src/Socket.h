@@ -27,8 +27,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <vector>
 #include <list>
 
-#include <time.h>
 #include "socket_include.h"
+#include <time.h>
 
 
 class SocketHandler;

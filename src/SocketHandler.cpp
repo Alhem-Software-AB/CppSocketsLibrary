@@ -207,7 +207,7 @@ DEB(
 		{
 			printf("  select() errcode = %d\n",errcode);
 			m_preverror = errcode;
-			for (int i = 0; i <= m_maxsock; i++)
+			for (size_t i = 0; i <= m_maxsock; i++)
 			{
 				if (FD_ISSET(i, &m_rfds))
 					printf("%4d: Read\n",i);

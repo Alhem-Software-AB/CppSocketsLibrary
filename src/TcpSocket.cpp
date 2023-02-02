@@ -44,7 +44,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 
 // thanks, q
-#ifdef WIN32
+#ifdef _WIN32
 #pragma warning(disable:4355)
 #endif
 TcpSocket::TcpSocket(SocketHandler& h) : Socket(h)
@@ -53,12 +53,12 @@ TcpSocket::TcpSocket(SocketHandler& h) : Socket(h)
 ,m_line("")
 {
 }
-#ifdef WIN32
+#ifdef _WIN32
 #pragma warning(default:4355)
 #endif
 
 
-#ifdef WIN32
+#ifdef _WIN32
 #pragma warning(disable:4355)
 #endif
 TcpSocket::TcpSocket(SocketHandler& h,size_t isize,size_t osize) : Socket(h)
@@ -67,7 +67,7 @@ TcpSocket::TcpSocket(SocketHandler& h,size_t isize,size_t osize) : Socket(h)
 ,m_line("")
 {
 }
-#ifdef WIN32
+#ifdef _WIN32
 #pragma warning(default:4355)
 #endif
 
@@ -495,7 +495,7 @@ void TcpSocket::ReadLine()
 }
 
 
-#ifdef WIN32
+#ifdef _WIN32
 #pragma warning(disable:4355)
 #endif
 TcpSocket::TcpSocket(const TcpSocket& s) 
@@ -504,7 +504,7 @@ TcpSocket::TcpSocket(const TcpSocket& s)
 ,obuf(*this,0) 
 {
 }
-#ifdef WIN32
+#ifdef _WIN32
 #pragma warning(default:4355)
 #endif
 

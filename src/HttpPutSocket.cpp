@@ -25,10 +25,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #else
 #include <errno.h>
 #endif
+#include "SocketHandler.h"
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#include "SocketHandler.h"
 #include "Utility.h"
 #include "Parse.h"
 
