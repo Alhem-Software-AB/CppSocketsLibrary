@@ -4,6 +4,7 @@
  **	\author grymse@alhem.net
 **/
 /*
+Copyright (C) 2015-2023  Alhem Software AB
 Copyright (C) 2007-2011  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL, with
@@ -34,9 +35,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define _SOCKETS_SocketAddress_H
 
 #include "sockets-config.h"
+#include "socket_include.h"
+#include "sockets_stdptr.h"
+
 #include <string>
 #include <memory>
-#include "socket_include.h"
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
@@ -92,7 +95,7 @@ public:
 	virtual bool IsValid() = 0;
 
 	/** Get a copy of this SocketAddress object. */
-	virtual std::auto_ptr<SocketAddress> GetCopy() = 0;
+	virtual USING_AUTOPTR_AS<SocketAddress> GetCopy() = 0;
 };
 
 

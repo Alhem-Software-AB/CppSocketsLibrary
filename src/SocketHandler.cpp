@@ -3,6 +3,7 @@
  **	\author grymse@alhem.net
 **/
 /*
+Copyright (C) 2015-2023  Alhem Software AB
 Copyright (C) 2004-2011  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL, with
@@ -49,6 +50,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "Exception.h"
 #include "SocketHandlerThread.h"
 #include "Lock.h"
+#include "sockets_stdptr.h"
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
@@ -63,9 +65,9 @@ namespace SOCKETS_NAMESPACE {
 
 SocketHandler::SocketHandler(StdLog *p)
 :m_stdlog(p)
-,m_mutex(m_mutex)
+,m_mutex(NULL)
 ,m_b_use_mutex(false)
-,m_parent(m_parent)
+,m_parent(NULL)
 ,m_b_parent_is_valid(false)
 ,m_release(NULL)
 ,m_maxsock(0)
@@ -99,9 +101,9 @@ SocketHandler::SocketHandler(StdLog *p)
 
 SocketHandler::SocketHandler(IMutex& mutex,StdLog *p)
 :m_stdlog(p)
-,m_mutex(mutex)
+,m_mutex(&mutex)
 ,m_b_use_mutex(true)
-,m_parent(m_parent)
+,m_parent(NULL)
 ,m_b_parent_is_valid(false)
 ,m_release(NULL)
 ,m_maxsock(0)
@@ -127,7 +129,7 @@ SocketHandler::SocketHandler(IMutex& mutex,StdLog *p)
 ,m_slave(false)
 #endif
 {
-	m_mutex.Lock();
+	m_mutex -> Lock();
 	FD_ZERO(&m_rfds);
 	FD_ZERO(&m_wfds);
 	FD_ZERO(&m_efds);
@@ -136,9 +138,9 @@ SocketHandler::SocketHandler(IMutex& mutex,StdLog *p)
 
 SocketHandler::SocketHandler(IMutex& mutex, ISocketHandler& parent, StdLog *p)
 :m_stdlog(p)
-,m_mutex(mutex)
+,m_mutex(&mutex)
 ,m_b_use_mutex(true)
-,m_parent(parent)
+,m_parent(&parent)
 ,m_b_parent_is_valid(true)
 ,m_release(NULL)
 ,m_maxsock(0)
@@ -164,7 +166,7 @@ SocketHandler::SocketHandler(IMutex& mutex, ISocketHandler& parent, StdLog *p)
 ,m_slave(false)
 #endif
 {
-	m_mutex.Lock();
+	m_mutex -> Lock();
 	FD_ZERO(&m_rfds);
 	FD_ZERO(&m_wfds);
 	FD_ZERO(&m_efds);
@@ -229,7 +231,7 @@ DEB(		fprintf(stderr, "/Emptying sockets list in SocketHandler destructor, %d in
 #endif
 	if (m_b_use_mutex)
 	{
-		m_mutex.Unlock();
+		m_mutex -> Unlock();
 	}
 }
 
@@ -256,7 +258,7 @@ ISocketHandler& SocketHandler::ParentHandler()
 {
 	if (!m_b_parent_is_valid)
 		throw Exception("No parent sockethandler available");
-	return m_parent;
+	return *m_parent;
 }
 
 
@@ -288,7 +290,7 @@ ISocketHandler& SocketHandler::GetRandomHandler()
 
 ISocketHandler& SocketHandler::GetEffectiveHandler()
 {
-	return m_b_parent_is_valid ? m_parent : *this;
+	return m_b_parent_is_valid ? *m_parent : *this;
 }
 
 
@@ -340,7 +342,9 @@ void SocketHandler::Release()
 
 IMutex& SocketHandler::GetMutex() const
 {
-	return m_mutex; 
+	if (!m_b_use_mutex)
+		throw Exception("mutex not initialized (FATAL)");
+	return *m_mutex; 
 }
 
 
@@ -1095,7 +1099,7 @@ void SocketHandler::CheckRetry()
 			tcp -> SetRetryClientConnect(false);
 DEB(					fprintf(stderr, "Close() before retry client connect\n");)
 			p -> Close(); // removes from m_fds_retry
-			std::auto_ptr<SocketAddress> ad = p -> GetClientRemoteAddress();
+			USING_AUTOPTR_AS<SocketAddress> ad = p -> GetClientRemoteAddress();
 			if (ad.get())
 			{
 				tcp -> Open(*ad);
@@ -1170,7 +1174,7 @@ DEB(						fprintf(stderr, " close(1)\n");)
 DEB(						fprintf(stderr, "Close() before reconnect\n");)
 				p -> Close(); // dispose of old file descriptor (Open creates a new)
 				p -> OnDisconnect();
-				std::auto_ptr<SocketAddress> ad = p -> GetClientRemoteAddress();
+				USING_AUTOPTR_AS<SocketAddress> ad = p -> GetClientRemoteAddress();
 				if (ad.get())
 				{
 					tcp -> Open(*ad);
@@ -1246,9 +1250,9 @@ printf("]\n");
 )
 	if (m_b_use_mutex)
 	{
-		m_mutex.Unlock();
+		m_mutex -> Unlock();
 		n = select( (int)(m_maxsock + 1),&rfds,&wfds,&efds,tsel);
-		m_mutex.Lock();
+		m_mutex -> Lock();
 	}
 	else
 	{

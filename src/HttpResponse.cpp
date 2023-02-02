@@ -4,6 +4,7 @@
  **	\author grymse@alhem.net
 **/
 /*
+Copyright (C) 2015-2023  Alhem Software AB
 Copyright (C) 2007-2011  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL, with
@@ -68,7 +69,11 @@ HttpResponse::HttpResponse(const HttpResponse& src) : HttpTransaction(src)
 , m_http_status_code( src.m_http_status_code )
 , m_http_status_msg( src.m_http_status_msg )
 , m_cookie( src.m_cookie )
+#ifdef HAVE_CPP11
+, m_file( std::move(src.m_file) )
+#else
 , m_file( src.m_file )
+#endif
 {
 }
 
@@ -86,7 +91,11 @@ HttpResponse& HttpResponse::operator=(const HttpResponse& src)
 	m_http_status_code = src.m_http_status_code;
 	m_http_status_msg = src.m_http_status_msg;
 	m_cookie = src.m_cookie;
+#ifdef HAVE_CPP11
+	m_file = std::move(src.m_file);
+#else
 	m_file = src.m_file;
+#endif
 
 	HttpTransaction::operator=(src);
 
@@ -218,7 +227,7 @@ IFile& HttpResponse::GetFile()
 // --------------------------------------------------------------------------------------
 void HttpResponse::SetFile( const std::string& path )
 {
-	m_file = std::auto_ptr<IFile>(new File);
+	m_file = USING_AUTOPTR_AS<IFile>(new File);
 	m_file -> fopen( path, "rb" );
 }
 
@@ -226,7 +235,7 @@ void HttpResponse::SetFile( const std::string& path )
 // --------------------------------------------------------------------------------------
 void HttpResponse::SetFile( IFile *f )
 {
-	m_file = std::auto_ptr<IFile>(f);
+	m_file = USING_AUTOPTR_AS<IFile>(f);
 }
 
 
@@ -241,7 +250,7 @@ void HttpResponse::Reset()
 	{
 		m_cookie.erase(m_cookie.begin());
 	}
-	m_file = std::auto_ptr<IFile>(new MemFile);
+	m_file = USING_AUTOPTR_AS<IFile>(new MemFile);
 }
 
 

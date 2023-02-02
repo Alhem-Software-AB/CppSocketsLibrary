@@ -3,6 +3,7 @@
  **	\author grymse@alhem.net
 **/
 /*
+Copyright (C) 2015-2023  Alhem Software AB
 Copyright (C) 2004-2011  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL, with
@@ -57,6 +58,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "Ipv6Address.h"
 #include "IFile.h"
 #include "Lock.h"
+#include "sockets_stdptr.h"
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
@@ -973,7 +975,7 @@ void TcpSocket::OnSocks4Connect()
 	request[0] = 4; // socks v4
 	request[1] = 1; // command code: CONNECT
 	{
-		std::auto_ptr<SocketAddress> ad = GetClientRemoteAddress();
+		USING_AUTOPTR_AS<SocketAddress> ad = GetClientRemoteAddress();
 		if (ad.get())
 		{
 			struct sockaddr *p0 = (struct sockaddr *)*ad;
@@ -1283,7 +1285,7 @@ void TcpSocket::InitializeContext(const std::string& context, const SSL_METHOD *
 	/* Create our context*/
 	if (m_client_contexts.find(context) == m_client_contexts.end())
 	{
-		const SSL_METHOD *meth = meth_in ? meth_in : SSLv3_method();
+		const SSL_METHOD *meth = meth_in ? meth_in : SSLv23_method();
 		m_ssl_ctx = m_client_contexts[context] = SSL_CTX_new(const_cast<SSL_METHOD *>(meth));
 		SSL_CTX_set_mode(m_ssl_ctx, SSL_MODE_AUTO_RETRY|SSL_MODE_ENABLE_PARTIAL_WRITE);
 	}
@@ -1302,7 +1304,7 @@ void TcpSocket::InitializeContext(const std::string& context,const std::string& 
 	// Create our context
 	if (m_server_contexts.find(context) == m_server_contexts.end())
 	{
-		const SSL_METHOD *meth = meth_in ? meth_in : SSLv3_method();
+		const SSL_METHOD *meth = meth_in ? meth_in : SSLv23_method();
 		m_ssl_ctx = m_server_contexts[context] = SSL_CTX_new(const_cast<SSL_METHOD *>(meth));
 		SSL_CTX_set_mode(m_ssl_ctx, SSL_MODE_AUTO_RETRY|SSL_MODE_ENABLE_PARTIAL_WRITE);
 		// session id
@@ -1339,7 +1341,7 @@ void TcpSocket::InitializeContext(const std::string& context,const std::string& 
 	/* Create our context*/
 	if (m_server_contexts.find(context) == m_server_contexts.end())
 	{
-		const SSL_METHOD *meth = meth_in ? meth_in : SSLv3_method();
+		const SSL_METHOD *meth = meth_in ? meth_in : SSLv23_method();
 		m_ssl_ctx = m_server_contexts[context] = SSL_CTX_new(const_cast<SSL_METHOD *>(meth));
 		SSL_CTX_set_mode(m_ssl_ctx, SSL_MODE_AUTO_RETRY|SSL_MODE_ENABLE_PARTIAL_WRITE);
 		// session id

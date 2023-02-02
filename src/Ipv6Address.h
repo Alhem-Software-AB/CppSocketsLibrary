@@ -4,6 +4,7 @@
  **	\author grymse@alhem.net
 **/
 /*
+Copyright (C) 2015-2023  Alhem Software AB
 Copyright (C) 2007-2011  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL, with
@@ -40,6 +41,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #if defined( _WIN32) && !defined(__CYGWIN__)
 typedef unsigned __int32 uint32_t;
 #endif
+
+#include "sockets_stdptr.h"
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
@@ -78,7 +81,7 @@ public:
 	int GetFamily();
 
 	bool IsValid();
-	std::auto_ptr<SocketAddress> GetCopy();
+	USING_AUTOPTR_AS<SocketAddress> GetCopy();
 
 	/** Convert address struct to text. */
 	std::string Convert(bool include_port = false);

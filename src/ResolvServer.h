@@ -3,6 +3,7 @@
  **	\author grymse@alhem.net
 **/
 /*
+Copyright (C) 2015-2023  Alhem Software AB
 Copyright (C) 2004-2011  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL, with
@@ -55,7 +56,7 @@ public:
 	bool Ready();
 
 private:
-	ResolvServer(const ResolvServer& ) {} // copy constructor
+	ResolvServer(const ResolvServer& src) : Thread(src) {} // copy constructor
 	ResolvServer& operator=(const ResolvServer& ) { return *this; } // assignment operator
 
 	bool m_quit;

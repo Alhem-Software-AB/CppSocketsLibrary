@@ -3,6 +3,7 @@
  **	\author grymse@alhem.net
 **/
 /*
+Copyright (C) 2015-2023  Alhem Software AB
 Copyright (C) 2004-2011  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL, with
@@ -110,9 +111,10 @@ protected:
 	pthread_attr_t m_attr;
 #endif
 
-private:
 	Thread(const Thread& ) {}
 	Thread& operator=(const Thread& ) { return *this; }
+
+private:
 	Semaphore m_sem;
 	bool m_running;
 	bool m_release;

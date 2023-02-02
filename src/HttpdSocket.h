@@ -1,6 +1,7 @@
 /** \file HttpdSocket.h
 */
 /*
+Copyright (C) 2015-2023  Alhem Software AB
 Copyright (C) 2001-2011  Anders Hedstrom (grymse@alhem.net)
 
 This library is made available under the terms of the GNU GPL, with

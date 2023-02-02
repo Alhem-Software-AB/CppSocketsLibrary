@@ -3,6 +3,7 @@
  **	\author grymse@alhem.net
 **/
 /*
+Copyright (C) 2015-2023  Alhem Software AB
 Copyright (C) 2004-2011  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL, with
@@ -73,9 +74,19 @@ WSAInitializer Socket::m_winsock_init;
 socketuid_t Socket::m_next_uid = 0;
 
 
+Socket::Socket() : m_handler(NULL)
+{
+}
+
+
+Socket::Socket(const Socket& s) : m_handler(s.m_handler)
+{
+}
+
+
 Socket::Socket(ISocketHandler& h)
 //:m_flags(0)
-:m_handler(h)
+:m_handler(&h)
 ,m_socket( INVALID_SOCKET )
 ,m_bDel(false)
 ,m_bClose(false)
@@ -85,8 +96,6 @@ Socket::Socket(ISocketHandler& h)
 ,m_connected(false)
 ,m_b_erased_by_handler(false)
 ,m_tClose(0)
-,m_client_remote_address(NULL)
-,m_remote_address(NULL)
 ,m_traffic_monitor(NULL)
 ,m_timeout_start(0)
 ,m_timeout_limit(0)
@@ -287,7 +296,7 @@ void Socket::SetRemoteAddress(SocketAddress& ad) //struct sockaddr* sa, socklen_
 }
 
 
-std::auto_ptr<SocketAddress> Socket::GetRemoteSocketAddress()
+USING_AUTOPTR_AS<SocketAddress> Socket::GetRemoteSocketAddress()
 {
 	return m_remote_address -> GetCopy();
 }
@@ -299,13 +308,17 @@ ISocketHandler& Socket::Handler() const
 	if (IsDetached())
 		return *m_slave_handler;
 #endif
-	return m_handler;
+	if (!m_handler)
+		throw Exception("handler not initialized (FATAL)");
+	return *m_handler;
 }
 
 
 ISocketHandler& Socket::MasterHandler() const
 {
-	return m_handler;
+	if (!m_handler)
+		throw Exception("handler not initialized (FATAL)");
+	return *m_handler;
 }
 
 
@@ -602,7 +615,7 @@ void Socket::SetClientRemoteAddress(SocketAddress& ad)
 }
 
 
-std::auto_ptr<SocketAddress> Socket::GetClientRemoteAddress()
+USING_AUTOPTR_AS<SocketAddress> Socket::GetClientRemoteAddress()
 {
 	if (!m_client_remote_address.get())
 	{

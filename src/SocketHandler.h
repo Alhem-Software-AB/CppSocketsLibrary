@@ -3,6 +3,7 @@
  **	\author grymse@alhem.net
 **/
 /*
+Copyright (C) 2015-2023  Alhem Software AB
 Copyright (C) 2004-2011  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL, with
@@ -239,9 +240,11 @@ protected:
 	void CheckClose();
 	//
 	StdLog *m_stdlog; ///< Registered log class, or NULL
-	IMutex& m_mutex; ///< Thread safety mutex
+private:
+	IMutex *m_mutex; ///< Thread safety mutex
+protected:
 	bool m_b_use_mutex; ///< Mutex correctly initialized
-	ISocketHandler& m_parent;
+	ISocketHandler *m_parent;
 	bool m_b_parent_is_valid;
 
 private:

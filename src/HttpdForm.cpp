@@ -4,6 +4,7 @@
  **/
 
 /*
+Copyright (C) 2015-2023  Alhem Software AB
 Copyright (C) 1999-2011  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL, with
@@ -40,6 +41,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "IFileUpload.h"
 #include "IStream.h"
 #include "File.h"
+#include "sockets_stdptr.h"
 #include <memory>
 
 #ifdef SOCKETS_NAMESPACE
@@ -64,7 +66,7 @@ HttpdForm::HttpdForm(FILE *fil)
 		const char *c_l = getenv("CONTENT_LENGTH");
 		if (c_t && c_l)
 		{
-			std::auto_ptr<IFile> p = std::auto_ptr<IFile>(new File(fil));
+			USING_AUTOPTR_AS<IFile> p = USING_AUTOPTR_AS<IFile>(new File(fil));
 			ParseFormData( p.get(), c_t, atoi(c_l) );
 		}
 	}

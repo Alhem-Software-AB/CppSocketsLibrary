@@ -4,6 +4,7 @@
  **	\author grymse@alhem.net
 **/
 /*
+Copyright (C) 2015-2023  Alhem Software AB
 Copyright (C) 2007-2011  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL, with
@@ -34,6 +35,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define _SOCKETS_HttpResponse_H
 
 #include "HttpTransaction.h"
+#include "sockets_stdptr.h"
 #include <list>
 
 #ifdef SOCKETS_NAMESPACE
@@ -85,7 +87,7 @@ private:
 	int m_http_status_code;
 	std::string m_http_status_msg;
 	Utility::ncmap<std::string> m_cookie;
-	mutable std::auto_ptr<IFile> m_file;
+	mutable USING_AUTOPTR_AS<IFile> m_file;
 
 }; // end of class
 

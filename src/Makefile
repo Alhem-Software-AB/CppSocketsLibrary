@@ -45,8 +45,8 @@ INCLUDE =	-I/usr/include/libxml2
 include		Makefile.Defines.$(PLATFORM)
 
 # uncomment these lines if the library should be in its own namespace
-#CFLAGS +=	-DSOCKETS_NAMESPACE=sockets
-#CFLAGS +=	-DSOCKETS_NAMESPACE_STR='"sockets"'
+#CFLAGS +=	-DSOCKETS_NAMESPACE=Sockets
+#CFLAGS +=	-DSOCKETS_NAMESPACE_STR='"Sockets"'
 
 # Enable insane amounts of debug output to stdout/stderr:
 #CFLAGS +=	-D_DEBUG
@@ -145,6 +145,8 @@ tar:		clean
 		rm -f Uid.*
 		rm -f Session.*
 		tar czf Sockets-$(VERSION).tar.gz $(FILES)
+
+tar-x:
 		/usr/local/bin/tarfix.sh Sockets-$(VERSION)
 		cp Sockets-$(VERSION).tar.gz $(HTDOCS)/Sockets
 		cp Sockets-$(VERSION).zip $(HTDOCS)/Sockets
@@ -162,6 +164,8 @@ tmptar:		clean
 		rm -f Uid.*
 		rm -f Session.*
 		tar czf Sockets-$(VERSION).tar.gz $(FILES)
+
+tmptar-x:
 		/usr/local/bin/tarfix.sh Sockets-$(VERSION)
 		cp Sockets-$(VERSION).tar.gz $(HTDOCS)/Sockets-tmp
 		cp Sockets-$(VERSION).zip $(HTDOCS)/Sockets-tmp

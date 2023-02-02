@@ -3,6 +3,7 @@
  ** \author grymse@alhem.net
 **/
 /*
+Copyright (C) 2015-2023  Alhem Software AB
 Copyright (C) 2004-2011  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL, with
@@ -44,6 +45,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <time.h>
 #include "SocketAddress.h"
 #include "Thread.h"
+#include "sockets_stdptr.h"
 
 
 #ifdef SOCKETS_NAMESPACE
@@ -177,7 +179,7 @@ public:
 	void SetClientRemoteAddress(SocketAddress&);
 
 	/** Get address/port of last connect() call. */
-	std::auto_ptr<SocketAddress> GetClientRemoteAddress();
+	USING_AUTOPTR_AS<SocketAddress> GetClientRemoteAddress();
 
 	/** Common interface for SendBuf used by Tcp and Udp sockets. */
 	virtual void SendBuf(const char *,size_t,int = 0);
@@ -300,7 +302,7 @@ public:
 	/** \name Information about remote connection */
 	//@{
 	/** Returns address of remote end. */
-	std::auto_ptr<SocketAddress> GetRemoteSocketAddress();
+	USING_AUTOPTR_AS<SocketAddress> GetRemoteSocketAddress();
 	/** Returns address of remote end: ipv4. */
 	ipaddr_t GetRemoteIP4();
 #ifdef ENABLE_IPV6
@@ -642,9 +644,9 @@ public:
 
 protected:
 	/** default constructor not available */
-	Socket() : m_handler(m_handler) {}
+	Socket();
 	/** copy constructor not available */
-	Socket(const Socket& s) : m_handler(s.m_handler) {}
+	Socket(const Socket& s);
 
 	/** assignment operator not available. */
 	Socket& operator=(const Socket& ) { return *this; }
@@ -655,7 +657,7 @@ protected:
 //	unsigned long m_flags; ///< boolean flags, replacing old 'bool' members
 
 private:
-	ISocketHandler& m_handler; ///< Reference of ISocketHandler in control of this socket
+	ISocketHandler *m_handler; ///< Reference of ISocketHandler in control of this socket
 	SOCKET m_socket; ///< File descriptor
 	bool m_bDel; ///< Delete by handler flag
 	bool m_bClose; ///< Close and delete flag
@@ -665,8 +667,8 @@ private:
 	bool m_connected; ///< Socket is connected (tcp/udp)
 	bool m_b_erased_by_handler; ///< Set by handler before delete
 	time_t m_tClose; ///< Time in seconds when ordered to close
-	std::auto_ptr<SocketAddress> m_client_remote_address; ///< Address of last connect()
-	std::auto_ptr<SocketAddress> m_remote_address; ///< Remote end address
+	USING_AUTOPTR_AS<SocketAddress> m_client_remote_address; ///< Address of last connect()
+	USING_AUTOPTR_AS<SocketAddress> m_remote_address; ///< Remote end address
 	IFile *m_traffic_monitor;
 	time_t m_timeout_start; ///< Set by SetTimeout
 	time_t m_timeout_limit; ///< Defined by SetTimeout
