@@ -25,13 +25,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "AjpBaseSocket.h"
 #include "HttpRequest.h"
-#include "HttpResponse.h"
 #include "IHttpServer.h"
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
 #endif
 
+
+class HttpResponse;
 
 class Ajp13Socket : public AjpBaseSocket, public IHttpServer
 {
@@ -42,7 +43,7 @@ public:
 	void OnPacket( const char *buf, size_t sz );
 
 	// implements IHttpServer::Respond
-	void Respond();
+	void Respond(const HttpResponse& res);
 
 	void OnTransferLimit();
 
@@ -56,8 +57,7 @@ private:
 	//
 	size_t m_body_size_left;
 	HttpRequest m_req;
-	HttpResponse m_res;
-
+	const IFile *m_res_file;
 };
 
 

@@ -36,9 +36,12 @@ class IHttpServer
 public:
 	virtual ~IHttpServer() {}
 
-	virtual void OnExec(const HttpRequest& req, HttpResponse& res) = 0;
+	/** Complete request has been received and parsed. Send response
+	    using the Respond() method. */
+	virtual void OnExec(const HttpRequest& req) = 0;
 
-	virtual void Respond() = 0;
+	/** Send response. */
+	virtual void Respond(const HttpResponse& res) = 0;
 
 };
 

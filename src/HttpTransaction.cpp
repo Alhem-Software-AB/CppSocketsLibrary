@@ -45,19 +45,6 @@ HttpTransaction::~HttpTransaction()
 
 
 // --------------------------------------------------------------------------------------
-HttpTransaction::HttpTransaction(const HttpTransaction&)
-{
-}
-
-
-// --------------------------------------------------------------------------------------
-HttpTransaction& HttpTransaction::operator=(const HttpTransaction&)
-{
-	return *this;
-}
-
-
-// --------------------------------------------------------------------------------------
 void HttpTransaction::SetHeader(const std::string& key, const std::string& value)
 {
 	m_header[Utility::ToLower(key)] = value;

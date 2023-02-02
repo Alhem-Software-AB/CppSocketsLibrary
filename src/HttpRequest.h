@@ -25,6 +25,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "HttpTransaction.h"
 #include "HttpdCookies.h"
+#include <memory>
+#include "IFile.h"
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
@@ -38,6 +40,7 @@ class HttpRequest : public HttpTransaction
 {
 public:
 	HttpRequest();
+	HttpRequest(const HttpRequest& src);
 	~HttpRequest();
 
 	/** Get, Post */
@@ -91,14 +94,11 @@ public:
 	const HttpdForm& Form() const;
 	const HttpdCookies& Cookies() const;
 
-	const IFile *BodyFile() const { return m_body_file; }
+	const IFile *BodyFile() const { return m_body_file.get(); }
 
 	void Reset();
 
 private:
-	HttpRequest(const HttpRequest&);
-	HttpRequest& operator=(const HttpRequest&);
-
 	std::string m_method;
 	std::string m_protocol;
 	std::string m_req_uri;
@@ -109,8 +109,8 @@ private:
 	bool m_is_ssl;
 	std::map<std::string, std::string> m_attribute;
 	std::string m_null;
-	IFile *m_body_file;
-	HttpdForm *m_form;
+	mutable std::auto_ptr<IFile> m_body_file;
+	mutable std::auto_ptr<HttpdForm> m_form;
 	HttpdCookies m_cookies;
 	std::map<std::string, std::string> m_cookie;
 

@@ -445,6 +445,7 @@ void TcpSocket::OnRead()
 				break;
 			case SSL_ERROR_ZERO_RETURN:
 DEB(				fprintf(stderr, "SSL_read() returns zero - closing socket\n");)
+				OnDisconnect();
 				SetCloseAndDelete(true);
 				SetFlushBeforeClose(false);
 #ifdef ENABLE_POOL
@@ -453,6 +454,7 @@ DEB(				fprintf(stderr, "SSL_read() returns zero - closing socket\n");)
 				break;
 			default:
 DEB(				fprintf(stderr, "SSL read problem, errcode = %d\n",n);)
+				OnDisconnect();
 				SetCloseAndDelete(true);
 				SetFlushBeforeClose(false);
 #ifdef ENABLE_POOL
@@ -498,6 +500,7 @@ DEB(				fprintf(stderr, "SSL read problem, errcode = %d\n",n);)
 		if (n == -1)
 		{
 			Handler().LogError(this, "read", Errno, StrError(Errno), LOG_LEVEL_FATAL);
+			OnDisconnect();
 			SetCloseAndDelete(true);
 			SetFlushBeforeClose(false);
 #ifdef ENABLE_POOL
@@ -728,6 +731,7 @@ int TcpSocket::TryWrite(const char *buf, size_t len)
 			int errnr = SSL_get_error(m_ssl, n);
 			if ( errnr != SSL_ERROR_WANT_READ && errnr != SSL_ERROR_WANT_WRITE )
 			{
+				OnDisconnect();
 				SetCloseAndDelete(true);
 				SetFlushBeforeClose(false);
 #ifdef ENABLE_POOL
@@ -741,6 +745,7 @@ int TcpSocket::TryWrite(const char *buf, size_t len)
 		else
 		if (!n)
 		{
+			OnDisconnect();
 			SetCloseAndDelete(true);
 			SetFlushBeforeClose(false);
 #ifdef ENABLE_POOL
@@ -767,6 +772,7 @@ DEB(			int errnr = SSL_get_error(m_ssl, n);
 #endif
 			{	
 				Handler().LogError(this, "send", Errno, StrError(Errno), LOG_LEVEL_FATAL);
+				OnDisconnect();
 				SetCloseAndDelete(true);
 				SetFlushBeforeClose(false);
 #ifdef ENABLE_POOL

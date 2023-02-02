@@ -94,12 +94,14 @@ public:
 	void SetStatus(const std::string& x);
 	/** Set http statustext for outgoing response. */
 	void SetStatusText(const std::string& x);
-	/** Add (and replace if exists) html header. */
+	/** Add (and replace if exists) http header. */
 	void AddResponseHeader(const std::string& x,const std::string& y);
-	/** Add (and replace if exists) html header. */
+	/** Add (and replace if exists) http header. */
 	void AddResponseHeader(const std::string& x,const char *format, ...);
-	/** Add html header. */
+	/** Add http header. */
 	void AppendResponseHeader(const std::string& x,const std::string& y);
+	/** See if http header 'name' has been set. */
+	bool ResponseHeaderIsSet(const std::string& name);
 	/** Send response prepared with calls to methods SetHttpVersion, SetStatus, SetStatusText,
 		and AddResponseHeader. */
 	void SendResponse();

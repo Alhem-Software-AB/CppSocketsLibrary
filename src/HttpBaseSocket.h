@@ -25,13 +25,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "HTTPSocket.h"
 #include "HttpRequest.h"
-#include "HttpResponse.h"
 #include "IHttpServer.h"
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
 #endif
 
+
+class HttpResponse;
 
 class HttpBaseSocket : public HTTPSocket, public IHttpServer
 {
@@ -45,21 +46,23 @@ public:
 	void OnData(const char *,size_t);
 
 	// implements IHttpServer::Respond
-	void Respond();
+	void Respond(const HttpResponse& res);
 
 	void OnTransferLimit();
 
 protected:
-	HttpBaseSocket(const HttpBaseSocket& s) : HTTPSocket(s), m_res(m_req) {} // copy constructor
+	HttpBaseSocket(const HttpBaseSocket& s) : HTTPSocket(s) {} // copy constructor
 	//
 	HttpRequest m_req;
-	HttpResponse m_res;
 	void Reset();
 
 private:
 	HttpBaseSocket& operator=(const HttpBaseSocket& ) { return *this; } // assignment operator
+	void Execute();
 	//
 	size_t m_body_size_left;
+	const IFile *m_res_file;
+	bool m_b_keepalive;
 };
 
 

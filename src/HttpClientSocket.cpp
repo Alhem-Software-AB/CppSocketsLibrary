@@ -26,6 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "HttpClientSocket.h"
 #include "StdLog.h"
 #include "ISocketHandler.h"
+#include "Utility.h"
 
 
 #ifdef SOCKETS_NAMESPACE
@@ -60,7 +61,7 @@ HttpClientSocket::HttpClientSocket(ISocketHandler& h,const std::string& url_in)
 {
 	std::string url;
 	url_this(url_in, m_protocol, m_host, m_port, url, m_url_filename);
-	SetUrl(url);
+	SetUrl( url );
 }
 
 

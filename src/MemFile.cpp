@@ -158,7 +158,7 @@ size_t MemFile::fread(char *ptr, size_t size, size_t nmemb) const
 size_t MemFile::fwrite(const char *ptr, size_t size, size_t nmemb)
 {
 	size_t p = m_write_ptr % BLOCKSIZE;
-	int nr = m_write_ptr / BLOCKSIZE;
+	int nr = (int)m_write_ptr / BLOCKSIZE;
 	size_t sz = size * nmemb;
 	if (m_current_write_nr < nr)
 	{

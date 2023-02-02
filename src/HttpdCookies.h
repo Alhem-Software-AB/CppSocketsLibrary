@@ -51,16 +51,9 @@ class HTTPSocket;
 \ingroup webserver */
 class HttpdCookies 
 {
-	/** Name/value pair store struct. 
-		\ingroup webserver */
-	struct COOKIE
-	{
-		COOKIE(const std::string& n,const std::string& v) : name(n),value(v) {}
-		std::string name;
-		std::string value;
-	};
 	/** list of key/value structs. */
-	typedef std::list<COOKIE *> cookie_v;
+	typedef std::list<std::pair<std::string, std::string> > cookie_v;
+
 public:
 	HttpdCookies();
 	HttpdCookies(const std::string& query_string);

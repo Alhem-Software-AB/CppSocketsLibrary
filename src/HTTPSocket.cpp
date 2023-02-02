@@ -333,13 +333,13 @@ void HTTPSocket::SetStatusText(const std::string& x)
 
 void HTTPSocket::AddResponseHeader(const std::string& x,const std::string& y)
 {
-	m_response_header[x] = y;
+	m_response_header[Utility::ToLower(x)] = y;
 }
 
 
 void HTTPSocket::AppendResponseHeader(const std::string& x,const std::string& y)
 {
-	m_response_header_append.push_back(std::pair<std::string, std::string>(x,y));
+	m_response_header_append.push_back(std::pair<std::string, std::string>(Utility::ToLower(x),y));
 }
 
 
@@ -384,6 +384,26 @@ void HTTPSocket::url_this(const std::string& url_in,std::string& protocol,std::s
 		}
 	}
 } // url_this
+
+
+bool HTTPSocket::ResponseHeaderIsSet(const std::string& name)
+{
+	string_m::iterator it = m_response_header.find( Utility::ToLower(name) );
+	if (it != m_response_header.end())
+	{
+		return true;
+	}
+	std::list<std::pair<std::string, std::string> >::iterator it2;
+	for (it2 = m_response_header_append.begin(); it2 != m_response_header_append.end(); it2++)
+	{
+		std::pair<std::string, std::string>& ref = *it2;
+		if (ref.first == Utility::ToLower(name) )
+		{
+			return true;
+		}
+	}
+	return false;
+}
 
 
 #ifdef SOCKETS_NAMESPACE

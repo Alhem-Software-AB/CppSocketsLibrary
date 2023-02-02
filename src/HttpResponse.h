@@ -31,16 +31,13 @@ namespace SOCKETS_NAMESPACE {
 #endif
 
 
-class HttpRequest;
 class IFile;
 
 class HttpResponse : public HttpTransaction
 {
 public:
-	HttpResponse(HttpRequest& req);
+	HttpResponse(const std::string& version = "HTTP/1.0");
 	~HttpResponse();
-
-	const HttpRequest& Request() const;
 
 	/** HTTP/1.x */
 	void SetHttpVersion(const std::string& value);
@@ -60,7 +57,7 @@ public:
 	void Write( const char *buf, size_t sz );
 	void Writef( const char *format, ... );
 
-	const IFile& GetFile() { return *m_file; }
+	const IFile& GetFile() const { return *m_file; }
 
 	/** Replace memfile with file on disk, opened for read. */
 	void SetFile( const std::string& path );
@@ -68,7 +65,6 @@ public:
 	void Reset();
 
 private:
-	HttpRequest& m_req;
 	std::string m_http_version;
 	int m_http_status_code;
 	std::string m_http_status_msg;

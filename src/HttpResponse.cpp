@@ -45,9 +45,8 @@ namespace SOCKETS_NAMESPACE {
 
 
 // --------------------------------------------------------------------------------------
-HttpResponse::HttpResponse(HttpRequest& req) : HttpTransaction()
-, m_req(req)
-, m_http_version( req.HttpVersion() )
+HttpResponse::HttpResponse(const std::string& version) : HttpTransaction()
+, m_http_version( version )
 , m_http_status_code(0)
 , m_file( new MemFile )
 {
@@ -58,13 +57,6 @@ HttpResponse::HttpResponse(HttpRequest& req) : HttpTransaction()
 HttpResponse::~HttpResponse()
 {
 	delete m_file;
-}
-
-
-// --------------------------------------------------------------------------------------
-const HttpRequest& HttpResponse::Request() const
-{
-	return m_req;
 }
 
 
@@ -188,7 +180,6 @@ void HttpResponse::SetFile( const std::string& path )
 void HttpResponse::Reset()
 {
 	HttpTransaction::Reset();
-	m_req.Reset();
 	m_http_version = "";
 	m_http_status_code = 0;
 	m_http_status_msg = "";

@@ -52,8 +52,31 @@ HttpRequest::HttpRequest() : HttpTransaction()
 
 
 // --------------------------------------------------------------------------------------
+HttpRequest::HttpRequest(const HttpRequest& src) : HttpTransaction(src)
+, m_method(src.m_method)
+, m_protocol(src.m_protocol)
+, m_req_uri(src.m_req_uri)
+, m_remote_addr(src.m_remote_addr)
+, m_remote_host(src.m_remote_host)
+, m_server_name(src.m_server_name)
+, m_server_port(src.m_server_port)
+, m_is_ssl(src.m_is_ssl)
+, m_attribute(src.m_attribute)
+, m_null(src.m_null)
+, m_body_file(src.m_body_file)
+, m_form(src.m_form)
+, m_cookies(src.m_cookies)
+, m_cookie(src.m_cookie)
+{
+}
+
+
+// --------------------------------------------------------------------------------------
 HttpRequest::~HttpRequest()
 {
+	m_body_file = std::auto_ptr<IFile>(NULL);
+	m_form = std::auto_ptr<HttpdForm>(NULL);
+/*
 	if (m_body_file)
 	{
 		delete m_body_file;
@@ -62,19 +85,7 @@ HttpRequest::~HttpRequest()
 	{
 		delete m_form;
 	}
-}
-
-
-// --------------------------------------------------------------------------------------
-HttpRequest::HttpRequest(const HttpRequest&)
-{
-}
-
-
-// --------------------------------------------------------------------------------------
-HttpRequest& HttpRequest::operator=(const HttpRequest&)
-{
-	return *this;
+*/
 }
 
 
@@ -239,8 +250,8 @@ DEB(fprintf(stderr, " *** AddCookie '%s' = '%s'\n", name.c_str(), lstr.c_str());
 // --------------------------------------------------------------------------------------
 void HttpRequest::InitBody( size_t sz )
 {
-	if (!m_body_file)
-		m_body_file = new MemFile;
+	if (!m_body_file.get())
+		m_body_file = std::auto_ptr<IFile>(new MemFile);
 DEB(	else
 		fprintf(stderr, "Body data file already opened\n");)
 }
@@ -249,7 +260,7 @@ DEB(	else
 // --------------------------------------------------------------------------------------
 void HttpRequest::Write( const char *buf, size_t sz )
 {
-	if (m_body_file)
+	if (m_body_file.get())
 		m_body_file -> fwrite(buf, 1, sz);
 DEB(	else
 		fprintf(stderr, "Write: Body data file not open\n");)
@@ -259,7 +270,7 @@ DEB(	else
 // --------------------------------------------------------------------------------------
 void HttpRequest::CloseBody()
 {
-	if (m_body_file)
+	if (m_body_file.get())
 		m_body_file -> fclose();
 DEB(	else
 		fprintf(stderr, "CloseBody: File not open\n");)
@@ -273,17 +284,17 @@ void HttpRequest::ParseBody()
 	if ( (it = m_attribute.find("query_string")) != m_attribute.end())
 	{
 		std::string qs = it -> second;
-		m_form = new HttpdForm( qs, qs.size() );
+		m_form = std::auto_ptr<HttpdForm>(new HttpdForm( qs, qs.size() ));
 	}
 	else
-	if (m_body_file)
+	if (m_body_file.get())
 	{
-		m_form = new HttpdForm( m_body_file, ContentType(), ContentLength() );
+		m_form = std::auto_ptr<HttpdForm>(new HttpdForm( m_body_file.get(), ContentType(), ContentLength() ));
 	}
 	else
 	{
 		// dummy
-		m_form = new HttpdForm( "", 0 );
+		m_form = std::auto_ptr<HttpdForm>(new HttpdForm( "", 0 ));
 	}
 }
 
@@ -318,6 +329,9 @@ void HttpRequest::Reset()
 	{
 		m_attribute.erase(m_attribute.begin());
 	}
+	m_body_file = std::auto_ptr<IFile>(NULL);
+	m_form = std::auto_ptr<HttpdForm>(NULL);
+/*
 	if (m_body_file)
 	{
 		delete m_body_file;
@@ -328,6 +342,7 @@ void HttpRequest::Reset()
 		delete m_form;
 		m_form = NULL;
 	}
+*/
 	m_cookies.Reset();
 	while (!m_cookie.empty())
 	{

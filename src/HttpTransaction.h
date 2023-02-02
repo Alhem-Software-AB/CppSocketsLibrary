@@ -80,9 +80,6 @@ public:
 	virtual void Reset();
 
 private:
-	HttpTransaction(const HttpTransaction&);
-	HttpTransaction& operator=(const HttpTransaction&);
-
 	std::map<std::string, std::string> m_header;
 	std::string m_null;
 

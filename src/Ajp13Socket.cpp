@@ -44,7 +44,7 @@ namespace SOCKETS_NAMESPACE {
 // --------------------------------------------------------------------------------------
 Ajp13Socket::Ajp13Socket(ISocketHandler& h) : AjpBaseSocket(h)
 , m_body_size_left(0)
-, m_res(m_req)
+, m_res_file(NULL)
 {
 }
 
@@ -242,13 +242,13 @@ void Ajp13Socket::Execute()
 	m_req.ParseBody();
 
 	// prepare page
-	OnExec( m_req, m_res );
+	OnExec( m_req );
 
 }
 
 
 // --------------------------------------------------------------------------------------
-void Ajp13Socket::Respond()
+void Ajp13Socket::Respond(const HttpResponse& res)
 {
 	char msg[8192];
 	msg[0] = 'A';
@@ -262,19 +262,19 @@ void Ajp13Socket::Respond()
 //	0x9 CPong Reply
 
 	// check content length
-	if (!m_res.ContentLength() && m_res.GetFile().size())
+	if (!res.ContentLength() && res.GetFile().size())
 	{
-		m_res.SetContentLength( m_res.GetFile().size() );
+//		res.SetContentLength( res.GetFile().size() );
 	}
 
 	// Send Headers
 	{
 		int ptr = 4;
 		put_byte(msg, ptr, 0x04); // send headers
-		put_integer(msg, ptr, m_res.HttpStatusCode() );
-		put_string(msg, ptr, m_res.HttpStatusMsg() );
-		put_integer(msg, ptr, (short)m_res.Headers().size() );
-		for (std::map<std::string, std::string>::const_iterator it = m_res.Headers().begin(); it != m_res.Headers().end(); ++it)
+		put_integer(msg, ptr, res.HttpStatusCode() );
+		put_string(msg, ptr, res.HttpStatusMsg() );
+		put_integer(msg, ptr, (short)res.Headers().size() );
+		for (std::map<std::string, std::string>::const_iterator it = res.Headers().begin(); it != res.Headers().end(); ++it)
 		{
 			std::map<std::string, int>::const_iterator it2 = Init.ResponseHeader.find( it -> first );
 			if (it2 != Init.ResponseHeader.end())
@@ -287,7 +287,7 @@ void Ajp13Socket::Respond()
 			}
 			put_string(msg, ptr, it -> second);
 		}
-		std::list<std::string> vec = m_res.CookieNames();
+		std::list<std::string> vec = res.CookieNames();
 		{
 			for (std::list<std::string>::iterator it = vec.begin(); it != vec.end(); it++)
 			{
@@ -300,7 +300,7 @@ void Ajp13Socket::Respond()
 				{
 					put_string(msg, ptr, "set-cookie");
 				}
-				put_string(msg, ptr, m_res.Cookie(*it) );
+				put_string(msg, ptr, res.Cookie(*it) );
 			}
 		}
 
@@ -309,47 +309,9 @@ void Ajp13Socket::Respond()
 
 		SendBuf( msg, ptr );
 	}
+	m_res_file = &res.GetFile();
 	// Send Body Chunk
-	{
-		size_t n = m_res.GetFile().fread(msg + 7, 1, 8100);
-		while (n > 0)
-		{
-			int ptr = 4;
-			put_byte(msg, ptr, 0x03); // send body chunk
-			put_integer(msg, ptr, (short)n);
-			ptr += (int)n;
-
-			short len = htons( ptr - 4 );
-			memcpy( msg + 2, &len, 2 );
-
-			SendBuf( msg, ptr );
-			if (GetOutputLength() > 1)
-			{
-				SetTransferLimit( 1 );
-				break;
-			}
-
-			//
-			n = m_res.GetFile().fread(msg + 7, 1, 8100);
-		}
-		if (!GetOutputLength()) // all body data sent and no data in output buffer - send end response
-		{
-			// End Response
-			{
-				int ptr = 4;
-				put_byte(msg, ptr, 0x05); // end response
-				put_boolean(msg, ptr, false); // reuse
-				/*
-					don't reuse
-				*/
-
-				short len = htons( ptr - 4 );
-				memcpy( msg + 2, &len, 2 );
-
-				SendBuf( msg, ptr );
-			}
-		}
-	}
+	OnTransferLimit();
 }
 
 
@@ -361,45 +323,43 @@ void Ajp13Socket::OnTransferLimit()
 	msg[1] = 'B';
 
 	// Send Body Chunk
+	size_t n = m_res_file -> fread(msg + 7, 1, 8100);
+	while (n > 0)
 	{
-		size_t n = m_res.GetFile().fread(msg + 7, 1, 8100);
-		while (n > 0)
+		int ptr = 4;
+		put_byte(msg, ptr, 0x03); // send body chunk
+		put_integer(msg, ptr, (short)n);
+		ptr += (int)n;
+
+		short len = htons( ptr - 4 );
+		memcpy( msg + 2, &len, 2 );
+
+		SendBuf( msg, ptr );
+		if (GetOutputLength() > 1)
 		{
-			int ptr = 4;
-			put_byte(msg, ptr, 0x03); // send body chunk
-			put_integer(msg, ptr, (short)n);
-			ptr += (int)n;
-
-			short len = htons( ptr - 4 );
-			memcpy( msg + 2, &len, 2 );
-
-			SendBuf( msg, ptr );
-			if (GetOutputLength() > 1)
-			{
-				SetTransferLimit( 1 );
-				break;
-			}
-
-			//
-			n = m_res.GetFile().fread(msg + 7, 1, 8100);
+			SetTransferLimit( 1 );
+			break;
 		}
-		if (!GetOutputLength()) // all body data sent and no data in output buffer - send end response
-		{
-			// End Response
-			{
-				int ptr = 4;
-				put_byte(msg, ptr, 0x05); // end response
-				put_boolean(msg, ptr, false); // reuse
-				/*
-					don't reuse
-				*/
 
-				short len = htons( ptr - 4 );
-				memcpy( msg + 2, &len, 2 );
+		//
+		n = m_res_file -> fread(msg + 7, 1, 8100);
+	}
+	if (!GetOutputLength()) // all body data sent and no data in output buffer - send end response
+	{
+		// End Response
+		int ptr = 4;
+		put_byte(msg, ptr, 0x05); // end response
+		put_boolean(msg, ptr, false); // reuse
+		/*
+			don't reuse
+			- but with m_req.Reset() and res.Reset() it should be possible
+			- also reset any AjpBaseSocket/Ajp13Socket specific states
+		*/
 
-				SendBuf( msg, ptr );
-			}
-		}
+		short len = htons( ptr - 4 );
+		memcpy( msg + 2, &len, 2 );
+
+		SendBuf( msg, ptr );
 	}
 }
 

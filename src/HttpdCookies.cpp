@@ -60,8 +60,7 @@ HttpdCookies::HttpdCookies(const std::string& s)
 		std::string name = pa2 -> getword();
 		std::string value = pa2 -> getword();
 		delete pa2;
-		COOKIE *c = new COOKIE(name,value);
-		m_cookies.push_back(c);
+		m_cookies.push_back(std::pair<std::string, std::string>(name, value));
 		//
 		slask = pa -> getword();
 	}
@@ -79,8 +78,7 @@ DEB(fprintf(stderr, "Parse cookie: %s\n", s.c_str());)
 		std::string name = pa2 -> getword();
 		std::string value = pa2 -> getword();
 		delete pa2;
-		COOKIE *c = new COOKIE(name,value);
-		m_cookies.push_back(c);
+		m_cookies.push_back(std::pair<std::string, std::string>(name, value));
 		//
 		slask = pa -> getword();
 	}
@@ -89,21 +87,16 @@ DEB(fprintf(stderr, "Parse cookie: %s\n", s.c_str());)
 
 HttpdCookies::~HttpdCookies()
 {
-	for (cookie_v::iterator it = m_cookies.begin(); it != m_cookies.end(); it++)
-	{
-		COOKIE *c = *it;
-		delete c;
-	}
 }
 
 bool HttpdCookies::getvalue(const std::string& name,std::string& buffer) const
 {
 	for (cookie_v::const_iterator it = m_cookies.begin(); it != m_cookies.end(); it++)
 	{
-		COOKIE *c = *it;
-		if (!strcasecmp(c -> name.c_str(),name.c_str()))
+		const std::pair<std::string, std::string>& ref = *it;
+		if (!strcasecmp(ref.first.c_str(),name.c_str()))
 		{
-			buffer = c -> value;
+			buffer = ref.second;
 			return true;
 		}
 	}
@@ -113,25 +106,17 @@ bool HttpdCookies::getvalue(const std::string& name,std::string& buffer) const
 
 void HttpdCookies::replacevalue(const std::string& name,const std::string& value)
 {
-	COOKIE *c = NULL;
-	
 	for (cookie_v::iterator it = m_cookies.begin(); it != m_cookies.end(); it++)
 	{
-		c = *it;
-		if (!strcasecmp(c -> name.c_str(),name.c_str()))
-			break;
-		c = NULL;
+		std::pair<std::string, std::string>& ref = *it;
+		if (!strcasecmp(ref.first.c_str(),name.c_str()))
+		{
+			ref.second = value;
+			return;
+		}
 	}
+	m_cookies.push_back(std::pair<std::string, std::string>(name, value));
 
-	if (c)
-	{
-		c -> value = value;
-	}
-	else
-	{
-		c = new COOKIE(name,value);
-		m_cookies.push_back(c);
-	}
 }
 
 void HttpdCookies::replacevalue(const std::string& name,long l)
@@ -146,16 +131,15 @@ void HttpdCookies::replacevalue(const std::string& name,int i)
 
 size_t HttpdCookies::getlength(const std::string& name) const
 {
-	COOKIE *c = NULL;
-
 	for (cookie_v::const_iterator it = m_cookies.begin(); it != m_cookies.end(); it++)
 	{
-		c = *it;
-		if (!strcasecmp(c -> name.c_str(),name.c_str()))
-			break;
-		c = NULL;
+		const std::pair<std::string, std::string>& ref = *it;
+		if (!strcasecmp(ref.first.c_str(),name.c_str()))
+		{
+			return ref.second.size();
+		}
 	}
-	return c ? c -> value.size() : 0;
+	return 0;
 }
 
 void HttpdCookies::setcookie(HTTPSocket *sock, const std::string& domain, const std::string& path, const std::string& name, const std::string& value)
@@ -271,11 +255,6 @@ const std::string& HttpdCookies::expiredatetime() const
 
 void HttpdCookies::Reset()
 {
-	for (cookie_v::iterator it = m_cookies.begin(); it != m_cookies.end(); it++)
-	{
-		COOKIE *p = *it;
-		delete p;
-	}
 	while (!m_cookies.empty())
 	{
 		m_cookies.erase(m_cookies.begin());

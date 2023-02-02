@@ -26,6 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "HttpBaseSocket.h"
 #include "IFile.h"
 #include "Utility.h"
+#include "HttpResponse.h"
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
@@ -40,7 +41,8 @@ namespace SOCKETS_NAMESPACE {
 
 HttpBaseSocket::HttpBaseSocket(ISocketHandler& h)
 :HTTPSocket(h)
-,m_res(m_req)
+,m_res_file(NULL)
+,m_b_keepalive(false)
 {
 }
 
@@ -86,7 +88,7 @@ void HttpBaseSocket::OnHeaderComplete()
 	else
 	{
 		// execute
-		OnExec(m_req, m_res);
+		Execute();
 	}
 }
 
@@ -98,100 +100,99 @@ void HttpBaseSocket::OnData(const char *buf,size_t sz)
 	if (!m_body_size_left)
 	{
 		m_req.CloseBody();
+
 		// execute
-		OnExec(m_req, m_res);
+		Execute();
 	}
 }
 
 
-void HttpBaseSocket::Respond()
+// --------------------------------------------------------------------------------------
+void HttpBaseSocket::Execute()
 {
-	m_res.SetHeader("connection", "close");
+	// parse form data / query_string and cookie header if available
+	m_req.ParseBody();
 
-	SetHttpVersion( m_res.HttpVersion() );
-	SetStatus( Utility::l2string(m_res.HttpStatusCode()) );
-	SetStatusText( m_res.HttpStatusMsg() );
+	// prepare page
+	OnExec( m_req );
 
-	AddResponseHeader( "content-length", Utility::l2string( m_res.GetFile().size() ) );
-	for (std::map<std::string, std::string>::const_iterator it = m_res.Headers().begin(); it != m_res.Headers().end(); ++it)
+DEB(printf(" *** http version: %s\n", m_req.HttpVersion().c_str());
+printf(" ***   connection: %s\n", m_req.Header("connection").c_str());)
+	if ( !(m_req.HttpVersion().size() > 4 && m_req.HttpVersion().substr(m_req.HttpVersion().size() - 4) == "/1.1") ||
+			m_req.Header("connection") == "close")
+	{
+		m_b_keepalive = false;
+DEB(printf(" *** keepalive: false\n");)
+	}
+	else
+	{
+		m_b_keepalive = true;
+DEB(printf(" *** keepalive: true\n");)
+	}
+	m_req.Reset();
+	Reset();
+}
+
+
+// --------------------------------------------------------------------------------------
+void HttpBaseSocket::Respond(const HttpResponse& res)
+{
+//	res.SetHeader("connection", "close");
+
+	SetHttpVersion( res.HttpVersion() );
+	SetStatus( Utility::l2string(res.HttpStatusCode()) );
+	SetStatusText( res.HttpStatusMsg() );
+
+	if (!ResponseHeaderIsSet("content-length"))
+	{
+		AddResponseHeader( "content-length", Utility::l2string( res.GetFile().size() ) );
+	}
+	for (std::map<std::string, std::string>::const_iterator it = res.Headers().begin(); it != res.Headers().end(); ++it)
 	{
 		AddResponseHeader( it -> first, it -> second );
 	}
-	std::list<std::string> vec = m_res.CookieNames();
+	std::list<std::string> vec = res.CookieNames();
 	for (std::list<std::string>::iterator it2 = vec.begin(); it2 != vec.end(); it2++)
 	{
-		AppendResponseHeader( "set-cookie", m_res.Cookie(*it2) );
+		AppendResponseHeader( "set-cookie", res.Cookie(*it2) );
 	}
 	SendResponse();
-	{
-		char msg[32768];
-		size_t n = m_res.GetFile().fread(msg, 1, 32768);
-		while (n > 0)
-		{
-			SendBuf( msg, n );
-			if (GetOutputLength() > 1)
-			{
-				SetTransferLimit( 1 );
-				break;
-			}
 
-			//
-			n = m_res.GetFile().fread(msg, 1, 32768);
-		}
-		if (!GetOutputLength())
-		{
-			if (m_req.HttpVersion() == "HTTP/1.0" ||
-					m_req.Header("connection") == "close")
-			{
-				SetCloseAndDelete();
-			}
-			else
-			{
-				Reset();
-			}
-		}
-	}
+	m_res_file = &res.GetFile();
+
+	OnTransferLimit();
 }
 
 
+// --------------------------------------------------------------------------------------
 void HttpBaseSocket::OnTransferLimit()
 {
+	char msg[32768];
+	size_t n = m_res_file -> fread(msg, 1, 32768);
+	while (n > 0)
 	{
-		char msg[32768];
-		size_t n = m_res.GetFile().fread(msg, 1, 32768);
-		while (n > 0)
+		SendBuf( msg, n );
+		if (GetOutputLength() > 1)
 		{
-			SendBuf( msg, n );
-			if (GetOutputLength() > 1)
-			{
-				SetTransferLimit( 1 );
-				break;
-			}
-
-			//
-			n = m_res.GetFile().fread(msg, 1, 32768);
+			SetTransferLimit( 1 );
+			break;
 		}
-		if (!GetOutputLength())
+		n = m_res_file -> fread(msg, 1, 32768);
+	}
+	if (!GetOutputLength())
+	{
+		if (!m_b_keepalive)
 		{
-			if (m_req.HttpVersion() == "HTTP/1.0" ||
-					m_req.Header("connection") == "close")
-			{
-				SetCloseAndDelete();
-			}
-			else
-			{
-				Reset();
-			}
+			SetCloseAndDelete();
 		}
 	}
 }
 
 
+// --------------------------------------------------------------------------------------
 void HttpBaseSocket::Reset()
 {
 	HTTPSocket::Reset();
-	m_req.Reset();
-	m_res.Reset();
 	m_body_size_left = 0;
 }
 
