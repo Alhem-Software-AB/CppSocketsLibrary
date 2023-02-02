@@ -68,7 +68,7 @@ SocketHandler::SocketHandler(StdLog *p)
 ,m_resolv_id(0)
 ,m_resolver(NULL)
 ,m_b_enable_pool(false)
-,m_mutex(m_mutex0) // yum
+,m_mutex(m_mutex) // yum
 ,m_b_use_mutex(false)
 {
 	FD_ZERO(&m_rfds);

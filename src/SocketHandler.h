@@ -51,6 +51,8 @@ class Mutex;
 	\ingroup basic */
 class SocketHandler
 {
+	friend class Socket;
+
 protected:
 	/** Map type for holding file descriptors/socket object pointers. */
 	typedef std::map<SOCKET,Socket *> socket_m;
@@ -141,10 +143,10 @@ public:
 	/** Check pool status. 
 		\return true if connection pool is enabled */
 	bool PoolEnabled();
-
+private:
 	/** Remove socket from socket map, used by Socket class. */
 	void Remove(Socket *);
-
+public:
 	/** Get checklist: callonconnect */
 	socket_v& GetFdsCallOnConnect();
 	/** Get checklist: Detach */
@@ -193,7 +195,6 @@ private:
 	socket_v m_fds_close; ///< checklist close and delete
 	Mutex& m_mutex; ///< Thread safety mutex
 	bool m_b_use_mutex; ///< Mutex correctly initialized
-	Mutex m_mutex0; ///< Dummy mutex when not using threadsafe
 };
 
 
