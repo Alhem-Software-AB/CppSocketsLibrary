@@ -172,9 +172,6 @@ public:
 	/** SSL; Get ssl password. */
 	const std::string& GetPassword();
 
-	/** Get timeout value for sending of all data before closing. */
-	long CheckSendTimeoutCount();
-
 protected:
 	TcpSocket(const TcpSocket& s);
 	void OnRead();
@@ -218,8 +215,6 @@ static	BIO *bio_err; ///< ssl bio err
 	// state flags
 	bool m_b_reconnect; ///< Reconnect on lost connection flag
 	bool m_b_is_reconnect; ///< Trying to reconnect
-	long m_send_timeout_count; ///< Max timer to wait for send all data
-	size_t m_last_output_buffer_size; ///< Remember buffer size to reset timeout count if changed
 };
 
 

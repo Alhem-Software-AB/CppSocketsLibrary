@@ -169,21 +169,6 @@ public:
 	/** Number of seconds the socket has been connected. */
 	time_t GetConnectTime();
 
-	/** Checks whether a string is a valid ipv4/ipv6 ip number. */
-	bool isip(const std::string&);
-	/** Hostname to ip resolution ipv4. */
-	bool u2ip(const std::string&, ipaddr_t&);
-	/** Hostname to ip resolution ipv6. */
-#ifdef IPPROTO_IPV6
-	bool u2ip(const std::string&, struct in6_addr&);
-#endif
-	/** Convert binary ip address to string: ipv4. */
-	void l2ip(const ipaddr_t,std::string& );
-	/** Convert binary ip address to string: ipv6. */
-#ifdef IPPROTO_IPV6
-	void l2ip(const struct in6_addr&,std::string& ,bool mixed = false);
-#endif
-
 	/** Used by ListenSocket. ipv4 and ipv6 */
 	void SetRemoteAddress(struct sockaddr* sa,socklen_t);
 	/** Returns address of remote end. */
@@ -413,6 +398,14 @@ public:
 	/** Store the slave sockethandler pointer. */
 	void SetSlaveHandler(SocketHandler *);
 
+	/** Return number of seconds since socket was ordered to close. */
+	time_t TimeSinceClose();
+
+	/** Set shutdown status. */
+	void SetShutdown(int);
+	/** Get shutdown status. */
+	int GetShutdown();
+
 protected:
 	Socket(const Socket& ); ///< do not allow use of copy constructor
 	/** Create new thread for this socket to run detached in. */
@@ -427,7 +420,7 @@ static	WSAInitializer m_winsock_init; ///< Winsock initialization singleton clas
 	/** assignment operator not available. */
 	Socket& operator=(const Socket& ) { return *this; }
 	//
-	void AddList(socket_v&, bool); ///< Add file descriptor to specified checklist
+	void AddList(socket_v&, bool, const std::string& src = ""); ///< Add file descriptor to specified checklist
 	SocketHandler& m_handler; ///< Reference of SocketHandler in control of this socket
 	SOCKET m_socket; ///< File descriptor
 	bool m_bDel; ///< Delete by handler flag
@@ -476,6 +469,8 @@ static	WSAInitializer m_winsock_init; ///< Winsock initialization singleton clas
 	int m_retries; ///< Actual number of connection retries (tcp)
 	bool m_b_erased_by_handler; ///< Set by handler before delete
 	SocketHandler *m_slave_handler; ///< Actual sockethandler while detached
+	time_t m_tClose; ///< Time in seconds when ordered to close
+	int m_shutdown; ///< Shutdown status
 };
 
 #ifdef SOCKETS_NAMESPACE

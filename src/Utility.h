@@ -42,6 +42,7 @@ typedef unsigned __int64 uint64_t;
 #endif
 #endif
 #include "Base64.h"
+#include "socket_include.h"
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
@@ -60,6 +61,24 @@ public:
 	static unsigned int hex2unsigned(const std::string& str);
 	static std::string rfc1738_encode(const std::string& src);
 	static std::string rfc1738_decode(const std::string& src);
+
+	/** Checks whether a string is a valid ipv4/ipv6 ip number. */
+	static bool isipv4(const std::string&);
+	/** Checks whether a string is a valid ipv4/ipv6 ip number. */
+	static bool isipv6(const std::string&);
+	/** Hostname to ip resolution ipv4, not asynchronous. */
+	static bool u2ip(const std::string&, ipaddr_t&);
+	/** Hostname to ip resolution ipv6, not asynchronous. */
+#ifdef IPPROTO_IPV6
+	static bool u2ip(const std::string&, struct in6_addr&);
+#endif
+	/** Convert binary ip address to string: ipv4. */
+	static void l2ip(const ipaddr_t,std::string& );
+	/** Convert binary ip address to string: ipv6. */
+#ifdef IPPROTO_IPV6
+	static void l2ip(const struct in6_addr&,std::string& ,bool mixed = false);
+#endif
+
 };
 
 

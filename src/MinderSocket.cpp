@@ -84,7 +84,7 @@ void MinderSocket::OnLine(const std::string& line)
 		port = (port_t)pa.getvalue();
 		unsigned long hostid = pa.getvalue();
 
-		u2ip(ipstr,ip);
+		Utility::u2ip(ipstr,ip);
 
 DEB(		printf(" received my id '%s' %s:%d - %lu\n",id.c_str(),ipstr.c_str(),port,hostid);)
 		// this is ourselves
@@ -118,7 +118,7 @@ DEB(		printf("ignoring %s:%d\n",ipstr.c_str(),port);)
 		port = (port_t)pa.getvalue();
 		long remote_host_id = pa.getvalue();
 
-		u2ip(ipstr,ip);
+		Utility::u2ip(ipstr,ip);
 		
 		if (ip == my_ip && port == my_port)
 		{

@@ -76,7 +76,7 @@ MinionSocket::MinionSocket(SocketHandler& h,const std::string& id,ipaddr_t l,por
 	SetLineProtocol();
 
 	std::string str;
-	l2ip(l,str);
+	Utility::l2ip(l,str);
 DEB(	printf(" new connect: %s:%d\n",str.c_str(),s);)
 }
 
@@ -112,7 +112,7 @@ void MinionSocket::OnConnect()
 void MinionSocket::SendHello(const std::string& cmd)
 {
 	std::string str;
-	l2ip(my_ip,str);
+	Utility::l2ip(my_ip,str);
 	char msg[200];
 	sprintf(msg,"%s_%s:%s:%d:%s:%ld\n",cmd.c_str(),m_remote_id.c_str(),str.c_str(),my_port,
 		static_cast<MinderHandler&>(Handler()).GetID().c_str(),
@@ -166,7 +166,7 @@ void MinionSocket::OnLine(const std::string& line)
 			int max = GetMaxConnections(); //atoi(config["max_connections"].c_str());
 			max = (max == 0) ? 4 : max;
 
-			u2ip(ipstr, ip);
+			Utility::u2ip(ipstr, ip);
 
 			if (id == static_cast<MinderHandler&>(Handler()).GetID() &&
 				!static_cast<MinderHandler&>(Handler()).FindMinion(remote_id) &&

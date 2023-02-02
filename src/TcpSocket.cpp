@@ -83,8 +83,6 @@ TcpSocket::TcpSocket(SocketHandler& h) : Socket(h)
 ,m_sbio(NULL)
 ,m_b_reconnect(false)
 ,m_b_is_reconnect(false)
-,m_send_timeout_count(0)
-,m_last_output_buffer_size(0)
 {
 }
 #ifdef _WIN32
@@ -106,8 +104,6 @@ TcpSocket::TcpSocket(SocketHandler& h,size_t isize,size_t osize) : Socket(h)
 ,m_sbio(NULL)
 ,m_b_reconnect(false)
 ,m_b_is_reconnect(false)
-,m_send_timeout_count(0)
-,m_last_output_buffer_size(0)
 {
 }
 #ifdef _WIN32
@@ -194,7 +190,7 @@ DEB(printf("Reusing connection\n");)
 		memcpy(&sa.sin_addr, &a, 4);
 		{
 			std::string sockshost;
-			l2ip(GetSocks4Host(), sockshost);
+			Utility::l2ip(GetSocks4Host(), sockshost);
 			Handler().LogError(this, "Open", 0, "Connecting to socks4 server @ " + sockshost + ":" +
 				Utility::l2string(GetSocks4Port()), LOG_LEVEL_INFO);
 		}
@@ -360,7 +356,7 @@ bool TcpSocket::Open(const std::string &host,port_t port)
 	{
 		in6_addr a;
 		// %! enable ipv6 resolver
-		if (!u2ip(host, a))
+		if (!Utility::u2ip(host, a))
 		{
 			SetCloseAndDelete();
 			return false;
@@ -368,10 +364,10 @@ bool TcpSocket::Open(const std::string &host,port_t port)
 		return Open(a, port);
 	}
 #endif
-	if (!Handler().ResolverEnabled() || isip(host) )
+	if (!Handler().ResolverEnabled() || Utility::isipv4(host) )
 	{
 		ipaddr_t l;
-		if (!u2ip(host,l))
+		if (!Utility::u2ip(host,l))
 		{
 			SetCloseAndDelete();
 			return false;
@@ -1266,17 +1262,6 @@ bool TcpSocket::IsReconnect()
 const std::string& TcpSocket::GetPassword()
 {
 	return m_password;
-}
-
-
-long TcpSocket::CheckSendTimeoutCount()
-{
-	if (GetOutputLength() != m_last_output_buffer_size)
-	{
-		m_last_output_buffer_size = GetOutputLength();
-		m_send_timeout_count = 0;
-	}
-	return m_send_timeout_count++;
 }
 
 

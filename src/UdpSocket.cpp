@@ -37,6 +37,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "SocketHandler.h"
 #include "UdpSocket.h"
+#include "Utility.h"
 // include this to see strange sights
 //#include <linux/in6.h>
 
@@ -93,7 +94,7 @@ int UdpSocket::Bind(const std::string& intf,port_t &port,int range)
 	if (IsIpv6())
 	{
 		in6_addr a;
-		if (u2ip(intf, a))
+		if (Utility::u2ip(intf, a))
 		{
 			return Bind(a, port, range);
 		}
@@ -105,7 +106,7 @@ int UdpSocket::Bind(const std::string& intf,port_t &port,int range)
 	}
 #endif
 	ipaddr_t l = 0;
-	if (u2ip(intf, l))
+	if (Utility::u2ip(intf, l))
 	{
 		return Bind(l, port, range);
 	}
@@ -209,7 +210,7 @@ bool UdpSocket::Open(const std::string& host,port_t port)
 	if (IsIpv6())
 	{
 		struct in6_addr a;
-		if (u2ip(host, a))
+		if (Utility::u2ip(host, a))
 		{
 			return Open(a, port);
 		}
@@ -217,7 +218,7 @@ bool UdpSocket::Open(const std::string& host,port_t port)
 	}
 #endif
 	ipaddr_t a;
-	if (u2ip(host, a))
+	if (Utility::u2ip(host, a))
 	{
 		return Open(a, port);
 	}
@@ -288,7 +289,7 @@ void UdpSocket::SendToBuf(const std::string& h,port_t p,const char *data,int len
 	if (IsIpv6())
 	{
 		struct in6_addr a;
-		if (u2ip(h,a))
+		if (Utility::u2ip(h,a))
 		{
 			SendToBuf(a, p, data, len, flags);
 		}
@@ -296,7 +297,7 @@ void UdpSocket::SendToBuf(const std::string& h,port_t p,const char *data,int len
 	}
 #endif
 	ipaddr_t a;
-	if (u2ip(h,a))
+	if (Utility::u2ip(h,a))
 	{
 		SendToBuf(a, p, data, len, flags);
 	}
@@ -551,7 +552,7 @@ void UdpSocket::AddMulticastMembership(const std::string& group,const std::strin
 	{
 		struct ipv6_mreq x;
 		struct in6_addr addr;
-		if (u2ip( group, addr ))
+		if (Utility::u2ip( group, addr ))
 		{
 			x.ipv6mr_multiaddr = addr;
 			x.ipv6mr_interface = if_index;
@@ -565,10 +566,10 @@ void UdpSocket::AddMulticastMembership(const std::string& group,const std::strin
 #endif
 	struct ip_mreq x; // ip_mreqn
 	ipaddr_t addr;
-	if (u2ip( group, addr ))
+	if (Utility::u2ip( group, addr ))
 	{
 		memcpy(&x.imr_multiaddr.s_addr, &addr, sizeof(addr));
-		u2ip( local_if, addr);
+		Utility::u2ip( local_if, addr);
 		memcpy(&x.imr_interface.s_addr, &addr, sizeof(addr));
 //		x.imr_ifindex = if_index;
 		if (setsockopt(GetSocket(), SOL_IP, IP_ADD_MEMBERSHIP, (char *)&x, sizeof(struct ip_mreq)) == -1)
@@ -586,7 +587,7 @@ void UdpSocket::DropMulticastMembership(const std::string& group,const std::stri
 	{
 		struct ipv6_mreq x;
 		struct in6_addr addr;
-		if (u2ip( group, addr ))
+		if (Utility::u2ip( group, addr ))
 		{
 			x.ipv6mr_multiaddr = addr;
 			x.ipv6mr_interface = if_index;
@@ -600,10 +601,10 @@ void UdpSocket::DropMulticastMembership(const std::string& group,const std::stri
 #endif
 	struct ip_mreq x; // ip_mreqn
 	ipaddr_t addr;
-	if (u2ip( group, addr ))
+	if (Utility::u2ip( group, addr ))
 	{
 		memcpy(&x.imr_multiaddr.s_addr, &addr, sizeof(addr));
-		u2ip( local_if, addr);
+		Utility::u2ip( local_if, addr);
 		memcpy(&x.imr_interface.s_addr, &addr, sizeof(addr));
 //		x.imr_ifindex = if_index;
 		if (setsockopt(GetSocket(), SOL_IP, IP_DROP_MEMBERSHIP, (char *)&x, sizeof(struct ip_mreq)) == -1)

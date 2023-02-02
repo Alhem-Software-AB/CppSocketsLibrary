@@ -42,6 +42,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "ResolvServer.h"
 #include "TcpSocket.h"
 #include "Mutex.h"
+#include "Utility.h"
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
@@ -155,20 +156,17 @@ void SocketHandler::ResolveLocal()
 	*h = 0;
 	gethostname(h,255);
 	{
-		Socket zl(*this);
-		if (zl.u2ip(h, m_ip))
+		if (Utility::u2ip(h, m_ip))
 		{
-			zl.l2ip(m_ip, m_addr);
+			Utility::l2ip(m_ip, m_addr);
 		}
 	}
 #ifdef IPPROTO_IPV6
 	memset(&m_local_ip6, 0, sizeof(m_local_ip6));
 	{
-		Socket zl(*this);
-		zl.SetIpv6();
-		if (zl.u2ip(h, m_local_ip6))
+		if (Utility::u2ip(h, m_local_ip6))
 		{
-			zl.l2ip(m_local_ip6, m_local_addr6);
+			Utility::l2ip(m_local_ip6, m_local_addr6);
 		}
 	}
 #endif
@@ -255,6 +253,15 @@ int SocketHandler::Select(long sec,long usec)
 
 int SocketHandler::Select()
 {
+	if (m_fds_callonconnect.size() ||
+		(!m_slave && m_fds_detach.size()) ||
+		m_fds_connecting.size() ||
+		m_fds_retry.size() ||
+		m_fds_close.size() ||
+		m_fds_erase.size())
+	{
+		return Select(0, 200000);
+	}
 	return Select(NULL);
 }
 
@@ -292,7 +299,7 @@ int SocketHandler::Select(struct timeval *tsel)
 		m_maxsock = (s > m_maxsock) ? s : m_maxsock;
 		m_fds.push_back(s);
 		m_sockets[s] = p;
-//printf("Add: %d\n", s);
+		//
 		m_add.erase(it);
 	}
 #ifdef MACOSX
@@ -464,7 +471,6 @@ DEB(
 		socket_v tmp = m_fds_callonconnect;
 		for (socket_v::iterator it = tmp.begin(); it != tmp.end(); it++)
 		{
-//printf("Check fd callonconnect: %d\n", *it);
 			Socket *p = m_sockets[*it];
 			if (p)
 			{
@@ -504,7 +510,6 @@ DEB(
 	{
 		for (socket_v::iterator it = m_fds_detach.begin(); it != m_fds_detach.end(); it++)
 		{
-//printf("Check fd detach: %d\n", *it);
 			Socket *p = m_sockets[*it];
 			if (p)
 			{
@@ -527,7 +532,6 @@ DEB(
 		socket_v tmp = m_fds_connecting;
 		for (socket_v::iterator it = tmp.begin(); it != tmp.end(); it++)
 		{
-//printf("Check fd connecting: %d\n", *it);
 			Socket *p = m_sockets[*it];
 			if (p)
 			{
@@ -573,7 +577,6 @@ DEB(
 		socket_v tmp = m_fds_retry;
 		for (socket_v::iterator it = tmp.begin(); it != tmp.end(); it++)
 		{
-//printf("Check fd retry client connect: %d\n", *it);
 			Socket *p = m_sockets[*it];
 			if (p)
 			{
@@ -605,20 +608,29 @@ DEB(
 		socket_v tmp = m_fds_close;
 		for (socket_v::iterator it = tmp.begin(); it != tmp.end(); it++)
 		{
-//printf("Check fd close: %d\n", *it);
 			Socket *p = m_sockets[*it];
 			if (p)
 			{
 				if (p -> CloseAndDelete() )
 				{
 					TcpSocket *tcp = dynamic_cast<TcpSocket *>(p);
-					if (tcp && tcp -> GetOutputLength() && 
-						tcp -> GetFlushBeforeClose() && 
-						!tcp -> IsSSL() &&
-						tcp -> CheckSendTimeoutCount() < 100 // magic number of cycles
-						) // wait until all data sent
+					// new graceful tcp - flush and close timeout 5s
+					if (tcp && tcp -> GetFlushBeforeClose() && !tcp -> IsSSL() && p -> TimeSinceClose() < 5)
 					{
-						LogError(p, "Closing", (int)tcp -> GetOutputLength(), "Sending all data before closing", LOG_LEVEL_INFO);
+						if (tcp -> GetOutputLength())
+						{
+							LogError(p, "Closing", (int)tcp -> GetOutputLength(), "Sending all data before closing", LOG_LEVEL_INFO);
+						}
+						else // shutdown write when output buffer is empty
+						if (!(p -> GetShutdown() & SHUT_WR))
+						{
+							SOCKET nn = *it;
+							if (nn != INVALID_SOCKET && shutdown(nn, SHUT_WR) == -1)
+							{
+								LogError(p, "graceful shutdown", Errno, StrError(Errno), LOG_LEVEL_ERROR);
+							}
+							p -> SetShutdown(SHUT_WR);
+						}
 					}
 					else
 					if (tcp && p -> IsConnected() && tcp -> Reconnect())
@@ -667,7 +679,8 @@ DEB(
 						if (p -> DeleteByHandler())
 						{
 							p -> SetErasedByHandler();
-							delete p;
+DEB(printf("Delete socket with fd %d\n", nn);)
+//							delete p;
 						}
 						m_fds_erase.push_back(nn);
 					}
@@ -682,12 +695,14 @@ DEB(
 	{
 		socket_v::iterator it = m_fds_erase.begin();
 		SOCKET nn = *it;
+DEB(printf("Remove socket with fd %d\n", nn);)
 		{
 			for (socket_v::iterator it = m_fds_detach.begin(); it != m_fds_detach.end(); it++)
 			{
 				if (*it == nn)
 				{
 					m_fds_detach.erase(it);
+DEB(printf("Remove socket from m_fds_detach with fd %d\n", nn);)
 					break;
 				}
 			}
@@ -698,6 +713,7 @@ DEB(
 				if (*it == nn)
 				{
 					m_fds.erase(it);
+DEB(printf("Remove socket from m_fds with fd %d\n", nn);)
 					break;
 				}
 			}
@@ -707,7 +723,13 @@ DEB(
 			{
 				if ((*it).first == nn)
 				{
+					Socket *p = (*it).second;
+					if (p -> ErasedByHandler())
+					{
+						delete p;
+					}
 					m_sockets.erase(it);
+DEB(printf("Remove socket from m_sockets with fd %d\n", nn);)
 					break;
 				}
 			}
@@ -734,6 +756,7 @@ DEB(
 		if (p -> DeleteByHandler())
 		{
 			p -> SetErasedByHandler();
+DEB(printf("Delete socket with fd %d (add failed)\n", p -> GetSocket());)
 			delete p;
 		}
 	}
@@ -882,8 +905,7 @@ void SocketHandler::SetSocks4Host(ipaddr_t a)
 
 void SocketHandler::SetSocks4Host(const std::string& host)
 {
-	Socket s(*this);
-	s.u2ip(host, m_socks4_host);
+	Utility::u2ip(host, m_socks4_host);
 }
 
 
@@ -908,7 +930,7 @@ int SocketHandler::Resolve(Socket *p,const std::string& host,port_t port)
 	resolv -> SetPort(port);
 	resolv -> SetDeleteByHandler();
 	ipaddr_t local;
-	resolv -> u2ip("127.0.0.1", local);
+	Utility::u2ip("127.0.0.1", local);
 	if (!resolv -> Open(local, m_resolver_port))
 	{
 		LogError(resolv, "Resolve", -1, "Can't connect to local resolve server", LOG_LEVEL_FATAL);
@@ -1006,7 +1028,10 @@ bool SocketHandler::PoolEnabled()
 void SocketHandler::Remove(Socket *p)
 {
 	if (p -> ErasedByHandler())
+	{
+DEB(printf("Not removing socket from sockethandler, fd %d\n", p -> GetSocket());)
 		return;
+	}
 	for (socket_m::iterator it = m_sockets.begin(); it != m_sockets.end(); it++)
 	{
 		if ((*it).second == p)

@@ -163,13 +163,14 @@ namespace SOCKETS_NAMESPACE {
 }
 #endif
 
-#define MSG_NOSIGNAL 0
-#define SHUT_RDWR 2
-
 // 1.8.6: define FD_SETSIZE to something bigger than 64 if there are a lot of
 // simultaneous connections (must be done before including winsock.h)
 //#define FD_SETSIZE 1024
 #include <winsock.h>
+
+#define MSG_NOSIGNAL 0
+//#define SHUT_RDWR 2
+#define SHUT_WR 1
 
 #define Errno WSAGetLastError()
 #ifdef SOCKETS_NAMESPACE

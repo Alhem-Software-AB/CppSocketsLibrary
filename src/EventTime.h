@@ -27,8 +27,8 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
-#ifndef _SOCKETS_TIME_H
-#define _SOCKETS_TIME_H
+#ifndef _SOCKETS_EVENTTIME_H
+#define _SOCKETS_EVENTTIME_H
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
@@ -72,4 +72,4 @@ private:
 }
 #endif
 
-#endif // _SOCKETS_TIME_H
+#endif // _SOCKETS_EVENTTIME_H

@@ -84,7 +84,7 @@ void ResolvSocket::OnLine(const std::string& line)
 	if (key == "A" && m_parent)
 	{
 		ipaddr_t l;
-		u2ip(value, l); // ip2ipaddr_t
+		Utility::u2ip(value, l); // ip2ipaddr_t
 		m_parent -> OnResolved(m_resolv_id, l, m_resolv_port);
 		m_parent = NULL; // always use first ip in case there are several
 	}

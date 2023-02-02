@@ -102,6 +102,8 @@ Socket::Socket(SocketHandler& h)
 ,m_retries(0)
 ,m_b_erased_by_handler(false)
 ,m_slave_handler(NULL)
+,m_tClose(0)
+,m_shutdown(0)
 {
 }
 
@@ -233,7 +235,7 @@ int Socket::Close()
 	SetNonblocking(true);
 	if (IsConnected())
 	{
-		if (shutdown(m_socket, SHUT_RDWR) == -1)
+		if (shutdown(m_socket, SHUT_WR) == -1)
 		{
 			// failed...
 			Handler().LogError(this, "shutdown", Errno, StrError(Errno), LOG_LEVEL_ERROR);
@@ -248,7 +250,9 @@ int Socket::Close()
 	else
 	{
 		if (n)
+		{
 			Handler().LogError(this, "read() after shutdown", n, "bytes read", LOG_LEVEL_WARNING);
+		}
 	}
 	if ((n = closesocket(m_socket)) == -1)
 	{
@@ -256,11 +260,11 @@ int Socket::Close()
 		Handler().LogError(this, "close", Errno, StrError(Errno), LOG_LEVEL_ERROR);
 	}
 	Set(false, false, false); // remove from fd_set's
-	AddList(Handler().GetFdsCallOnConnect(), false);
-	AddList(Handler().GetFdsDetach(), false);
-	AddList(Handler().GetFdsConnecting(), false);
-	AddList(Handler().GetFdsRetry(), false);
-	AddList(Handler().GetFdsClose(), false);
+	AddList(Handler().GetFdsCallOnConnect(), false, "Close()/CallOnConnect");
+	AddList(Handler().GetFdsDetach(), false, "Close()/Detach");
+	AddList(Handler().GetFdsConnecting(), false, "Close()/Connecting");
+	AddList(Handler().GetFdsRetry(), false, "Close()/Retry");
+	AddList(Handler().GetFdsClose(), false, "Close()/Close");
 	m_socket = INVALID_SOCKET;
 	return n;
 }
@@ -330,270 +334,6 @@ SOCKET Socket::CreateSocket(int af,int type, const std::string& protocol)
 }
 
 
-bool Socket::isip(const std::string& str)
-{
-	if (m_ipv6)
-	{
-		size_t qc = 0;
-		size_t qd = 0;
-		for (size_t i = 0; i < str.size(); i++)
-		{
-			qc += (str[i] == ':') ? 1 : 0;
-			qd += (str[i] == '.') ? 1 : 0;
-		}
-		if (qc > 7)
-		{
-			return false;
-		}
-		if (qd && qd != 3)
-		{
-			return false;
-		}
-		Parse pa(str,":.");
-		std::string tmp = pa.getword();
-		while (tmp.size())
-		{
-			if (tmp.size() > 4)
-			{
-				return false;
-			}
-			for (size_t i = 0; i < tmp.size(); i++)
-			{
-				if (tmp[i] < '0' || (tmp[i] > '9' && tmp[i] < 'A') ||
-					(tmp[i] > 'F' && tmp[i] < 'a') || tmp[i] > 'f')
-				{
-					return false;
-				}
-			}
-			//
-			tmp = pa.getword();
-		}
-		return true;
-	}
-	for (size_t i = 0; i < str.size(); i++)
-		if (!isdigit(str[i]) && str[i] != '.')
-			return false;
-	return true;
-}
-
-
-bool Socket::u2ip(const std::string& str, ipaddr_t& l)
-{
-	if (m_ipv6)
-	{
-		Handler().LogError(this, "u2ip", 0, "converting to ipv4 on ipv6 socket", LOG_LEVEL_WARNING);
-	}
-	if (isip(str))
-	{
-		Parse pa((char *)str.c_str(), ".");
-		union {
-			struct {
-				unsigned char b1;
-				unsigned char b2;
-				unsigned char b3;
-				unsigned char b4;
-			} a;
-			ipaddr_t l;
-		} u;
-		u.a.b1 = static_cast<unsigned char>(pa.getvalue());
-		u.a.b2 = static_cast<unsigned char>(pa.getvalue());
-		u.a.b3 = static_cast<unsigned char>(pa.getvalue());
-		u.a.b4 = static_cast<unsigned char>(pa.getvalue());
-		l = u.l;
-		return true;
-	}
-	else
-	{
-		struct hostent *he = gethostbyname( str.c_str() );
-		if (!he)
-		{
-			Handler().LogError(this, "gethostbyname", Errno, StrError(Errno), LOG_LEVEL_WARNING);
-			return false;
-		}
-		memcpy(&l, he -> h_addr, 4);
-		return true;
-	}
-	return false;
-}
-
-
-#ifdef IPPROTO_IPV6
-bool Socket::u2ip(const std::string& str, struct in6_addr& l)
-{
-	if (!m_ipv6)
-	{
-		Handler().LogError(this, "u2ip", 0, "converting to ipv6 on ipv4 socket", LOG_LEVEL_WARNING);
-	}
-	if (isip(str))
-	{
-		std::list<std::string> vec;
-		size_t x = 0;
-//		char s[100];
-		for (size_t i = 0; i <= str.size(); i++)
-		{
-			if (i == str.size() || str[i] == ':')
-			{
-//				strncpy(s, str.substr(x,i - x).c_str(), i - x);
-//				s[i - x] = 0;
-				std::string s = str.substr(x, i - x);
-				//
-				if (strstr(s.c_str(),".")) // x.x.x.x
-				{
-					Parse pa(s,".");
-					char slask[100]; // u2ip temporary hex2string conversion
-					unsigned long b0 = static_cast<unsigned long>(pa.getvalue());
-					unsigned long b1 = static_cast<unsigned long>(pa.getvalue());
-					unsigned long b2 = static_cast<unsigned long>(pa.getvalue());
-					unsigned long b3 = static_cast<unsigned long>(pa.getvalue());
-					sprintf(slask,"%lx",b0 * 256 + b1);
-					vec.push_back(slask);
-					sprintf(slask,"%lx",b2 * 256 + b3);
-					vec.push_back(slask);
-				}
-				else
-				{
-					vec.push_back(s);
-				}
-				//
-				x = i + 1;
-			}
-		}
-		size_t sz = vec.size(); // number of byte pairs
-		size_t i = 0; // index in in6_addr.in6_u.u6_addr16[] ( 0 .. 7 )
-		for (std::list<std::string>::iterator it = vec.begin(); it != vec.end(); it++)
-		{
-			std::string bytepair = *it;
-			if (bytepair.size())
-			{
-				l.s6_addr16[i++] = htons(Utility::hex2unsigned(bytepair));
-			}
-			else
-			{
-				l.s6_addr16[i++] = 0;
-				while (sz++ < 8)
-				{
-					l.s6_addr16[i++] = 0;
-				}
-			}
-		}
-		return true;
-	}
-	else
-	{
-#ifdef SOLARIS
-		int errnum = 0;
-		struct hostent *he = getipnodebyname( str.c_str(), AF_INET6, 0, &errnum );
-#else
-		struct hostent *he = gethostbyname2( str.c_str(), AF_INET6 );
-#endif
-		if (!he)
-		{
-#ifdef SOLARIS
-			Handler().LogError(this, "getipnodebyname", errnum, "failed, see error code");
-#else
-			Handler().LogError(this, "gethostbyname2", Errno, StrError(Errno), LOG_LEVEL_WARNING);
-#endif
-			return false;
-		}
-		memcpy(&l,he -> h_addr_list[0],he -> h_length);
-#ifdef SOLARIS
-		free(he);
-#endif
-		return true;
-	}
-	return false;
-}
-#endif
-
-
-void Socket::l2ip(const ipaddr_t ip, std::string& str)
-{
-	if (m_ipv6)
-	{
-		Handler().LogError(this, "l2ip", 0, "converting to ipv4 on ipv6 socket", LOG_LEVEL_ERROR);
-		str = "";
-		return;
-	}
-	union {
-		struct {
-			unsigned char b1;
-			unsigned char b2;
-			unsigned char b3;
-			unsigned char b4;
-		} a;
-		ipaddr_t l;
-	} u;
-	u.l = ip;
-	char tmp[100];
-	sprintf(tmp, "%u.%u.%u.%u", u.a.b1, u.a.b2, u.a.b3, u.a.b4);
-	str = tmp;
-}
-
-
-#ifdef IPPROTO_IPV6
-void Socket::l2ip(const struct in6_addr& ip, std::string& str,bool mixed)
-{
-	if (!m_ipv6)
-	{
-		Handler().LogError(this, "l2ip", 0, "converting to ipv6 on ipv4 socket", LOG_LEVEL_ERROR);
-		str = "";
-		return;
-	}
-	char slask[100]; // l2ip temporary
-	*slask = 0;
-	unsigned int prev = 0;
-	bool skipped = false;
-	bool ok_to_skip = true;
-	if (mixed)
-	{
-		unsigned int x;
-		for (size_t i = 0; i < 6; i++)
-		{
-			x = ntohs(ip.s6_addr16[i]);
-			if (*slask && (x || !ok_to_skip || prev))
-				strcat(slask,":");
-			if (x || !ok_to_skip)
-			{
-				sprintf(slask + strlen(slask),"%X", x);
-				if (x && skipped)
-					ok_to_skip = false;
-			}
-			else
-			{
-				skipped = true;
-			}
-			prev = x;
-		}
-		x = ntohs(ip.s6_addr16[6]);
-		sprintf(slask + strlen(slask),":%u.%u",x / 256,x & 255);
-		x = ntohs(ip.s6_addr16[7]);
-		sprintf(slask + strlen(slask),".%u.%u",x / 256,x & 255);
-	}
-	else
-	{
-		for (size_t i = 0; i < 8; i++)
-		{
-			unsigned int x = ntohs(ip.s6_addr16[i]);
-			if (*slask && (x || !ok_to_skip || prev))
-				strcat(slask,":");
-			if (x || !ok_to_skip)
-			{
-				sprintf(slask + strlen(slask),"%X", x);
-				if (x && skipped)
-					ok_to_skip = false;
-			}
-			else
-			{
-				skipped = true;
-			}
-			prev = x;
-		}
-	}
-	str = slask;
-}
-#endif
-
-
 void Socket::Attach(SOCKET s)
 {
 	m_socket = s;
@@ -620,8 +360,12 @@ bool Socket::DeleteByHandler()
 
 void Socket::SetCloseAndDelete(bool x)
 {
-	AddList(Handler().GetFdsClose(), x);
+	AddList(Handler().GetFdsClose(), x, "SetCloseAndDelete()");
 	m_bClose = x;
+	if (x)
+	{
+		m_tClose = time(NULL);
+	}
 }
 
 
@@ -633,7 +377,7 @@ bool Socket::CloseAndDelete()
 
 void Socket::SetConnecting(bool x)
 {
-	AddList(Handler().GetFdsConnecting(), x);
+	AddList(Handler().GetFdsConnecting(), x, "SetConnecting()");
 	m_bConnecting = x;
 	if (x)
 		m_tConnect = time(NULL);
@@ -714,11 +458,11 @@ std::string Socket::GetRemoteAddress()
 #ifdef IPPROTO_IPV6
 	if (m_ipv6)
 	{
-		l2ip(GetRemoteIP6(), str);
+		Utility::l2ip(GetRemoteIP6(), str);
 		return str;
 	}
 #endif
-	l2ip(GetRemoteIP4(), str);
+	Utility::l2ip(GetRemoteIP4(), str);
 	return str;
 }
 
@@ -734,11 +478,7 @@ std::string Socket::GetRemoteHostname()
 	}
 #endif
 	long l = GetRemoteIP4();
-//#ifdef LINUX
-//	struct hostent *he = gethostbyaddr(&l, sizeof(long), AF_INET);
-//#else // _WIN32, MACOSX and SOLARIS
 	struct hostent *he = gethostbyaddr( (char *)&l, sizeof(long), AF_INET);
-//#endif
 	if (!he)
 	{
 		return GetRemoteAddress();
@@ -967,7 +707,7 @@ bool Socket::OnSocks4Read()
 
 void Socket::SetSocks4Host(const std::string& host)
 {
-	u2ip(host, m_socks4_host);
+	Utility::u2ip(host, m_socks4_host);
 }
 
 
@@ -1029,7 +769,7 @@ void Socket::OnDetached()
 
 void Socket::SetDetach(bool x)
 {
-	AddList(Handler().GetFdsDetach(), x);
+	AddList(Handler().GetFdsDetach(), x, "SetDetach()");
 	m_detach = x;
 }
 
@@ -1158,7 +898,7 @@ bool Socket::Lost()
 
 void Socket::SetCallOnConnect(bool x)
 {
-	AddList(Handler().GetFdsCallOnConnect(), x);
+	AddList(Handler().GetFdsCallOnConnect(), x, "SetCallOnConnect()");
 	m_call_on_connect = x;
 }
 
@@ -1291,7 +1031,7 @@ bool Socket::IsDisableRead()
 
 void Socket::SetRetryClientConnect(bool x)
 {
-	AddList(Handler().GetFdsRetry(), x);
+	AddList(Handler().GetFdsRetry(), x, "SetRetryClientConnect()");
 	m_b_retry_connect = x;
 }
 
@@ -1393,14 +1133,17 @@ bool Socket::ErasedByHandler()
 }
 
 
-void Socket::AddList(socket_v& ref, bool add)
+void Socket::AddList(socket_v& ref, bool add, const std::string& src)
 {
-//printf("AddList: %d, %s\n", m_socket, add ? "add" : "remove");
+DEB(printf("AddList, %s: %d, %s\n", src.c_str(), m_socket, add ? "add" : "remove");)
 	if (m_socket == INVALID_SOCKET)
+	{
+DEB(printf(" AddList called with INVALID_SOCKET\n");)
 		return;
+	}
 	if (add)
 	{
-		AddList(ref, false);
+		AddList(ref, false, "remove before add");
 		ref.push_back(m_socket);
 	}
 	else // remove
@@ -1420,6 +1163,24 @@ void Socket::AddList(socket_v& ref, bool add)
 void Socket::SetSlaveHandler(SocketHandler *p)
 {
 	m_slave_handler = p;
+}
+
+
+time_t Socket::TimeSinceClose()
+{
+	return time(NULL) - m_tClose;
+}
+
+
+void Socket::SetShutdown(int x)
+{
+	m_shutdown = x;
+}
+
+
+int Socket::GetShutdown()
+{
+	return m_shutdown;
 }
 
 

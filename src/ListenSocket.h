@@ -37,7 +37,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #endif
 
 #include "SocketHandler.h"
-#include "TcpSocket.h"
+#include "Socket.h"
+#include "Utility.h"
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
@@ -122,7 +123,7 @@ public:
 		if (IsIpv6())
 		{
 			in6_addr a;
-			if (u2ip(intf, a))
+			if (Utility::u2ip(intf, a))
 			{
 				return Bind(a, port, depth);
 			}
@@ -133,7 +134,7 @@ public:
 #endif
 		{
 			ipaddr_t a;
-			if (u2ip(intf, a))
+			if (Utility::u2ip(intf, a))
 			{
 				return Bind(a, port, depth);
 			}
