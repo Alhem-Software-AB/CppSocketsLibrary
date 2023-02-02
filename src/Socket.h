@@ -131,6 +131,10 @@ public:
 	virtual bool OnConnectRetry();
 	/** a reconnect has been made */
 	virtual void OnReconnect();
+	/** SSL negotiation failed for client connect. */
+	virtual void OnSSLConnectFailed();
+	/** SSL negotiation failed for server accept. */
+	virtual void OnSSLAcceptFailed();
 
 	/** Check whether a connection has been established. */
 	virtual bool CheckConnect();

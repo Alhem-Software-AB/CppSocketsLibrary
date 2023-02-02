@@ -203,6 +203,10 @@ bool Socket::CheckConnect()
 		Set(!IsDisableRead(), false);
 		SetConnecting(false);
 	}
+	else
+	{
+		Set(false, false); // no more monitoring because connection failed
+	}
 	return r;
 }
 
@@ -1341,6 +1345,16 @@ void Socket::SetFlushBeforeClose(bool x)
 bool Socket::GetFlushBeforeClose()
 {
 	return m_flush_before_close;
+}
+
+
+void Socket::OnSSLConnectFailed()
+{
+}
+
+
+void Socket::OnSSLAcceptFailed()
+{
 }
 
 

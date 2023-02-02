@@ -239,6 +239,7 @@ void HttpGetSocket::url_this(const std::string& url_in,std::string& host,port_t&
 	else
 	if (!strcasecmp(protocol.c_str(), "https:"))
 	{
+		EnableSSL();
 		port = 443;
 	}
 	else

@@ -943,7 +943,22 @@ DEB(		printf(" SSLNegotiate is_client, SSL_connect returns %d\n",r);)
 //			CheckCertificateChain( "");//ServerHOST);
 			SetNonblocking(false);
 DEB(			printf("TcpSocket::SSLNegotiate() init OK\n");)
-			OnConnect();
+			//
+			{
+				SetConnected();
+				if (GetOutputLength())
+				{
+					OnWrite();
+				}
+			}
+			if (IsReconnect())
+				OnReconnect();
+			else
+			{
+				Handler().LogError(this, "Calling OnConnect", 0, "SSLNegotiate", LOG_LEVEL_INFO);
+				OnConnect();
+			}
+//			OnConnect();
 			Handler().LogError(this, "SSLNegotiate", 0, "Connection established", LOG_LEVEL_INFO);
 			return true;
 		}
@@ -952,6 +967,7 @@ DEB(			printf("TcpSocket::SSLNegotiate() init OK\n");)
 		{
 			SetSSLNegotiate(false);
 			SetCloseAndDelete();
+			OnSSLConnectFailed();
 		}
 		else
 		{
@@ -961,6 +977,7 @@ DEB(			printf("TcpSocket::SSLNegotiate() init OK\n");)
 DEB(				printf("SSL_connect() failed - closing socket, return code: %d\n",r);)
 				SetSSLNegotiate(false);
 				SetCloseAndDelete(true);
+				OnSSLConnectFailed();
 			}
 		}
 	}
@@ -976,6 +993,14 @@ DEB(		printf(" SSLNegotiate is_server, SSL_accept returns %d\n",r);)
 //			CheckCertificateChain( "");//ClientHOST);
 			SetNonblocking(false);
 DEB(			printf("TcpSocket::SSLNegotiate() init OK\n");)
+			//
+			{
+				SetConnected();
+				if (GetOutputLength())
+				{
+					OnWrite();
+				}
+			}
 			OnAccept();
 			return true;
 		}
@@ -984,6 +1009,7 @@ DEB(			printf("TcpSocket::SSLNegotiate() init OK\n");)
 		{
 			SetSSLNegotiate(false);
 			SetCloseAndDelete();
+			OnSSLAcceptFailed();
 		}
 		else
 		{
@@ -993,6 +1019,7 @@ DEB(			printf("TcpSocket::SSLNegotiate() init OK\n");)
 DEB(				printf("SSL_accept() failed - closing socket, return code: %d\n",r);)
 				SetSSLNegotiate(false);
 				SetCloseAndDelete(true);
+				OnSSLAcceptFailed();
 			}
 		}
 	}
@@ -1012,6 +1039,8 @@ void TcpSocket::InitSSLClient()
 
 void TcpSocket::InitSSLServer()
 {
+	Handler().LogError(this, "InitSSLServer", 0, "You MUST implement your own InitSSLServer method", LOG_LEVEL_FATAL);
+	SetCloseAndDelete();
 }
 
 
