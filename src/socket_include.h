@@ -33,7 +33,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #if (defined(__unix__) || defined(unix)) && !defined(USG)
 #include <sys/param.h>
 #endif
-
+#include <list>
 
 #ifndef _WIN32 
 // ----------------------------------------
@@ -222,5 +222,17 @@ namespace SOCKETS_NAMESPACE {
 #include "Mutex.h"
 #include "Lock.h"
 #endif
+
+#ifdef SOCKETS_NAMESPACE
+namespace SOCKETS_NAMESPACE {
+#endif
+	/** List type containing file descriptors. */
+	typedef std::list<SOCKET> socket_v;
+
+
+#ifdef SOCKETS_NAMESPACE
+}
+#endif
+
 
 #endif // _SOCKET_INCLUDE_H

@@ -220,6 +220,7 @@ DEB(printf("Reusing connection\n");)
 #endif
 		{
 			Handler().LogError(this, "connect: connection pending", Errno, StrError(Errno), LOG_LEVEL_INFO);
+			Attach(s);
 			SetConnecting( true ); // this flag will control fd_set's
 		}
 		else
@@ -239,6 +240,7 @@ DEB(printf("Reusing connection\n");)
 	else
 	{
 		Handler().LogError(this, "connect", 0, "connection established", LOG_LEVEL_INFO);
+		Attach(s);
 		SetCallOnConnect(); // SocketHandler must call OnConnect
 		Handler().LogError(this, "SetCallOnConnect", n, "connect() returns != -1", LOG_LEVEL_INFO);
 	}
@@ -317,6 +319,7 @@ DEB(printf("Reusing connection\n");)
 #endif
 		{
 			Handler().LogError(this, "connect: connection pending", Errno, StrError(Errno), LOG_LEVEL_INFO);
+			Attach(s);
 			SetConnecting( true ); // this flag will control fd_set's
 		}
 		else
@@ -330,6 +333,7 @@ DEB(printf("Reusing connection\n");)
 	else
 	{
 		Handler().LogError(this, "connect", 0, "connection established", LOG_LEVEL_INFO);
+		Attach(s);
 		SetCallOnConnect(); // SocketHandler must call OnConnect
 		Handler().LogError(this, "SetCallOnConnect", n, "connect() returns != -1", LOG_LEVEL_INFO);
 	}

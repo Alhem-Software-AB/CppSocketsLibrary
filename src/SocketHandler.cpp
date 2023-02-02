@@ -40,6 +40,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "PoolSocket.h"
 #include "ResolvSocket.h"
 #include "ResolvServer.h"
+#include "TcpSocket.h"
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
@@ -225,9 +226,6 @@ int SocketHandler::Select()
 }
 
 
-static std::list<SOCKET> gSockets;
-static std::list<SOCKET> gEraseSockets;
-
 int SocketHandler::Select(struct timeval *tsel)
 {
 	while (m_add.size())
@@ -253,8 +251,9 @@ int SocketHandler::Select(struct timeval *tsel)
 				Set(s,true,false);
 		}
 		m_maxsock = (s > m_maxsock) ? s : m_maxsock;
-		gSockets.push_back(s);
+		m_fds.push_back(s);
 		m_sockets[s] = p;
+//printf("Add: %d\n", s);
 		m_add.erase(it);
 	}
 #ifdef MACOSX
@@ -297,10 +296,9 @@ DEB(
 	else
 	if (n > 0)
 	{
-		for (std::list<SOCKET>::iterator it2 = gSockets.begin(); it2 != gSockets.end() && n; it2++)
+		for (socket_v::iterator it2 = m_fds.begin(); it2 != m_fds.end() && n; it2++)
 		{
 			SOCKET i = *it2;
-if (m_slave) printf(" %d", i);
 			if (FD_ISSET(i, &rfds))
 			{
 				Socket *p = m_sockets[i];
@@ -409,9 +407,9 @@ if (m_slave) printf(" %d", i);
 				n--;
 			}
 		}
-if (m_slave) printf("\n");
 	} // if (n > 0)
 
+/*
 	for (socket_m::iterator it3 = m_sockets.begin(); it3 != m_sockets.end(); it3++)
 	{
 		Socket *p = (*it3).second;
@@ -449,20 +447,16 @@ if (m_slave) printf("\n");
 			{
 				Set(p -> GetSocket(), false, false, false);
 				p -> DetachSocket();
-				gEraseSockets.push_back(p -> GetSocket());
-/*
-				m_sockets.erase(it3);
-				repeat = true;
-				break;
-*/
+				m_fds_erase.push_back(p -> GetSocket());
+//				m_sockets.erase(it3);
+//				repeat = true;
+//				break;
 				continue;
 			}
-/*
-			if (p && p -> Timeout() && p -> Inactive() > p -> Timeout())
-			{
-				p -> SetCloseAndDelete();
-			}
-*/
+//			if (p && p -> Timeout() && p -> Inactive() > p -> Timeout())
+//			{
+//				p -> SetCloseAndDelete();
+//			}
 			if (p -> Connecting() && p -> GetConnectTime() >= p -> GetConnectTimeout() )
 			{
 				TcpSocket *tcp = dynamic_cast<TcpSocket *>(p);
@@ -514,7 +508,7 @@ if (m_slave) printf("\n");
 				Add(p);
 //					repeat = true;
 //					break;
-				gEraseSockets.push_back(nn);
+				m_fds_erase.push_back(nn);
 				continue;
 			}
 			if (p -> CloseAndDelete() )
@@ -544,13 +538,15 @@ if (m_slave) printf("\n");
 					}
 					else
 #endif
-					tcp -> Open(p -> GetClientRemoteAddr(), p -> GetClientRemotePort());
+					{
+						tcp -> Open(p -> GetClientRemoteAddr(), p -> GetClientRemotePort());
+					}
 					tcp -> ResetConnectionRetries();
 //						m_sockets.erase(it3); // remove old SOCKET/Socket* pair
 					Add(p);
 //						repeat = true;
 //						break;
-					gEraseSockets.push_back(nn);
+					m_fds_erase.push_back(nn);
 					continue;
 				}
 				else
@@ -565,7 +561,6 @@ if (m_slave) printf("\n");
 						PoolSocket *p2 = new PoolSocket(*this, p);
 						p2 -> SetDeleteByHandler();
 						Add(p2);
-//printf("Adding PoolSocket...\n");
 					}
 					else
 					{
@@ -581,24 +576,243 @@ if (m_slave) printf("\n");
 					}
 //						repeat = true;
 //						break;
-					gEraseSockets.push_back(nn);
+					m_fds_erase.push_back(nn);
 					continue;
 				}
 			}
 		} // if (p)
 	}
+*/
 
-	bool repeat = false;
-	while (gEraseSockets.size())
+	// check CallOnConnect
+	if (m_fds_callonconnect.size())
 	{
-		std::list<SOCKET>::iterator it = gEraseSockets.begin();
+		socket_v tmp = m_fds_callonconnect;
+		for (socket_v::iterator it = tmp.begin(); it != tmp.end(); it++)
+		{
+//printf("Check fd callonconnect: %d\n", *it);
+			Socket *p = m_sockets[*it];
+			if (p)
+			{
+				if (p -> CallOnConnect() && p -> Ready() )
+				{
+					if (p -> IsSSL()) // SSL Enabled socket
+						p -> OnSSLConnect();
+					else
+					if (p -> Socks4())
+						p -> OnSocks4Connect();
+					else
+					{
+						TcpSocket *tcp = dynamic_cast<TcpSocket *>(p);
+						if (tcp)
+						{
+							p -> SetConnected();
+							if (tcp -> GetOutputLength())
+							{
+								p -> OnWrite();
+							}
+						}
+						if (tcp && tcp -> IsReconnect())
+							p -> OnReconnect();
+						else
+						{
+							LogError(p, "Calling OnConnect", 0, "Because CallOnConnect", LOG_LEVEL_INFO);
+							p -> OnConnect();
+						}
+					}
+					p -> SetCallOnConnect( false );
+				}
+			}
+		}
+	}
+	// if (!m_slave) check Detach
+	if (!m_slave && m_fds_detach.size())
+	{
+		socket_v tmp = m_fds_detach;
+		for (socket_v::iterator it = tmp.begin(); it != tmp.end(); it++)
+		{
+//printf("Check fd detach: %d\n", *it);
+			Socket *p = m_sockets[*it];
+			if (p)
+			{
+				if (p -> IsDetach())
+				{
+					Set(p -> GetSocket(), false, false, false);
+					p -> DetachSocket();
+					m_fds_erase.push_back(p -> GetSocket());
+					//
+					p -> SetDetach(false); // added
+				}
+			}
+		}
+	}
+	// check Connecting
+	if (m_fds_connecting.size())
+	{
+		socket_v tmp = m_fds_connecting;
+		for (socket_v::iterator it = tmp.begin(); it != tmp.end(); it++)
+		{
+//printf("Check fd connecting: %d\n", *it);
+			Socket *p = m_sockets[*it];
+			if (p)
+			{
+				if (p -> Connecting() && p -> GetConnectTime() >= p -> GetConnectTimeout() )
+				{
+					TcpSocket *tcp = dynamic_cast<TcpSocket *>(p);
+					LogError(p, "connect", -1, "connect timeout", LOG_LEVEL_FATAL);
+					if (p -> Socks4())
+					{
+						p -> OnSocks4ConnectFailed();
+						// retry direct connection
+					}
+					else
+					if (tcp && (tcp -> GetConnectionRetry() == -1 ||
+						(tcp -> GetConnectionRetry() &&
+						 tcp -> GetConnectionRetries() < tcp -> GetConnectionRetry() )))
+					{
+						tcp -> IncreaseConnectionRetries();
+						if (p -> OnConnectRetry())
+						{
+							p -> SetRetryClientConnect();
+						}
+						else
+						{
+							p -> SetCloseAndDelete( true );
+							p -> OnConnectFailed();
+						}
+					}
+					else
+					{
+						p -> SetCloseAndDelete(true);
+						p -> OnConnectFailed();
+					}
+					//
+					p -> SetConnecting(false); // added
+				}
+			}
+		}
+	}
+	// check retry client connect
+	if (m_fds_retry.size())
+	{
+		socket_v tmp = m_fds_retry;
+		for (socket_v::iterator it = tmp.begin(); it != tmp.end(); it++)
+		{
+//printf("Check fd retry client connect: %d\n", *it);
+			Socket *p = m_sockets[*it];
+			if (p)
+			{
+				if (p -> RetryClientConnect())
+				{
+					TcpSocket *tcp = dynamic_cast<TcpSocket *>(p);
+					SOCKET nn = *it; //(*it3).first;
+					p -> SetRetryClientConnect(false);
+					p -> Close(); // removes from m_fds_retry
+#ifdef IPPROTO_IPV6
+					if (p -> IsIpv6())
+					{
+						tcp -> Open(p -> GetClientRemoteAddr6(), p -> GetClientRemotePort());
+					}
+					else
+#endif
+					{
+						tcp -> Open(p -> GetClientRemoteAddr(), p -> GetClientRemotePort());
+					}
+					Add(p);
+					m_fds_erase.push_back(nn);
+				}
+			}
+		}
+	}
+	// check close and delete
+	if (m_fds_close.size())
+	{
+		socket_v tmp = m_fds_close;
+		for (socket_v::iterator it = tmp.begin(); it != tmp.end(); it++)
+		{
+//printf("Check fd close: %d\n", *it);
+			Socket *p = m_sockets[*it];
+			if (p)
+			{
+				if (p -> CloseAndDelete() )
+				{
+					TcpSocket *tcp = dynamic_cast<TcpSocket *>(p);
+					if (tcp && tcp -> GetOutputLength() && 
+						tcp -> GetFlushBeforeClose() && 
+						!tcp -> IsSSL() &&
+						tcp -> CheckSendTimeoutCount() < 100 // magic number of cycles
+						) // wait until all data sent
+					{
+						LogError(p, "Closing", (int)tcp -> GetOutputLength(), "Sending all data before closing", LOG_LEVEL_INFO);
+					}
+					else
+					if (tcp && p -> IsConnected() && tcp -> Reconnect())
+					{
+						SOCKET nn = *it; //(*it3).first;
+						p -> SetCloseAndDelete(false);
+						tcp -> SetIsReconnect();
+						p -> SetConnected(false);
+						p -> Close(); // dispose of old file descriptor (Open creates a new)
+						p -> OnDisconnect();
+#ifdef IPPROTO_IPV6
+						if (p -> IsIpv6())
+						{
+							tcp -> Open(p -> GetClientRemoteAddr6(), p -> GetClientRemotePort());
+						}
+						else
+#endif
+						{
+							tcp -> Open(p -> GetClientRemoteAddr(), p -> GetClientRemotePort());
+						}
+						tcp -> ResetConnectionRetries();
+						Add(p);
+						m_fds_erase.push_back(nn);
+					}
+					else
+					{
+						SOCKET nn = *it; //(*it3).first;
+						if (tcp && tcp -> GetOutputLength())
+						{
+							LogError(p, "Closing", (int)tcp -> GetOutputLength(), "Closing socket while data still left to send", LOG_LEVEL_WARNING);
+						}
+						if (p -> Retain() && !p -> Lost())
+						{
+							PoolSocket *p2 = new PoolSocket(*this, p);
+							p2 -> SetDeleteByHandler();
+							Add(p2);
+							//
+							p -> SetCloseAndDelete(false); // added - remove from m_fds_close
+						}
+						else
+						{
+							Set(p -> GetSocket(),false,false,false);
+							p -> Close();
+						}
+						p -> OnDelete();
+						if (p -> DeleteByHandler())
+						{
+							p -> SetErasedByHandler();
+							delete p;
+						}
+						m_fds_erase.push_back(nn);
+					}
+				}
+			}
+		}
+	}
+
+	// check erased sockets
+	bool repeat = false;
+	while (m_fds_erase.size())
+	{
+		socket_v::iterator it = m_fds_erase.begin();
 		SOCKET nn = *it;
 		{
-			for (std::list<SOCKET>::iterator it = gSockets.begin(); it != gSockets.end(); it++)
+			for (socket_v::iterator it = m_fds.begin(); it != m_fds.end(); it++)
 			{
 				if (*it == nn)
 				{
-					gSockets.erase(it);
+					m_fds.erase(it);
 					break;
 				}
 			}
@@ -613,13 +827,13 @@ if (m_slave) printf("\n");
 				}
 			}
 		}
-		gEraseSockets.erase(it);
+		m_fds_erase.erase(it);
 		repeat = true;
 	}
 	if (repeat)
 	{
 		m_maxsock = 0;
-		for (std::list<SOCKET>::iterator it = gSockets.begin(); it != gSockets.end(); it++)
+		for (socket_v::iterator it = m_fds.begin(); it != m_fds.end(); it++)
 		{
 			SOCKET s = *it;
 			m_maxsock = s > m_maxsock ? s : m_maxsock;
@@ -935,6 +1149,36 @@ void SocketHandler::Remove(Socket *p)
 			return;
 		}
 	}
+}
+
+
+socket_v& SocketHandler::GetFdsCallOnConnect()
+{
+	return m_fds_callonconnect;
+}
+
+
+socket_v& SocketHandler::GetFdsDetach()
+{
+	return m_fds_detach;
+}
+
+
+socket_v& SocketHandler::GetFdsConnecting()
+{
+	return m_fds_connecting;
+}
+
+
+socket_v& SocketHandler::GetFdsRetry()
+{
+	return m_fds_retry;
+}
+
+
+socket_v& SocketHandler::GetFdsClose()
+{
+	return m_fds_close;
 }
 
 

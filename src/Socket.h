@@ -412,9 +412,10 @@ public:
 	int GetConnectionRetries();
 	/** Reset actual connection retries (tcp only). */
 	void ResetConnectionRetries();
-
-	void SetErasedByHandler(bool x = true) { m_b_erased_by_handler = x; }
-	bool ErasedByHandler() { return m_b_erased_by_handler; }
+	/** Set flag indicating the socket is being actively deleted by the sockethandler. */
+	void SetErasedByHandler(bool x = true);
+	/** Get value of flag indicating socket is deleted by sockethandler. */
+	bool ErasedByHandler();
 
 protected:
 	Socket(const Socket& ); ///< do not allow use of copy constructor
@@ -433,6 +434,7 @@ static	WSAInitializer m_winsock_init; ///< Winsock initialization singleton clas
 	/** assignment operator not available. */
 	Socket& operator=(const Socket& ) { return *this; }
 	//
+	void AddList(socket_v&, bool); ///< Add file descriptor to specified checklist
 	SocketHandler& m_handler; ///< Reference of SocketHandler in control of this socket
 	SOCKET m_socket; ///< File descriptor
 	bool m_bDel; ///< Delete by handler flag
@@ -479,7 +481,7 @@ static	WSAInitializer m_winsock_init; ///< Winsock initialization singleton clas
 	bool m_flush_before_close; ///< Send all data before closing (default true)
 	int m_connection_retry; ///< Maximum connection retries (tcp)
 	int m_retries; ///< Actual number of connection retries (tcp)
-	bool m_b_erased_by_handler;
+	bool m_b_erased_by_handler; ///< Set by handler before delete
 };
 
 #ifdef SOCKETS_NAMESPACE

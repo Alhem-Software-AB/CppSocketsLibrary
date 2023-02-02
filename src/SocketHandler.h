@@ -162,6 +162,17 @@ public:
 	/** Remove socket from socket map, used by Socket class. */
 	void Remove(Socket *);
 
+	/** Get checklist: callonconnect */
+	socket_v& GetFdsCallOnConnect();
+	/** Get checklist: Detach */
+	socket_v& GetFdsDetach();
+	/** Get checklist: Connecting */
+	socket_v& GetFdsConnecting();
+	/** Get checklist: Retry client connect */
+	socket_v& GetFdsRetry();
+	/** Get checklist: Close and delete */
+	socket_v& GetFdsClose();
+
 protected:
 	socket_m m_sockets; ///< Active sockets list
 	socket_m m_add; ///< Sockets to be added to sockets list
@@ -195,6 +206,13 @@ private:
 	ResolvServer *m_resolver; ///< Resolver thread pointer
 	port_t m_resolver_port; ///< Resolver listen port
 	bool m_b_enable_pool; ///< Connection pool enabled if true
+	socket_v m_fds; ///< Active file descriptor list
+	socket_v m_fds_erase; ///< File descriptors that are to be erased from m_sockets
+	socket_v m_fds_callonconnect; ///< checklist CallOnConnect
+	socket_v m_fds_detach; ///< checklist Detach
+	socket_v m_fds_connecting; ///< checklist Connecting
+	socket_v m_fds_retry; ///< checklist retry client connect
+	socket_v m_fds_close; ///< checklist close and delete
 };
 
 

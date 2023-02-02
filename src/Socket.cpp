@@ -8,7 +8,7 @@ Copyright (C) 2004,2005  Anders Hedstrom
 This library is made available under the terms of the GNU GPL.
 
 If you would like to use this library in a closed-source application,
-a separate license agreement is available. For information about 
+a separate license agreement is available. For information about
 the closed-source license agreement for the C++ sockets library,
 please visit http://www.alhem.net/Sockets/license.html and/or
 email license@alhem.net.
@@ -255,6 +255,11 @@ int Socket::Close()
 		Handler().LogError(this, "close", Errno, StrError(Errno), LOG_LEVEL_ERROR);
 	}
 	Set(false, false, false); // remove from fd_set's
+	AddList(Handler().GetFdsCallOnConnect(), false);
+	AddList(Handler().GetFdsDetach(), false);
+	AddList(Handler().GetFdsConnecting(), false);
+	AddList(Handler().GetFdsRetry(), false);
+	AddList(Handler().GetFdsClose(), false);
 	m_socket = INVALID_SOCKET;
 	return n;
 }
@@ -614,6 +619,7 @@ bool Socket::DeleteByHandler()
 
 void Socket::SetCloseAndDelete(bool x)
 {
+	AddList(Handler().GetFdsClose(), x);
 	m_bClose = x;
 }
 
@@ -626,6 +632,7 @@ bool Socket::CloseAndDelete()
 
 void Socket::SetConnecting(bool x)
 {
+	AddList(Handler().GetFdsConnecting(), x);
 	m_bConnecting = x;
 	if (x)
 		m_tConnect = time(NULL);
@@ -1019,6 +1026,7 @@ void Socket::OnDetached()
 
 void Socket::SetDetach(bool x)
 {
+	AddList(Handler().GetFdsDetach(), x);
 	m_detach = x;
 }
 
@@ -1147,6 +1155,7 @@ bool Socket::Lost()
 
 void Socket::SetCallOnConnect(bool x)
 {
+	AddList(Handler().GetFdsCallOnConnect(), x);
 	m_call_on_connect = x;
 }
 
@@ -1279,6 +1288,7 @@ bool Socket::IsDisableRead()
 
 void Socket::SetRetryClientConnect(bool x)
 {
+	AddList(Handler().GetFdsRetry(), x);
 	m_b_retry_connect = x;
 }
 
@@ -1372,6 +1382,42 @@ void Socket::ResetConnectionRetries()
 
 void Socket::OnDisconnect()
 {
+}
+
+
+void Socket::SetErasedByHandler(bool x)
+{
+	m_b_erased_by_handler = x;
+}
+
+
+bool Socket::ErasedByHandler()
+{
+	return m_b_erased_by_handler;
+}
+
+
+void Socket::AddList(socket_v& ref, bool add)
+{
+//printf("AddList: %d, %s\n", m_socket, add ? "add" : "remove");
+	if (m_socket == INVALID_SOCKET)
+		return;
+	if (add)
+	{
+		AddList(ref, false);
+		ref.push_back(m_socket);
+	}
+	else // remove
+	{
+		for (socket_v::iterator it = ref.begin(); it != ref.end(); it++)
+		{
+			if (*it == m_socket)
+			{
+				ref.erase(it);
+				break;
+			}
+		}
+	}
 }
 
 

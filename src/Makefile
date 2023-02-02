@@ -1,4 +1,4 @@
-VERSION =	1.9.10rc1
+VERSION =	1.9.10rc2
 DIFF_VERSION =	1.9.9
 
 INCLUDE =	-I.
@@ -7,7 +7,14 @@ PREFIX =	/usr/local
 # static lib .a files installed to $(PREFIX)/lib
 
 CFLAGS =	-Wall -g -O2 $(INCLUDE) -MD -D_VERSION='"$(VERSION)"'
-CFLAGS +=	-D_DEBUG
+#CFLAGS +=	-D_DEBUG
+
+CXX =		g++
+
+# The flag _THREADSAFE_SOCKETS does NOT mean that all operations in 
+# SocketHandler/Socket derivatives becomes thread safe unfortunately.
+# It merely enables a small fix to sync writing to the socket
+# output buffer / internal reading from that output buffer.
 #CFLAGS +=	-D_THREADSAFE_SOCKETS
 
 # uncomment depending on your operating system
@@ -38,7 +45,7 @@ PROGS =
 all:		libSockets.a $(PROGS) libSocketsEx.a Sockets-config 
 
 Sockets-config:	Sockets-config.o
-		g++ -o $@ $^
+		$(CXX) -o $@ $^
 
 OBJS =		CircularBuffer.o \
 		Socket.o \
