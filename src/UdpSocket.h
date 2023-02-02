@@ -56,6 +56,14 @@ public:
 		\param sa_len Length of sockaddr struct */
 	virtual void OnRawData(const char *buf,size_t len,struct sockaddr *sa,socklen_t sa_len);
 
+	/** Called when incoming data has been received and read timestamp is enabled.
+		\param buf Pointer to data
+		\param len Length of data
+		\param sa Pointer to sockaddr struct of sender
+		\param sa_len Length of sockaddr struct
+		\param ts Timestamp from message */
+	virtual void OnRawData(const char *buf,size_t len,struct sockaddr *sa,socklen_t sa_len,struct timeval *ts);
+
 	/** To receive incoming data, call Bind to setup an incoming port.
 		\param port Incoming port number
 		\param range Port range to try if ports already in use
@@ -174,9 +182,18 @@ public:
 
 	int GetLastSizeWritten();
 
+#ifndef _WIN32
+	/** Also read timestamp information from incoming message */
+	void SetTimestamp(bool = true);
+#endif
+
 protected:
 	UdpSocket(const UdpSocket& s) : Socket(s) {}
 	void OnRead();
+#ifndef _WIN32
+	/** This method emulates socket recvfrom, but uses messages so we can get the timestamp */
+	int ReadTS(char *ioBuf, int inBufSize, struct sockaddr *from, socklen_t fromlen, struct timeval *ts);
+#endif
 
 private:
 	UdpSocket& operator=(const UdpSocket& ) { return *this; }
@@ -188,6 +205,7 @@ private:
 	port_t m_port; ///< Bind port number
 	int m_last_size_written;
 	int m_retries;
+	bool m_b_read_ts;
 };
 
 

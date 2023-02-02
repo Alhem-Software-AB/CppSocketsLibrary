@@ -344,6 +344,14 @@ DEB(		fprintf(stderr, "Trying to add fd %d,  m_add.size() %d,  ignore %d\n", (in
 		if (!p -> CloseAndDelete())
 		{
 			StreamSocket *scp = dynamic_cast<StreamSocket *>(p);
+DEB(
+printf("Add Socket\n");
+printf("  StreamSocket: %s\n", scp ? "yes" : "no");
+printf("  Connecting:   %s\n", scp && scp -> Connecting() ? "yes" : "no");
+printf("  SSL:          %s\n", p -> IsSSL() ? "yes" : "no");
+printf("  IsConnected:  %s\n", p -> IsConnected() ? "yes" : "no");
+printf("  IsSSLNegotiate: %s\n", p -> IsSSLNegotiate() ? "yes" : "no");
+printf("\n");)
 			if (scp && scp -> Connecting()) // 'Open' called before adding socket
 			{
 				Set(s,false,true);
@@ -1209,9 +1217,9 @@ bool SocketHandler::PoolEnabled()
 void SocketHandler::Remove(Socket *p)
 {
 #ifdef ENABLE_RESOLVER
-	std::map<Socket *, bool>::iterator it = m_resolve_q.find(p);
-	if (it != m_resolve_q.end())
-		m_resolve_q.erase(it);
+	std::map<Socket *, bool>::iterator it4 = m_resolve_q.find(p);
+	if (it4 != m_resolve_q.end())
+		m_resolve_q.erase(it4);
 #endif
 	if (p -> ErasedByHandler())
 	{

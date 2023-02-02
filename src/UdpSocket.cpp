@@ -60,6 +60,7 @@ UdpSocket::UdpSocket(ISocketHandler& h, int ibufsz, bool ipv6, int retries) : So
 , m_port(0)
 , m_last_size_written(-1)
 , m_retries(retries)
+, m_b_read_ts(false)
 {
 #ifdef ENABLE_IPV6
 #ifdef IPPROTO_IPV6
@@ -376,6 +377,63 @@ void UdpSocket::Send(const std::string& str, int flags)
 }
 
 
+#ifndef _WIN32
+int UdpSocket::ReadTS(char *ioBuf, int inBufSize, struct sockaddr *from, socklen_t fromlen, struct timeval *ts)
+{
+	struct msghdr msg;
+	struct iovec vec[1];
+	union {
+		struct cmsghdr cm;
+		char data[CMSG_SPACE(sizeof(struct timeval))];
+	} cmsg_un;
+	struct cmsghdr *cmsg;
+	struct timeval *tv;
+
+	vec[0].iov_base = ioBuf;
+	vec[0].iov_len = inBufSize;
+
+	memset(&msg, 0, sizeof(msg));
+	memset(from, 0, fromlen);
+	memset(ioBuf, 0, inBufSize);
+	memset(&cmsg_un, 0, sizeof(cmsg_un));
+
+	msg.msg_name = (caddr_t)from;
+	msg.msg_namelen = fromlen;
+	msg.msg_iov = vec;
+	msg.msg_iovlen = 1;
+	msg.msg_control = cmsg_un.data;
+	msg.msg_controllen = sizeof(cmsg_un.data);
+	msg.msg_flags = 0;
+
+	// Original version - for reference only
+	//int n = recvfrom(GetSocket(), m_ibuf, m_ibufsz, 0, (struct sockaddr *)&sa, &sa_len);
+
+	int n = recvmsg(GetSocket(), &msg, MSG_DONTWAIT);
+
+	// now ioBuf will contain the data, as if we used recvfrom
+
+	// Now get the time
+	if(n != -1 && msg.msg_controllen >= sizeof(struct cmsghdr) && !(msg.msg_flags & MSG_CTRUNC))
+	{
+		tv = 0;
+		for (cmsg = CMSG_FIRSTHDR(&msg); cmsg != NULL; cmsg = CMSG_NXTHDR(&msg, cmsg))
+		{
+			if (cmsg->cmsg_level == SOL_SOCKET && cmsg->cmsg_type == SCM_TIMESTAMP)
+			{
+				tv = (struct timeval *)CMSG_DATA(cmsg);
+			}
+		}
+		if (tv)
+		{
+			memcpy(ts, tv, sizeof(struct timeval));
+		}
+	}
+	// The address is in network order, but that's OK right now
+	return n;
+}
+#endif
+
+
 void UdpSocket::OnRead()
 {
 #ifdef ENABLE_IPV6
@@ -384,6 +442,29 @@ void UdpSocket::OnRead()
 	{
 		struct sockaddr_in6 sa;
 		socklen_t sa_len = sizeof(sa);
+		if (m_b_read_ts)
+		{
+#ifndef _WIN32
+			struct timeval ts;
+			memset(&ts, 0, sizeof(struct timeval));
+			int n = ReadTS(m_ibuf, m_ibufsz, (struct sockaddr *)&sa, sa_len, &ts);
+			if (n > 0)
+			{
+				this -> OnRawData(m_ibuf, n, (struct sockaddr *)&sa, sa_len, &ts);
+			}
+			else
+			if (n == -1)
+			{
+#ifdef _WIN32
+				if (Errno != WSAEWOULDBLOCK)
+#else
+				if (Errno != EWOULDBLOCK)
+#endif
+					Handler().LogError(this, "recvfrom", Errno, StrError(Errno), LOG_LEVEL_ERROR);
+			}
+#endif
+			return;
+		}
 		int n = recvfrom(GetSocket(), m_ibuf, m_ibufsz, 0, (struct sockaddr *)&sa, &sa_len);
 		int q = m_retries; // receive max 10 at one cycle
 		while (n > 0)
@@ -413,6 +494,29 @@ void UdpSocket::OnRead()
 #endif
 	struct sockaddr_in sa;
 	socklen_t sa_len = sizeof(sa);
+	if (m_b_read_ts)
+	{
+#ifndef _WIN32
+		struct timeval ts;
+		memset(&ts, 0, sizeof(struct timeval));
+		int n = ReadTS(m_ibuf, m_ibufsz, (struct sockaddr *)&sa, sa_len, &ts);
+		if (n > 0)
+		{
+			this -> OnRawData(m_ibuf, n, (struct sockaddr *)&sa, sa_len, &ts);
+		}
+		else
+		if (n == -1)
+		{
+#ifdef _WIN32
+			if (Errno != WSAEWOULDBLOCK)
+#else
+			if (Errno != EWOULDBLOCK)
+#endif
+				Handler().LogError(this, "recvfrom", Errno, StrError(Errno), LOG_LEVEL_ERROR);
+		}
+#endif
+		return;
+	}
 	int n = recvfrom(GetSocket(), m_ibuf, m_ibufsz, 0, (struct sockaddr *)&sa, &sa_len);
 	int q = m_retries;
 	while (n > 0)
@@ -705,6 +809,11 @@ void UdpSocket::OnRawData(const char *buf, size_t len, struct sockaddr *sa, sock
 }
 
 
+void UdpSocket::OnRawData(const char *buf, size_t len, struct sockaddr *sa, socklen_t sa_len, struct timeval *ts)
+{
+}
+
+
 port_t UdpSocket::GetPort()
 {
 	return m_port;
@@ -715,6 +824,14 @@ int UdpSocket::GetLastSizeWritten()
 {
 	return m_last_size_written;
 }
+
+
+#ifndef _WIN32
+void UdpSocket::SetTimestamp(bool x)
+{
+	m_b_read_ts = x;
+}
+#endif
 
 
 #ifdef SOCKETS_NAMESPACE

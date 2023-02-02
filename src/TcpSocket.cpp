@@ -1053,7 +1053,7 @@ DEB(			fprintf(stderr, " m_sbio is NULL\n");)
 			return;
 		}
 		SSL_set_bio(m_ssl, m_sbio, m_sbio);
-//		if (!SSLNegotiate())
+		if (!SSLNegotiate())
 		{
 			SetSSLNegotiate();
 		}
