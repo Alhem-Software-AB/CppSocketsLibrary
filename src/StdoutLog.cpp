@@ -44,6 +44,8 @@ namespace SOCKETS_NAMESPACE {
 
 void StdoutLog::error(ISocketHandler *,Socket *sock,const std::string& call,int err,const std::string& sys_err,loglevel_t lvl)
 {
+	if (lvl < m_min_level)
+		return;
 	time_t t = time(NULL);
 	struct tm tp;
 #ifdef _WIN32

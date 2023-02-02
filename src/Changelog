@@ -2,6 +2,19 @@ diff for next release always available @ http://www.alhem.net/Sockets/latest_dif
 
 next
 ------
+TcpSocket using std::vector<char> to receive incoming line (OnLine
+callback). Configurable max limit for library available in sockets-config.h,
+default 8192 bytes (TCP_LINE_SIZE). Override ISocketHandler::MaxTcpLineSize
+to change this value without recompiling the library.
+Added more operators in Debug class. Removed some leftover debug printouts.
+HttpResponse returns non-const output file.
+HTTPSocket aborts after receiving more than 200 (MAX_HTTP_HEADER_COUNT) http
+headers. Use method HTTPSocket::SetMaxHeaderCount() to modify this value.
+Reordered log level enum, added minlevel to StdoutLog.
+
+
+2.3.8
+------
 SSL sockets now operate in nonblocking mode. A much better solution to the
 "hang" problem mentioned in 2.3.7.
 Added Path() method to IFile interface. Returns File path name or MemFile
@@ -14,7 +27,6 @@ Added reference count when a MemFile object is source for another memfile.
 Set OnTransferLimit back to 0 after a successful transfer of requested file
 (in Ajp13Socket and HttpBaseSocket). Reset IFile auto_ptr to
 decrease the reference count asap (by using fclose).
-
 
 2.3.7
 ------

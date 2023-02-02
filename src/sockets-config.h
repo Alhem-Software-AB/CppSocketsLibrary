@@ -33,6 +33,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef _SOCKETS_CONFIG_H
 #define _SOCKETS_CONFIG_H
 
+/* Limits */
+#define TCP_LINE_SIZE 8192
+#define MAX_HTTP_HEADER_COUNT 200
+
 #ifndef _RUN_DP
 /* First undefine symbols if already defined. */
 #undef HAVE_OPENSSL

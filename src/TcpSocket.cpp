@@ -85,6 +85,8 @@ TcpSocket::TcpSocket(ISocketHandler& h) : StreamSocket(h)
 ,m_bytes_sent(0)
 ,m_bytes_received(0)
 ,m_skip_c(false)
+,m_line(Handler().MaxTcpLineSize())
+,m_line_ptr(0)
 #ifdef SOCKETS_DYNAMIC_TEMP
 ,m_buf(new char[TCP_BUFSIZE_READ + 1])
 #endif
@@ -123,6 +125,8 @@ TcpSocket::TcpSocket(ISocketHandler& h,size_t isize,size_t osize) : StreamSocket
 ,m_bytes_sent(0)
 ,m_bytes_received(0)
 ,m_skip_c(false)
+,m_line(Handler().MaxTcpLineSize())
+,m_line_ptr(0)
 #ifdef SOCKETS_DYNAMIC_TEMP
 ,m_buf(new char[TCP_BUFSIZE_READ + 1])
 #endif
@@ -583,9 +587,22 @@ void TcpSocket::OnRead( char *buf, size_t n )
 					buf[i] = 0;
 					if (buf[x])
 					{
-						m_line += (buf + x);
+						size_t sz = strlen(&buf[x]);
+						if (m_line_ptr + sz < Handler().MaxTcpLineSize())
+						{
+							memcpy(&m_line[m_line_ptr], &buf[x], sz);
+							m_line_ptr += sz;
+						}
+						else
+						{
+							Handler().LogError(this, "TcpSocket::OnRead", m_line_ptr + sz, "maximum tcp_line_size exceeded, connection closed", LOG_LEVEL_FATAL);
+							SetCloseAndDelete();
+						}
 					}
-					OnLine( m_line );
+					if (m_line_ptr > 0)
+						OnLine( std::string(&m_line[0], m_line_ptr) );
+					else
+						OnLine( "" );
 					i++;
 					m_skip_c = true;
 					m_c = c;
@@ -595,7 +612,7 @@ void TcpSocket::OnRead( char *buf, size_t n )
 						i++;
 					}
 					x = i;
-					m_line = "";
+					m_line_ptr = 0;
 				}
 				if (!LineProtocol())
 				{
@@ -612,7 +629,17 @@ void TcpSocket::OnRead( char *buf, size_t n )
 			else
 			if (buf[x])
 			{
-				m_line += (buf + x);
+				size_t sz = strlen(&buf[x]);
+				if (m_line_ptr + sz < Handler().MaxTcpLineSize())
+				{
+					memcpy(&m_line[m_line_ptr], &buf[x], sz);
+					m_line_ptr += sz;
+				}
+				else
+				{
+					Handler().LogError(this, "TcpSocket::OnRead", m_line_ptr + sz, "maximum tcp_line_size exceeded, connection closed", LOG_LEVEL_FATAL);
+					SetCloseAndDelete();
+				}
 			}
 		}
 		else
@@ -1513,9 +1540,11 @@ void TcpSocket::SetLineProtocol(bool x)
 }
 
 
-const std::string& TcpSocket::GetLine() const
+const std::string TcpSocket::GetLine() const
 {
-	return m_line;
+	if (!m_line_ptr)
+		return "";
+	return std::string(&m_line[0], m_line_ptr);
 }
 
 

@@ -128,6 +128,8 @@ protected:
 	/** Reset state of socket to sucessfully implement keep-alive. */
 	virtual void Reset();
 
+	void SetMaxHeaderCount(int x) { m_max_header_count = x; }
+
 private:
 	HTTPSocket& operator=(const HTTPSocket& ) { return *this; }
 	bool m_first;
@@ -151,6 +153,8 @@ private:
 	size_t m_chunk_size;
 	int m_chunk_state;
 	std::string m_chunk_line;
+	int m_header_count;
+	int m_max_header_count;
 };
 
 

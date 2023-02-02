@@ -136,6 +136,9 @@ public:
 	/** Use with care, always lock with h.GetMutex() if multithreaded */
 	virtual const std::map<SOCKET, Socket *>& AllSockets() = 0;
 
+	/** Override to accept longer lines than TCP_LINE_SIZE */
+	virtual size_t MaxTcpLineSize() = 0;
+
 	// -------------------------------------------------------------------------
 	// Connection pool
 	// -------------------------------------------------------------------------

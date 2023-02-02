@@ -209,6 +209,13 @@ const IFile& HttpResponse::GetFile() const
 
 
 // --------------------------------------------------------------------------------------
+IFile& HttpResponse::GetFile()
+{
+  return *m_file;
+}
+
+
+// --------------------------------------------------------------------------------------
 void HttpResponse::SetFile( const std::string& path )
 {
 	m_file = std::auto_ptr<IFile>(new File);

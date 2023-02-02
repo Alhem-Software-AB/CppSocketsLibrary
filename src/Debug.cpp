@@ -49,6 +49,13 @@ void Debug::Print(const char *format, ...)
 }
 
 
+Debug& Debug::operator<<(const char * str)
+{
+	m_line += str;
+	return *this;
+}
+
+
 Debug& Debug::operator<<(const std::string& str)
 {
 	m_line += str;
@@ -56,9 +63,32 @@ Debug& Debug::operator<<(const std::string& str)
 }
 
 
+Debug& Debug::operator<<(short l)
+{
+	m_line += Utility::l2string(l);
+	return *this;
+}
+
+
+Debug& Debug::operator<<(int l)
+{
+	m_line += Utility::l2string(l);
+	return *this;
+}
+
+
 Debug& Debug::operator<<(long l)
 {
 	m_line += Utility::l2string(l);
+	return *this;
+}
+
+
+Debug& Debug::operator<<(double d)
+{
+	char slask[100];
+	sprintf(slask, "%f", d);
+	m_line += slask;
 	return *this;
 }
 

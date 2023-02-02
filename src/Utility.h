@@ -79,14 +79,18 @@ public:
 	public:
 		Uri(const std::string& url);
 
-		const std::string Url() { return m_url; }
-		const std::string& UrlUri() { return m_uri; }
-		const std::string& QueryString() { return m_query_string; }
-		const std::string Protocol() { return m_protocol; }
-		const std::string Host() { return m_host; }
-		int Port() { return m_port; }
-		const std::string Path() { return m_path; }
-		const std::string Extension() { return m_ext; }
+		const std::string& Url() const { return m_url; }
+		const std::string& UrlUri() const { return m_uri; }
+		const std::string& QueryString() const { return m_query_string; }
+		const std::string& Protocol() const { return m_protocol; }
+		const std::string& Host() const { return m_host; }
+		int Port() const { return m_port; }
+		const std::string& Path() const { return m_path; }
+		const std::string& File() const { return m_file; }
+		const std::string& Extension() const { return m_ext; }
+
+		const std::string& ToString() const { return m_url; }
+
 	private:
 		std::string m_url;
 		std::string m_uri;
@@ -95,6 +99,7 @@ public:
 		std::string m_host;
 		int m_port;
 		std::string m_path;
+		std::string m_file;
 		std::string m_ext;
 	};
 	class Path

@@ -251,7 +251,7 @@ public:
 	/** Get the unfinished line when using SetLineProtocol = true.
 	    The finished line will always be reported with a call to OnLine.
 	 */
-	const std::string& GetLine() const;
+	const std::string GetLine() const;
 
 	// TCP options
 	bool SetTcpNodelay(bool = true);
@@ -315,7 +315,8 @@ private:
 	uint64_t m_bytes_received;
 	bool m_skip_c; ///< Skip second char of CRLF or LFCR sequence in OnRead
 	char m_c; ///< First char in CRLF or LFCR sequence
-	std::string m_line; ///< Current line in line protocol mode
+	std::vector<char> m_line; ///< Current line in line protocol mode
+	size_t m_line_ptr;
 #ifdef SOCKETS_DYNAMIC_TEMP
 	char *m_buf; ///< temporary read buffer
 #endif

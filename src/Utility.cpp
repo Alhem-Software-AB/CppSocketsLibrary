@@ -1145,6 +1145,12 @@ Utility::Uri::Uri(const std::string& url) : m_url(url), m_port(0), m_path(url)
 	}
 	pos = std::string::npos;
 	for (size_t i = 0; i < m_uri.size(); ++i)
+		if (m_uri[i] == '/')
+			pos = i;
+	if (pos != std::string::npos)
+		m_file = m_uri.substr(pos + 1);
+	pos = std::string::npos;
+	for (size_t i = 0; i < m_uri.size(); ++i)
 		if (m_uri[i] == '.')
 			pos = i;
 	if (pos != std::string::npos)

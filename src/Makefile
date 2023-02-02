@@ -114,7 +114,7 @@ install_shared:	install shared
 		cp -a pkgconfig/*pc $(DESTDIR)/$(PREFIX)/lib/pkgconfig
 
 # no binary files, zip will translate lf to cr lf
-FILES =		*.h *.cpp Makefile Makefile.* Project/*.ds* \
+FILES =		*.h *.cpp Makefile Makefile.Defines.* Makefile.solaris9-sparc-64 Project/*.ds* \
 		README Changelog README.macosx gpl.txt mkdot.sh \
 		Project.net/Sockets/*.vcproj Project.net/Sockets/*.sln \
 		Project.net/Test/*.vcproj \

@@ -55,6 +55,8 @@ HTTPSocket::HTTPSocket(ISocketHandler& h)
 ,m_b_chunked(false)
 ,m_chunk_size(0)
 ,m_chunk_state(0)
+,m_header_count(0)
+,m_max_header_count(MAX_HTTP_HEADER_COUNT)
 {
 	SetLineProtocol();
 	DisableInputBuffer();
@@ -263,6 +265,11 @@ void HTTPSocket::OnLine(const std::string& line)
 		SetRetain();
 	}
 #endif
+	if (m_header_count++ > m_max_header_count)
+	{
+		SetCloseAndDelete();
+		Handler().LogError(this, "OnLine", m_header_count, "http header count exceeds builtin limit of (" + Utility::l2string(m_max_header_count) + ")", LOG_LEVEL_FATAL);
+	}
 }
 
 
@@ -287,14 +294,14 @@ void HTTPSocket::SendResponse()
 
 void HTTPSocket::AddResponseHeader(const std::string& header, const char *format, ...)
 {
-	char slask[5000]; // temporary for vsprintf / vsnprintf
+	char slask[8192]; // temporary for vsprintf / vsnprintf
 	va_list ap;
 
 	va_start(ap, format);
 #ifdef _WIN32
 	vsprintf(slask, format, ap);
 #else
-	vsnprintf(slask, 5000, format, ap);
+	vsnprintf(slask, 8192, format, ap);
 #endif
 	va_end(ap);
 
@@ -344,6 +351,7 @@ void HTTPSocket::Reset()
                 std::list<std::pair<std::string, std::string> >::iterator it = m_response_header_append.begin();
                 m_response_header_append.erase(it);
         }
+        m_header_count = 0;
 
 }
 

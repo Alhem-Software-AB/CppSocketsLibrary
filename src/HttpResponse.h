@@ -71,6 +71,7 @@ public:
 	void Writef( const char *format, ... );
 
 	const IFile& GetFile() const;
+	IFile& GetFile();
 
 	/** Replace memfile with file on disk, opened for read. */
 	void SetFile( const std::string& path );

@@ -42,10 +42,10 @@ namespace SOCKETS_NAMESPACE {
 /** error level enum. */
 typedef enum
 {
-	LOG_LEVEL_WARNING = 0,
+	LOG_LEVEL_INFO = 0,
+	LOG_LEVEL_WARNING,
 	LOG_LEVEL_ERROR,
-	LOG_LEVEL_FATAL,
-	LOG_LEVEL_INFO
+	LOG_LEVEL_FATAL
 } loglevel_t;
 
 

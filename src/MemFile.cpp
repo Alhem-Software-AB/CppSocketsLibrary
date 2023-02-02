@@ -78,7 +78,6 @@ MemFile::MemFile(MemFile& s)
 ,m_ref_decreased(false)
 ,m_path(s.m_path)
 {
-printf("increase ref count for %s\n", m_src.Path().c_str());
 	m_src.Increase();
 }
 
@@ -120,7 +119,6 @@ MemFile::~MemFile()
 	}
 	if (m_src_valid && !m_ref_decreased)
 	{
-printf("decrease ref count for %s\n", m_src.Path().c_str());
 		m_src.Decrease();
 		m_ref_decreased = true;
 	}
@@ -137,7 +135,6 @@ void MemFile::fclose() const
 {
 	if (m_src_valid && !m_ref_decreased)
 	{
-printf("decrease ref count for %s\n", m_src.Path().c_str());
 		m_src.Decrease();
 		m_ref_decreased = true;
 	}

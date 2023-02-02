@@ -205,6 +205,8 @@ public:
 	/** Use with care, always lock with h.GetMutex() if multithreaded */
 	const std::map<SOCKET, Socket *>& AllSockets() { return m_sockets; }
 
+	size_t MaxTcpLineSize() { return TCP_LINE_SIZE; }
+
 protected:
 	socket_m m_sockets; ///< Active sockets map
 	socket_m m_add; ///< Sockets to be added to sockets map
