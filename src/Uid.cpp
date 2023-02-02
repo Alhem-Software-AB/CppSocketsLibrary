@@ -22,7 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #include <stdio.h>
 #include <assert.h>
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__CYGWIN__)
 #include <objbase.h>
 #elif defined MACOSX
 #include "uuid.h"
@@ -38,7 +38,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 Uid::Uid()
 {
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__CYGWIN__)
 	GUID randomGuid;
 	// create random GUID
 	randomGuid = GUID_NULL;

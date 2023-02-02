@@ -48,7 +48,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #pragma warning(disable:4355)
 #endif
 TcpSocket::TcpSocket(SocketHandler& h) : Socket(h)
-,ibuf(*this, 10240)
+,ibuf(*this, TCP_BUFSIZE_READ)
 ,obuf(*this, 32768)
 ,m_line("")
 {
@@ -290,7 +290,7 @@ bool TcpSocket::Open6(const std::string &host,port_t port)
 #endif
 
 
-#define BUFSIZE_READ 16400
+#define BUFSIZE_READ TCP_BUFSIZE_READ
 void TcpSocket::OnRead()
 {
 	int n = ibuf.Space();
@@ -453,7 +453,7 @@ void TcpSocket::OnLine(const std::string& )
 }
 
 
-#define BUFSIZE 16384
+#define BUFSIZE TCP_BUFSIZE_READ
 
 void TcpSocket::ReadLine()
 {

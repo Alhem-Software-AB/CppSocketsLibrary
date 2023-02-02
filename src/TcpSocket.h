@@ -26,6 +26,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "Socket.h"
 #include "CircularBuffer.h"
 
+#define TCP_BUFSIZE_READ 16400
+
 
 class TcpSocket : public Socket
 {

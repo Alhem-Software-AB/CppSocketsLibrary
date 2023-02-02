@@ -201,7 +201,7 @@ void HttpsGetSocket::url_this(const std::string& url_in,std::string& host,port_t
 	}
 	else
 	{
-		port = 80;
+		port = 443;
 	}
 	url = "/" + pa.getrest();
 	{

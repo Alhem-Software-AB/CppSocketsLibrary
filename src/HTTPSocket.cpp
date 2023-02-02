@@ -49,7 +49,7 @@ HTTPSocket::~HTTPSocket()
 }
 
 
-#define BUFSIZE 10000
+#define BUFSIZE TCP_BUFSIZE_READ
 
 void HTTPSocket::OnRead()
 {
@@ -141,6 +141,7 @@ void HTTPSocket::OnLine(const std::string& line)
 	}
 	if (!line.size())
 	{
+		SetLineProtocol(false);
 		m_header = false;
 		OnHeaderComplete();
 		return;

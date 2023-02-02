@@ -1,14 +1,22 @@
-VERSION =	1.7.1
+VERSION =	1.7.2
 
 INCLUDE =	-I/usr/devel/include -I.
 PREFIX =	/usr/local
-CFLAGS =	-Wall -g -O2 $(INCLUDE) -MD -D_VERSION='"$(VERSION)"' 
-# manual autoconf ....
+# .h files installed to $(PREFIX)/include/Sockets
+# static lib .a files installed to $(PREFIX)/lib
 
-# uncomment if your operating system is linux, mac os x, or solaris
+CFLAGS =	-Wall -g -O2 $(INCLUDE) -MD -D_VERSION='"$(VERSION)"'
+# uncomment depending on your operating system
 #CFLAGS +=	-DLINUX
 #CFLAGS +=	-DMACOSX 
+# solaris > 8
 #CFLAGS +=	-DSOLARIS
+# solaris 8
+#CFLAGS +=	-DSOLARIS8
+# windows and/or cygwin
+#CFLAGS +=	-D_WIN32
+# cygwin
+#CFLAGS +=	-D__CYGWIN__
 
 # uncomment if openssl is installed
 CFLAGS += 	-DHAVE_OPENSSL
@@ -44,7 +52,7 @@ OBJS =		CircularBuffer.o \
 		HttpPostSocket.o \
 		HttpDebugSocket.o \
 		Utility.o \
-		PoolSocket.o
+		PoolSocket.o 
 
 libSockets.a:	$(OBJS)
 		ar cru $@ $(OBJS)
@@ -59,9 +67,10 @@ libSocketsEx.a:	$(EX)
 		ranlib $@
 
 install:	all
+		@mkdir -p $(PREFIX)/lib
 		cp libSockets.a $(PREFIX)/lib
 		cp libSocketsEx.a $(PREFIX)/lib
-		mkdir -p $(PREFIX)/include/Sockets
+		@mkdir -p $(PREFIX)/include/Sockets
 		cp -a *.h $(PREFIX)/include/Sockets
 		install Sockets-config $(PREFIX)/bin
 
