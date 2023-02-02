@@ -9,7 +9,8 @@ namespace SOCKETS_NAMESPACE {
 #endif
 
 
-
+/* Ipv4 address implementation.
+	\ingroup basic */
 class Ipv4Address : public SocketAddress
 {
 public:
@@ -28,6 +29,7 @@ public:
 		\param host Hostname to be resolved
 		\param port Port number in host byte order */
 	Ipv4Address(const std::string& host,port_t port);
+	Ipv4Address(struct sockaddr_in&);
 	~Ipv4Address();
 
 	// SocketAddress implementation
@@ -43,7 +45,7 @@ public:
 	int GetFamily();
 
 	bool IsValid();
-	SocketAddress *GetCopy();
+	std::auto_ptr<SocketAddress> GetCopy();
 
 	/** Convert address struct to text. */
 	std::string Convert(bool include_port = false);

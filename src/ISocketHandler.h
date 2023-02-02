@@ -46,7 +46,7 @@ typedef enum {
 	LIST_DETACH,
 	LIST_CONNECTING,
 	LIST_RETRY,
-	LIST_CLOSE,
+	LIST_CLOSE
 } list_t;
 
 class PoolSocket;
@@ -151,7 +151,7 @@ public:
 	}
 	/** Get socks4 port number.
 		\return socks4 port number */
-	port_t GetSocks4Port() {
+	virtual port_t GetSocks4Port() {
 		return 0;
 	}
 	/** Get socks4 userid (optional).
@@ -177,23 +177,25 @@ public:
 	/** Queue a dns request.
 		\param host Hostname to be resolved
 		\param port Port number will be echoed in Socket::OnResolved callback */
-	int Resolve(Socket *,const std::string& host,port_t port) {
+	virtual int Resolve(Socket *,const std::string& host,port_t port) {
+		return -1;
+	}
+	virtual int Resolve6(Socket *,const std::string& host,port_t port) {
 		return -1;
 	}
 	/** Do a reverse dns lookup. */
-	int Resolve(Socket *,ipaddr_t a) {
+	virtual int Resolve(Socket *,ipaddr_t a) {
 		return -1;
 	}
-	/** Do a reverse dns lookup. */
-	int Resolve(Socket *,const std::string&) {
+	virtual int Resolve(Socket *,in6_addr& a) {
 		return -1;
 	}
 	/** Get listen port of asynchronous dns server. */
-	port_t GetResolverPort() {
+	virtual port_t GetResolverPort() {
 		return 0;
 	}
 	/** Resolver thread ready for queries. */
-	bool ResolverReady() {
+	virtual bool ResolverReady() {
 		return false;
 	}
 

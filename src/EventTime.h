@@ -35,7 +35,7 @@ namespace SOCKETS_NAMESPACE {
 #endif
 
 
-#ifdef _WIN32
+#if defined( _WIN32) && !defined(__CYGWIN__)
 typedef __int64 mytime_t;
 #else
 #include <inttypes.h> // int64_t

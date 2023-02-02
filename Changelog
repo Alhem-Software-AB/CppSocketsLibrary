@@ -544,3 +544,15 @@ Version 2.1pre
 Version 2.1
 --------------------------
 
+Version 2.1.1rc1
+--------------------------
+49a50,51
+> Makefile.solaris9-sparc-64
+> Makefile.version
+65a68,69
+> RandomNumber.cpp
+> RandomNumber.h
+72a77,78
+> Semaphore.cpp
+> Semaphore.h
+

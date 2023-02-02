@@ -99,7 +99,7 @@ public:
 	/** Add html header. */
 	void AddResponseHeader(const std::string& x,const std::string& y);
 	/** Add html header. */
-	void AddResponseHeader(const std::string& x,char *format, ...);
+	void AddResponseHeader(const std::string& x,const char *format, ...);
 	/** Send response prepared with calls to methods SetHttpVersion, SetStatus, SetStatusText,
 		and AddResponseHeader. */
 	void SendResponse();

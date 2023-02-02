@@ -1,6 +1,9 @@
 #include "Ipv4Address.h"
 #include "Utility.h"
 #include "Parse.h"
+#ifndef _WIN32
+#include <netdb.h>
+#endif
 
 
 #ifdef SOCKETS_NAMESPACE
@@ -51,6 +54,13 @@ Ipv4Address::Ipv4Address(const std::string& host,port_t port) : m_valid(false)
 }
 
 
+Ipv4Address::Ipv4Address(struct sockaddr_in& sa)
+{
+	m_addr = sa;
+	m_valid = sa.sin_family == AF_INET;
+}
+
+
 Ipv4Address::~Ipv4Address()
 {
 }
@@ -82,57 +92,29 @@ port_t Ipv4Address::GetPort()
 
 bool Ipv4Address::Resolve(const std::string& hostname,struct in_addr& a)
 {
+	struct sockaddr_in sa;
+	memset(&a, 0, sizeof(a));
 	if (Utility::isipv4(hostname))
 	{
-		Parse pa((char *)hostname.c_str(), ".");
-		union {
-			struct {
-				unsigned char b1;
-				unsigned char b2;
-				unsigned char b3;
-				unsigned char b4;
-			} a;
-			ipaddr_t l;
-		} u;
-		u.a.b1 = static_cast<unsigned char>(pa.getvalue());
-		u.a.b2 = static_cast<unsigned char>(pa.getvalue());
-		u.a.b3 = static_cast<unsigned char>(pa.getvalue());
-		u.a.b4 = static_cast<unsigned char>(pa.getvalue());
-		memcpy(&a, &u.l, sizeof(struct in_addr));
+		if (!Utility::u2ip(hostname, sa, AI_NUMERICHOST))
+			return false;
+		a = sa.sin_addr;
 		return true;
 	}
-#ifndef LINUX
-	struct hostent *he = gethostbyname( hostname.c_str() );
-	if (!he)
-	{
+	if (!Utility::u2ip(hostname, sa))
 		return false;
-	}
-	memcpy(&a, he -> h_addr, sizeof(struct in_addr));
-#else
-	struct hostent he;
-	struct hostent *result;
-	int myerrno;
-	char buf[2000];
-	int n = gethostbyname_r(hostname.c_str(), &he, buf, sizeof(buf), &result, &myerrno);
-	if (n)
-	{
-		return false;
-	}
-	memcpy(&a, he.h_addr, sizeof(struct in_addr));
-#endif
+	a = sa.sin_addr;
 	return true;
 }
 
 
 bool Ipv4Address::Reverse(struct in_addr& a,std::string& name)
 {
-	struct hostent *h = gethostbyaddr( (const char *)&a, sizeof(a), AF_INET);
-	if (h)
-	{
-		name = h -> h_name;
-		return true;
-	}
-	return false;
+	struct sockaddr_in sa;
+	memset(&sa, 0, sizeof(sa));
+	sa.sin_family = AF_INET;
+	sa.sin_addr = a;
+	return Utility::reverse((struct sockaddr *)&sa, sizeof(sa), name);
 }
 
 
@@ -146,19 +128,13 @@ std::string Ipv4Address::Convert(bool include_port)
 
 std::string Ipv4Address::Convert(struct in_addr& a)
 {
-	union {
-		struct {
-			unsigned char b1;
-			unsigned char b2;
-			unsigned char b3;
-			unsigned char b4;
-		} a;
-		ipaddr_t l;
-	} u;
-	memcpy(&u.l, &a, sizeof(struct in_addr));
-	char tmp[100];
-	sprintf(tmp, "%u.%u.%u.%u", u.a.b1, u.a.b2, u.a.b3, u.a.b4);
-	return tmp;
+	struct sockaddr_in sa;
+	memset(&sa, 0, sizeof(sa));
+	sa.sin_family = AF_INET;
+	sa.sin_addr = a;
+	std::string name;
+	Utility::reverse((struct sockaddr *)&sa, sizeof(sa), name, NI_NUMERICHOST);
+	return name;
 }
 
 
@@ -196,10 +172,9 @@ bool Ipv4Address::operator==(SocketAddress& a)
 }
 
 
-SocketAddress *Ipv4Address::GetCopy()
+std::auto_ptr<SocketAddress> Ipv4Address::GetCopy()
 {
-	Ipv4Address *p = new Ipv4Address(m_addr.sin_addr, ntohs(m_addr.sin_port));
-	return p;
+	return std::auto_ptr<SocketAddress>(new Ipv4Address(m_addr));
 }
 
 

@@ -218,7 +218,7 @@ void HTTPSocket::SendResponse()
 }
 
 
-void HTTPSocket::AddResponseHeader(const std::string& header, char *format, ...)
+void HTTPSocket::AddResponseHeader(const std::string& header, const char *format, ...)
 {
 	char slask[5000]; // temporary for vsprintf / vsnprintf
 	va_list ap;

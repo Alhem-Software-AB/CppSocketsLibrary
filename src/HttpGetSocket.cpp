@@ -98,7 +98,7 @@ void HttpGetSocket::OnConnect()
 	AddResponseHeader( "User-agent", MyUseragent() );
 
 	if (GetUrlPort() != 80 && GetUrlPort() != 443)
-		AddResponseHeader( "Host", GetUrlHost() + " " + Utility::l2string(GetUrlPort()) );
+		AddResponseHeader( "Host", GetUrlHost() + ":" + Utility::l2string(GetUrlPort()) );
 	else
 		AddResponseHeader( "Host", GetUrlHost() );
 	SendRequest();

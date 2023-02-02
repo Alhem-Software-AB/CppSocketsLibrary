@@ -30,7 +30,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef _IEVENTOWNER_H
 #define _IEVENTOWNER_H
 
-#include <stdio.h>
 #include "IEventHandler.h"
 
 #ifdef SOCKETS_NAMESPACE

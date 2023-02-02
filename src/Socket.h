@@ -37,6 +37,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "socket_include.h"
 #include <time.h>
 #include "Utility.h"
+#include "SocketAddress.h"
+#include "RandomNumber.h"
+
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
@@ -174,7 +177,7 @@ public:
 	/** Used by ListenSocket. ipv4 and ipv6 */
 	void SetRemoteAddress(SocketAddress&);
 	/** Returns address of remote end. */
-	SocketAddress *GetRemoteSocketAddress();
+	std::auto_ptr<SocketAddress> GetRemoteSocketAddress();
 	/** Returns address of remote end: ipv4. */
 	ipaddr_t GetRemoteIP4();
 	/** Returns address of remote end: ipv6. */
@@ -258,7 +261,7 @@ public:
 	/** Set address/port of last connect() call. */
 	void SetClientRemoteAddress(SocketAddress&);
 	/** Get address/port of last connect() call. */
-	SocketAddress *GetClientRemoteAddress();
+	std::auto_ptr<SocketAddress> GetClientRemoteAddress();
 
 	/** Instruct a client socket to stay open in the connection pool after use.
 		If you have connected to a server using tcp, you can call SetRetain
@@ -295,22 +298,22 @@ public:
 		\param host hostname to be resolved
 		\param port port number passed along for the ride
 		\return Resolve ID */
-	int Resolve(const std::string& host,port_t port);
+	int Resolve(const std::string& host,port_t port = 0);
+	int Resolve6(const std::string& host, port_t port = 0);
 	/** Callback returning a resolved address.
 		\param id Resolve ID from Resolve call
 		\param a resolved ip address
 		\param port port number passed to Resolve */
 	virtual void OnResolved(int id,ipaddr_t a,port_t port);
+	virtual void OnResolved(int id,in6_addr& a,port_t port);
 	/** Request asynchronous reverse dns lookup.
 		\param a in_addr to be translated */
 	int Resolve(ipaddr_t a);
-	/** Request asynchronous reverse dns lookup.
-		\param a IP address to be translated */
-	int Resolve(const std::string& a);
+	int Resolve(in6_addr& a);
 	/** Callback returning reverse resolve results.
 		\param id Resolve ID
 		\param name Resolved hostname */
-	virtual void OnResolved(int id,const std::string& name);
+	virtual void OnReverseResolved(int id,const std::string& name);
 	/** Callback indicating failed dns lookup.
 		\param id Resolve ID */
 	virtual void OnResolveFailed(int id);
@@ -426,8 +429,11 @@ public:
 	virtual uint64_t GetBytesSent(bool clear = false);
 	virtual uint64_t GetBytesReceived(bool clear = false);
 
+	unsigned long int Random();
+
 protected:
 	Socket(const Socket& ); ///< do not allow use of copy constructor
+	RandomNumber m_prng; ///< Random number generator
 
 private:
 	/** default constructor not available */
@@ -481,8 +487,8 @@ static	WSAInitializer m_winsock_init; ///< Winsock initialization singleton clas
 	ISocketHandler *m_slave_handler; ///< Actual sockethandler while detached
 	time_t m_tClose; ///< Time in seconds when ordered to close
 	int m_shutdown; ///< Shutdown status
-	SocketAddress *m_client_remote_address; ///< Address of last connect()
-	SocketAddress *m_remote_address; ///< Remote end address
+	std::auto_ptr<SocketAddress> m_client_remote_address; ///< Address of last connect()
+	std::auto_ptr<SocketAddress> m_remote_address; ///< Remote end address
 };
 
 #ifdef SOCKETS_NAMESPACE

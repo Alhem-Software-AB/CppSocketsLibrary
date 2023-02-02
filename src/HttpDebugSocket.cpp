@@ -85,14 +85,14 @@ void HttpDebugSocket::OnHeader(const std::string& key,const std::string& value)
 
 void HttpDebugSocket::OnHeaderComplete()
 {
-	if (GetMethod() == "GET")
+	if (m_content_length)
 	{
-		Send("</pre><hr></body></html>");
-		SetCloseAndDelete();
+		Send("</pre><h3>Request Body</h3><pre style='background: #e0e0e0'>");
 	}
 	else
 	{
-		Send("</pre><h3>Request Body</h3><pre style='background: #e0e0e0'>");
+		Send("</pre><hr></body></html>");
+		SetCloseAndDelete();
 	}
 }
 

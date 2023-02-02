@@ -29,7 +29,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <TcpSocket.h>
 #ifndef _WIN32
 #include <signal.h>
-#include <sys/sysinfo.h>
 #endif
 #include <HttpDebugSocket.h>
 
@@ -118,7 +117,7 @@ int main(int argc,char *argv[])
 {
 #ifndef _WIN32
   signal(SIGPIPE, SIG_IGN);
-  signal(SIGINT, (__sighandler_t)sigint);
+  signal(SIGINT, sigint);
 #endif
   port_t port = 2222;
   bool enableLog = false;
@@ -195,31 +194,10 @@ int main(int argc,char *argv[])
     fprintf(stderr, "Will detach each incoming socket\n");
   if (g_b_ssl)
     fprintf(stderr, "Using SSL\n");
-//  time_t t = time(NULL);
   while (!quit)
   {
     h.Select(1, 0);
-/*
-    if (time(NULL) - t > 10)
-    {
-      t = time(NULL);
-      struct sysinfo info;
-      sysinfo(&info);
-      printf("Free mem: %ld / %ld\n", info.freeram, info.totalram);
-    }
-*/
   }
-/*
-  if (g_b_detach)
-  {
-    fprintf(stderr, "Waiting for threads to exit...\n");
-#ifdef _WIN32
-    Sleep(1000);
-#else
-    sleep(1);
-#endif
-  }
-*/
   fprintf(stderr, "\nExiting...\n");
   if (log)
   {

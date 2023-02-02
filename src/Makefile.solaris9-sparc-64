@@ -1,13 +1,15 @@
 include		Makefile.version
 
-INCLUDE =	
-PREFIX =	/usr/local
+INCLUDE =	-I../Tekton/openssl/include
+
 # .h files installed to $(PREFIX)/include/Sockets
 # static lib .a files installed to $(PREFIX)/lib
+PREFIX =	/usr/local
 
-CXX =		g++
+CXX =		/opt/SUNWspro/bin/CC
 
-CFLAGS =	-Wall -g $(INCLUDE) -MD -D_VERSION='"$(VERSION)"'
+CFLAGS =	-g $(INCLUDE) -MD -D_VERSION='"$(VERSION)"'
+CFLAGS +=	-features=rtti -mt
 
 # turn off optimization if compiling with gcc 2.9.x:
 #CFLAGS +=	-O0
@@ -17,7 +19,7 @@ CFLAGS +=	-O2
 #CFLAGS +=	-DLINUX
 #CFLAGS +=	-DMACOSX 
 # solaris > 8
-#CFLAGS +=	-DSOLARIS
+CFLAGS +=	-DSOLARIS
 # solaris 8
 #CFLAGS +=	-DSOLARIS8
 # windows and/or cygwin
@@ -128,7 +130,7 @@ clean:
 -include	*.d
 
 # no binary files, zip will translate lf to cr lf
-FILES =		*.h *.cpp Makefile Makefile.* Project/*.ds* \
+FILES =		*.h *.cpp Makefile Project/*.ds* \
 		README.macosx gpl.txt mkdot.sh \
 		Project.net/Sockets/*.vcproj Project.net/Sockets/*.sln \
 		Project.net/Test/*.vcproj \
@@ -157,3 +159,8 @@ docs:		clean
 		rm -rf /usr/local/apache/www.alhem.net/htdocs/Sockets/html
 		doxygen doxygen.cfg
 		./packdocs.sh Sockets-$(VERSION)-doxygendocs
+
+.cpp.o:		
+		@echo Compiling $<
+		@$(CXX) $(CFLAGS) -c -o $@ $<
+

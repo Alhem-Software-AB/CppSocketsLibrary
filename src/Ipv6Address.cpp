@@ -1,6 +1,9 @@
 #include "Ipv6Address.h"
 #include "Utility.h"
 #include "Parse.h"
+#ifndef _WIN32
+#include <netdb.h>
+#endif
 #ifdef IPPROTO_IPV6
 
 #ifdef SOCKETS_NAMESPACE
@@ -41,6 +44,13 @@ Ipv6Address::Ipv6Address(const std::string& host,port_t port) : m_valid(false)
 }
 
 
+Ipv6Address::Ipv6Address(struct sockaddr_in6& sa)
+{
+	m_addr = sa;
+	m_valid = sa.sin6_family == AF_INET6;
+}
+
+
 Ipv6Address::~Ipv6Address()
 {
 }
@@ -72,85 +82,29 @@ port_t Ipv6Address::GetPort()
 
 bool Ipv6Address::Resolve(const std::string& hostname,struct in6_addr& a)
 {
+	struct sockaddr_in6 sa;
+	memset(&a, 0, sizeof(a));
 	if (Utility::isipv6(hostname))
 	{
-		std::list<std::string> vec;
-		size_t x = 0;
-		for (size_t i = 0; i <= hostname.size(); i++)
-		{
-			if (i == hostname.size() || hostname[i] == ':')
-			{
-				std::string s = hostname.substr(x, i - x);
-				//
-				if (strstr(s.c_str(),".")) // x.x.x.x
-				{
-					Parse pa(s,".");
-					char slask[100]; // u2ip temporary hex2string conversion
-					unsigned long b0 = static_cast<unsigned long>(pa.getvalue());
-					unsigned long b1 = static_cast<unsigned long>(pa.getvalue());
-					unsigned long b2 = static_cast<unsigned long>(pa.getvalue());
-					unsigned long b3 = static_cast<unsigned long>(pa.getvalue());
-					sprintf(slask,"%lx",b0 * 256 + b1);
-					vec.push_back(slask);
-					sprintf(slask,"%lx",b2 * 256 + b3);
-					vec.push_back(slask);
-				}
-				else
-				{
-					vec.push_back(s);
-				}
-				//
-				x = i + 1;
-			}
-		}
-		size_t sz = vec.size(); // number of byte pairs
-		size_t i = 0; // index in in6_addr.in6_u.u6_addr16[] ( 0 .. 7 )
-		for (std::list<std::string>::iterator it = vec.begin(); it != vec.end(); it++)
-		{
-			std::string bytepair = *it;
-			if (bytepair.size())
-			{
-				a.s6_addr16[i++] = htons(Utility::hex2unsigned(bytepair));
-			}
-			else
-			{
-				a.s6_addr16[i++] = 0;
-				while (sz++ < 8)
-				{
-					a.s6_addr16[i++] = 0;
-				}
-			}
-		}
+		if (!Utility::u2ip(hostname, sa, AI_NUMERICHOST))
+			return false;
+		a = sa.sin6_addr;
 		return true;
 	}
-#ifdef SOLARIS
-	int errnum = 0;
-	struct hostent *he = getipnodebyname( hostname.c_str(), AF_INET6, 0, &errnum );
-#else
-	struct hostent *he = gethostbyname2( hostname.c_str(), AF_INET6 );
-#endif
-	if (!he)
-	{
+	if (!Utility::u2ip(hostname, sa))
 		return false;
-	}
-	memcpy(&a,he -> h_addr_list[0],he -> h_length);
-#ifdef SOLARIS
-	free(he);
-#endif
+	a = sa.sin6_addr;
 	return true;
 }
 
 
 bool Ipv6Address::Reverse(struct in6_addr& a,std::string& name)
 {
-	/// \todo implement ipv6 reverse lookup
-	struct hostent *h = gethostbyaddr( (const char *)&a, sizeof(a), AF_INET6);
-	if (h)
-	{
-		name = h -> h_name;
-		return true;
-	}
-	return false;
+	struct sockaddr_in6 sa;
+	memset(&sa, 0, sizeof(sa));
+	sa.sin6_family = AF_INET6;
+	sa.sin6_addr = a;
+	return Utility::reverse((struct sockaddr *)&sa, sizeof(sa), name);
 }
 
 
@@ -171,15 +125,17 @@ std::string Ipv6Address::Convert(struct in6_addr& a,bool mixed)
 	bool ok_to_skip = true;
 	if (mixed)
 	{
-		unsigned int x;
+		unsigned short x;
+		unsigned short addr16[8];
+		memcpy(addr16, &a, sizeof(addr16));
 		for (size_t i = 0; i < 6; i++)
 		{
-			x = ntohs(a.s6_addr16[i]);
+			x = ntohs(addr16[i]);
 			if (*slask && (x || !ok_to_skip || prev))
 				strcat(slask,":");
 			if (x || !ok_to_skip)
 			{
-				sprintf(slask + strlen(slask),"%X", x);
+				sprintf(slask + strlen(slask),"%x", x);
 				if (x && skipped)
 					ok_to_skip = false;
 			}
@@ -189,30 +145,20 @@ std::string Ipv6Address::Convert(struct in6_addr& a,bool mixed)
 			}
 			prev = x;
 		}
-		x = ntohs(a.s6_addr16[6]);
+		x = ntohs(addr16[6]);
 		sprintf(slask + strlen(slask),":%u.%u",x / 256,x & 255);
-		x = ntohs(a.s6_addr16[7]);
+		x = ntohs(addr16[7]);
 		sprintf(slask + strlen(slask),".%u.%u",x / 256,x & 255);
 	}
 	else
 	{
-		for (size_t i = 0; i < 8; i++)
-		{
-			unsigned int x = ntohs(a.s6_addr16[i]);
-			if (*slask && (x || !ok_to_skip || prev))
-				strcat(slask,":");
-			if (x || !ok_to_skip)
-			{
-				sprintf(slask + strlen(slask),"%X", x);
-				if (x && skipped)
-					ok_to_skip = false;
-			}
-			else
-			{
-				skipped = true;
-			}
-			prev = x;
-		}
+		struct sockaddr_in6 sa;
+		memset(&sa, 0, sizeof(sa));
+		sa.sin6_family = AF_INET6;
+		sa.sin6_addr = a;
+		std::string name;
+		Utility::reverse((struct sockaddr *)&sa, sizeof(sa), name, NI_NUMERICHOST);
+		return name;
 	}
 	return slask;
 }
@@ -242,6 +188,7 @@ uint32_t Ipv6Address::GetFlowinfo()
 }
 
 
+#ifndef _WIN32
 void Ipv6Address::SetScopeId(uint32_t x)
 {
 	m_addr.sin6_scope_id = x;
@@ -252,6 +199,7 @@ uint32_t Ipv6Address::GetScopeId()
 {
 	return m_addr.sin6_scope_id;
 }
+#endif
 
 
 bool Ipv6Address::IsValid()
@@ -276,12 +224,9 @@ bool Ipv6Address::operator==(SocketAddress& a)
 }
 
 
-SocketAddress *Ipv6Address::GetCopy()
+std::auto_ptr<SocketAddress> Ipv6Address::GetCopy()
 {
-	Ipv6Address *p = new Ipv6Address(m_addr.sin6_addr, ntohs(m_addr.sin6_port));
-	p -> SetFlowinfo(GetFlowinfo());
-	p -> SetScopeId(GetScopeId());
-	return p;
+	return std::auto_ptr<SocketAddress>(new Ipv6Address(m_addr));
 }
 
 

@@ -1,6 +1,8 @@
 #ifndef _SOCKETADDRESS_H
 #define _SOCKETADDRESS_H
 
+#include <string>
+#include <memory>
 #include "socket_include.h"
 
 
@@ -9,13 +11,15 @@ namespace SOCKETS_NAMESPACE {
 #endif
 
 
-/* This class and its subclasses is intended to be used as replacement
+/**
+   This class and its subclasses is intended to be used as replacement
    for the internal data type 'ipaddr_t' and various implementations of
    IPv6 addressing found throughout the library.
    'ipaddr_t' is an IPv4 address in network byte order.
    'port_t' is the portnumber in host byte order.
    'struct in6_addr' is an IPv6 address.
    'struct in_addr' is an IPv4 address.
+   \ingroup basic
 */
 class SocketAddress
 {
@@ -56,7 +60,7 @@ public:
 	virtual bool IsValid() = 0;
 
 	/** Get a copy of this SocketAddress object. */
-	virtual SocketAddress *GetCopy() = 0;
+	virtual std::auto_ptr<SocketAddress> GetCopy() = 0;
 };
 
 

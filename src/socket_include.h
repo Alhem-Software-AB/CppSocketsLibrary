@@ -55,7 +55,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include <netdb.h>
+//#include <netdb.h>
 
 // all typedefs in this file will be declared outside the sockets namespace,
 // because some os's will already have one or more of the type defined.
@@ -177,7 +177,19 @@ namespace SOCKETS_NAMESPACE {
 // 1.8.6: define FD_SETSIZE to something bigger than 64 if there are a lot of
 // simultaneous connections (must be done before including winsock.h)
 //#define FD_SETSIZE 1024
-#include <winsock.h>
+
+// windows 2000 with ipv6 preview installed:
+//    http://msdn.microsoft.com/downloads/sdks/platform/tpipv6.asp
+// see the FAQ on how to install
+#define WIN32_LEAN_AND_MEAN
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#if MSC_VER == 1200
+#ifndef __CYGWIN__
+#include <tpipv6.h>  // For IPv6 Tech Preview.
+#endif
+#endif // MSC_VER == 1200
+
 
 #define MSG_NOSIGNAL 0
 //#define SHUT_RDWR 2

@@ -34,13 +34,13 @@ namespace SOCKETS_NAMESPACE {
 #endif
 
 
-char *Base64::bstr =
+const char *Base64::bstr =
 	"ABCDEFGHIJKLMNOPQ"
 	"RSTUVWXYZabcdefgh"
 	"ijklmnopqrstuvwxy"
 	"z0123456789+/";
 
-char Base64::rstr[] = {
+const char Base64::rstr[] = {
 	  0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0, 
 	  0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0, 
 	  0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,  62,   0,   0,   0,  63, 

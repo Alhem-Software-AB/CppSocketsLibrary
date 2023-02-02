@@ -31,7 +31,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <stdio.h>
 #ifdef _WIN32
 #pragma warning(disable:4786)
-#include <windows.h>
 #endif
 #include "socket_include.h"
 #include "Parse.h"

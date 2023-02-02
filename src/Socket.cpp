@@ -32,10 +32,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <stdlib.h>
 #else
 #include <errno.h>
+#include <netdb.h>
 #endif
 #include <stdio.h>
 #include <ctype.h>
 #include <fcntl.h>
+
 #include "ISocketHandler.h"
 #include "SocketThread.h"
 #include "Utility.h"
@@ -56,7 +58,8 @@ WSAInitializer Socket::m_winsock_init;
 
 
 Socket::Socket(ISocketHandler& h)
-:m_handler(h)
+:m_prng( true )
+,m_handler(h)
 ,m_socket( INVALID_SOCKET )
 ,m_bDel(false)
 ,m_bClose(false)
@@ -107,21 +110,6 @@ Socket::~Socket()
 	{
 		Close();
 	}
-	if (m_client_remote_address)
-	{
-		delete m_client_remote_address;
-	}
-	if (m_remote_address)
-	{
-		delete m_remote_address;
-	}
-/*
-	// SocketThread will delete itself
-	if (m_pThread)
-	{
-		delete m_pThread;
-	}
-*/
 }
 
 
@@ -400,15 +388,11 @@ bool Socket::Connecting()
 
 void Socket::SetRemoteAddress(SocketAddress& ad) //struct sockaddr* sa, socklen_t l)
 {
-	if (m_remote_address)
-	{
-		delete m_remote_address;
-	}
 	m_remote_address = ad.GetCopy();
 }
 
 
-SocketAddress *Socket::GetRemoteSocketAddress()
+std::auto_ptr<SocketAddress> Socket::GetRemoteSocketAddress()
 {
 	return m_remote_address;
 }
@@ -435,7 +419,7 @@ ipaddr_t Socket::GetRemoteIP4()
 	{
 		Handler().LogError(this, "GetRemoteIP4", 0, "get ipv4 address for ipv6 socket", LOG_LEVEL_WARNING);
 	}
-	if (m_remote_address)
+	if (m_remote_address.get() != NULL)
 	{
 		struct sockaddr *p = *m_remote_address;
 		struct sockaddr_in *sa = (struct sockaddr_in *)p;
@@ -453,7 +437,7 @@ struct in6_addr Socket::GetRemoteIP6()
 		Handler().LogError(this, "GetRemoteIP6", 0, "get ipv6 address for ipv4 socket", LOG_LEVEL_WARNING);
 	}
 	struct sockaddr_in6 fail;
-	if (m_remote_address)
+	if (m_remote_address.get() != NULL)
 	{
 		struct sockaddr *p = *m_remote_address;
 		memcpy(&fail, p, sizeof(struct sockaddr_in6));
@@ -469,7 +453,7 @@ struct in6_addr Socket::GetRemoteIP6()
 
 port_t Socket::GetRemotePort()
 {
-	if (!m_remote_address)
+	if (!m_remote_address.get())
 	{
 		return 0;
 	}
@@ -479,7 +463,7 @@ port_t Socket::GetRemotePort()
 
 std::string Socket::GetRemoteAddress()
 {
-	if (!m_remote_address)
+	if (!m_remote_address.get())
 	{
 		return "";
 	}
@@ -489,7 +473,7 @@ std::string Socket::GetRemoteAddress()
 
 std::string Socket::GetRemoteHostname()
 {
-	if (!m_remote_address)
+	if (!m_remote_address.get())
 	{
 		return "";
 	}
@@ -664,17 +648,22 @@ void Socket::CopyConnection(Socket *sock)
 	SetSocketType( sock -> GetSocketType() );
 	SetSocketProtocol( sock -> GetSocketProtocol() );
 
+/*
 	SocketAddress *client = sock -> GetClientRemoteAddress();
 	if (client)
 	{
 		SetClientRemoteAddress( *client );
 	}
-
+*/
+	SetClientRemoteAddress( *sock -> GetClientRemoteAddress() );
+/*
 	SocketAddress *remote = GetRemoteSocketAddress();
 	if (remote)
 	{
 		SetRemoteAddress(*remote);
 	}
+*/
+	SetRemoteAddress( *sock -> GetRemoteSocketAddress() );
 }
 
 
@@ -684,13 +673,19 @@ int Socket::Resolve(const std::string& host,port_t port)
 }
 
 
+int Socket::Resolve6(const std::string& host,port_t port)
+{
+	return Handler().Resolve6(this, host, port);
+}
+
+
 int Socket::Resolve(ipaddr_t a)
 {
 	return Handler().Resolve(this, a);
 }
 
 
-int Socket::Resolve(const std::string& a)
+int Socket::Resolve(in6_addr& a)
 {
 	return Handler().Resolve(this, a);
 }
@@ -733,7 +728,12 @@ void Socket::OnResolved(int,ipaddr_t,port_t)
 }
 
 
-void Socket::OnResolved(int,const std::string&)
+void Socket::OnResolved(int,in6_addr&,port_t)
+{
+}
+
+
+void Socket::OnReverseResolved(int,const std::string&)
 {
 }
 
@@ -1145,17 +1145,13 @@ void Socket::SetClientRemoteAddress(SocketAddress& ad)
 	{
 		Handler().LogError(this, "SetClientRemoteAddress", 0, "remote address not valid", LOG_LEVEL_ERROR);
 	}
-	if (m_client_remote_address)
-	{
-		delete m_client_remote_address;
-	}
 	m_client_remote_address = ad.GetCopy();
 }
 
 
-SocketAddress *Socket::GetClientRemoteAddress()
+std::auto_ptr<SocketAddress> Socket::GetClientRemoteAddress()
 {
-	if (!m_client_remote_address)
+	if (!m_client_remote_address.get())
 	{
 		Handler().LogError(this, "GetClientRemoteAddress", 0, "remote address not yet set", LOG_LEVEL_ERROR);
 	}
@@ -1172,6 +1168,12 @@ uint64_t Socket::GetBytesSent(bool)
 uint64_t Socket::GetBytesReceived(bool)
 {
 	return 0;
+}
+
+
+unsigned long int Socket::Random()
+{
+	return m_prng.next();
 }
 
 

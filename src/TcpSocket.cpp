@@ -212,7 +212,8 @@ TcpSocket::~TcpSocket()
 bool TcpSocket::Open(ipaddr_t ip,port_t port,bool skip_socks)
 {
 	Ipv4Address ad(ip, port);
-	return Open(ad, skip_socks);
+	Ipv4Address local;
+	return Open(ad, local, skip_socks);
 }
 
 
@@ -226,6 +227,13 @@ bool TcpSocket::Open(in6_addr ip,port_t port,bool skip_socks)
 
 
 bool TcpSocket::Open(SocketAddress& ad,bool skip_socks)
+{
+	Ipv4Address bind_ad("0.0.0.0", 0);
+	return Open(ad, bind_ad, skip_socks);
+}
+
+
+bool TcpSocket::Open(SocketAddress& ad,SocketAddress& bind_ad,bool skip_socks)
 {
 	if (!ad.IsValid())
 	{
@@ -272,6 +280,10 @@ bool TcpSocket::Open(SocketAddress& ad,bool skip_socks)
 	SetIsClient(); // client because we connect
 	SetClientRemoteAddress(ad);
 	int n = 0;
+	if (bind_ad.GetPort() != 0)
+	{
+		bind(s, bind_ad, bind_ad);
+	}
 	if (!skip_socks && GetSocks4Host() && GetSocks4Port())
 	{
 		Ipv4Address sa(GetSocks4Host(), GetSocks4Port());
@@ -351,7 +363,8 @@ bool TcpSocket::Open(const std::string &host,port_t port)
 			return false;
 		}
 		Ipv6Address ad(a, port);
-		return Open(ad);
+		Ipv6Address local;
+		return Open(ad, local);
 	}
 #endif
 	if (!Handler().ResolverEnabled() || Utility::isipv4(host) )
@@ -363,7 +376,8 @@ bool TcpSocket::Open(const std::string &host,port_t port)
 			return false;
 		}
 		Ipv4Address ad(l, port);
-		return Open(ad);
+		Ipv4Address local;
+		return Open(ad, local);
 	}
 	// resolve using async resolver thread
 	m_resolver_id = Resolve(host, port);
@@ -378,7 +392,8 @@ void TcpSocket::OnResolved(int id,ipaddr_t a,port_t port)
 		if (a && port)
 		{
 			Ipv4Address ad(a, port);
-			if (Open(ad))
+			Ipv4Address local;
+			if (Open(ad, local))
 			{
 				if (!Handler().Valid(this))
 				{
@@ -390,6 +405,31 @@ void TcpSocket::OnResolved(int id,ipaddr_t a,port_t port)
 		{
 			Handler().LogError(this, "OnResolved", 0, "Resolver failed", LOG_LEVEL_FATAL);
 			SetCloseAndDelete();
+		}
+	}
+	else
+	{
+		Handler().LogError(this, "OnResolved", id, "Resolver returned wrong job id", LOG_LEVEL_FATAL);
+		SetCloseAndDelete();
+	}
+}
+
+
+void TcpSocket::OnResolved(int id,in6_addr& a,port_t port)
+{
+	if (id == m_resolver_id)
+	{
+		Ipv6Address ad(a, port);
+		if (ad.IsValid())
+		{
+			Ipv6Address local;
+			if (Open(ad, local))
+			{
+				if (!Handler().Valid(this))
+				{
+					Handler().Add(this);
+				}
+			}
 		}
 	}
 	else
@@ -442,10 +482,11 @@ DEB(				printf("SSL read problem, errcode = %d\n",n);)
 			SetCloseAndDelete(true);
 			SetFlushBeforeClose(false);
 			SetLost();
-			SetConnected(false); // avoid shutdown in Close()
+			//SetConnected(false); // avoid shutdown in Close()
 			return;
 		}
 		else
+		if (n > 0 && n <= TCP_BUFSIZE_READ)
 		{
 			m_bytes_received += n;
 			OnRawData(buf,n);
@@ -454,6 +495,10 @@ DEB(				printf("SSL read problem, errcode = %d\n",n);)
 				// overflow
 				Handler().LogError(this, "OnRead(ssl)", 0, "ibuf overflow", LOG_LEVEL_WARNING);
 			}
+		}
+		else
+		{
+			Handler().LogError(this, "OnRead(ssl)", n, "abnormal value from SSL_read", LOG_LEVEL_ERROR);
 		}
 #endif // HAVE_OPENSSL
 	}
@@ -475,10 +520,11 @@ DEB(				printf("SSL read problem, errcode = %d\n",n);)
 			SetCloseAndDelete(true);
 			SetFlushBeforeClose(false);
 			SetLost();
-			SetConnected(false); // avoid shutdown in Close()
+			//SetConnected(false); // avoid shutdown in Close()
 			return;
 		}
 		else
+		if (n > 0 && n <= TCP_BUFSIZE_READ)
 		{
 			m_bytes_received += n;
 			OnRawData(buf,n);
@@ -487,6 +533,10 @@ DEB(				printf("SSL read problem, errcode = %d\n",n);)
 				// overflow
 				Handler().LogError(this, "OnRead", 0, "ibuf overflow", LOG_LEVEL_WARNING);
 			}
+		}
+		else
+		{
+			Handler().LogError(this, "OnRead(ssl)", n, "abnormal value from recv", LOG_LEVEL_ERROR);
 		}
 	}
 	// unbuffered
@@ -857,8 +907,8 @@ void TcpSocket::OnSocks4Connect()
 	request[0] = 4; // socks v4
 	request[1] = 1; // command code: CONNECT
 	{
-		SocketAddress *ad = GetClientRemoteAddress();
-		if (ad)
+		std::auto_ptr<SocketAddress> ad = GetClientRemoteAddress();
+		if (ad.get())
 		{
 			struct sockaddr *p0 = (struct sockaddr *)*ad;
 			struct sockaddr_in *p = (struct sockaddr_in *)p0;
@@ -1376,11 +1426,7 @@ void TcpSocket::SetRandFile(const std::string& file,long size)
 	{
 		for (long i = 0; i < size; i++)
 		{
-#ifdef _WIN32
-			long rnd = rand();
-#else
-			long rnd = random();
-#endif
+			long rnd = Random();
 			fwrite(&rnd, 1, 1, fil);
 		}
 		fclose(fil);

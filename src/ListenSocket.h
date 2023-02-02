@@ -340,7 +340,9 @@ public:
 				{
 					Ipv6Address ad(p -> sin6_addr,ntohs(p -> sin6_port));
 					ad.SetFlowinfo(p -> sin6_flowinfo);
+#ifndef _WIN32
 					ad.SetScopeId(p -> sin6_scope_id);
+#endif
 					tmp -> SetRemoteAddress(ad);
 				}
 			}

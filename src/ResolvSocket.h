@@ -52,8 +52,11 @@ public:
 	void SetId(int x) { m_resolv_id = x; }
 	void SetHost(const std::string& x) { m_resolv_host = x; }
 	void SetAddress(ipaddr_t x) { m_resolv_address = x; }
+	void SetAddress(in6_addr& a) { m_resolv_address6 = a; m_ipv6 = true; }
 	void SetPort(port_t x) { m_resolv_port = x; }
 	void OnConnect();
+
+	void SetIpv6(bool x = true) { m_ipv6 = x; }
 
 private:
 	ResolvSocket(const ResolvSocket& s) : TcpSocket(s) {} // copy constructor
@@ -67,6 +70,8 @@ private:
 	std::string m_resolv_host;
 	port_t m_resolv_port;
 	ipaddr_t m_resolv_address;
+	bool m_ipv6;
+	in6_addr m_resolv_address6;
 };
 
 

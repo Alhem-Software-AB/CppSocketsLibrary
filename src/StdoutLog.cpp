@@ -45,7 +45,12 @@ namespace SOCKETS_NAMESPACE {
 void StdoutLog::error(ISocketHandler *,Socket *sock,const std::string& call,int err,const std::string& sys_err,loglevel_t lvl)
 {
 	time_t t = time(NULL);
-	struct tm *tp = localtime(&t);
+	struct tm tp;
+#ifdef _WIN32
+	memcpy(&tp, localtime(&t), sizeof(tp));
+#else
+	localtime_r(&t, &tp);
+#endif
 	std::string level;
 	
 	switch (lvl)
@@ -66,20 +71,20 @@ void StdoutLog::error(ISocketHandler *,Socket *sock,const std::string& call,int 
 	if (sock)
 	{
 		printf("%d-%02d-%02d %02d:%02d:%02d :: fd %d :: %s: %d %s (%s)\n",
-			tp -> tm_year + 1900,
-			tp -> tm_mon + 1,
-			tp -> tm_mday,
-			tp -> tm_hour,tp -> tm_min,tp -> tm_sec,
+			tp.tm_year + 1900,
+			tp.tm_mon + 1,
+			tp.tm_mday,
+			tp.tm_hour,tp.tm_min,tp.tm_sec,
 			sock -> GetSocket(),
 			call.c_str(),err,sys_err.c_str(),level.c_str());
 	}
 	else
 	{
 		printf("%d-%02d-%02d %02d:%02d:%02d :: %s: %d %s (%s)\n",
-			tp -> tm_year + 1900,
-			tp -> tm_mon + 1,
-			tp -> tm_mday,
-			tp -> tm_hour,tp -> tm_min,tp -> tm_sec,
+			tp.tm_year + 1900,
+			tp.tm_mon + 1,
+			tp.tm_mday,
+			tp.tm_hour,tp.tm_min,tp.tm_sec,
 			call.c_str(),err,sys_err.c_str(),level.c_str());
 	}
 }

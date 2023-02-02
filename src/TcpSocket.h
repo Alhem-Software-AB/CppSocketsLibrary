@@ -112,6 +112,7 @@ public:
 	bool Open(in6_addr ip,port_t port,bool skip_socks = false);
 #endif
 	bool Open(SocketAddress&,bool skip_socks = false);
+	bool Open(SocketAddress&,SocketAddress& bind_address,bool skip_socks = false);
 	/** Open connection. 
 		\param host Hostname
 		\param port Port number */
@@ -162,6 +163,7 @@ public:
 
 	/** Callback executed when resolver thread has finished a resolve request. */
 	void OnResolved(int id,ipaddr_t a,port_t port);
+	void OnResolved(int id,in6_addr& a,port_t port);
 
 	/** Callback for 'New' ssl support - replaces SSLSocket. Internal use. */
 	void OnSSLConnect();

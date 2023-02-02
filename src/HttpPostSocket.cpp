@@ -64,7 +64,7 @@ HttpPostSocket::HttpPostSocket(ISocketHandler& h,const std::string& url_in) : Ht
 		char c = 0;
 		while (!isalnum(c))
 		{
-			c = rand() % 96 + 32;
+			c = (char)(Random() % 96 + 32);
 		}
 		m_boundary += c;
 	}

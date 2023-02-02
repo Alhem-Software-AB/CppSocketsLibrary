@@ -34,7 +34,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #pragma warning(disable:4514)
 #endif
 
-#include <stdio.h>
 #include <string>
 
 #ifdef SOCKETS_NAMESPACE
@@ -63,8 +62,8 @@ public:
 private:
 	Base64(const Base64& ) {}
 	Base64& operator=(const Base64& ) { return *this; }
-static	char *bstr;
-static	char rstr[128];
+static	const char *bstr;
+static	const char rstr[128];
 };
 
 

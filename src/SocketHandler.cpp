@@ -601,8 +601,8 @@ DEB(
 						tcp -> Open(p -> GetClientRemoteAddr(), p -> GetClientRemotePort());
 					}
 */
-					SocketAddress *ad = p -> GetClientRemoteAddress();
-					if (ad)
+					std::auto_ptr<SocketAddress> ad = p -> GetClientRemoteAddress();
+					if (ad.get())
 					{
 						tcp -> Open(*ad);
 					}
@@ -686,10 +686,14 @@ DEB(
 							tcp -> Open(p -> GetClientRemoteAddr(), p -> GetClientRemotePort());
 						}
 */
-						SocketAddress *ad = p -> GetClientRemoteAddress();
-						if (ad)
+						std::auto_ptr<SocketAddress> ad = p -> GetClientRemoteAddress();
+						if (ad.get())
 						{
 							tcp -> Open(*ad);
+						}
+						else
+						{
+							LogError(p, "Reconnect", 0, "no address", LOG_LEVEL_ERROR);
 						}
 						tcp -> ResetConnectionRetries();
 						Add(p);
@@ -886,7 +890,7 @@ PoolSocket *SocketHandler::FindConnection(int type,const std::string& protocol,S
 		{
 			if (pools -> GetSocketType() == type &&
 			    pools -> GetSocketProtocol() == protocol &&
-			    pools -> GetClientRemoteAddress() &&
+// %!			    pools -> GetClientRemoteAddress() &&
 			    *pools -> GetClientRemoteAddress() == ad)
 			{
 				m_sockets.erase(it);
@@ -942,6 +946,26 @@ int SocketHandler::Resolve(Socket *p,const std::string& host,port_t port)
 }
 
 
+int SocketHandler::Resolve6(Socket *p,const std::string& host,port_t port)
+{
+	// check cache
+	ResolvSocket *resolv = new ResolvSocket(*this, p);
+	resolv -> SetId(++m_resolv_id);
+	resolv -> SetHost(host);
+	resolv -> SetPort(port);
+	resolv -> SetIpv6();
+	resolv -> SetDeleteByHandler();
+	ipaddr_t local;
+	Utility::u2ip("127.0.0.1", local);
+	if (!resolv -> Open(local, m_resolver_port))
+	{
+		LogError(resolv, "Resolve", -1, "Can't connect to local resolve server", LOG_LEVEL_FATAL);
+	}
+	Add(resolv);
+	return m_resolv_id;
+}
+
+
 int SocketHandler::Resolve(Socket *p,ipaddr_t a)
 {
 	// check cache
@@ -960,16 +984,12 @@ int SocketHandler::Resolve(Socket *p,ipaddr_t a)
 }
 
 
-int SocketHandler::Resolve(Socket *p,const std::string& ip)
+int SocketHandler::Resolve(Socket *p,in6_addr& a)
 {
 	// check cache
 	ResolvSocket *resolv = new ResolvSocket(*this, p);
 	resolv -> SetId(++m_resolv_id);
-	{
-		ipaddr_t a;
-		Utility::u2ip(ip, a);
-		resolv -> SetAddress(a);
-	}
+	resolv -> SetAddress(a);
 	resolv -> SetDeleteByHandler();
 	ipaddr_t local;
 	Utility::u2ip("127.0.0.1", local);

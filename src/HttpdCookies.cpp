@@ -219,21 +219,26 @@ void HttpdCookies::setcookie(HTTPSocket *sock, const std::string& domain, const 
 const std::string& HttpdCookies::expiredatetime()
 {
 	time_t t = time(NULL);
-	struct tm * tp = gmtime(&t);
-	char *days[7] = {"Sunday", "Monday",
+	struct tm tp;
+#ifdef _WIN32
+	memcpy(&tp, gmtime(&t), sizeof(tp));
+#else
+	gmtime_r(&t, &tp);
+#endif
+	const char *days[7] = {"Sunday", "Monday",
 	 "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
-	char *months[12] = {"Jan", "Feb", "Mar", "Apr", "May",
+	const char *months[12] = {"Jan", "Feb", "Mar", "Apr", "May",
 	 "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
 	char dt[100];
 
 	sprintf(dt, "%s, %02d-%s-%04d %02d:%02d:%02d GMT",
-	 days[tp -> tm_wday],
-	 tp -> tm_mday,
-	 months[tp -> tm_mon],
-	 tp -> tm_year + 1910,
-	 tp -> tm_hour,
-	 tp -> tm_min,
-	 tp -> tm_sec);
+	 days[tp.tm_wday],
+	 tp.tm_mday,
+	 months[tp.tm_mon],
+	 tp.tm_year + 1910,
+	 tp.tm_hour,
+	 tp.tm_min,
+	 tp.tm_sec);
 	m_date = dt;
 	return m_date;
 }

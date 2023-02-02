@@ -140,10 +140,10 @@ public:
 		\param host Hostname to be resolved
 		\param port Port number will be echoed in Socket::OnResolved callback */
 	int Resolve(Socket *,const std::string& host,port_t port);
+	int Resolve6(Socket *,const std::string& host,port_t port);
 	/** Do a reverse dns lookup. */
 	int Resolve(Socket *,ipaddr_t a);
-	/** Do a reverse dns lookup. */
-	int Resolve(Socket *,const std::string&);
+	int Resolve(Socket *,in6_addr& a);
 	/** Get listen port of asynchronous dns server. */
 	port_t GetResolverPort();
 	/** Resolver thread ready for queries. */

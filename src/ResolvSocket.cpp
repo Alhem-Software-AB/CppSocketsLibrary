@@ -30,6 +30,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <stdio.h>
 #ifdef _WIN32
 #pragma warning(disable:4786)
+#else
+#include <netdb.h>
 #endif
 /*
 #if defined(_WIN32) || defined(__CYGWIN__)
@@ -59,6 +61,7 @@ ResolvSocket::ResolvSocket(ISocketHandler& h,Socket *parent)
 :TcpSocket(h)
 ,m_bServer(false)
 ,m_parent(parent)
+,m_ipv6(false)
 {
 	SetLineProtocol();
 }
@@ -95,7 +98,7 @@ DEB(		printf("************ Resolve failed\n");)
 	else
 	if (key == "Name" && !m_resolv_host.size() && m_parent)
 	{
-		m_parent -> OnResolved(m_resolv_id, value);
+		m_parent -> OnReverseResolved(m_resolv_id, value);
 		m_parent = NULL;
 	}
 	else
@@ -106,6 +109,16 @@ DEB(		printf("************ Resolve failed\n");)
 		m_parent -> OnResolved(m_resolv_id, l, m_resolv_port);
 		m_parent = NULL; // always use first ip in case there are several
 	}
+#ifdef IPPROTO_IPV6
+	else
+	if (key == "AAAA" && m_parent)
+	{
+		in6_addr a;
+		Utility::u2ip(value, a);
+		m_parent -> OnResolved(m_resolv_id, a, m_resolv_port);
+		m_parent = NULL;
+	}
+#endif
 }
 
 
@@ -122,31 +135,34 @@ DEB(	printf("ResolvSocket::OnDetached(); query=%s, data=%s\n", m_query.c_str(), 
 		int n = getaddrinfo(m_data.c_str(), NULL, &hints, &res);
 		if (!n)
 		{
-			while (res)
+			struct addrinfo *resl = res;
+			while (resl)
 			{
-				Send("Flags: " + Utility::l2string(res -> ai_flags) + "\n");
-				Send("Family: " + Utility::l2string(res -> ai_family) + "\n");
-				Send("Socktype: " + Utility::l2string(res -> ai_socktype) + "\n");
-				Send("Protocol: " + Utility::l2string(res -> ai_protocol) + "\n");
-				Send("Addrlen: " + Utility::l2string(res -> ai_addrlen) + "\n");
+				Send("Flags: " + Utility::l2string(resl -> ai_flags) + "\n");
+				Send("Family: " + Utility::l2string(resl -> ai_family) + "\n");
+				Send("Socktype: " + Utility::l2string(resl -> ai_socktype) + "\n");
+				Send("Protocol: " + Utility::l2string(resl -> ai_protocol) + "\n");
+				Send("Addrlen: " + Utility::l2string(resl -> ai_addrlen) + "\n");
 				std::string tmp;
 				Base64 bb;
-				bb.encode( (unsigned char *)res -> ai_addr, res -> ai_addrlen, tmp, false);
+				bb.encode( (unsigned char *)resl -> ai_addr, resl -> ai_addrlen, tmp, false);
 				Send("Address: " + tmp + "\n");
 				// base64-encoded sockaddr
 				Send("Canonname: ");
-				Send( res -> ai_canonname );
+				Send( resl -> ai_canonname );
 				Send("\n");
 				Send("\n");
 				//
-				res = res -> ai_next;
+				resl = resl -> ai_next;
 			}
 			freeaddrinfo(res);
 		}
 		else
 		{
 			std::string error = "Error: ";
+#ifndef __CYGWIN__
 			error += gai_strerror(n);
+#endif
 			Send( error + "\n" );
 			Send("\n");
 		}
@@ -155,118 +171,86 @@ DEB(	printf("ResolvSocket::OnDetached(); query=%s, data=%s\n", m_query.c_str(), 
 #endif // _WIN32
 	if (m_query == "gethostbyname")
 	{
-#ifdef LINUX
-		struct hostent he;
-		struct hostent *result;
-		int myerrno;
-		char buf[2000];
-		// solaris safe?
-		int n = gethostbyname_r(m_data.c_str(), &he, buf, sizeof(buf), &result, &myerrno);
-		if (!n)
+		struct sockaddr_in sa;
+		if (Utility::u2ip(m_data, sa))
 		{
-			Send("Name: " + (std::string)he.h_name);
-			size_t i = 0;
-			while (he.h_aliases[i])
-			{
-				Send("Alias: " + (std::string)he.h_aliases[i] + "\n");
-				i++;
-			}
-			Send("AddrType: " + Utility::l2string(he.h_addrtype) + "\n");
-			Send("Length: " + Utility::l2string(he.h_length) + "\n");
-			i = 0;
-			while (he.h_addr_list[i])
-			{
-				// let's assume 4 byte IPv4 addresses
-				char ip[40];
-				*ip = 0;
-				for (int j = 0; j < 4; j++)
-				{
-					if (*ip)
-						strcat(ip,".");
-					sprintf(ip + strlen(ip),"%u",(unsigned char)he.h_addr_list[i][j]);
-				}
-				Send("A: " + (std::string)ip + "\n");
-				i++;
-			}
+			std::string ip;
+			Utility::l2ip(sa.sin_addr, ip);
+			Send("A: " + ip + "\n");
 		}
 		else
 		{
 			Send("Failed\n");
 		}
 		Send("\n");
-#else
-		struct hostent *h = gethostbyname(m_data.c_str());
-		if (h)
-		{
-			Send("Name: " + (std::string)h -> h_name + "\n");
-			size_t i = 0;
-			while (h -> h_aliases[i])
-			{
-				Send("Alias: " + (std::string)h -> h_aliases[i] + "\n");
-				i++;
-			}
-			Send("AddrType: " + Utility::l2string(h -> h_addrtype) + "\n");
-			Send("Length: " + Utility::l2string(h -> h_length) + "\n");
-			i = 0;
-			while (h -> h_addr_list[i])
-			{
-				// let's assume 4 byte IPv4 addresses
-				char ip[40];
-				*ip = 0;
-				for (int j = 0; j < 4; j++)
-				{
-					if (*ip)
-						strcat(ip,".");
-					sprintf(ip + strlen(ip),"%u",(unsigned char)h -> h_addr_list[i][j]);
-				}
-				Send("A: " + (std::string)ip + "\n");
-				i++;
-			}
-		}
-		else
-		{
-			Send("Failed\n");
-		}
-		Send( "\n" );
-#endif
 	}
 	else
-	if (m_query == "gethostbyaddr")
+#ifdef IPPROTO_IPV6
+	if (m_query == "gethostbyname2")
 	{
-		// input: ipv4 ip address
-		ipaddr_t a;
-		Utility::u2ip(m_data.c_str(), a);
-		struct hostent *h = gethostbyaddr( (const char *)&a, sizeof(a), AF_INET);
-		if (h)
+		struct sockaddr_in6 sa;
+		if (Utility::u2ip(m_data, sa))
 		{
-			Send("Name: " + (std::string)h -> h_name + "\n");
-			size_t i = 0;
-			while (h -> h_aliases[i])
-			{
-				Send("Alias: " + (std::string)h -> h_aliases[i] + "\n");
-				i++;
-			}
-			Send("AddrType: " + Utility::l2string(h -> h_addrtype) + "\n");
-			Send("Length: " + Utility::l2string(h -> h_length) + "\n");
-			i = 0;
-			while (h -> h_addr_list[i])
-			{
-				// let's assume 4 byte IPv4 addresses
-				char ip[40];
-				*ip = 0;
-				for (int j = 0; j < 4; j++)
-				{
-					if (*ip)
-						strcat(ip,".");
-					sprintf(ip + strlen(ip),"%u",(unsigned char)h -> h_addr_list[i][j]);
-				}
-				Send("A: " + (std::string)ip + "\n");
-				i++;
-			}
+			std::string ip;
+			Utility::l2ip(sa.sin6_addr, ip);
+			Send("AAAA: " + ip + "\n");
 		}
 		else
 		{
 			Send("Failed\n");
+		}
+		Send("\n");
+	}
+	else
+#endif
+	if (m_query == "gethostbyaddr")
+	{
+		if (Utility::isipv4( m_data ))
+		{
+			struct sockaddr_in sa;
+			if (!Utility::u2ip(m_data, sa, AI_NUMERICHOST))
+			{
+				Send("Failed: convert to sockaddr_in failed\n");
+			}
+			else
+			{
+				std::string name;
+				if (!Utility::reverse( (struct sockaddr *)&sa, sizeof(sa), name))
+				{
+					Send("Failed: ipv4 reverse lookup of " + m_data + "\n");
+				}
+				else
+				{
+					Send("Name: " + name + "\n");
+				}
+			}
+		}
+		else
+#ifdef IPPROTO_IPV6
+		if (Utility::isipv6( m_data ))
+		{
+			struct sockaddr_in6 sa;
+			if (!Utility::u2ip(m_data, sa, AI_NUMERICHOST))
+			{
+				Send("Failed: convert to sockaddr_in6 failed\n");
+			}
+			else
+			{
+				std::string name;
+				if (!Utility::reverse( (struct sockaddr *)&sa, sizeof(sa), name))
+				{
+					Send("Failed: ipv6 reverse lookup of " + m_data + "\n");
+				}
+				else
+				{
+					Send("Name: " + name + "\n");
+				}
+			}
+		}
+		else
+#endif
+		{
+			Send("Failed: malformed address\n");
 		}
 		Send("\n");
 	}
@@ -284,9 +268,16 @@ void ResolvSocket::OnConnect()
 {
 	if (m_resolv_host.size())
 	{
-		std::string msg = "gethostbyname " + m_resolv_host + "\n";
+		std::string msg = (m_ipv6 ? "gethostbyname2 " : "gethostbyname ") + m_resolv_host + "\n";
 		Send( msg );
 		return;
+	}
+	if (m_ipv6)
+	{
+		std::string tmp;
+		Utility::l2ip(m_resolv_address6, tmp);
+		std::string msg = "gethostbyaddr " + tmp + "\n";
+		Send( msg );
 	}
 	std::string tmp;
 	Utility::l2ip(m_resolv_address, tmp);

@@ -29,6 +29,16 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #include "Utility.h"
 #include "Parse.h"
+#include "Ipv4Address.h"
+#include "Ipv6Address.h"
+#include "RandomNumber.h"
+#include <vector>
+#ifdef _WIN32
+#include <time.h>
+#else
+#include <netdb.h>
+#endif
+#include <map>
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
@@ -178,9 +188,18 @@ std::string Utility::rfc1738_decode(const std::string& src)
 
 bool Utility::isipv4(const std::string& str)
 {
+	int dots = 0;
+	// %! ignore :port?
 	for (size_t i = 0; i < str.size(); i++)
-		if (!isdigit(str[i]) && str[i] != '.')
+	{
+		if (str[i] == '.')
+			dots++;
+		else
+		if (!isdigit(str[i]))
 			return false;
+	}
+	if (dots != 3)
+		return false;
 	return true;
 }
 
@@ -227,144 +246,41 @@ bool Utility::isipv6(const std::string& str)
 
 bool Utility::u2ip(const std::string& str, ipaddr_t& l)
 {
-	if (isipv4(str))
-	{
-		Parse pa((char *)str.c_str(), ".");
-		union {
-			struct {
-				unsigned char b1;
-				unsigned char b2;
-				unsigned char b3;
-				unsigned char b4;
-			} a;
-			ipaddr_t l;
-		} u;
-		u.a.b1 = static_cast<unsigned char>(pa.getvalue());
-		u.a.b2 = static_cast<unsigned char>(pa.getvalue());
-		u.a.b3 = static_cast<unsigned char>(pa.getvalue());
-		u.a.b4 = static_cast<unsigned char>(pa.getvalue());
-		l = u.l;
-		return true;
-	}
-	else
-	{
-#ifndef LINUX
-		struct hostent *he = gethostbyname( str.c_str() );
-		if (!he)
-		{
-			return false;
-		}
-		memcpy(&l, he -> h_addr, 4);
-#else
-		struct hostent he;
-		struct hostent *result;
-		int myerrno;
-		char buf[2000];
-		int n = gethostbyname_r(str.c_str(), &he, buf, sizeof(buf), &result, &myerrno);
-		if (n)
-		{
-			return false;
-		}
-		memcpy(&l, he.h_addr, 4);
-#endif
-		return true;
-	}
-	return false;
+	struct sockaddr_in sa;
+	bool r = Utility::u2ip(str, sa);
+	memcpy(&l, &sa.sin_addr, sizeof(l));
+	return r;
 }
 
 
 #ifdef IPPROTO_IPV6
 bool Utility::u2ip(const std::string& str, struct in6_addr& l)
 {
-	if (isipv6(str))
-	{
-		std::list<std::string> vec;
-		size_t x = 0;
-		for (size_t i = 0; i <= str.size(); i++)
-		{
-			if (i == str.size() || str[i] == ':')
-			{
-				std::string s = str.substr(x, i - x);
-				//
-				if (strstr(s.c_str(),".")) // x.x.x.x
-				{
-					Parse pa(s,".");
-					char slask[100]; // u2ip temporary hex2string conversion
-					unsigned long b0 = static_cast<unsigned long>(pa.getvalue());
-					unsigned long b1 = static_cast<unsigned long>(pa.getvalue());
-					unsigned long b2 = static_cast<unsigned long>(pa.getvalue());
-					unsigned long b3 = static_cast<unsigned long>(pa.getvalue());
-					sprintf(slask,"%lx",b0 * 256 + b1);
-					vec.push_back(slask);
-					sprintf(slask,"%lx",b2 * 256 + b3);
-					vec.push_back(slask);
-				}
-				else
-				{
-					vec.push_back(s);
-				}
-				//
-				x = i + 1;
-			}
-		}
-		size_t sz = vec.size(); // number of byte pairs
-		size_t i = 0; // index in in6_addr.in6_u.u6_addr16[] ( 0 .. 7 )
-		for (std::list<std::string>::iterator it = vec.begin(); it != vec.end(); it++)
-		{
-			std::string bytepair = *it;
-			if (bytepair.size())
-			{
-				l.s6_addr16[i++] = htons(Utility::hex2unsigned(bytepair));
-			}
-			else
-			{
-				l.s6_addr16[i++] = 0;
-				while (sz++ < 8)
-				{
-					l.s6_addr16[i++] = 0;
-				}
-			}
-		}
-		return true;
-	}
-	else
-	{
-#ifdef SOLARIS
-		int errnum = 0;
-		struct hostent *he = getipnodebyname( str.c_str(), AF_INET6, 0, &errnum );
-#else
-		struct hostent *he = gethostbyname2( str.c_str(), AF_INET6 );
-#endif
-		if (!he)
-		{
-			return false;
-		}
-		memcpy(&l,he -> h_addr_list[0],he -> h_length);
-#ifdef SOLARIS
-		free(he);
-#endif
-		return true;
-	}
-	return false;
+	struct sockaddr_in6 sa;
+	bool r = Utility::u2ip(str, sa);
+	l = sa.sin6_addr;
+	return r;
 }
 #endif
 
 
 void Utility::l2ip(const ipaddr_t ip, std::string& str)
 {
-	union {
-		struct {
-			unsigned char b1;
-			unsigned char b2;
-			unsigned char b3;
-			unsigned char b4;
-		} a;
-		ipaddr_t l;
-	} u;
-	u.l = ip;
-	char tmp[100];
-	sprintf(tmp, "%u.%u.%u.%u", u.a.b1, u.a.b2, u.a.b3, u.a.b4);
-	str = tmp;
+	struct sockaddr_in sa;
+	memset(&sa, 0, sizeof(sa));
+	sa.sin_family = AF_INET;
+	memcpy(&sa.sin_addr, &ip, sizeof(sa.sin_addr));
+	Utility::reverse( (struct sockaddr *)&sa, sizeof(sa), str, NI_NUMERICHOST);
+}
+
+
+void Utility::l2ip(const in_addr& ip, std::string& str)
+{
+	struct sockaddr_in sa;
+	memset(&sa, 0, sizeof(sa));
+	sa.sin_family = AF_INET;
+	sa.sin_addr = ip;
+	Utility::reverse( (struct sockaddr *)&sa, sizeof(sa), str, NI_NUMERICHOST);
 }
 
 
@@ -378,15 +294,17 @@ void Utility::l2ip(const struct in6_addr& ip, std::string& str,bool mixed)
 	bool ok_to_skip = true;
 	if (mixed)
 	{
-		unsigned int x;
+		unsigned short x;
+		unsigned short addr16[8];
+		memcpy(addr16, &ip, sizeof(addr16));
 		for (size_t i = 0; i < 6; i++)
 		{
-			x = ntohs(ip.s6_addr16[i]);
+			x = ntohs(addr16[i]);
 			if (*slask && (x || !ok_to_skip || prev))
 				strcat(slask,":");
 			if (x || !ok_to_skip)
 			{
-				sprintf(slask + strlen(slask),"%X", x);
+				sprintf(slask + strlen(slask),"%x", x);
 				if (x && skipped)
 					ok_to_skip = false;
 			}
@@ -396,30 +314,19 @@ void Utility::l2ip(const struct in6_addr& ip, std::string& str,bool mixed)
 			}
 			prev = x;
 		}
-		x = ntohs(ip.s6_addr16[6]);
+		x = ntohs(addr16[6]);
 		sprintf(slask + strlen(slask),":%u.%u",x / 256,x & 255);
-		x = ntohs(ip.s6_addr16[7]);
+		x = ntohs(addr16[7]);
 		sprintf(slask + strlen(slask),".%u.%u",x / 256,x & 255);
 	}
 	else
 	{
-		for (size_t i = 0; i < 8; i++)
-		{
-			unsigned int x = ntohs(ip.s6_addr16[i]);
-			if (*slask && (x || !ok_to_skip || prev))
-				strcat(slask,":");
-			if (x || !ok_to_skip)
-			{
-				sprintf(slask + strlen(slask),"%X", x);
-				if (x && skipped)
-					ok_to_skip = false;
-			}
-			else
-			{
-				skipped = true;
-			}
-			prev = x;
-		}
+		struct sockaddr_in6 sa;
+		memset(&sa, 0, sizeof(sa));
+		sa.sin6_family = AF_INET6;
+		sa.sin6_addr = ip;
+		Utility::reverse( (struct sockaddr *)&sa, sizeof(sa), str, NI_NUMERICHOST);
+		return;
 	}
 	str = slask;
 }
@@ -524,8 +431,14 @@ void Utility::SetEnv(const std::string& var,const std::string& value)
 {
 #if (defined(SOLARIS8) || defined(SOLARIS))
 	{
-		std::string slask = var + "=" + value;
-		putenv( (char *)slask.c_str());
+		static std::map<std::string, char *> vmap;
+		if (vmap.find(var) != vmap.end())
+		{
+			delete[] vmap[var];
+		}
+		vmap[var] = new char[var.size() + 1 + value.size() + 1];
+		sprintf(vmap[var], "%s=%s", var.c_str(), value.c_str());
+		putenv( vmap[var] );
 	}
 #elif defined _WIN32
 	{
@@ -567,15 +480,219 @@ void Utility::GetTime(struct timeval *p)
 #ifdef _WIN32
 	FILETIME ft; // Contains a 64-bit value representing the number of 100-nanosecond intervals since January 1, 1601 (UTC).
 	GetSystemTimeAsFileTime(&ft);
-	ULARGE_INTEGER ul;
-	memcpy(&ul, &ft, sizeof(ft));
-	__int64 tt = ul.QuadPart;
-	p->tv_sec = tt / 10000000L;
-	p->tv_usec = tt % 10000000L;
-
+	uint64_t tt;
+	memcpy(&tt, &ft, sizeof(tt));
+	tt /= 10; // make it usecs
+	p->tv_sec = (long)tt / 1000000;
+	p->tv_usec = (long)tt % 1000000;
 #else
 	gettimeofday(p, NULL);
 #endif
+}
+
+
+std::auto_ptr<SocketAddress> Utility::CreateAddress(struct sockaddr *sa,socklen_t sa_len)
+{
+	switch (sa -> sa_family)
+	{
+	case AF_INET:
+		if (sa_len == sizeof(struct sockaddr_in))
+		{
+			struct sockaddr_in *p = (struct sockaddr_in *)sa;
+			return std::auto_ptr<SocketAddress>(new Ipv4Address(*p));
+		}
+		break;
+#ifdef IPPROTO_IPV6
+	case AF_INET6:
+		if (sa_len == sizeof(struct sockaddr_in6))
+		{
+			struct sockaddr_in6 *p = (struct sockaddr_in6 *)sa;
+			return std::auto_ptr<SocketAddress>(new Ipv6Address(*p));
+		}
+		break;
+#endif
+	}
+	return std::auto_ptr<SocketAddress>(NULL);
+}
+
+
+bool Utility::u2ip(const std::string& host, struct sockaddr_in& sa, int ai_flags)
+{
+	struct addrinfo hints;
+	memset(&sa, 0, sizeof(sa));
+	memset(&hints, 0, sizeof(hints));
+	// AI_NUMERICHOST
+	// AI_CANONNAME
+	// AI_PASSIVE - server
+	// AI_ADDRCONFIG
+	// AI_V4MAPPED
+	// AI_ALL
+	// AI_NUMERICSERV
+	hints.ai_flags = ai_flags;
+	hints.ai_family = AF_INET;
+	hints.ai_socktype = 0;
+	hints.ai_protocol = 0;
+	struct addrinfo *res;
+	if (Utility::isipv4(host))
+		hints.ai_flags |= AI_NUMERICHOST;
+	int n = getaddrinfo(host.c_str(), NULL, &hints, &res);
+	if (!n)
+	{
+		RandomNumber prng( true );
+		std::vector<struct addrinfo *> vec;
+		struct addrinfo *ai = res;
+		while (ai)
+		{
+			if (ai -> ai_addrlen == sizeof(sa))
+				vec.push_back( ai );
+			prng.next();
+			//
+			ai = ai -> ai_next;
+		}
+		if (!vec.size())
+			return false;
+		ai = vec[prng.next() % vec.size()];
+		{
+			memcpy(&sa, ai -> ai_addr, ai -> ai_addrlen);
+		}
+		freeaddrinfo(res);
+		return true;
+	}
+	std::string error = "Error: ";
+#ifndef __CYGWIN__
+	error += gai_strerror(n);
+#endif
+	return false;
+}
+
+
+#ifdef IPPROTO_IPV6
+bool Utility::u2ip(const std::string& host, struct sockaddr_in6& sa, int ai_flags)
+{
+	struct addrinfo hints;
+	memset(&sa, 0, sizeof(sa));
+	memset(&hints, 0, sizeof(hints));
+	hints.ai_flags = ai_flags;
+	hints.ai_family = AF_INET6;
+	hints.ai_socktype = 0;
+	hints.ai_protocol = 0;
+	struct addrinfo *res;
+	if (Utility::isipv6(host))
+		hints.ai_flags |= AI_NUMERICHOST;
+	int n = getaddrinfo(host.c_str(), NULL, &hints, &res);
+	if (!n)
+	{
+		RandomNumber prng( true );
+		std::vector<struct addrinfo *> vec;
+		struct addrinfo *ai = res;
+		while (ai)
+		{
+			if (ai -> ai_addrlen == sizeof(sa))
+				vec.push_back( ai );
+			prng.next();
+			//
+			ai = ai -> ai_next;
+		}
+		if (!vec.size())
+			return false;
+		ai = vec[prng.next() % vec.size()];
+		{
+			memcpy(&sa, ai -> ai_addr, ai -> ai_addrlen);
+		}
+		freeaddrinfo(res);
+		return true;
+	}
+	std::string error = "Error: ";
+#ifndef __CYGWIN__
+	error += gai_strerror(n);
+#endif
+	return false;
+}
+#endif
+
+
+bool Utility::reverse(struct sockaddr *sa, socklen_t sa_len, std::string& hostname, int flags)
+{
+	hostname = "";
+	char host[NI_MAXHOST];
+	// NI_NOFQDN
+	// NI_NUMERICHOST
+	// NI_NAMEREQD
+	// NI_NUMERICSERV
+	// NI_DGRAM
+	int n = getnameinfo(sa, sa_len, host, sizeof(host), NULL, 0, flags);
+	if (n)
+	{
+		// EAI_AGAIN
+		// EAI_BADFLAGS
+		// EAI_FAIL
+		// EAI_FAMILY
+		// EAI_MEMORY
+		// EAI_NONAME
+		// EAI_OVERFLOW
+		// EAI_SYSTEM
+		return false;
+	}
+	hostname = host;
+	return true;
+}
+
+
+bool Utility::reverse(struct sockaddr *sa, socklen_t sa_len, std::string& hostname, std::string& service, int flags)
+{
+	hostname = "";
+	service = "";
+	char host[NI_MAXHOST];
+	char serv[NI_MAXSERV];
+	// NI_NOFQDN
+	// NI_NUMERICHOST
+	// NI_NAMEREQD
+	// NI_NUMERICSERV
+	// NI_DGRAM
+	int n = getnameinfo(sa, sa_len, host, sizeof(host), serv, sizeof(serv), flags);
+	if (n)
+	{
+		// EAI_AGAIN
+		// EAI_BADFLAGS
+		// EAI_FAIL
+		// EAI_FAMILY
+		// EAI_MEMORY
+		// EAI_NONAME
+		// EAI_OVERFLOW
+		// EAI_SYSTEM
+		return false;
+	}
+	hostname = host;
+	service = serv;
+	return true;
+}
+
+
+bool Utility::u2service(const std::string& name, int& service, int ai_flags)
+{
+	struct addrinfo hints;
+	service = 0;
+	memset(&hints, 0, sizeof(hints));
+	// AI_NUMERICHOST
+	// AI_CANONNAME
+	// AI_PASSIVE - server
+	// AI_ADDRCONFIG
+	// AI_V4MAPPED
+	// AI_ALL
+	// AI_NUMERICSERV
+	hints.ai_flags = ai_flags;
+	hints.ai_family = AF_UNSPEC;
+	hints.ai_socktype = 0;
+	hints.ai_protocol = 0;
+	struct addrinfo *res;
+	int n = getaddrinfo(NULL, name.c_str(), &hints, &res);
+	if (!n)
+	{
+		service = res -> ai_protocol;
+		freeaddrinfo(res);
+		return true;
+	}
+	return false;
 }
 
 

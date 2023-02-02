@@ -58,7 +58,7 @@ Thread::Thread(bool release)
 
 	pthread_attr_init(&attr);
 	pthread_attr_setdetachstate(&attr,PTHREAD_CREATE_DETACHED);
-	if (pthread_create(&m_thread,&attr,StartThread,this) == -1)
+	if (pthread_create(&m_thread,&attr, StartThread,this) == -1)
 	{
 		perror("Thread: create failed");
 		SetRunning(false);

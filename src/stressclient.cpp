@@ -1,7 +1,7 @@
 /**
- **	\file stressclient.cpp
- **	\date  2006-10-02
- **	\author grymse@alhem.net
+ **  \file stressclient.cpp
+ **  \date  2006-10-02
+ **  \author grymse@alhem.net
 **/
 /*
 Copyright (C) 2006  Anders Hedstrom
@@ -31,91 +31,43 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef _WIN32
 #include <signal.h>
 #include <stdint.h>
-#include <sys/sysinfo.h>
 #else
 typedef __int64 int64_t;
 #endif
 #include <HttpGetSocket.h>
 
 
-static	double min_time = 10000;
-static	double max_time = 0;
-static	double tot_time = 0;
-static	int ant = 0;
-static	double min_time2 = 10000;
-static	double max_time2 = 0;
-static	double tot_time2 = 0;
-static	int ant2 = 0;
-static	bool quit = false;
-static	size_t gnn = 0;
-static	std::string gHost = "localhost";
-static	port_t gPort = 2222;
-static	bool g_b_flood = false;
-static	bool g_b_off = false;
-static	bool g_b_limit = false;
-static	int64_t gBytesIn = 0;
-static	int64_t gBytesOut = 0;
-static	bool g_b_repeat = false;
-static	std::string data;
-static	size_t data_size = 1024;
-static	bool g_b_stop = false;
-static	bool g_b_ssl = false;
-static	bool g_b_instant = false;
-static	time_t rTime = 10;
+static  double          g_min_time = 10000;
+static  double          g_max_time = 0;
+static  double          g_tot_time = 0;
+static  int             g_ant = 0;
+static  double          g_min_time2 = 10000;
+static  double          g_max_time2 = 0;
+static  double          g_tot_time2 = 0;
+static  int             g_ant2 = 0;
+static  bool            gQuit = false;
+static  size_t          g_max_connections = 0;
+static  std::string     gHost = "localhost";
+static  port_t          gPort = 2222;
+static  bool            g_b_flood = false;
+static  bool            g_b_off = false;
+static  bool            g_b_limit = false;
+static  int64_t         gBytesIn = 0;
+static  int64_t         gBytesOut = 0;
+static  bool            g_b_repeat = false;
+static  std::string     g_data;
+static  size_t          g_data_size = 1024;
+static  bool            g_b_stop = false;
+static  bool            g_b_ssl = false;
+static  bool            g_b_instant = false;
+static	struct timeval	g_t_start;
 
 
-void printreport()
-{
-  printf("\n");
-  if (ant)
-    printf("connect; ant: %5d min: %.4f max: %.4f med: %.4f\n", ant, min_time, max_time, tot_time / ant);
-  if (ant2)
-    printf("reply;   ant: %5d min: %.4f max: %.4f med: %.4f\n", ant2, min_time2, max_time2, tot_time2 / ant2);
-  double mbi = (double)gBytesIn / 1024;
-  mbi /= 1024;
-  mbi /= (double)rTime;
-  double mbo = (double)gBytesOut / 1024;
-  mbo /= 1024;
-  mbo /= (double)rTime;
-  printf("bytes in: %lld", gBytesIn);
-  printf(" (%.2f MB/sec)", mbi);
-  printf("  bytes out: %lld", gBytesOut);
-  printf(" (%.2f MB/sec)\n", mbo);
-}
-
-
-void tempreport()
-{
-  printreport();
-  //
-  min_time = 10000;
-  max_time = 0;
-  tot_time = 0;
-  ant = 0;
-  min_time2 = 10000;
-  max_time2 = 0;
-  tot_time2 = 0;
-  ant2 = 0;
-  gBytesIn = gBytesOut = 0;
-}
-
-
-void gettime(struct timeval *p, struct timezone *)
-{
-#ifdef _WIN32
-	FILETIME ft; // Contains a 64-bit value representing the number of 100-nanosecond intervals since January 1, 1601 (UTC).
-	GetSystemTimeAsFileTime(&ft);
-	uint64_t tt;
-	memcpy(&tt, &ft, sizeof(tt));
-	tt /= 10;
-	p->tv_sec = tt / 1000000;
-	p->tv_usec = tt % 1000000;
-#else
-	gettimeofday(p, NULL);
-#endif
-}
-
-
+/**
+ * Return time difference between two struct timeval's, in seconds
+ * \param t0 start time
+ * \param t  end time
+ */
 double Diff(struct timeval t0,struct timeval t)
 {
   t.tv_sec -= t0.tv_sec;
@@ -129,6 +81,64 @@ double Diff(struct timeval t0,struct timeval t)
 }
 
 
+void gettime(struct timeval *p, struct timezone *)
+{
+#ifdef _WIN32
+  FILETIME ft; // Contains a 64-bit value representing the number of 100-nanosecond intervals since January 1, 1601 (UTC).
+  GetSystemTimeAsFileTime(&ft);
+  uint64_t tt;
+  memcpy(&tt, &ft, sizeof(tt));
+  tt /= 10;
+  p->tv_sec = tt / 1000000;
+  p->tv_usec = tt % 1000000;
+#else
+  gettimeofday(p, NULL);
+#endif
+}
+
+
+void printreport()
+{
+  struct timeval tv;
+  gettime(&tv, NULL);
+  double rt = Diff(g_t_start, tv);
+  g_t_start = tv;
+  //
+  printf("\n");
+  if (g_ant)
+    printf("connect; ant: %5d min: %.4f max: %.4f med: %.4f\n", g_ant, g_min_time, g_max_time, g_tot_time / g_ant);
+  if (g_ant2)
+    printf("reply;   ant: %5d min: %.4f max: %.4f med: %.4f\n", g_ant2, g_min_time2, g_max_time2, g_tot_time2 / g_ant2);
+  double mbi = (double)gBytesIn / 1024;
+  mbi /= 1024;
+  mbi /= rt;
+  double mbo = (double)gBytesOut / 1024;
+  mbo /= 1024;
+  mbo /= rt;
+  printf("bytes in: %lld", gBytesIn);
+  printf(" (%.2f MB/sec)", mbi);
+  printf("  bytes out: %lld", gBytesOut);
+  printf(" (%.2f MB/sec)", mbo);
+  printf("  time: %.2f sec\n", rt);
+}
+
+
+void printreport_reset()
+{
+  printreport();
+  //
+  g_min_time = 10000;
+  g_max_time = 0;
+  g_tot_time = 0;
+  g_ant = 0;
+  g_min_time2 = 10000;
+  g_max_time2 = 0;
+  g_tot_time2 = 0;
+  g_ant2 = 0;
+  gBytesIn = gBytesOut = 0;
+}
+
+
 class MySocket : public TcpSocket
 {
 public:
@@ -137,11 +147,11 @@ public:
     SetLineProtocol();
     if (g_b_ssl)
       EnableSSL();
-    if (gnn && !m_b_one && Handler().GetCount() >= gnn)
+    if (g_max_connections && !m_b_one && Handler().GetCount() >= g_max_connections)
     {
-      fprintf(stderr, "\nConnection limit reached: %d, continuing in single connection stress mode\n", gnn);
+      fprintf(stderr, "\nConnection limit reached: %d, continuing in single connection stress mode\n", (int)g_max_connections);
       if (g_b_off)
-        tempreport();
+        printreport_reset();
       g_b_limit = true;
       m_b_one = true;
       //
@@ -149,9 +159,9 @@ public:
     }
     if (!m_b_one && Handler().GetCount() >= FD_SETSIZE - 17)
     {
-      fprintf(stderr, "\nFD_SETSIZE connection limit reached: %d, continuing in single connection stress mode\n", Handler().GetCount());
+      fprintf(stderr, "\nFD_SETSIZE connection limit reached: %d, continuing in single connection stress mode\n", (int)Handler().GetCount());
       if (g_b_off)
-        tempreport();
+        printreport_reset();
       g_b_limit = true;
       m_b_one = true;
       //
@@ -167,10 +177,10 @@ public:
     {
       double tconnect = Diff(m_create, m_connect);
       //
-      min_time = tconnect < min_time ? tconnect : min_time;
-      max_time = tconnect > max_time ? tconnect : max_time;
-      tot_time += tconnect;
-      ant += 1;
+      g_min_time = tconnect < g_min_time ? tconnect : g_min_time;
+      g_max_time = tconnect > g_max_time ? tconnect : g_max_time;
+      g_tot_time += tconnect;
+      g_ant += 1;
     }
     SendBlock();
     m_b_client = true;
@@ -178,7 +188,7 @@ public:
 
   void SendBlock() {
     gettime(&m_send, NULL);
-    Send(data + "\n");
+    Send(g_data + "\n");
   }
 
   void OnLine(const std::string& line) {
@@ -187,15 +197,15 @@ public:
     {
       double treply = Diff(m_send, m_reply);
       //
-      min_time2 = treply < min_time2 ? treply : min_time2;
-      max_time2 = treply > max_time2 ? treply : max_time2;
-      tot_time2 += treply;
-      ant2 += 1;
+      g_min_time2 = treply < g_min_time2 ? treply : g_min_time2;
+      g_max_time2 = treply > g_max_time2 ? treply : g_max_time2;
+      g_tot_time2 += treply;
+      g_ant2 += 1;
     }
     //
-    if (line != data)
+    if (line != g_data)
     {
-      fprintf(stderr, "\n%s\n%s\n", line.c_str(), data.c_str());
+      fprintf(stderr, "\n%s\n%s\n", line.c_str(), g_data.c_str());
       fprintf(stderr, "(reply did not match data - exiting)\n");
       exit(-1);
     }
@@ -245,6 +255,7 @@ class MyHttpSocket : public HttpGetSocket
 public:
   MyHttpSocket(ISocketHandler& h,const std::string& url) : HttpGetSocket(h,url), m_url(url) {
     gettime(&m_create, NULL);
+    AddResponseHeader("content-length", Utility::l2string(g_data_size));
   }
   ~MyHttpSocket() {}
 
@@ -253,13 +264,18 @@ public:
     {
       double tconnect = Diff(m_create, m_connect);
       //
-      min_time = tconnect < min_time ? tconnect : min_time;
-      max_time = tconnect > max_time ? tconnect : max_time;
-      tot_time += tconnect;
-      ant += 1;
+      g_min_time = tconnect < g_min_time ? tconnect : g_min_time;
+      g_max_time = tconnect > g_max_time ? tconnect : g_max_time;
+      g_tot_time += tconnect;
+      g_ant += 1;
     }
     gettime(&m_send, NULL);
+
+    // send request header
     HttpGetSocket::OnConnect();
+
+    // send body
+    Send(g_data);
   }
 
   void OnContent() {
@@ -267,10 +283,10 @@ public:
     {
       double treply = Diff(m_send, m_reply);
       //
-      min_time2 = treply < min_time2 ? treply : min_time2;
-      max_time2 = treply > max_time2 ? treply : max_time2;
-      tot_time2 += treply;
-      ant2 += 1;
+      g_min_time2 = treply < g_min_time2 ? treply : g_min_time2;
+      g_max_time2 = treply > g_max_time2 ? treply : g_max_time2;
+      g_tot_time2 += treply;
+      g_ant2 += 1;
     }
     CreateNew();
   }
@@ -296,7 +312,7 @@ private:
 void sigint(int)
 {
   printreport();
-  quit = true;
+  gQuit = true;
 }
 
 
@@ -308,7 +324,7 @@ void sigusr1(int)
 
 void sigusr2(int)
 {
-  tempreport();
+  printreport_reset();
 }
 #endif
 
@@ -334,8 +350,8 @@ public:
     }
   }
   void Report() {
-    size_t ant = 0;
-    size_t act = 0;
+    int ant = 0;
+    int act = 0;
     for (socket_m::iterator it = m_sockets.begin(); it != m_sockets.end(); it++)
     {
       MySocket *p = dynamic_cast<MySocket *>(it -> second);
@@ -360,6 +376,7 @@ int main(int argc,char *argv[])
   bool enableLog = false;
   bool http = false;
   std::string url;
+  time_t report_period = 10;
   for (int i = 1; i < argc; i++)
   {
     if (!strcmp(argv[i], "-many"))
@@ -367,27 +384,21 @@ int main(int argc,char *argv[])
     if (!strcmp(argv[i], "-one"))
       one = true;
     if (*argv[i] == '-' && strlen(argv[i]) > 1 && isdigit(argv[i][1]) )
-      gnn = atoi(argv[i] + 1);
+      g_max_connections = atoi(argv[i] + 1);
     if (!strcmp(argv[i], "-host") && i < argc - 1)
-    {
       gHost = argv[++i];
-    }
     if (!strcmp(argv[i], "-port") && i < argc - 1)
-    {
       gPort = atoi(argv[++i]);
-    }
     if (!strcmp(argv[i], "-off"))
       g_b_off = true;
     if (!strcmp(argv[i], "-repeat"))
       g_b_repeat = true;
     if (!strcmp(argv[i], "-size") && i < argc - 1)
-    {
-      data_size = atoi(argv[++i]);
-    }
+      g_data_size = atoi(argv[++i]);
     if (!strcmp(argv[i], "-log"))
       enableLog = true;
     if (!strcmp(argv[i], "-time") && i < argc - 1)
-      rTime = atoi(argv[++i]);
+      report_period = atoi(argv[++i]);
     if (!strcmp(argv[i], "-stop"))
       g_b_stop = true;
     if (!strcmp(argv[i], "-ssl"))
@@ -399,32 +410,38 @@ int main(int argc,char *argv[])
     if (!strcmp(argv[i], "-url") && i < argc - 1)
       url = argv[++i];
   }
-  if (argc < 2 || (!many && !one && !gnn) )
+  if (argc < 2 || (!many && !one && !g_max_connections && !http) )
   {
-    printf("Usage: %s [-many|-one|-nn|-off|-repeat|-size nn|-log|-time nn] [-host <hostname>] [-port <port number>]\n", *argv);
-    printf("  -many      start max number of connections\n");
-    printf("  -one       open - close - repeat\n");
-    printf("  -nn        open nn connections, then start -one mode\n");
-    printf("  -off       turn off new connections when connection limit reached\n");
-    printf("  -repeat    send new block when reply is received\n");
-    printf("  -size nn   size of block to send, default is 1024 bytes\n");
-    printf("  -log       enable debug log\n");
-    printf("  -time nn   time between reports, default 10s\n");
-    printf("  -stop      stop after time elapsed\n");
-    printf("  -ssl       use ssl\n");
-    printf("  -instant   create all sockets at once\n");
+    printf("Usage: %s [mode] [options]\n", *argv);
+    printf("  Modes (only use one of these):\n");
+    printf("    -many      start max number of connections\n");
+    printf("    -one       open - close - repeat\n");
+    printf("    -nn        open nn connections, then start -one mode\n");
+    printf("    -http      send/receive http request/response\n");
+    printf("  Options:\n");
+    printf("    -host xx   host to connect to\n");
+    printf("    -port nn   port number to connection to\n");
+    printf("    -off       turn off new connections when connection limit reached\n");
+    printf("    -repeat    send new block when reply is received\n");
+    printf("    -size nn   size of block to send, default is 1024 bytes\n");
+    printf("    -log       enable debug log\n");
+    printf("    -time nn   time between reports, default 10s\n");
+    printf("    -stop      stop after time elapsed\n");
+    printf("    -instant   create all sockets at once\n");
+    printf("    -ssl       use ssl\n");
+    printf("    -url xx    url to use in http mode (default http://<host>:<port>/)\n");
     exit(-1);
   }
-  fprintf(stderr, "Using data size: %d bytes\n", data_size);
+  fprintf(stderr, "Using data size: %d bytes\n", (int)g_data_size);
   std::string chars = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
-  while (data.size() < data_size)
+  while (g_data.size() < g_data_size)
   {
-    data += chars[rand() % chars.size()];
+    g_data += chars[rand() % chars.size()];
   }
 #ifndef _WIN32
-  signal(SIGINT, (__sighandler_t)sigint);
-  signal(SIGUSR1, (__sighandler_t)sigusr1);
-  signal(SIGUSR2, (__sighandler_t)sigusr2);
+  signal(SIGINT, sigint);
+  signal(SIGUSR1, sigusr1);
+  signal(SIGUSR2, sigusr2);
   signal(SIGPIPE, SIG_IGN);
 #endif
   StdoutLog *log = enableLog ? new StdoutLog() : NULL;
@@ -442,7 +459,7 @@ int main(int argc,char *argv[])
   else
   if (g_b_instant)
   {
-    for (size_t i = 0; i < gnn; i++)
+    for (size_t i = 0; i < g_max_connections; i++)
     {
       MySocket *s = new MySocket(h, one);
       s -> SetDeleteByHandler();
@@ -459,7 +476,8 @@ int main(int argc,char *argv[])
     h.Add(s);
   }
   time_t t = time(NULL);
-  while (!quit)
+  gettime(&g_t_start, NULL);
+  while (!gQuit)
   {
     h.Select(1, 0);
     if (g_b_flood)
@@ -468,20 +486,15 @@ int main(int argc,char *argv[])
       h.Flood();
       g_b_flood = false;
     }
-    if (time(NULL) - t >= rTime) // report
+    if (time(NULL) - t >= report_period) // report
     {
       t = time(NULL);
-      tempreport();
+      printreport_reset();
       h.Report();
       if (g_b_stop)
       {
-        quit = true;
+        gQuit = true;
       }
-/*
-      struct sysinfo info;
-      sysinfo(&info);
-      printf("Free mem: %ld / %ld\n", info.freeram, info.totalram);
-*/
     }
   }
   fprintf(stderr, "\nExiting...\n");

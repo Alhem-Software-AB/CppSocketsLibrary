@@ -41,12 +41,15 @@ typedef unsigned __int64 uint64_t;
 # include <stdint.h>
 #endif
 #endif
+#include <memory>
 #include "Base64.h"
 #include "socket_include.h"
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
 #endif
+
+class SocketAddress;
 
 /** Conversion utilities. 
 	\ingroup util */
@@ -66,14 +69,26 @@ public:
 	static bool isipv4(const std::string&);
 	/** Checks whether a string is a valid ipv4/ipv6 ip number. */
 	static bool isipv6(const std::string&);
+
 	/** Hostname to ip resolution ipv4, not asynchronous. */
 	static bool u2ip(const std::string&, ipaddr_t&);
+	static bool u2ip(const std::string&, struct sockaddr_in& sa, int ai_flags = 0);
+
 	/** Hostname to ip resolution ipv6, not asynchronous. */
 #ifdef IPPROTO_IPV6
 	static bool u2ip(const std::string&, struct in6_addr&);
+	static bool u2ip(const std::string&, struct sockaddr_in6& sa, int ai_flags = 0);
 #endif
+
+	/** Reverse lookup of address to hostname */
+	static bool reverse(struct sockaddr *sa, socklen_t sa_len, std::string&, int flags = 0);
+	static bool reverse(struct sockaddr *sa, socklen_t sa_len, std::string& hostname, std::string& service, int flags = 0);
+
+	static bool u2service(const std::string& name, int& service, int ai_flags = 0);
+
 	/** Convert binary ip address to string: ipv4. */
 	static void l2ip(const ipaddr_t,std::string& );
+	static void l2ip(const in_addr&,std::string& );
 	/** Convert binary ip address to string: ipv6. */
 #ifdef IPPROTO_IPV6
 	static void l2ip(const struct in6_addr&,std::string& ,bool mixed = false);
@@ -112,6 +127,8 @@ public:
 
 	/** Get current time in sec/microseconds. */
 	static void GetTime(struct timeval *);
+
+	static std::auto_ptr<SocketAddress> CreateAddress(struct sockaddr *,socklen_t);
 
 private:
 	static std::string m_host; ///< local hostname

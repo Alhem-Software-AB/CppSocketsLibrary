@@ -421,8 +421,8 @@ std::string HttpdSocket::datetime2httpdate(const std::string& dt)
 {
 	struct tm tp;
 	time_t t;
-	char *days[] = { "Sun","Mon","Tue","Wed","Thu","Fri","Sat" };
-	char *months[] = { "Jan","Feb","Mar","Apr","May","Jun",
+	const char *days[] = { "Sun","Mon","Tue","Wed","Thu","Fri","Sat" };
+	const char *months[] = { "Jan","Feb","Mar","Apr","May","Jun",
 	                   "Jul","Aug","Sep","Oct","Nov","Dec" };
 	int i;
 	char s[40];
@@ -465,20 +465,18 @@ std::string HttpdSocket::datetime2httpdate(const std::string& dt)
 std::string HttpdSocket::GetDate()
 {
 	time_t t = time(NULL);
-	struct tm* tp = localtime(&t);
+	struct tm tp;
+#ifdef _WIN32
+	memcpy(&tp, localtime(&t), sizeof(tp));
+#else
+	localtime_r(&t, &tp);
+#endif
 	char slask[40]; // yyyy-mm-dd hh:mm:ss
-	if (tp)
-	{
-		sprintf(slask,"%d-%02d-%02d %02d:%02d:%02d",
-			tp -> tm_year + 1900,
-			tp -> tm_mon + 1,
-			tp -> tm_mday,
-			tp -> tm_hour,tp -> tm_min,tp -> tm_sec);
-	}
-	else
-	{
-		*slask = 0;
-	}
+	sprintf(slask,"%d-%02d-%02d %02d:%02d:%02d",
+		tp.tm_year + 1900,
+		tp.tm_mon + 1,
+		tp.tm_mday,
+		tp.tm_hour,tp.tm_min,tp.tm_sec);
 	return slask;
 }
 
