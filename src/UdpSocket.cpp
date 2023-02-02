@@ -22,13 +22,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #ifdef _WIN32
 #pragma warning(disable:4786)
+#include <stdlib.h>
+#else
+#include <errno.h>
 #endif
 #include <stdio.h>
-//#include <string>
-//#include <vector>
 #include <map>
 
-//#include "socket_include.h"
+#include "StdLog.h"
+#include "SocketHandler.h"
 #include "UdpSocket.h"
 
 
@@ -54,7 +56,6 @@ SOCKET UdpSocket::Bind(port_t &port,int range)
 	SOCKET s = CreateSocket(SOCK_DGRAM);
 	if (s == -1)
 	{
-		perror("CreateSocket() failed");
 		return -1;
 	}
 
@@ -76,7 +77,7 @@ SOCKET UdpSocket::Bind(port_t &port,int range)
 	}
 	if (n == -1)
 	{
-		perror("bind() failed");
+		Handler().LogError(this, "bind", errno, strerror(errno), LOG_LEVEL_FATAL);
 		closesocket(s);
 		return -1;
 	}

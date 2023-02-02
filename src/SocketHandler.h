@@ -28,82 +28,44 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <string>
 
 #include "socket_include.h"
-
+#include "StdLog.h"
 
 class Socket;
 
 
 
-
 class SocketHandler
 {
-  typedef std::map<int,Socket *> socket_m;
+	typedef std::map<int,Socket *> socket_m;
 
 public:
 	SocketHandler();
 	virtual ~SocketHandler();
+
+	/** Register StdLog object for error callback */
+	void RegStdLog(StdLog *);
+	void LogError(Socket *,const std::string&,int,const std::string&,loglevel_t = LOG_LEVEL_WARNING);
 
 	void Add(Socket *);
 	void Set(SOCKET s,bool bRead,bool bWrite,bool bException = true);
 	int Select(long sec,long usec);
 	void StatLoop(long s,long us);
 	bool Valid(Socket *);
-	virtual bool OkToAccept() { return true; }
+	virtual bool OkToAccept();
 
 	const std::string& GetLocalHostname();
 	ipaddr_t GetLocalIP();
 	const std::string& GetLocalAddress();
 
-/*
-	template <class X>
-	void DoCallback(int code) {
-		for (socket_m::iterator it = m_sockets.begin(); it != m_sockets.end(); it++)
-		{
-			Socket *p = (*it).second;
-			X *p2 = dynamic_cast<X *>(p);
-			if (p2)
-			{
-				p2 -> OnCallback( code );
-			}
-		}
-	}
-	template <class X>
-	bool Exists() {
-		for (socket_m::iterator it = m_sockets.begin(); it != m_sockets.end(); it++)
-		{
-			Socket *p = (*it).second;
-			X *p2 = dynamic_cast<X *>(p);
-			if (p2)
-			{
-				return true;
-			}
-		}
-		return false;
-	}
-	template <class X>
-	int Count() {
-		int q = 0;
-		for (socket_m::iterator it = m_sockets.begin(); it != m_sockets.end(); it++)
-		{
-			Socket *p = (*it).second;
-			X *p2 = dynamic_cast<X *>(p);
-			if (p2)
-			{
-				q++;
-			}
-		}
-		return q;
-	}
-*/
-
-	size_t GetCount() { return m_sockets.size(); }
-	void SetSlave(bool x = true) { m_slave = x; }
+	size_t GetCount();
+	void SetSlave(bool x = true);
 
 protected:
 	socket_m m_sockets;
 	socket_m m_add;
 
 private:
+	StdLog *m_stdlog;
 	int m_maxsock;
 	std::string m_host;
 	ipaddr_t m_ip;

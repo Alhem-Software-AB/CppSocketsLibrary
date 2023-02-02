@@ -23,27 +23,27 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <stdio.h>
 #ifdef _WIN32
 #pragma warning(disable:4786)
+#include <stdlib.h>
+#else
+#include <errno.h>
 #endif
-//#include <string>
-//#include <vector>
-//#include <map>
-//#include <time.h>
-//#include "socket_include.h"
 
-//#include "Socket.h"
 #include "TcpSocket.h"
+#include "StdLog.h"
 #include "SocketHandler.h"
 #include "UdpSocket.h"
+
 
 #ifdef _DEBUG
 #define DEB(x) x
 #else
-#define DEB(x) 
+#define DEB(x)
 #endif
 
 
 SocketHandler::SocketHandler()
-:m_maxsock(0)
+:m_stdlog(NULL)
+,m_maxsock(0)
 ,m_host("")
 ,m_ip(0)
 ,m_preverror(-1)
@@ -162,6 +162,7 @@ int SocketHandler::Select(long sec,long usec)
 	n = select(m_maxsock + 1,&rfds,&wfds,&efds,&tv);
 	if (n == -1)
 	{
+		LogError(NULL, "select", errno, strerror(errno));
 #ifdef _WIN32
 DEB(
 		int errcode = WSAGetLastError();
@@ -181,7 +182,6 @@ DEB(
 		}
 ) // DEB
 #else
-		perror("select() failed");
 DEB(		printf("slave: %s\n",m_slave ? "YES" : "NO");
 		exit(-1);)
 #endif
@@ -270,12 +270,12 @@ DEB(									printf("calling OnConnect\n");)
 */
 				if (p && p -> Connecting() && p -> GetConnectTime() > 5)
 				{
-//						fprintf(stderr,"Connect timeout - removing socket\n");
+					LogError(p, "connect", -1, "connect timeout", LOG_LEVEL_FATAL);
 					p -> SetCloseAndDelete(true);
 				}
 				if (p && p -> CloseAndDelete() )
 				{
-DEB(printf("%s: calling Close for socket %d\n",m_slave ? "slave" : "master",s);)
+//DEB(printf("%s: calling Close for socket %d\n",m_slave ? "slave" : "master",s);)
 					Set(p -> GetSocket(),false,false,false);
 					p -> Close();
 					p -> OnDelete();
@@ -350,6 +350,39 @@ bool SocketHandler::Valid(Socket *p0)
 			return true;
 	}
 	return false;
+}
+
+
+void SocketHandler::RegStdLog(StdLog *x)
+{
+	m_stdlog = x;
+}
+
+
+bool SocketHandler::OkToAccept()
+{
+	return true;
+}
+
+
+size_t SocketHandler::GetCount()
+{
+	return m_sockets.size();
+}
+
+
+void SocketHandler::SetSlave(bool x)
+{
+	m_slave = x;
+}
+
+
+void SocketHandler::LogError(Socket *p,const std::string& user_text,int err,const std::string& sys_err,loglevel_t t)
+{
+	if (m_stdlog)
+	{
+		m_stdlog -> error(this, p, user_text, err, sys_err, t);
+	}
 }
 
 

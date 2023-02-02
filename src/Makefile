@@ -1,4 +1,4 @@
-VERSION =	1.3.1
+VERSION =	1.4
 
 INCLUDE =	-I/usr/devel/include -I.
 CFLAGS =	-Wall -g -O2 $(INCLUDE) -MD -D_VERSION='"$(VERSION)"' 
@@ -18,7 +18,9 @@ OBJS =		CircularBuffer.o \
 		CTcpSocket.o \
 		HTTPSocket.o \
 		HttpsSocket.o \
-		Thread.o SocketThread.o
+		Thread.o SocketThread.o \
+		StdoutLog.o
+
 # SocketsEx
 EX =		Uid.o \
 		MinderSocket.o MinionSocket.o MinderHandler.o
@@ -50,8 +52,8 @@ tar:		clean
 		rm -f Mutex.*
 		rm -f MinderSocket_T.h
 		./mkdot.sh
-		tar czf /usr/local/apache/www.alhem.net/htdocs/Sockets/Sockets-$(VERSION).tar.gz *.h *.cpp Makefile Project/*.dsp
-		cp Changelog /usr/local/apache/www.alhem.net/htdocs/Sockets
+		tar czf /usr/local/apache/www.libsockets.net/htdocs/Sockets-$(VERSION).tar.gz *.h *.cpp Makefile Project/*.dsp
+		cp Changelog /usr/local/apache/www.libsockets.net/htdocs
 		doxygen doxygen.cfg
 
 docs:		clean

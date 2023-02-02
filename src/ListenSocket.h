@@ -23,6 +23,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef _LISTENSOCKET_H
 #define _LISTENSOCKET_H
 
+#ifdef _WIN32
+#include <stdlib.h>
+#else
+#include <errno.h>
+#endif
+
 #include "Socket.h"
 
 
@@ -45,7 +51,6 @@ public:
 		s = CreateSocket(SOCK_STREAM);
 		if (s == -1)
 		{
-			perror("CreateSocket() failed");
 			return -1;
 		}
 
@@ -56,14 +61,14 @@ public:
 
 		if (bind(s, (struct sockaddr *)&sa, sizeof(sa)) == -1)
 		{
-			perror("bind() failed");
+			Handler().LogError(this, "bind", errno, strerror(errno), LOG_LEVEL_FATAL);
 			closesocket(s);
 			return -1;
 		}
 
 		if (listen(s, depth) == -1)
 		{
-			perror("listen() failed");
+			Handler().LogError(this, "listen", errno, strerror(errno), LOG_LEVEL_FATAL);
 			closesocket(s);
 			return -1;
 		}
@@ -87,7 +92,6 @@ public:
 		s = CreateSocket(SOCK_STREAM);
 		if (s == -1)
 		{
-			perror("CreateSocket() failed");
 			return -1;
 		}
 
@@ -98,14 +102,14 @@ public:
 
 		if (bind(s, (struct sockaddr *)&sa, sizeof(sa)) == -1)
 		{
-			perror("bind() failed");
+			Handler().LogError(this, "bind", errno, strerror(errno), LOG_LEVEL_FATAL);
 			closesocket(s);
 			return -1;
 		}
 
 		if (listen(s, depth) == -1)
 		{
-			perror("listen() failed");
+			Handler().LogError(this, "listen", errno, strerror(errno), LOG_LEVEL_FATAL);
 			closesocket(s);
 			return -1;
 		}
@@ -134,7 +138,7 @@ public:
 		a_s = accept(GetSocket(), saptr, lenptr);
 		if (a_s == -1)
 		{
-			perror("accept() failed");
+			Handler().LogError(this, "accept", errno, strerror(errno), LOG_LEVEL_ERROR);
 		}
 		else
 		{
@@ -150,6 +154,7 @@ public:
 			}
 			else
 			{
+				Handler().LogError(this, "accept", -1, "Not OK to accept", LOG_LEVEL_FATAL);
 				tmp -> SetCloseAndDelete();
 			}
 		}

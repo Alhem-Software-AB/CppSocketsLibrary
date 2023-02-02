@@ -22,13 +22,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #ifdef _WIN32
 #pragma warning(disable:4786)
+#include <stdlib.h>
+#else
+#include <errno.h>
 #endif
 #include <stdio.h>
 #include <ctype.h>
-//#include <string>
 #include <fcntl.h>
-//#include <time.h>
-//#include "socket_include.h"
 #include "Parse.h"
 #include "SocketHandler.h"
 #include "SocketThread.h"
@@ -112,7 +112,7 @@ bool Socket::CheckConnect()
 #endif
 	if (err)
 	{
-DEB(		printf("OnConnect() failed: %s\n",strerror(err));)
+		Handler().LogError(this,"connect failed",err,strerror(err),LOG_LEVEL_FATAL);
 		SetCloseAndDelete( true );
 		r = false;
 	}
@@ -126,23 +126,18 @@ void Socket::OnAccept()
 }
 
 
-/*
-void Socket::OnCallback(int )
-{
-}
-*/
-
-
 int Socket::Close()
 {
 	int n;
 	if (shutdown(m_socket, SHUT_RDWR) == -1)
 	{
 		// failed...
+		Handler().LogError(this, "shutdown", errno, strerror(errno),LOG_LEVEL_ERROR);
 	}
 	if ((n = closesocket(m_socket)) == -1)
 	{
 		// failed...
+		Handler().LogError(this, "close", errno, strerror(errno),LOG_LEVEL_ERROR);
 	}
 	m_socket = -1;
 	return n;
@@ -157,7 +152,7 @@ SOCKET Socket::CreateSocket(int type)
 	s = socket(AF_INET, type, 0);
 	if (s == -1)
 	{
-		perror("socket() failed");
+		Handler().LogError(this, "socket", errno, strerror(errno),LOG_LEVEL_FATAL);
 		return -1;
 	}
 
@@ -166,7 +161,7 @@ SOCKET Socket::CreateSocket(int type)
 		optval = 1;
 		if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, (char *)&optval, sizeof(optval)) == -1)
 		{
-			perror("setsockopt() failed");
+			Handler().LogError(this, "setsockopt(SOL_SOCKET,SO_REUSEADDR)", errno, strerror(errno),LOG_LEVEL_FATAL);
 			closesocket(s);
 			return -1;
 		}
@@ -174,7 +169,7 @@ SOCKET Socket::CreateSocket(int type)
 		optval = 1;
 		if (setsockopt(s, SOL_SOCKET, SO_KEEPALIVE, (char *)&optval, sizeof(optval)) == -1)
 		{
-			perror("setsockopt() failed");
+			Handler().LogError(this, "setsockopt(SOL_SOCKET,SO_KEEPALIVE)", errno, strerror(errno), LOG_LEVEL_FATAL);
 			closesocket(s);
 			return -1;
 		}
@@ -219,7 +214,9 @@ DEB(		printf("u2ip: %08lX\n",l);)
 	{
 		struct hostent *he = gethostbyname( str.c_str() );
 		if (!he)
+		{
 			return false;
+		}
 		memcpy(&l,he -> h_addr,4);
 		return true;
 	}
@@ -342,7 +339,9 @@ std::string Socket::GetRemoteHostname()
 	struct hostent *he = gethostbyaddr(&l,sizeof(long),AF_INET);
 #endif
 	if (!he)
+	{
 		return GetRemoteAddress();
+	}
 	str = he -> h_name;
 	return str;
 }
@@ -357,7 +356,7 @@ bool Socket::SetNonblocking(bool bNb)
 	{
 		int errcode;
 		errcode = WSAGetLastError();
-		fprintf(stderr,"ioctlsocket(FIONBIO) failed, errcode %d\n",errcode);
+		Handler().LogError(this, "ioctlsocket(FIONBIO)", errcode, "");
 		return false;
 	}
 	return true;
@@ -366,7 +365,7 @@ bool Socket::SetNonblocking(bool bNb)
 	{
 		if (fcntl(m_socket, F_SETFL, O_NONBLOCK) == -1)
 		{
-			perror("fcntl()");
+			Handler().LogError(this, "fcntl(F_SETFL,O_NONBLOCK)", errno, strerror(errno), LOG_LEVEL_ERROR);
 			return false;
 		}
 	}
@@ -374,7 +373,7 @@ bool Socket::SetNonblocking(bool bNb)
 	{
 		if (fcntl(m_socket, F_SETFL, 0) == -1)
 		{
-			perror("fcntl()");
+			Handler().LogError(this, "fcntl(F_SETFL,0)", errno, strerror(errno), LOG_LEVEL_ERROR);
 			return false;
 		}
 	}
@@ -392,15 +391,26 @@ bool Socket::SetNonblocking(bool bNb,SOCKET s)
 	{
 		int errcode;
 		errcode = WSAGetLastError();
-		fprintf(stderr,"ioctlsocket(FIONBIO) failed, errcode %d\n",errcode);
+		Handler().LogError(this, "ioctlsocket(FIONBIO)", errcode, "");
 		return false;
 	}
 	return true;
 #else
-	if (fcntl(s, F_SETFL, O_NONBLOCK) == -1)
+	if (bNb)
 	{
-		perror("fcntl()");
-		return false;
+		if (fcntl(s, F_SETFL, O_NONBLOCK) == -1)
+		{
+			Handler().LogError(this, "fcntl(F_SETFL,O_NONBLOCK)", errno, strerror(errno), LOG_LEVEL_ERROR);
+			return false;
+		}
+	}
+	else
+	{
+		if (fcntl(s, F_SETFL, 0) == -1)
+		{
+			Handler().LogError(this, "fcntl(F_SETFL,0)", errno, strerror(errno), LOG_LEVEL_ERROR);
+			return false;
+		}
 	}
 	return true;
 #endif

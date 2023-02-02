@@ -3,6 +3,7 @@
 
 #ifdef _WIN32
 // to be
+typedef void * threadfunc_t;
 #else
 #include <pthread.h>
 
@@ -27,6 +28,7 @@ public:
 
 private:
 #ifdef _WIN32
+  int m_thread;
 #else
 	pthread_t m_thread;
 #endif

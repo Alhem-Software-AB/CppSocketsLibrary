@@ -24,7 +24,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #pragma warning(disable:4786)
 #endif
 #include <assert.h>
-//#include "socket_include.h"
 #include "SSLSocket.h"
 #include <openssl/rand.h>
 #ifdef _WIN32

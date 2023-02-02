@@ -1,6 +1,6 @@
 /**
- **	File ......... SocketThread.cpp
- **	Published ....  2004-05-05
+ **	File ......... StdoutLog.cpp
+ **	Published ....  2004-06-01
  **	Author ....... grymse@alhem.net
 **/
 /*
@@ -23,45 +23,39 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifdef _WIN32
 #pragma warning(disable:4786)
 #endif
+#include <time.h>
 #include "SocketHandler.h"
-#include "SocketThread.h"
-
-//#define DEB(x) x; fflush(stdout);
-#define DEB(x)
+#include "Socket.h"
+#include "StdoutLog.h"
 
 
-SocketThread::SocketThread(Socket& p)
-:Thread(false)
-,m_socket(p)
+
+
+void StdoutLog::error(SocketHandler *,Socket *,const std::string& call,int err,const std::string& sys_err,loglevel_t lvl)
 {
-	// Creator will release
-DEB(	printf("SocketThread()\n");)
-}
-
-
-SocketThread::~SocketThread()
-{
-DEB(	printf("~SocketThread()\n");)
-}
-
-
-void SocketThread::Run()
-{
-	SocketHandler h;
-	h.SetSlave();
-	h.Add(&m_socket);
-DEB(	printf("slave: OnDetached()\n");)
-	m_socket.OnDetached();
-DEB(	printf("slave: first select\n");)
-	h.Select(1,0);
-	while (h.GetCount()) //m_socket.Ready() && IsRunning())
+	time_t t = time(NULL);
+	struct tm *tp = localtime(&t);
+	std::string level;
+	
+	switch (lvl)
 	{
-DEB(		printf("slave: select\n");)
-		h.Select(1,0);
+	case LOG_LEVEL_WARNING:
+		level = "Warning";
+		break;
+	case LOG_LEVEL_ERROR:
+		level = "Error";
+		break;
+	case LOG_LEVEL_FATAL:
+		level = "Fatal";
+		break;
 	}
-	// m_socket now deleted oops
-DEB(	printf("slave: SetDetach( false )\n");)
-//	m_socket.SetDetach(false);
+
+	printf("%d-%02d-%2d %02d:%02d:%02d :: %s: %s (%s)\n",
+		tp -> tm_year + 1900,
+		tp -> tm_mon + 1,
+		tp -> tm_mday,
+		tp -> tm_hour,tp -> tm_min,tp -> tm_sec,
+		call.c_str(),sys_err.c_str(),level.c_str());
 }
 
 

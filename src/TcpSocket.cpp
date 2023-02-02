@@ -23,16 +23,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifdef _WIN32
 #pragma warning(disable:4786)
 #define strcasecmp stricmp
+#include <stdlib.h>
 #endif
 #include <stdio.h>
 #include <fcntl.h>
 #include <errno.h>
-//#include <string>
-//#include <vector>
-//#include <map>
 #include <assert.h>
 
-//#include "socket_include.h"
 #include "SocketHandler.h"
 #include "TcpSocket.h"
 
@@ -62,7 +59,6 @@ bool TcpSocket::Open(ipaddr_t ip,port_t port)
 	SOCKET s = CreateSocket(SOCK_STREAM);
 	if (s == -1)
 	{
-		perror("CreateSocket() failed");
 		return false;
 	}
 	ipaddr_t l = ip;
@@ -91,7 +87,7 @@ bool TcpSocket::Open(ipaddr_t ip,port_t port)
 			if (errno != EINPROGRESS)
 #endif
 			{
-				perror("connect() failed 4");
+				Handler().LogError(this, "connect", errno, strerror(errno), LOG_LEVEL_FATAL);
 				closesocket(s);
 				return false;
 			}
@@ -113,7 +109,6 @@ bool TcpSocket::Open(const std::string &host,port_t port)
 	SOCKET s = CreateSocket(SOCK_STREAM);
 	if (s == -1)
 	{
-		perror("CreateSocket() failed");
 		return false;
 	}
 	ipaddr_t l;
@@ -149,7 +144,7 @@ DEB(	printf("Connecting to: %s:%d\n",ipstr.c_str(),port);)
 			if (errno != EINPROGRESS)
 #endif
 			{
-				perror("connect() failed 5");
+				Handler().LogError(this, "connect", errno, strerror(errno), LOG_LEVEL_FATAL);
 				closesocket(s);
 				return false;
 			}
@@ -177,8 +172,8 @@ void TcpSocket::OnRead()
 	n = readsocket(GetSocket(),buf,(n < BUFSIZE_READ) ? n : BUFSIZE_READ);
 	if (n == -1)
 	{
+		Handler().LogError(this, "read", errno, strerror(errno), LOG_LEVEL_FATAL);
 		SetCloseAndDelete(true); // %!
-DEB(		perror(" * read() error");)
 	}
 	else
 	if (!n)
@@ -229,8 +224,8 @@ DEB(	printf("OnWrite: %d bytes sent\n",n);)
 		int x = WSAGetLastError();
 DEB(	printf("write() error, errcode = %d\n",x);)
 #endif
+		Handler().LogError(this, "write", errno, strerror(errno), LOG_LEVEL_FATAL);
 		SetCloseAndDelete(true); // %!
-DEB(		perror(" * write() error");)
 	}
 	else
 	if (!n)
@@ -279,14 +274,13 @@ void TcpSocket::SendBuf(const char *buf,size_t len)
 	int n = obuf.GetLength();
 	if (!Ready())
 	{
-//		fprintf(stderr,"Attempt to write to a non-ready socket\n");
+		Handler().LogError(this, "SendBuf", -1, "Attempt to write to a non-ready socket" );
 		return;
 	}
 DEB(	printf("trying to send %d bytes;  buf before = %d bytes\n",len,n);)
 	if (m_mes.size() || len > obuf.Space())
 	{
 		MES *p = new MES(buf,len);
-//printf("\n m_mes push_back()\n");
 		m_mes.push_back(p);
 	}
 	if (m_mes.size())
@@ -298,7 +292,6 @@ DEB(	printf("trying to send %d bytes;  buf before = %d bytes\n",len,n);)
 			{
 				obuf.Write(p -> curbuf(),p -> left());
 				delete p;
-//printf("\n m_mes erase()\n");
 				m_mes.erase(m_mes.begin());
 			}
 			else
@@ -313,7 +306,7 @@ DEB(	printf("trying to send %d bytes;  buf before = %d bytes\n",len,n);)
 	{
 		if (!obuf.Write(buf,len))
 		{
-DEB(			printf(" Send overflow\n");)
+			Handler().LogError(this, "SendBuf", -1, "Send overflow" );
 			// overflow
 		}
 	}

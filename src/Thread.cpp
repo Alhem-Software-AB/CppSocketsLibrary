@@ -1,5 +1,9 @@
 #include <stdio.h>
+#ifdef _WIN32
+#include "socket_include.h"
+#else
 #include <unistd.h>
+#endif
 
 #include "Thread.h"
 
@@ -34,7 +38,14 @@ Thread::~Thread()
 		SetRunning(false);
 		SetRelease(true);
 
-		sleep(1);
+#ifdef _WIN32
+    struct timeval tv;
+    tv.tv_sec = 0;
+    tv.tv_usec = 100000;
+    select(0,NULL,NULL,NULL,&tv);
+#else
+    sleep(1);
+#endif
 	}
 }
 
@@ -45,7 +56,14 @@ threadfunc_t Thread::StartThread(void *zz)
 
 	while (pclThread -> m_running && !pclThread -> m_release)
 	{
-		sleep(1);
+#ifdef _WIN32
+    struct timeval tv;
+    tv.tv_sec = 0;
+    tv.tv_usec = 100000;
+    select(0,NULL,NULL,NULL,&tv);
+#else
+    sleep(1);
+#endif
 	}
 	if (pclThread -> m_running)
 	{
