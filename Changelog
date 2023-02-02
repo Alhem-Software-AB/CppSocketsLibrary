@@ -1,0 +1,33 @@
+Version 1.0
+--------------------------
+0a1,29
+> Base64.cpp
+> Base64.h
+> CircularBuffer.cpp
+> CircularBuffer.h
+> CTcpSocket.cpp
+> CTcpSocket.h
+> HttpGetSocket.cpp
+> HttpGetSocket.h
+> HttpsGetSocket.cpp
+> HttpsGetSocket.h
+> ICrypt.h
+> ListenSocket.h
+> Makefile
+> NullCrypt.cpp
+> NullCrypt.h
+> Parse.cpp
+> Parse.h
+> Socket.cpp
+> Socket.h
+> SocketHandler.cpp
+> SocketHandler.h
+> socket_include.h
+> SSLSocket.cpp
+> SSLSocket.h
+> TcpSocket.cpp
+> TcpSocket.h
+> UdpSocket.cpp
+> UdpSocket.h
+> Utility.h
+
