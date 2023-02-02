@@ -41,7 +41,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "ISocketHandler.h"
 #include "Utility.h"
 
-#include "TcpSocket.h"
 #include "SocketAddress.h"
 #include "SocketHandler.h"
 

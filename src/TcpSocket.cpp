@@ -72,8 +72,7 @@ SSLInitializer TcpSocket::m_ssl_init;
 #pragma warning(disable:4355)
 #endif
 TcpSocket::TcpSocket(ISocketHandler& h) : StreamSocket(h)
-,ibuf(*this, TCP_BUFSIZE_READ)
-,obuf(*this, 32768)
+,ibuf(TCP_BUFSIZE_READ)
 ,m_b_input_buffer_disabled(false)
 ,m_bytes_sent(0)
 ,m_bytes_received(0)
@@ -81,6 +80,7 @@ TcpSocket::TcpSocket(ISocketHandler& h) : StreamSocket(h)
 #ifdef SOCKETS_DYNAMIC_TEMP
 ,m_buf(new char[TCP_BUFSIZE_READ + 1])
 #endif
+,m_obuf_top(NULL)
 #ifdef HAVE_OPENSSL
 ,m_ssl_ctx(NULL)
 ,m_ssl(NULL)
@@ -107,8 +107,7 @@ TcpSocket::TcpSocket(ISocketHandler& h) : StreamSocket(h)
 #pragma warning(disable:4355)
 #endif
 TcpSocket::TcpSocket(ISocketHandler& h,size_t isize,size_t osize) : StreamSocket(h)
-,ibuf(*this, isize)
-,obuf(*this, osize)
+,ibuf(isize)
 ,m_b_input_buffer_disabled(false)
 ,m_bytes_sent(0)
 ,m_bytes_received(0)
@@ -116,6 +115,7 @@ TcpSocket::TcpSocket(ISocketHandler& h,size_t isize,size_t osize) : StreamSocket
 #ifdef SOCKETS_DYNAMIC_TEMP
 ,m_buf(new char[TCP_BUFSIZE_READ + 1])
 #endif
+,m_obuf_top(NULL)
 #ifdef HAVE_OPENSSL
 ,m_ssl_ctx(NULL)
 ,m_ssl(NULL)
@@ -140,20 +140,10 @@ TcpSocket::TcpSocket(ISocketHandler& h,size_t isize,size_t osize) : StreamSocket
 
 TcpSocket::~TcpSocket()
 {
-	if (m_mes.size())
-	{
-		Handler().LogError(this, "TcpSocket destructor", 0, "Output buffer not empty", LOG_LEVEL_WARNING);
-	}
-	while (m_mes.size())
-	{
-		ucharp_v::iterator it = m_mes.begin();
-		MES *p = *it;
-		delete p;
-		m_mes.erase(it);
-	}
 #ifdef SOCKETS_DYNAMIC_TEMP
 	delete[] m_buf;
 #endif
+	// %! empty m_obuf
 #ifdef HAVE_OPENSSL
 	if (m_ssl)
 	{
@@ -542,8 +532,6 @@ DEB(				fprintf(stderr, "SSL read problem, errcode = %d\n",n);)
 	{
 		if (LineProtocol())
 		{
-			size_t x = 0;
-
 			buf[n] = 0;
 			int i = 0;
 			if (m_skip_c && (buf[i] == 13 || buf[i] == 10) && buf[i] != m_c)
@@ -551,6 +539,7 @@ DEB(				fprintf(stderr, "SSL read problem, errcode = %d\n",n);)
 				m_skip_c = false;
 				i++;
 			}
+			size_t x = i;
 			for (; i < n && LineProtocol(); i++)
 			{
 				while ((buf[i] == 13 || buf[i] == 10) && LineProtocol())
@@ -614,6 +603,11 @@ DEB(				fprintf(stderr, "SSL read problem, errcode = %d\n",n);)
 }
 
 
+void TcpSocket::OnWriteComplete()
+{
+}
+
+
 void TcpSocket::OnWrite()
 {
 	if (Connecting())
@@ -655,13 +649,61 @@ void TcpSocket::OnWrite()
 		OnConnectFailed();
 		return;
 	}
+	// try send next block in buffer
+	// if full block is sent, repeat
+	// if all blocks are sent, reset m_wfds
+
+	bool repeat = false;
+	do
+	{
+		output_l::iterator it = m_obuf.begin();
+		OUTPUT *p = *it;
+		repeat = false;
+		int n = TryWrite(p -> Buf(), p -> Len());
+		if (n > 0)
+		{
+			size_t left = p -> Remove(n);
+			if (!left)
+			{
+				delete p;
+				m_obuf.erase(it);
+				if (!m_obuf.size())
+				{
+					m_obuf_top = NULL;
+					OnWriteComplete();
+				}
+				else
+				{
+					repeat = true;
+				}
+			}
+		}
+	} while (repeat);
+
+	// check output buffer set, set/reset m_wfds accordingly
+	{
+		bool br;
+		bool bw;
+		bool bx;
+		Handler().Get(GetSocket(), br, bw, bx);
+		if (m_obuf.size())
+			Set(br, true);
+		else
+			Set(br, false);
+	}
+}
+
+
+int TcpSocket::TryWrite(const char *buf, size_t len)
+{
+	int n = 0;
 #ifdef HAVE_OPENSSL
 	if (IsSSL())
 	{
-		int n = SSL_write(m_ssl,obuf.GetStart(),(int)obuf.GetLength());
-		int errnr = n < 1 ? SSL_get_error(m_ssl, n) : 0;
+		n = SSL_write(m_ssl, buf, len);
 		if (n == -1)
 		{
+			int errnr = SSL_get_error(m_ssl, n);
 			if ( errnr != SSL_ERROR_WANT_READ && errnr != SSL_ERROR_WANT_WRITE )
 			{
 				SetCloseAndDelete(true);
@@ -681,117 +723,74 @@ void TcpSocket::OnWrite()
 #ifdef ENABLE_POOL
 			SetLost();
 #endif
-DEB(			const char *errbuf = ERR_error_string(errnr, NULL);
+DEB(			int errnr = SSL_get_error(m_ssl, n);
+			const char *errbuf = ERR_error_string(errnr, NULL);
 			fprintf(stderr, "SSL_write() returns 0: %d : %s\n",errnr, errbuf);)
 		}
-		else
-		{
-			m_bytes_sent += n;
-			if (GetTrafficMonitor())
-			{
-				GetTrafficMonitor() -> fwrite(obuf.GetStart(), 1, n);
-			}
-			obuf.Remove(n);
-			// move data from m_mes to immediate output buffer
-			while (obuf.Space() && m_mes.size())
-			{
-				ucharp_v::iterator it = m_mes.begin();
-				MES *p = *it;
-				if (obuf.Space() > p -> left())
-				{
-					obuf.Write(p -> curbuf(),p -> left());
-					delete p;
-					m_mes.erase(it);
-				}
-				else
-				{
-					size_t sz = obuf.Space();
-					obuf.Write(p -> curbuf(),sz);
-					p -> ptr += sz;
-				}
-			}
-		}
-		//
-		{
-			bool br;
-			bool bw;
-			bool bx;
-			Handler().Get(GetSocket(), br, bw, bx);
-			if (obuf.GetLength() || m_mes.size())
-				Set(br, true);
-			else
-				Set(br, false);
-		}
-		return;
 	}
+	else
 #endif // HAVE_OPENSSL
-	int n = send(GetSocket(),obuf.GetStart(),(int)obuf.GetLength(),MSG_NOSIGNAL);
-/*
-When writing onto a connection-oriented socket that has been shut down (by the  local
-or the remote end) SIGPIPE is sent to the writing process and EPIPE is returned.  The
-signal is not sent when the write call specified the MSG_NOSIGNAL flag.
-*/
-	if (n == -1)
 	{
-	// normal error codes:
-	// WSAEWOULDBLOCK
-	//       EAGAIN or EWOULDBLOCK
+		n = send(GetSocket(), buf, len, MSG_NOSIGNAL);
+		if (n == -1)
+		{
+		// normal error codes:
+		// WSAEWOULDBLOCK
+		//       EAGAIN or EWOULDBLOCK
 #ifdef _WIN32
-		if (Errno != WSAEWOULDBLOCK)
+			if (Errno != WSAEWOULDBLOCK)
 #else
-		if (Errno != EWOULDBLOCK)
+			if (Errno != EWOULDBLOCK)
 #endif
-		{	
-			Handler().LogError(this, "send", Errno, StrError(Errno), LOG_LEVEL_FATAL);
-			SetCloseAndDelete(true);
-			SetFlushBeforeClose(false);
+			{	
+				Handler().LogError(this, "send", Errno, StrError(Errno), LOG_LEVEL_FATAL);
+				SetCloseAndDelete(true);
+				SetFlushBeforeClose(false);
 #ifdef ENABLE_POOL
-			SetLost();
+				SetLost();
 #endif
+			}
 		}
 	}
-	else
-	if (!n)
-	{
-//		SetCloseAndDelete(true);
-	}
-	else
+	if (n > 0)
 	{
 		m_bytes_sent += n;
 		if (GetTrafficMonitor())
 		{
-			GetTrafficMonitor() -> fwrite(obuf.GetStart(), 1, n);
+			GetTrafficMonitor() -> fwrite(buf, 1, n);
 		}
-		obuf.Remove(n);
-		// move data from m_mes to immediate output buffer
-		while (obuf.Space() && m_mes.size())
+	}
+	return n;
+}
+
+
+void TcpSocket::Buffer(const char *buf, size_t len)
+{
+	size_t ptr = 0;
+	while (ptr < len)
+	{
+		// buf/len => pbuf/sz
+		size_t space = 0;
+		if (m_obuf_top && (space = m_obuf_top -> Space()) > 0)
 		{
-			ucharp_v::iterator it = m_mes.begin();
-			MES *p = *it;
-			if (obuf.Space() > p -> left())
+			const char *pbuf = buf + ptr;
+			size_t sz = len - ptr;
+			if (space >= sz)
 			{
-				obuf.Write(p -> curbuf(),p -> left());
-				delete p;
-				m_mes.erase(it);
+				m_obuf_top -> Add(pbuf, sz);
+				ptr += sz;
 			}
 			else
 			{
-				size_t sz = obuf.Space();
-				obuf.Write(p -> curbuf(),sz);
-				p -> ptr += sz;
+				m_obuf_top -> Add(pbuf, space);
+				ptr += space;
 			}
 		}
-	}
-	// set write flag if data still left to write
-	{
-		bool br;
-		bool bw;
-		bool bx;
-		Handler().Get(GetSocket(), br, bw, bx);
-		if (obuf.GetLength() || m_mes.size())
-			Set(br, true);
 		else
-			Set(br, false);
+		{
+			m_obuf_top = new OUTPUT;
+			m_obuf.push_back( m_obuf_top );
+		}
 	}
 }
 
@@ -804,7 +803,6 @@ void TcpSocket::Send(const std::string &str,int i)
 
 void TcpSocket::SendBuf(const char *buf,size_t len,int)
 {
-	size_t n = obuf.GetLength();
 	if (!Ready() && !Connecting())
 	{
 		Handler().LogError(this, "SendBuf", -1, "Attempt to write to a non-ready socket" ); // warning
@@ -819,36 +817,37 @@ void TcpSocket::SendBuf(const char *buf,size_t len,int)
 	if (!IsConnected())
 	{
 		Handler().LogError(this, "SendBuf", -1, "Attempt to write to a non-connected socket, will be sent on connect" ); // warning
+		Buffer(buf, len);
+		return;
 	}
-	//
-	size_t ptr = 0;
-	if (!m_mes.size() && obuf.Space())
+	if (m_obuf_top)
 	{
-		if (len <= obuf.Space()) // entire block of data fits
-		{
-			ptr = len;
-			obuf.Write(buf, len);
-		}
-		else // a part of the block fits
-		{
-			ptr = obuf.Space();
-			obuf.Write(buf, ptr);
-		}
+		Buffer(buf, len);
+		return;
 	}
-	/// \todo check good value for max blocksize
-#define MAX_BLOCKSIZE 1024000
-	while (ptr < len) // data still left to buffer
+	int n = TryWrite(buf, len);
+	if (n > 0 && n < (int)len)
 	{
-		size_t sz = len - ptr; // size of data block that has not been buffered
-		if (sz > MAX_BLOCKSIZE)
-			sz = MAX_BLOCKSIZE;
-		m_mes.push_back(new MES(buf + ptr, sz));
-		ptr += sz;
+		Buffer(buf + n, len - n);
 	}
-	// kick a real write
-	if (!n && IsConnected())
+	// if ( data in buffer || !IsConnected )
+	// {
+	//   add to buffer
+	// }
+	// else
+	// try_send
+	// if any data is unsent, buffer it and set m_wfds
+
+	// check output buffer set, set/reset m_wfds accordingly
 	{
-		OnWrite();
+		bool br;
+		bool bw;
+		bool bx;
+		Handler().Get(GetSocket(), br, bw, bx);
+		if (m_obuf.size())
+			Set(br, true);
+		else
+			Set(br, false);
 	}
 }
 
@@ -863,8 +862,7 @@ void TcpSocket::OnLine(const std::string& )
 #endif
 TcpSocket::TcpSocket(const TcpSocket& s)
 :StreamSocket(s)
-,ibuf(*this,0)
-,obuf(*this,0)
+,ibuf(0)
 {
 }
 #ifdef _WIN32
@@ -1336,7 +1334,10 @@ size_t TcpSocket::GetInputLength()
 
 size_t TcpSocket::GetOutputLength()
 {
-	return obuf.GetLength();
+	size_t len = 0;
+	for (output_l::iterator it = m_obuf.begin(); it != m_obuf.end(); it++)
+		len += (*it) -> Len();
+	return len;
 }
 
 
@@ -1427,9 +1428,8 @@ bool TcpSocket::SetTcpNodelay(bool x)
 }
 
 
-TcpSocket::CircularBuffer::CircularBuffer(Socket& owner,size_t size)
-:m_owner(owner)
-,buf(new char[2 * size])
+TcpSocket::CircularBuffer::CircularBuffer(size_t size)
+:buf(new char[2 * size])
 ,m_max(size)
 ,m_q(0)
 ,m_b(0)
@@ -1449,7 +1449,6 @@ bool TcpSocket::CircularBuffer::Write(const char *s,size_t l)
 {
 	if (m_q + l > m_max)
 	{
-		m_owner.Handler().LogError(&m_owner, "TcpSocket::CircularBuffer::Write", -1, "write buffer overflow");
 		return false; // overflow
 	}
 	m_count += (unsigned long)l;
@@ -1480,7 +1479,6 @@ bool TcpSocket::CircularBuffer::Read(char *s,size_t l)
 {
 	if (l > m_q)
 	{
-		m_owner.Handler().LogError(&m_owner, s ? "TcpSocket::CircularBuffer::Read" : "TcpSocket::CircularBuffer::Write", -1, "attempt to read beyond buffer");
 		return false; // not enough chars
 	}
 	if (m_b + l > m_max) // block crosses circular border
@@ -1552,12 +1550,6 @@ unsigned long TcpSocket::CircularBuffer::ByteCounter(bool clear)
 		return x;
 	}
 	return m_count;
-}
-
-
-Socket& TcpSocket::CircularBuffer::GetOwner() const 
-{ 
-	return m_owner; 
 }
 
 

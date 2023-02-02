@@ -38,6 +38,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 
 #define TCP_BUFSIZE_READ 16400
+#define TCP_OUTPUT_CAPACITY 1024000
 
 
 #ifdef SOCKETS_NAMESPACE
@@ -58,7 +59,7 @@ protected:
 	class CircularBuffer
 	{
 	public:
-		CircularBuffer(Socket& owner,size_t size);
+		CircularBuffer(size_t size);
 		~CircularBuffer();
 
 		/** append l bytes from p to buffer */
@@ -83,10 +84,8 @@ protected:
 		unsigned long ByteCounter(bool clear = false);
 
 	private:
-		Socket& GetOwner() const;
-		CircularBuffer(const CircularBuffer& s) : m_owner( s.GetOwner() ) {}
+		CircularBuffer(const CircularBuffer& s) {}
 		CircularBuffer& operator=(const CircularBuffer& ) { return *this; }
-		Socket& m_owner;
 		char *buf;
 		size_t m_max;
 		size_t m_q;
@@ -94,26 +93,39 @@ protected:
 		size_t m_t;
 		unsigned long m_count;
 	};
-private:
-	/** Dynamic output buffer storage struct. 
+	/** Output buffer struct.
 		\ingroup internal */
-	struct MES {
-		MES( const char *buf_in,size_t len_in)
-		:buf(new  char[len_in])
-		,len(len_in)
-		,ptr(0)
-		{
-			memcpy(buf,buf_in,len);
+	struct OUTPUT {
+		OUTPUT() : _b(0), _t(0), _q(0) {}
+		OUTPUT(const char *buf, size_t len) : _b(0), _t(len), _q(len) {
+			memcpy(_buf, buf, len);
 		}
-		~MES() { delete[] buf; }
-		size_t left() { return len - ptr; }
-		 char *curbuf() { return buf + ptr; }
-		 char *buf;
-		size_t len;
-		size_t ptr;
+		size_t Space() {
+			return TCP_OUTPUT_CAPACITY - _t;
+		}
+		void Add(const char *buf, size_t len) {
+			memcpy(_buf + _t, buf, len);
+			_t += len;
+			_q += len;
+		}
+		size_t Remove(size_t len) {
+			_b += len;
+			_q -= len;
+			return _q;
+		}
+		const char *Buf() {
+			return _buf + _b;
+		}
+		size_t Len() {
+			return _q;
+		}
+		size_t _b;
+		size_t _t;
+		size_t _q;
+		char _buf[TCP_OUTPUT_CAPACITY];
 	};
-	/** Dynamic output buffer list. */
-	typedef std::list<MES *> ucharp_v;
+	typedef std::list<OUTPUT *> output_l;
+
 public:
 	/** Constructor with standard values on input/output buffers. */
 	TcpSocket(ISocketHandler& );
@@ -176,6 +188,8 @@ public:
 		\param len Length of the data */
 	virtual void OnRawData(const char *buf,size_t len);
 
+	/** Called when output buffer has been sent. */
+	virtual void OnWriteComplete();
 	/** Number of bytes in input buffer. */
 	size_t GetInputLength();
 	/** Number of bytes in output buffer. */
@@ -265,20 +279,27 @@ static	int SSL_password_cb(char *buf,int num,int rwflag,void *userdata);
 #endif
 
 	CircularBuffer ibuf; ///< Circular input buffer
-	CircularBuffer obuf; ///< Circular output buffer
 
 private:
 	TcpSocket& operator=(const TcpSocket& ) { return *this; }
+
+	/** the actual send() */
+	int TryWrite(const char *buf, size_t len);
+	/** add data to output buffer top */
+	void Buffer(const char *buf, size_t len);
+
+	//
 	bool m_b_input_buffer_disabled;
 	uint64_t m_bytes_sent;
 	uint64_t m_bytes_received;
 	bool m_skip_c; ///< Skip second char of CRLF or LFCR sequence in OnRead
 	char m_c; ///< First char in CRLF or LFCR sequence
 	std::string m_line; ///< Current line in line protocol mode
-	ucharp_v m_mes; ///< overflow protection, dynamic output buffer
 #ifdef SOCKETS_DYNAMIC_TEMP
 	char *m_buf; ///< temporary read buffer
 #endif
+	output_l m_obuf; ///< output buffer
+	OUTPUT *m_obuf_top; ///< output buffer on top
 
 #ifdef HAVE_OPENSSL
 static	SSLInitializer m_ssl_init;
