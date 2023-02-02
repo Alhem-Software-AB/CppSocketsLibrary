@@ -153,7 +153,7 @@ namespace SOCKETS_NAMESPACE {
 #elif defined MACOSX 
 // ----------------------------------------
 // Mac OS X
-#include <string.h>
+//#include <string.h>
 #ifdef __DARWIN_UNIX03
 typedef unsigned short port_t;
 #else

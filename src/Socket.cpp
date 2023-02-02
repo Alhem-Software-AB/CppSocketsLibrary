@@ -559,6 +559,11 @@ void Socket::OnDisconnect()
 }
 
 
+void Socket::OnDisconnect(short, int)
+{
+}
+
+
 void Socket::SetLost()
 {
 	m_bLost = true;

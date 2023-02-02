@@ -106,8 +106,10 @@ void EventHandler::CheckEvents()
 		}
 		for (it = m_events.begin(); it != m_events.end(); ++it)
 			if (*it == e)
+			{
+				delete e;
 				break;
-		delete e;
+			}
 		if (it != m_events.end())
 			m_events.erase(it);
 		it = m_events.begin();

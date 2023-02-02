@@ -36,6 +36,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "socket_include.h"
 #include <map>
 #include <string>
+#include <cstring>
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
@@ -65,9 +66,7 @@ class Utility
 	};
 	class ncmap_compare {
 	public:
-		bool operator()(const std::string& x, const std::string& y) const {
-			return strcasecmp(x.c_str(), y.c_str()) < 0;
-		}
+		bool operator()(const std::string& x, const std::string& y) const;
 	};
 public:
 	template<typename Y> class ncmap : public std::map<std::string, Y, ncmap_compare> {
@@ -76,34 +75,8 @@ public:
 	};
 	class Uri {
 	public:
-		Uri(const std::string& url) : m_url(url), m_port(0), m_path(url) {
-			size_t pos = url.find("://");
-			if (pos != std::string::npos)
-			{
-				m_protocol = Utility::ToLower(url.substr(0, pos));
-				m_port = (m_protocol == "http") ? 80 :
-					(m_protocol == "https") ? 443 : 0;
-				m_host = url.substr(pos + 3);
-				pos = m_host.find("/");
-				if (pos != std::string::npos)
-				{
-					m_path = m_host.substr(pos);
-					m_host = m_host.substr(0, pos);
-				}
-				pos = m_host.find(":");
-				if (pos != std::string::npos)
-				{
-					m_port = atoi(m_host.substr(pos + 1).c_str());
-					m_host = m_host.substr(0, pos);
-				}
-			}
-			pos = std::string::npos;
-			for (size_t i = 0; i < m_path.size(); i++)
-				if (m_path[i] == '.')
-					pos = i;
-			if (pos != std::string::npos)
-				m_ext = m_path.substr(pos + 1);
-		}
+		Uri(const std::string& url);
+
 		const std::string Url() { return m_url; }
 		const std::string Protocol() { return m_protocol; }
 		const std::string Host() { return m_host; }

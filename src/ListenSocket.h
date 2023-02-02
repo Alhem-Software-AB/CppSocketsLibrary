@@ -270,6 +270,12 @@ public:
 		{
 			return -1;
 		}
+		// socket must be nonblocking for async connect
+		if (!SetNonblocking(true, s))
+		{
+			closesocket(s);
+			return -1;
+		}
 		if (bind(s, ad, ad) == -1)
 		{
 			Handler().LogError(this, "bind", Errno, StrError(Errno), LOG_LEVEL_FATAL);
@@ -309,93 +315,105 @@ public:
 	void OnRead()
 	{
 		struct sockaddr sa;
-		socklen_t sa_len = sizeof(struct sockaddr);
-		SOCKET a_s = accept(GetSocket(), &sa, &sa_len);
+		int max = 10; // process max 10 incoming connection in one call
+		while (max--)
+		{
+			socklen_t sa_len = sizeof(struct sockaddr);
+			SOCKET a_s = accept(GetSocket(), &sa, &sa_len);
 
-		if (a_s == INVALID_SOCKET)
-		{
-			Handler().LogError(this, "accept", Errno, StrError(Errno), LOG_LEVEL_ERROR);
-			return;
-		}
-		if (!Handler().OkToAccept(this))
-		{
-			Handler().LogError(this, "accept", -1, "Not OK to accept", LOG_LEVEL_WARNING);
-			closesocket(a_s);
-			return;
-		}
-		if (Handler().GetCount() >= FD_SETSIZE)
-		{
-			Handler().LogError(this, "accept", (int)Handler().GetCount(), "ISocketHandler fd_set limit reached", LOG_LEVEL_FATAL);
-			closesocket(a_s);
-			return;
-		}
-		Socket *tmp = m_bHasCreate ? m_creator -> Create() : new X(Handler());
-#ifdef ENABLE_IPV6
-		tmp -> SetIpv6( IsIpv6() );
+			if (a_s == INVALID_SOCKET)
+			{
+				// EAGAIN or EWOULDBLOCK
+#ifdef _WIN32
+				if (Errno != WSAEWOULDBLOCK)
+#else
+				if (Errno != EWOULDBLOCK)
 #endif
-		tmp -> SetParent(this);
-		tmp -> Attach(a_s);
-		tmp -> SetNonblocking(true);
-		{
+				{
+					Handler().LogError(this, "accept", Errno, StrError(Errno), LOG_LEVEL_ERROR);
+				}
+				return;
+			}
+			if (!Handler().OkToAccept(this))
+			{
+				Handler().LogError(this, "accept", -1, "Not OK to accept", LOG_LEVEL_WARNING);
+				closesocket(a_s);
+				return;
+			}
+			if (Handler().GetCount() >= FD_SETSIZE)
+			{
+				Handler().LogError(this, "accept", (int)Handler().GetCount(), "ISocketHandler fd_set limit reached", LOG_LEVEL_FATAL);
+				closesocket(a_s);
+				return;
+			}
+			Socket *tmp = m_bHasCreate ? m_creator -> Create() : new X(Handler());
+#ifdef ENABLE_IPV6
+			tmp -> SetIpv6( IsIpv6() );
+#endif
+			tmp -> SetParent(this);
+			tmp -> Attach(a_s);
+			tmp -> SetNonblocking(true);
+			{
 #ifdef ENABLE_IPV6
 #ifdef IPPROTO_IPV6
-			if (sa_len == sizeof(struct sockaddr_in6))
-			{
-				struct sockaddr_in6 *p = (struct sockaddr_in6 *)&sa;
-				if (p -> sin6_family == AF_INET6)
+				if (sa_len == sizeof(struct sockaddr_in6))
 				{
-					Ipv6Address ad(p -> sin6_addr,ntohs(p -> sin6_port));
-					ad.SetFlowinfo(p -> sin6_flowinfo);
+					struct sockaddr_in6 *p = (struct sockaddr_in6 *)&sa;
+					if (p -> sin6_family == AF_INET6)
+					{
+						Ipv6Address ad(p -> sin6_addr,ntohs(p -> sin6_port));
+						ad.SetFlowinfo(p -> sin6_flowinfo);
 #ifndef _WIN32
-					ad.SetScopeId(p -> sin6_scope_id);
+						ad.SetScopeId(p -> sin6_scope_id);
 #endif
-					tmp -> SetRemoteAddress(ad);
+						tmp -> SetRemoteAddress(ad);
+					}
 				}
-			}
 #endif
 #endif
-			if (sa_len == sizeof(struct sockaddr_in))
-			{
-				struct sockaddr_in *p = (struct sockaddr_in *)&sa;
-				if (p -> sin_family == AF_INET)
+				if (sa_len == sizeof(struct sockaddr_in))
 				{
-					Ipv4Address ad(p -> sin_addr,ntohs(p -> sin_port));
-					tmp -> SetRemoteAddress(ad);
+					struct sockaddr_in *p = (struct sockaddr_in *)&sa;
+					if (p -> sin_family == AF_INET)
+					{
+						Ipv4Address ad(p -> sin_addr,ntohs(p -> sin_port));
+						tmp -> SetRemoteAddress(ad);
+					}
 				}
 			}
-		}
-		tmp -> SetConnected(true);
-		tmp -> Init();
-		tmp -> SetDeleteByHandler(true);
-		Handler().Add(tmp);
+			tmp -> SetConnected(true);
+			tmp -> Init();
+			tmp -> SetDeleteByHandler(true);
+			Handler().Add(tmp);
 #ifdef HAVE_OPENSSL
-		if (tmp -> IsSSL()) // SSL Enabled socket
-		{
-			// %! OnSSLAccept calls SSLNegotiate that can finish in this one call.
-			// %! If that happens and negotiation fails, the 'tmp' instance is
-			// %! still added to the list of active sockets in the sockethandler.
-			// %! See bugfix for this in SocketHandler::Select - don't Set rwx
-			// %! flags if CloseAndDelete() flag is true.
-			// %! An even better fugbix (see TcpSocket::OnSSLAccept) now avoids
-			// %! the Add problem altogether, so ignore the above.
-			// %! (OnSSLAccept does no longer call SSLNegotiate().)
-			tmp -> OnSSLAccept();
-		}
-		else
+			if (tmp -> IsSSL()) // SSL Enabled socket
+			{
+				// %! OnSSLAccept calls SSLNegotiate that can finish in this one call.
+				// %! If that happens and negotiation fails, the 'tmp' instance is
+				// %! still added to the list of active sockets in the sockethandler.
+				// %! See bugfix for this in SocketHandler::Select - don't Set rwx
+				// %! flags if CloseAndDelete() flag is true.
+				// %! An even better fugbix (see TcpSocket::OnSSLAccept) now avoids
+				// %! the Add problem altogether, so ignore the above.
+				// %! (OnSSLAccept does no longer call SSLNegotiate().)
+				tmp -> OnSSLAccept();
+			}
+			else
 #endif
-		{
-			tmp -> OnAccept();
-		}
+			{
+				tmp -> OnAccept();
+			}
+		} // while (true)
 	}
 
 	/** Please don't use this method.
 		"accept()" is handled automatically in the OnRead() method. */
-        virtual SOCKET Accept(SOCKET socket, struct sockaddr *saptr, socklen_t *lenptr)
-        {
-                return accept(socket, saptr, lenptr);
-        }
+	virtual SOCKET Accept(SOCKET socket, struct sockaddr *saptr, socklen_t *lenptr)
+	{
+		return accept(socket, saptr, lenptr);
+	}
 
-        bool HasCreator() { return m_bHasCreate; }
+	bool HasCreator() { return m_bHasCreate; }
 
 	void OnOptions(int,int,int,SOCKET) {
 		SetSoReuseaddr(true);

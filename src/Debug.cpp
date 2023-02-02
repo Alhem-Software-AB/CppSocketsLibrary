@@ -1,5 +1,6 @@
 #include "Debug.h"
 #include <stdarg.h>
+#include <cstring>
 
 
 #ifdef SOCKETS_NAMESPACE

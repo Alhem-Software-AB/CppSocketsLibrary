@@ -36,6 +36,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #undef ENABLE_DETACH
 #undef ENABLE_TRIGGERS
 #undef ENABLE_EXCEPTIONS
+#undef ENABLE_XML
 #endif // _RUN_DP
 
 
@@ -87,6 +88,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define ENABLE_EXCEPTIONS
 
 
+/* XML classes. */
+//#define ENABLE_XML
+
+
 /* Resolver uses the detach function so either enable both or disable both. */
 #ifndef ENABLE_DETACH
 #undef ENABLE_RESOLVER
@@ -94,4 +99,3 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 
 #endif // _SOCKETS_CONFIG_H
-

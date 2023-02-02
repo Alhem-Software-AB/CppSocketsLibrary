@@ -714,3 +714,13 @@ Version 2.2.9a
 7a8
 > Changelog
 
+Version 2.3
+--------------------------
+111a112,117
+> XmlDocument.cpp
+> XmlDocument.h
+> XmlException.cpp
+> XmlException.h
+> XmlNode.cpp
+> XmlNode.h
+

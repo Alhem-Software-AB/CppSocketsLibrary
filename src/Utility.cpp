@@ -1054,14 +1054,14 @@ std::string Utility::ToString(double d)
 
 unsigned long Utility::Rnd()
 {
-static	Utility::Rng generator( time(NULL) );
+static	Utility::Rng generator( (unsigned long)time(NULL) );
 	return generator.Get();
 }
 
 
 Utility::Rng::Rng(unsigned long seed) : m_value( 0 )
 {
-	m_tmp[0]= seed & 0xffffffffUL;
+	m_tmp[0] = seed & 0xffffffffUL;
 	for (int i = 1; i < TWIST_LEN; i++)
 	{
 		m_tmp[i] = (1812433253UL * (m_tmp[i - 1] ^ (m_tmp[i - 1] >> 30)) + i);
@@ -1094,6 +1094,44 @@ unsigned long Utility::Rng::Get()
 	}
 	return val;
 }
+
+
+bool Utility::ncmap_compare::operator()(const std::string& x, const std::string& y) const
+{
+	return strcasecmp(x.c_str(), y.c_str()) < 0;
+}
+
+
+Utility::Uri::Uri(const std::string& url) : m_url(url), m_port(0), m_path(url)
+{
+	size_t pos = url.find("://");
+	if (pos != std::string::npos)
+	{
+		m_protocol = Utility::ToLower(url.substr(0, pos));
+		m_port = (m_protocol == "http") ? 80 :
+			(m_protocol == "https") ? 443 : 0;
+		m_host = url.substr(pos + 3);
+		pos = m_host.find("/");
+		if (pos != std::string::npos)
+		{
+			m_path = m_host.substr(pos);
+			m_host = m_host.substr(0, pos);
+		}
+		pos = m_host.find(":");
+		if (pos != std::string::npos)
+		{
+			m_port = atoi(m_host.substr(pos + 1).c_str());
+			m_host = m_host.substr(0, pos);
+		}
+	}
+	pos = std::string::npos;
+	for (size_t i = 0; i < m_path.size(); i++)
+		if (m_path[i] == '.')
+			pos = i;
+	if (pos != std::string::npos)
+		m_ext = m_path.substr(pos + 1);
+}
+
 
 #ifdef SOCKETS_NAMESPACE
 }

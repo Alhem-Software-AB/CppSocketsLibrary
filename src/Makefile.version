@@ -1,5 +1,5 @@
-VERSION =	2.2.9a
-DIFF_VERSION =	2.2.9
+VERSION =	2.3
+DIFF_VERSION =	2.2.9a
 
 # Sockets
 OBJS =		\
@@ -45,4 +45,8 @@ OBJS =		\
 		Thread.o \
 		UdpSocket.o \
 		Utility.o \
-		socket_include.o
+		socket_include.o \
+		XmlDocument.o \
+		XmlNode.o \
+		XmlException.o
+

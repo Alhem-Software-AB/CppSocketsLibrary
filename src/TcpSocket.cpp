@@ -454,6 +454,7 @@ void TcpSocket::OnRead()
 			case SSL_ERROR_ZERO_RETURN:
 DEB(				fprintf(stderr, "SSL_read() returns zero - closing socket\n");)
 				OnDisconnect();
+				OnDisconnect(TCP_DISCONNECT_SSL|TCP_DISCONNECT_ERROR, n);
 				SetCloseAndDelete(true);
 				SetFlushBeforeClose(false);
 				SetLost();
@@ -461,6 +462,7 @@ DEB(				fprintf(stderr, "SSL_read() returns zero - closing socket\n");)
 			default:
 DEB(				fprintf(stderr, "SSL read problem, errcode = %d\n",n);)
 				OnDisconnect();
+				OnDisconnect(TCP_DISCONNECT_SSL|TCP_DISCONNECT_ERROR, n);
 				SetCloseAndDelete(true);
 				SetFlushBeforeClose(false);
 				SetLost();
@@ -471,6 +473,7 @@ DEB(				fprintf(stderr, "SSL read problem, errcode = %d\n",n);)
 		if (!n)
 		{
 			OnDisconnect();
+			OnDisconnect(TCP_DISCONNECT_SSL, 0);
 			SetCloseAndDelete(true);
 			SetFlushBeforeClose(false);
 			SetLost();
@@ -503,6 +506,7 @@ DEB(				fprintf(stderr, "SSL read problem, errcode = %d\n",n);)
 		{
 			Handler().LogError(this, "read", Errno, StrError(Errno), LOG_LEVEL_FATAL);
 			OnDisconnect();
+			OnDisconnect(TCP_DISCONNECT_ERROR, Errno);
 			SetCloseAndDelete(true);
 			SetFlushBeforeClose(false);
 			SetLost();
@@ -512,6 +516,7 @@ DEB(				fprintf(stderr, "SSL read problem, errcode = %d\n",n);)
 		if (!n)
 		{
 			OnDisconnect();
+			OnDisconnect(0, 0);
 			SetCloseAndDelete(true);
 			SetFlushBeforeClose(false);
 			SetLost();
@@ -730,6 +735,7 @@ int TcpSocket::TryWrite(const char *buf, size_t len)
 			if ( errnr != SSL_ERROR_WANT_READ && errnr != SSL_ERROR_WANT_WRITE )
 			{
 				OnDisconnect();
+				OnDisconnect(TCP_DISCONNECT_WRITE|TCP_DISCONNECT_ERROR|TCP_DISCONNECT_SSL, errnr);
 				SetCloseAndDelete(true);
 				SetFlushBeforeClose(false);
 				SetLost();
@@ -742,6 +748,7 @@ int TcpSocket::TryWrite(const char *buf, size_t len)
 		if (!n)
 		{
 			OnDisconnect();
+			OnDisconnect(TCP_DISCONNECT_WRITE|TCP_DISCONNECT_SSL, 0);
 			SetCloseAndDelete(true);
 			SetFlushBeforeClose(false);
 			SetLost();
@@ -767,6 +774,7 @@ DEB(			int errnr = SSL_get_error(m_ssl, n);
 			{	
 				Handler().LogError(this, "send", Errno, StrError(Errno), LOG_LEVEL_FATAL);
 				OnDisconnect();
+				OnDisconnect(TCP_DISCONNECT_WRITE|TCP_DISCONNECT_ERROR, Errno);
 				SetCloseAndDelete(true);
 				SetFlushBeforeClose(false);
 				SetLost();
@@ -1712,6 +1720,51 @@ void TcpSocket::SetTransferLimit(size_t sz)
 
 void TcpSocket::OnTransferLimit()
 {
+}
+
+
+TcpSocket::OUTPUT::OUTPUT() : _b(0), _t(0), _q(0)
+{
+}
+
+
+TcpSocket::OUTPUT::OUTPUT(const char *buf, size_t len) : _b(0), _t(len), _q(len)
+{
+	memcpy(_buf, buf, len);
+}
+
+
+size_t TcpSocket::OUTPUT::Space()
+{
+	return TCP_OUTPUT_CAPACITY - _t;
+}
+
+
+void TcpSocket::OUTPUT::Add(const char *buf, size_t len)
+{
+	memcpy(_buf + _t, buf, len);
+	_t += len;
+	_q += len;
+}
+
+
+size_t TcpSocket::OUTPUT::Remove(size_t len)
+{
+	_b += len;
+	_q -= len;
+	return _q;
+}
+
+
+const char *TcpSocket::OUTPUT::Buf()
+{
+	return _buf + _b;
+}
+
+
+size_t TcpSocket::OUTPUT::Len()
+{
+	return _q;
 }
 
 

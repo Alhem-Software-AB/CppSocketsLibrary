@@ -274,6 +274,13 @@ public:
 #endif
 	/** TcpSocket: When a disconnect has been detected (recv/SSL_read returns 0 bytes). */
 	virtual void OnDisconnect();
+	/** TcpSocket: When a disconnect has been detected (recv/SSL_read returns 0 bytes). 
+		\param info bit 0 read(0)/write(1)
+		            bit 1 normal(read or write returned 0)/error(r/w returned -1)
+		            bit 2 ssl
+		\param code error code from read/write call (errno / ssl error)
+	*/
+	virtual void OnDisconnect(short info, int code);
 	/** Timeout callback. */
 	virtual void OnTimeout();
 	/** Connection timeout. */

@@ -40,6 +40,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define TCP_BUFSIZE_READ 16400
 #define TCP_OUTPUT_CAPACITY 1024000
 
+// flags used in OnDisconnect callback
+#define TCP_DISCONNECT_WRITE 1
+#define TCP_DISCONNECT_ERROR 2
+#define TCP_DISCONNECT_SSL   4
+
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
@@ -96,29 +101,14 @@ protected:
 	/** Output buffer struct.
 		\ingroup internal */
 	struct OUTPUT {
-		OUTPUT() : _b(0), _t(0), _q(0) {}
-		OUTPUT(const char *buf, size_t len) : _b(0), _t(len), _q(len) {
-			memcpy(_buf, buf, len);
-		}
-		size_t Space() {
-			return TCP_OUTPUT_CAPACITY - _t;
-		}
-		void Add(const char *buf, size_t len) {
-			memcpy(_buf + _t, buf, len);
-			_t += len;
-			_q += len;
-		}
-		size_t Remove(size_t len) {
-			_b += len;
-			_q -= len;
-			return _q;
-		}
-		const char *Buf() {
-			return _buf + _b;
-		}
-		size_t Len() {
-			return _q;
-		}
+		OUTPUT();
+		OUTPUT(const char *buf, size_t len);
+		size_t Space();
+		void Add(const char *buf, size_t len);
+		size_t Remove(size_t len);
+		const char *Buf();
+		size_t Len();
+
 		size_t _b;
 		size_t _t;
 		size_t _q;
