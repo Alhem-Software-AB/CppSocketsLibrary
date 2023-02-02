@@ -1,4 +1,4 @@
-VERSION =	1.3
+VERSION =	1.3.1
 
 INCLUDE =	-I/usr/devel/include -I.
 CFLAGS =	-Wall -g -O2 $(INCLUDE) -MD -D_VERSION='"$(VERSION)"' 
@@ -52,4 +52,10 @@ tar:		clean
 		./mkdot.sh
 		tar czf /usr/local/apache/www.alhem.net/htdocs/Sockets/Sockets-$(VERSION).tar.gz *.h *.cpp Makefile Project/*.dsp
 		cp Changelog /usr/local/apache/www.alhem.net/htdocs/Sockets
+		doxygen doxygen.cfg
+
+docs:		clean
+		rm -f Mutex.*
+		rm -f MinderSocket_T.h
+		./mkdot.sh
 		doxygen doxygen.cfg

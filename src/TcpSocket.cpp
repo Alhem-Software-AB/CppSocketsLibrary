@@ -27,16 +27,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <stdio.h>
 #include <fcntl.h>
 #include <errno.h>
-#include <string>
-#include <vector>
-#include <map>
+//#include <string>
+//#include <vector>
+//#include <map>
 #include <assert.h>
 
-#include "socket_include.h"
+//#include "socket_include.h"
 #include "SocketHandler.h"
 #include "TcpSocket.h"
 
-using std::string;
 
 #ifdef _DEBUG
 #define DEB(x) x
@@ -109,7 +108,7 @@ bool TcpSocket::Open(ipaddr_t ip,port_t port)
 }
 
 
-bool TcpSocket::Open(const string &host,port_t port)
+bool TcpSocket::Open(const std::string &host,port_t port)
 {
 	SOCKET s = CreateSocket(SOCK_STREAM);
 	if (s == -1)
@@ -269,7 +268,7 @@ DEB(		printf(" %d bytes written\n",n);)
 }
 
 
-void TcpSocket::Send(const string &str)
+void TcpSocket::Send(const std::string &str)
 {
 	SendBuf(str.c_str(),str.size());
 }

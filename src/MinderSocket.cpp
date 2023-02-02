@@ -24,16 +24,17 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #pragma warning(disable:4786)
 #endif
 #include <stdio.h>
-#include <string>
-#include <vector>
-#include <map>
+//#include <string>
+//#include <vector>
+//#include <map>
 
-#include "socket_include.h"
+//#include "socket_include.h"
 
-#include "SocketHandler.h"
-#include "Parse.h"
+//#include "SocketHandler.h"
+//#include "Parse.h"
 #include "MinderHandler.h"
-#include "MinionSocket.h"
+//#include "MinionSocket.h"
+#include "Utility.h"
 #include "MinderSocket.h"
 
 #ifdef _DEBUG

@@ -23,11 +23,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef _MINIONSOCKET_H
 #define _MINIONSOCKET_H
 
-#include <string>
-#include <vector>
+//#include <string>
+//#include <vector>
 #include "CTcpSocket.h"
 #include "Parse.h"
-#include "Utility.h"
+//#include "Utility.h"
 
 
 class ICrypt;

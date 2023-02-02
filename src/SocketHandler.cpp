@@ -24,13 +24,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifdef _WIN32
 #pragma warning(disable:4786)
 #endif
-#include <string>
-#include <vector>
-#include <map>
-#include <time.h>
-#include "socket_include.h"
+//#include <string>
+//#include <vector>
+//#include <map>
+//#include <time.h>
+//#include "socket_include.h"
 
-#include "Socket.h"
+//#include "Socket.h"
 #include "TcpSocket.h"
 #include "SocketHandler.h"
 #include "UdpSocket.h"
@@ -47,6 +47,7 @@ SocketHandler::SocketHandler()
 ,m_host("")
 ,m_ip(0)
 ,m_preverror(-1)
+,m_slave(false)
 {
 	struct hostent *he;
 	char h[256];
@@ -82,14 +83,17 @@ SocketHandler::SocketHandler()
 
 SocketHandler::~SocketHandler()
 {
-	for (socket_m::iterator it = m_sockets.begin(); it != m_sockets.end(); it++)
+	if (!m_slave)
 	{
-		Socket *p = (*it).second;
-		p -> Close();
-//		p -> OnDelete();
-		if (p -> DeleteByHandler())
+		for (socket_m::iterator it = m_sockets.begin(); it != m_sockets.end(); it++)
 		{
-			delete p;
+			Socket *p = (*it).second;
+			p -> Close();
+//			p -> OnDelete();
+			if (p -> DeleteByHandler())
+			{
+				delete p;
+			}
 		}
 	}
 }
@@ -97,6 +101,7 @@ SocketHandler::~SocketHandler()
 
 void SocketHandler::Add(Socket *p)
 {
+DEB(	printf("%s: add socket %d\n",m_slave ? "slave" : "master",p -> GetSocket());)
 	m_add[p -> GetSocket()] = p;
 	if (p -> Connecting())
 		Set(p -> GetSocket(),false,true);
@@ -177,6 +182,8 @@ DEB(
 ) // DEB
 #else
 		perror("select() failed");
+DEB(		printf("slave: %s\n",m_slave ? "YES" : "NO");
+		exit(-1);)
 #endif
 	}
 	else
@@ -188,7 +195,8 @@ DEB(
 			Socket *p = (*it2).second;
 			if (p)
 			{
-				if (!p -> IsDetached() )
+//				if (!p -> IsDetached() || m_slave)
+				// always
 				{
 					if (p -> SSLConnecting())
 					{
@@ -235,29 +243,25 @@ DEB(									printf("calling OnConnect\n");)
 			} // if (p)
 		} // for
 	}
-	for (socket_m::iterator it3 = m_sockets.begin(); it3 != m_sockets.end(); it3++)
+
+	bool repeat;
+	do
 	{
-		SOCKET s = (*it3).first;
-		Socket *p = (*it3).second;
-		if (p)
+		repeat = false;
+		for (socket_m::iterator it3 = m_sockets.begin(); it3 != m_sockets.end(); it3++)
 		{
-			if (p -> IsDetach()) // socket.m_detach )
+//			SOCKET s = (*it3).first;
+			Socket *p = (*it3).second;
+			if (p)
 			{
-				Set(s, false, false, false);
-				p -> SetDetached(true); //socket.m_detached = true;
-				// %! check m_detached in loops above(below)
-				p -> SetDeleteByHandler(false); //socket.SetDeleteByHandler(false)
-				p -> DetachSocket(); //socket.DetachSocket;
-			}
-			else
-			if (p -> IsDetached()) // socket.m_detached ) // && !socket.m_detach
-			{
-				// Set(s, ?
-				p -> SetDetached(false); //socket.m_detached = false;
-				p -> SetDeleteByHandler(); //socket.SetDeleteByHandler();
-			}
-			if (!p -> IsDetached())
-			{
+				if (!m_slave && p -> IsDetach())
+				{
+					Set(p -> GetSocket(), false, false, false);
+					p -> DetachSocket();
+					m_sockets.erase(it3);
+					repeat = true;
+					break;
+				}
 /*
 				if (p && p -> Timeout() && p -> Inactive() > p -> Timeout())
 				{
@@ -266,11 +270,12 @@ DEB(									printf("calling OnConnect\n");)
 */
 				if (p && p -> Connecting() && p -> GetConnectTime() > 5)
 				{
-//					fprintf(stderr,"Connect timeout - removing socket\n");
+//						fprintf(stderr,"Connect timeout - removing socket\n");
 					p -> SetCloseAndDelete(true);
 				}
 				if (p && p -> CloseAndDelete() )
 				{
+DEB(printf("%s: calling Close for socket %d\n",m_slave ? "slave" : "master",s);)
 					Set(p -> GetSocket(),false,false,false);
 					p -> Close();
 					p -> OnDelete();
@@ -279,11 +284,21 @@ DEB(									printf("calling OnConnect\n");)
 						delete p;
 					}
 					m_sockets.erase(it3);
+					repeat = true;
 					break;
 				}
+			} // if (p)
+		}
+		if (repeat)
+		{
+			m_maxsock = 0;
+			for (socket_m::iterator it3 = m_sockets.begin(); it3 != m_sockets.end(); it3++)
+			{
+				SOCKET s = (*it3).first;
+				m_maxsock = s > m_maxsock ? s : m_maxsock;
 			}
 		}
-	}
+	} while (repeat);
 	return n;
 }
 

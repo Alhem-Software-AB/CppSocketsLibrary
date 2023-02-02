@@ -23,9 +23,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef _HTTPSGETSOCKET_H
 #define _HTTPSGETSOCKET_H
 
-#include <string>
+//#include <string>
 #include "HttpsSocket.h"
-#include "Utility.h"
+//#include "Utility.h"
 
 
 class HttpsGetSocket : public HttpsSocket

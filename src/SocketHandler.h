@@ -97,6 +97,7 @@ public:
 */
 
 	size_t GetCount() { return m_sockets.size(); }
+	void SetSlave(bool x = true) { m_slave = x; }
 
 protected:
 	socket_m m_sockets;
@@ -111,6 +112,7 @@ private:
 	fd_set m_wfds;
 	fd_set m_efds;
 	int m_preverror;
+	bool m_slave;
 };
 
 

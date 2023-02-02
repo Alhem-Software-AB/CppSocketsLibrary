@@ -23,12 +23,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef _MINION_MINDERHANDLER_H
 #define _MINION_MINDERHANDLER_H
 
-#include <string>
-#include <time.h>
+//#include <string>
+//#include <time.h>
 #include "SocketHandler.h"
 #include "MinionSocket.h" // for SendMessage ( to other minions )
-#include "Utility.h"
-
+//#include "Utility.h"
+#include "Base64.h"
 
 
 

@@ -33,6 +33,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "Parse.h"
 #include "MinderHandler.h"
 #include "Uid.h"
+#include "Utility.h"
 #include "MinionSocket.h"
 
 using std::string;

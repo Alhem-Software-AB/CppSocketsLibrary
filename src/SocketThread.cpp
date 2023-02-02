@@ -24,7 +24,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "SocketThread.h"
 
-
+//#define DEB(x) x; fflush(stdout);
+#define DEB(x)
 
 
 SocketThread::SocketThread(Socket& p)
@@ -32,25 +33,33 @@ SocketThread::SocketThread(Socket& p)
 ,m_socket(p)
 {
 	// Creator will release
+DEB(	printf("SocketThread()\n");)
 }
 
 
 SocketThread::~SocketThread()
 {
+DEB(	printf("~SocketThread()\n");)
 }
 
 
 void SocketThread::Run()
 {
 	SocketHandler h;
+	h.SetSlave();
 	h.Add(&m_socket);
+DEB(	printf("slave: OnDetached()\n");)
 	m_socket.OnDetached();
+DEB(	printf("slave: first select\n");)
 	h.Select(1,0);
-	while (m_socket.Ready() && IsRunning())
+	while (h.GetCount()) //m_socket.Ready() && IsRunning())
 	{
+DEB(		printf("slave: select\n");)
 		h.Select(1,0);
 	}
-	m_socket.SetDetach(false);
+	// m_socket now deleted oops
+DEB(	printf("slave: SetDetach( false )\n");)
+//	m_socket.SetDetach(false);
 }
 
 

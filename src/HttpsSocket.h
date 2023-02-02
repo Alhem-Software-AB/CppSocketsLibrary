@@ -23,8 +23,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef _HttpsSOCKET_H
 #define _HttpsSOCKET_H
 
-#include <map>
-#include <string>
+//#include <map>
+//#include <string>
 #include "SSLSocket.h"
 
 

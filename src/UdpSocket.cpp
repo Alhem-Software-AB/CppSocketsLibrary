@@ -24,14 +24,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #pragma warning(disable:4786)
 #endif
 #include <stdio.h>
-#include <string>
-#include <vector>
+//#include <string>
+//#include <vector>
 #include <map>
 
-#include "socket_include.h"
+//#include "socket_include.h"
 #include "UdpSocket.h"
 
-using std::string;
 
 #ifdef _DEBUG
 #define DEB(x) x
@@ -86,7 +85,7 @@ SOCKET UdpSocket::Bind(port_t &port,int range)
 }
 
 
-void UdpSocket::SendTo(const string &str)
+void UdpSocket::SendTo(const std::string &str)
 {
 	// sendto()...
 

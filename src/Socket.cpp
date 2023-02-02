@@ -25,10 +25,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #endif
 #include <stdio.h>
 #include <ctype.h>
-#include <string>
+//#include <string>
 #include <fcntl.h>
-#include <time.h>
-#include "socket_include.h"
+//#include <time.h>
+//#include "socket_include.h"
 #include "Parse.h"
 #include "SocketHandler.h"
 #include "SocketThread.h"
