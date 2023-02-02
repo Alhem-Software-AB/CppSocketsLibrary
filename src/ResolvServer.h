@@ -1,6 +1,6 @@
 /**
- **	File ......... Thread.h
- **	Published ....  2004-10-30
+ **	File ......... ResolvServer.h
+ **	Published ....  2005-03-24
  **	Author ....... grymse@alhem.net
 **/
 /*
@@ -20,45 +20,30 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
-#ifndef _THREAD_H
-#define _THREAD_H
+#ifndef _RESOLVSERVER_H
+#define _RESOLVSERVER_H
 
-#ifdef _WIN32
-// to be
-typedef void * threadfunc_t;
-#else
-#include <pthread.h>
-
-typedef void * threadfunc_t;
-#endif
+#include <Thread.h>
 
 
-class Thread
+class ResolvServer : public Thread
 {
 public:
-	Thread(bool release = true);
-	virtual ~Thread();
+	ResolvServer(port_t);
+	~ResolvServer();
 
-	static threadfunc_t StartThread(void *);
-
-	virtual void Run() = 0;
-
-	bool IsRunning();
-	void SetRunning(bool x);
-	bool IsReleased();
-	void SetRelease(bool x);
+	void Run();
+	void Quit();
 
 private:
-	Thread(const Thread& ) {}
-	Thread& operator=(const Thread& ) { return *this; }
-#ifdef _WIN32
-	int m_thread;
-#else
-	pthread_t m_thread;
-#endif
-	bool m_running;
-	bool m_release;
+	ResolvServer(const ResolvServer& ) {} // copy constructor
+	ResolvServer& operator=(const ResolvServer& ) { return *this; } // assignment operator
+
+	bool m_quit;
+	port_t m_port;
 };
 
 
-#endif // _THREAD_H
+
+
+#endif // _RESOLVSERVER_H

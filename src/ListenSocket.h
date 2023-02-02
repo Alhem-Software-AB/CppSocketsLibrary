@@ -36,7 +36,22 @@ template <class X>
 class ListenSocket : public Socket
 {
 public:
-	ListenSocket(SocketHandler& h) : Socket(h), m_port(0), m_depth(0) {}
+	ListenSocket(SocketHandler& h) : Socket(h), m_port(0), m_depth(0), m_creator(NULL)
+	,m_bHasCreate(false) {
+		m_creator = new X(h);
+		Socket *tmp = m_creator -> Create();
+		if (tmp && dynamic_cast<X *>(tmp))
+		{
+			m_bHasCreate = true;
+		}
+		if (tmp)
+		{
+			delete tmp;
+		}
+	}
+	~ListenSocket() {
+		delete m_creator;
+	}
 
 	/** bind() to port 0 - a random port */
 	int Bind()
@@ -259,7 +274,11 @@ public:
 				Handler().LogError(this, "accept", Errno, StrError(Errno), LOG_LEVEL_ERROR);
 				return;
 			}
-			X *tmp = new X(Handler());
+			Socket *tmp;
+			if (m_bHasCreate)
+				tmp = m_creator -> Create();
+			else
+				tmp = new X(Handler());
 			tmp -> SetIpv6();
 			tmp -> Init();
 			tmp -> SetParent(this);
@@ -289,7 +308,11 @@ public:
 			Handler().LogError(this, "accept", Errno, StrError(Errno), LOG_LEVEL_ERROR);
 			return;
 		}
-		X *tmp = new X(Handler());
+		Socket *tmp;
+		if (m_bHasCreate)
+			tmp = m_creator -> Create();
+		else
+			tmp = new X(Handler());
 		tmp -> Init();
 		tmp -> SetParent(this);
 		tmp -> Attach(a_s);
@@ -313,6 +336,8 @@ private:
 	ListenSocket& operator=(const ListenSocket& ) { return *this; }
 	port_t m_port;
 	int m_depth;
+	Socket *m_creator;
+	bool m_bHasCreate;
 };
 
 

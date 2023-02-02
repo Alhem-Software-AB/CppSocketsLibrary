@@ -1,4 +1,4 @@
-VERSION =	1.7.6
+VERSION =	1.8
 
 INCLUDE =	-I/usr/devel/include -I.
 PREFIX =	/usr/local
@@ -53,7 +53,8 @@ OBJS =		CircularBuffer.o \
 		HttpDebugSocket.o \
 		Utility.o \
 		PoolSocket.o \
-		ListenSocketBase.o
+		ResolvServer.o \
+		ResolvSocket.o
 
 libSockets.a:	$(OBJS)
 		ar cru $@ $(OBJS)
@@ -91,6 +92,7 @@ tar:		clean
 		rm -f MinderSocket_T.h
 		rm -f uuid.h
 		rm -f Stdin.*
+		rm -f ListenSocketBase.*
 		./mkdot.sh
 		tar czf Sockets-$(VERSION).tar.gz $(FILES)
 		zip -l Sockets-$(VERSION).zip $(FILES)
@@ -105,5 +107,6 @@ docs:		clean
 		rm -f uuid.h
 		rm -f Stdin.*
 		rm sockets_test.cpp
+		rm -f ListenSocketBase.*
 		./mkdot.sh
 		doxygen doxygen.cfg

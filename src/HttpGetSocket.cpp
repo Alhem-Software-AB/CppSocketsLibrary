@@ -165,6 +165,8 @@ void HttpGetSocket::OnFirst()
 
 void HttpGetSocket::OnHeader(const std::string& key,const std::string& value)
 {
+	m_content += key + ": " + value + "\n";
+
 	if (!strcasecmp(key.c_str(),"content-type"))
 	{
 		m_content_type = value;
@@ -179,6 +181,8 @@ void HttpGetSocket::OnHeader(const std::string& key,const std::string& value)
 
 void HttpGetSocket::OnHeaderComplete()
 {
+	m_content += "\n";
+
 	m_fil = fopen(m_to_file.c_str(),"wb");
 	if (!m_fil)
 	{
@@ -190,6 +194,8 @@ void HttpGetSocket::OnHeaderComplete()
 
 void HttpGetSocket::OnData(const char *buf,size_t len)
 {
+	m_content += static_cast<std::string>(buf).substr(0,len);
+
 	if (m_fil)
 	{
 		fwrite(buf,1,len,m_fil);

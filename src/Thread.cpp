@@ -1,3 +1,25 @@
+/**
+ **	File ......... Thread.cpp
+ **	Published ....  2004-10-30
+ **	Author ....... grymse@alhem.net
+**/
+/*
+Copyright (C) 2004  Anders Hedstrom
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+*/
 #include <stdio.h>
 #ifdef _WIN32
 #include "socket_include.h"
@@ -39,12 +61,12 @@ Thread::~Thread()
 		SetRelease(true);
 
 #ifdef _WIN32
-    struct timeval tv;
-    tv.tv_sec = 0;
-    tv.tv_usec = 100000;
-    select(0,NULL,NULL,NULL,&tv);
+		struct timeval tv;
+		tv.tv_sec = 0;
+		tv.tv_usec = 100000;
+		select(0,NULL,NULL,NULL,&tv);
 #else
-    sleep(1);
+		sleep(1);
 #endif
 	}
 }
@@ -57,12 +79,12 @@ threadfunc_t Thread::StartThread(void *zz)
 	while (pclThread -> m_running && !pclThread -> m_release)
 	{
 #ifdef _WIN32
-    struct timeval tv;
-    tv.tv_sec = 0;
-    tv.tv_usec = 100000;
-    select(0,NULL,NULL,NULL,&tv);
+		struct timeval tv;
+		tv.tv_sec = 0;
+		tv.tv_usec = 100000;
+		select(0,NULL,NULL,NULL,&tv);
 #else
-    sleep(1);
+		sleep(1);
 #endif
 	}
 	if (pclThread -> m_running)

@@ -73,6 +73,7 @@ Socket::Socket(SocketHandler& h)
 ,m_call_on_connect(false)
 ,m_opt_reuse(true)
 ,m_opt_keepalive(true)
+,m_bSocks4(false)
 {
 }
 
@@ -143,8 +144,6 @@ bool Socket::CheckConnect()
 	if (err)
 	{
 		Handler().LogError(this, "connect failed", err, StrError(err), LOG_LEVEL_FATAL);
-		SetCloseAndDelete( true );
-		OnConnectFailed();
 		r = false;
 	}
 	SetConnecting(false);
@@ -681,9 +680,7 @@ bool Socket::SetNonblocking(bool bNb)
 	int n = ioctlsocket(m_socket, FIONBIO, &l);
 	if (n != 0)
 	{
-		int errcode;
-		errcode = WSAGetLastError();
-		Handler().LogError(this, "ioctlsocket(FIONBIO)", errcode, "");
+		Handler().LogError(this, "ioctlsocket(FIONBIO)", Errno, "");
 		return false;
 	}
 	return true;
@@ -716,9 +713,7 @@ bool Socket::SetNonblocking(bool bNb, SOCKET s)
 	int n = ioctlsocket(s, FIONBIO, &l);
 	if (n != 0)
 	{
-		int errcode;
-		errcode = WSAGetLastError();
-		Handler().LogError(this, "ioctlsocket(FIONBIO)", errcode, "");
+		Handler().LogError(this, "ioctlsocket(FIONBIO)", Errno, "");
 		return false;
 	}
 	return true;
@@ -875,19 +870,38 @@ void Socket::CopyConnection(Socket *sock)
 
 void Socket::OnOptions(int family,int type,int protocol,SOCKET s)
 {
+/*
 	Handler().LogError(this, "OnOptions", family, "Address Family", LOG_LEVEL_INFO);
 	Handler().LogError(this, "OnOptions", type, "Type", LOG_LEVEL_INFO);
 	Handler().LogError(this, "OnOptions", protocol, "Protocol", LOG_LEVEL_INFO);
+*/
 	SetReuse(true);
 	SetKeepalive(true);
 }
 
 
-/*
-void Socket::Resolve(const std::string& host)
+int Socket::Resolve(const std::string& host,port_t port)
 {
-	Handler().Resolve(this, host);
+	return Handler().Resolve(this, host, port);
 }
-*/
+
+
+void Socket::OnSocks4Connect()
+{
+	Handler().LogError(this, "OnSocks4Connect", 0, "Use with TcpSocket only");
+}
+
+
+void Socket::OnSocks4ConnectFailed()
+{
+	Handler().LogError(this, "OnSocks4ConnectFailed", 0, "Use with TcpSocket only");
+}
+
+
+bool Socket::OnSocks4Read()
+{
+	Handler().LogError(this, "OnSocks4Read", 0, "Use with TcpSocket only");
+	return true;
+}
 
 

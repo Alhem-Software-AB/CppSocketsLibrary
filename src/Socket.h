@@ -65,6 +65,9 @@ public:
 	virtual void OnSSLInitDone();
 	virtual void OnConnectFailed();
 	virtual void OnOptions(int family,int type,int protocol,SOCKET);
+	virtual void OnSocks4Connect();
+	virtual void OnSocks4ConnectFailed();
+	virtual bool OnSocks4Read();
 
 	virtual bool CheckConnect();
 	virtual void ReadLine();
@@ -163,8 +166,12 @@ public:
 	void SetKeepalive(bool x) { m_opt_keepalive = x; }
 
 	// dns
-//	void Resolve(const std::string& host);
-//	virtual void OnResolved(const char *,size_t) {}
+	int Resolve(const std::string& host,port_t port);
+	virtual void Resolved(int id,ipaddr_t,port_t) {}
+
+	/** socket still in socks4 negotiation mode */
+	bool Socks4() { return m_bSocks4; }
+	void SetSocks4(bool x = true) { m_bSocks4 = x; }
 
 protected:
 	Socket(const Socket& ); // do not allow use of copy constructor
@@ -205,6 +212,7 @@ static	WSAInitializer m_winsock_init;
 	bool m_call_on_connect;
 	bool m_opt_reuse;
 	bool m_opt_keepalive;
+	bool m_bSocks4; // socks4 negotiation mode (TcpSocket)
 };
 
 

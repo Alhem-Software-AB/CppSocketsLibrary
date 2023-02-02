@@ -33,6 +33,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "SocketHandler.h"
 #include "UdpSocket.h"
 #include "PoolSocket.h"
+#include "ResolvSocket.h"
+#include "ResolvServer.h"
 
 
 #ifdef _DEBUG
@@ -50,6 +52,11 @@ SocketHandler::SocketHandler(StdLog *p)
 ,m_preverror(-1)
 ,m_slave(false)
 ,m_local_resolved(false)
+,m_socks4_host(0)
+,m_socks4_port(0)
+,m_bTryDirect(false)
+,m_resolv_id(0)
+,m_resolver(NULL)
 {
 	FD_ZERO(&m_rfds);
 	FD_ZERO(&m_wfds);
@@ -59,6 +66,8 @@ SocketHandler::SocketHandler(StdLog *p)
 
 SocketHandler::~SocketHandler()
 {
+	if (m_resolver)
+		m_resolver -> Quit();
 	if (!m_slave)
 	{
 		for (socket_m::iterator it = m_sockets.begin(); it != m_sockets.end(); it++)
@@ -74,6 +83,8 @@ SocketHandler::~SocketHandler()
 			}
 		}
 	}
+	if (m_resolver)
+		delete m_resolver;
 }
 
 
@@ -202,7 +213,7 @@ DEB(		printf(" * add => m_sockets; new socket added\n");)
 		LogError(NULL, "select", Errno, StrError(Errno));
 #ifdef _WIN32
 DEB(
-		int errcode = WSAGetLastError();
+		int errcode = Errno;
 		if (errcode != m_preverror)
 		{
 			printf("  select() errcode = %d\n",errcode);
@@ -234,7 +245,10 @@ DEB(		printf("slave: %s\n",m_slave ? "YES" : "NO");
 			{
 				if (p -> CallOnConnect() && p -> Ready() )
 				{
-					p -> OnConnect();
+					if (p -> Socks4())
+						p -> OnSocks4Connect();
+					else
+						p -> OnConnect();
 					p -> SetCallOnConnect( false );
 				}
 				if (p -> SSLConnecting())
@@ -249,12 +263,21 @@ DEB(		printf("slave: %s\n",m_slave ? "YES" : "NO");
 				{
 					if (FD_ISSET(i, &rfds))
 					{
+						TcpSocket *tcp = dynamic_cast<TcpSocket *>(p);
 						p -> OnRead();
-						if (p -> LineProtocol())
+						bool need_more = false;
+						while (tcp && p -> Socks4() && tcp -> GetInputLength() && !need_more && !p -> CloseAndDelete())
 						{
-							p -> ReadLine();
+							need_more = p -> OnSocks4Read();
 						}
+						if (!p -> Socks4())
+						{
+							if (p -> LineProtocol())
+							{
+								p -> ReadLine();
+							}
 //							p -> Touch();
+						}
 					}
 					if (FD_ISSET(i, &wfds))
 					{
@@ -262,8 +285,24 @@ DEB(		printf("slave: %s\n",m_slave ? "YES" : "NO");
 						{
 							if (p -> CheckConnect())
 							{
-DEB(									printf("calling OnConnect\n");)
-								p -> OnConnect();
+								if (p -> Socks4())
+									p -> OnSocks4Connect();
+								else
+									p -> OnConnect();
+							}
+							else
+							{
+								// failed
+								if (p -> Socks4())
+								{
+									p -> OnSocks4ConnectFailed();
+								}
+								else
+								{
+//									LogError(p, "connect failed", Errno, StrError(Errno), LOG_LEVEL_FATAL);
+									p -> SetCloseAndDelete( true );
+									p -> OnConnectFailed();
+								}
 							}
 //								p -> Touch();
 						}
@@ -309,8 +348,16 @@ DEB(									printf("calling OnConnect\n");)
 				if (p && p -> Connecting() && p -> GetConnectTime() > 5)
 				{
 					LogError(p, "connect", -1, "connect timeout", LOG_LEVEL_FATAL);
-					p -> OnConnectFailed();
-					p -> SetCloseAndDelete(true);
+					if (p -> Socks4())
+					{
+						p -> OnSocks4ConnectFailed();
+						// retry direct connection
+					}
+					else
+					{
+						p -> OnConnectFailed();
+						p -> SetCloseAndDelete(true);
+					}
 				}
 				if (p && p -> CloseAndDelete() )
 				{
@@ -464,6 +511,60 @@ DEB(printf("FindConnection() successful\n");)
 	}
 DEB(printf("FindConnection() NOT successful\n");)
 	return NULL;
+}
+
+
+void SocketHandler::SetSocks4Host(ipaddr_t a)
+{
+	m_socks4_host = a;
+}
+
+
+void SocketHandler::SetSocks4Host(const std::string& host)
+{
+	Socket s(*this);
+	s.u2ip(host, m_socks4_host);
+}
+
+
+void SocketHandler::SetSocks4Port(port_t port)
+{
+	m_socks4_port = port;
+}
+
+
+void SocketHandler::SetSocks4Userid(const std::string& id)
+{
+	m_socks4_userid = id;
+}
+
+
+int SocketHandler::Resolve(Socket *p,const std::string& host,port_t port)
+{
+	// check cache
+	ResolvSocket *resolv = new ResolvSocket(*this, p);
+	resolv -> SetId(++m_resolv_id);
+	resolv -> SetHost(host);
+	resolv -> SetPort(port);
+	resolv -> SetDeleteByHandler();
+	ipaddr_t local;
+	resolv -> u2ip("127.0.0.1", local);
+	if (!resolv -> Open(local, m_resolver_port))
+	{
+		LogError(resolv, "Resolve", -1, "Can't connect to local resolve server", LOG_LEVEL_FATAL);
+	}
+	Add(resolv);
+	return m_resolv_id;
+}
+
+
+void SocketHandler::EnableResolver(port_t port)
+{
+	if (!m_resolver)
+	{
+		m_resolver_port = port;
+		m_resolver = new ResolvServer(port);
+	}
 }
 
 

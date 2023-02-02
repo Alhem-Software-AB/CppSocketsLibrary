@@ -32,6 +32,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 class Socket;
 class PoolSocket;
+class ResolvServer;
 
 class SocketHandler
 {
@@ -66,6 +67,21 @@ public:
 
 	PoolSocket *FindConnection(int type,const std::string& protocol,ipaddr_t,port_t);
 
+	void SetSocks4Host(ipaddr_t);
+	void SetSocks4Host(const std::string& );
+	void SetSocks4Port(port_t);
+	void SetSocks4Userid(const std::string& );
+	void SetSocks4TryDirect(bool x = true) { m_bTryDirect = x; }
+	ipaddr_t GetSocks4Host() { return m_socks4_host; }
+	port_t GetSocks4Port() { return m_socks4_port; }
+	const std::string& GetSocks4Userid() { return m_socks4_userid; }
+	bool Socks4TryDirect() { return m_bTryDirect; }
+
+	void EnableResolver(port_t port = 16667);
+	bool ResolverEnabled() { return m_resolver ? true : false; }
+	int Resolve(Socket *,const std::string& host,port_t);
+	port_t GetResolverPort() { return m_resolver_port; }
+
 protected:
 	socket_m m_sockets;
 	socket_m m_add;
@@ -88,6 +104,13 @@ private:
 #endif
 	std::string m_local_addr6;
 	bool m_local_resolved;
+	ipaddr_t m_socks4_host;
+	port_t m_socks4_port;
+	std::string m_socks4_userid;
+	bool m_bTryDirect;
+	int m_resolv_id;
+	ResolvServer *m_resolver;
+	port_t m_resolver_port;
 };
 
 

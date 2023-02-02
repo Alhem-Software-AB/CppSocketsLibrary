@@ -173,3 +173,16 @@ Version 1.7.6
 > ListenSocketBase.cpp
 > ListenSocketBase.h
 
+Version 1.8
+--------------------------
+23,24d22
+< ListenSocketBase.cpp
+< ListenSocketBase.h
+39a38,41
+> ResolvServer.cpp
+> ResolvServer.h
+> ResolvSocket.cpp
+> ResolvSocket.h
+47d48
+< sockets_test.cpp
+

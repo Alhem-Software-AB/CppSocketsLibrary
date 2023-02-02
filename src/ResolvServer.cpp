@@ -1,6 +1,6 @@
 /**
- **	File ......... Thread.h
- **	Published ....  2004-10-30
+ **	File ......... ResolvServer.cpp
+ **	Published ....  2005-03-24
  **	Author ....... grymse@alhem.net
 **/
 /*
@@ -20,45 +20,50 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
-#ifndef _THREAD_H
-#define _THREAD_H
-
-#ifdef _WIN32
-// to be
-typedef void * threadfunc_t;
-#else
-#include <pthread.h>
-
-typedef void * threadfunc_t;
-#endif
+//#include <stdio.h>
+#include <StdoutLog.h>
+#include <SocketHandler.h>
+#include <ListenSocket.h>
+#include "ResolvSocket.h"
+#include "ResolvServer.h"
 
 
-class Thread
+ResolvServer::ResolvServer(port_t port)
+:Thread()
+,m_quit(false)
+,m_port(port)
 {
-public:
-	Thread(bool release = true);
-	virtual ~Thread();
-
-	static threadfunc_t StartThread(void *);
-
-	virtual void Run() = 0;
-
-	bool IsRunning();
-	void SetRunning(bool x);
-	bool IsReleased();
-	void SetRelease(bool x);
-
-private:
-	Thread(const Thread& ) {}
-	Thread& operator=(const Thread& ) { return *this; }
-#ifdef _WIN32
-	int m_thread;
-#else
-	pthread_t m_thread;
-#endif
-	bool m_running;
-	bool m_release;
-};
+}
 
 
-#endif // _THREAD_H
+ResolvServer::~ResolvServer()
+{
+}
+
+
+void ResolvServer::Run()
+{
+//	StdoutLog log;
+	SocketHandler h;
+	ListenSocket<ResolvSocket> l(h);
+
+	if (l.Bind("127.0.0.1", m_port))
+	{
+		return;
+	}
+	h.Add(&l);
+
+	while (!m_quit && IsRunning() )
+	{
+		h.Select(1,0);
+	}
+	SetRunning(false);
+}
+
+
+void ResolvServer::Quit()
+{
+	m_quit = true;
+}
+
+

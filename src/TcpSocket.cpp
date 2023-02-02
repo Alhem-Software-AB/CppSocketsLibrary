@@ -51,6 +51,8 @@ TcpSocket::TcpSocket(SocketHandler& h) : Socket(h)
 ,ibuf(*this, TCP_BUFSIZE_READ)
 ,obuf(*this, 32768)
 ,m_line("")
+,m_socks4_state(0)
+,m_resolver_id(0)
 {
 }
 #ifdef _WIN32
@@ -65,6 +67,8 @@ TcpSocket::TcpSocket(SocketHandler& h,size_t isize,size_t osize) : Socket(h)
 ,ibuf(*this, isize)
 ,obuf(*this, osize)
 ,m_line("")
+,m_socks4_state(0)
+,m_resolver_id(0)
 {
 }
 #ifdef _WIN32
@@ -77,8 +81,10 @@ TcpSocket::~TcpSocket()
 }
 
 
-bool TcpSocket::Open(ipaddr_t ip,port_t port)
+bool TcpSocket::Open(ipaddr_t ip,port_t port,bool skip_socks)
 {
+	SetConnecting(false);
+	SetSocks4(false);
 	// check for pooling
 	PoolSocket *pools = Handler().FindConnection(SOCK_STREAM, "tcp", ip, port);
 	if (pools)
@@ -87,147 +93,133 @@ bool TcpSocket::Open(ipaddr_t ip,port_t port)
 		delete pools;
 
 		SetIsClient();
-		SetCallOnConnect();
+		SetCallOnConnect(); // SocketHandler must call OnConnect
 DEB(printf("Reusing connection\n");)
 		return true;
 	}
-
 	// if not, create new connection
 	SOCKET s = CreateSocket4(SOCK_STREAM, "tcp");
 	if (s == INVALID_SOCKET)
 	{
 		return false;
 	}
-	ipaddr_t l = ip;
+	// socket must be nonblocking for async connect
+	if (!SetNonblocking(true, s))
 	{
-		struct sockaddr_in sa;
-		socklen_t sa_len = sizeof(sa);
-
-		SetIsClient();
-		SetClientRemoteAddr(ip);
-		SetClientRemotePort(port);
-
-		memset(&sa,0,sizeof(sa));
+		closesocket(s);
+		return false;
+	}
+	SetIsClient(); // client because we connect
+	SetClientRemoteAddr(ip);
+	SetClientRemotePort(port);
+	struct sockaddr_in sa;
+	// size of sockaddr struct
+	socklen_t sa_len = sizeof(sa);
+	if (!skip_socks && Handler().GetSocks4Host() && Handler().GetSocks4Port())
+	{
+		memset(&sa, 0, sa_len);
+		sa.sin_family = AF_INET;
+		sa.sin_port = htons(Handler().GetSocks4Port());
+		ipaddr_t a = Handler().GetSocks4Host();
+		memcpy(&sa.sin_addr, &a, 4);
+		{
+			char slask[100];
+			sprintf(slask,"Connecting to socks4 server @ %08x:%d",Handler().GetSocks4Host(),Handler().GetSocks4Port());
+			Handler().LogError(this, "Open", 0, slask, LOG_LEVEL_INFO);
+		}
+		SetSocks4();
+	}
+	else
+	{
+		// setup sockaddr struct
+		memset(&sa,0,sa_len);
 		sa.sin_family = AF_INET; // hp -> h_addrtype;
 		sa.sin_port = htons( port );
-		memcpy(&sa.sin_addr,&l,4);
-
-		if (!SetNonblocking(true, s))
+		memcpy(&sa.sin_addr,&ip,4);
+	}
+	// try connect
+	int n = connect(s, (struct sockaddr *)&sa, sa_len);
+	if (n == -1)
+	{
+		// check error code that means a connect is in progress
+#ifdef _WIN32
+		if (Errno == WSAEWOULDBLOCK)
+#else
+		if (Errno == EINPROGRESS)
+#endif
+		{
+			SetConnecting( true ); // this flag will control fd_set's
+		}
+		else
+		if (Socks4() && Handler().Socks4TryDirect() ) // retry
 		{
 			closesocket(s);
-			return false;
-		}
-		int n = connect(s, (struct sockaddr *)&sa, sa_len);
-		if (n == -1)
-		{
-#ifdef _WIN32
-			int errcode;
-			errcode = WSAGetLastError();
-			if (errcode != WSAEWOULDBLOCK)
-#else
-			if (Errno != EINPROGRESS)
-#endif
-			{
-				Handler().LogError(this, "connect", Errno, StrError(Errno), LOG_LEVEL_FATAL);
-				closesocket(s);
-				return false;
-			}
-			else
-			{
-				SetConnecting( true ); // this flag will control fd_set's
-			}
+			return Open(ip, port, true);
 		}
 		else
 		{
-			SetCallOnConnect();
+			Handler().LogError(this, "connect", Errno, StrError(Errno), LOG_LEVEL_FATAL);
+			closesocket(s);
+			return false;
 		}
-		SetRemoteAddress( (struct sockaddr *)&sa,sa_len);
-		Attach(s);
-		return !Connecting();
 	}
-	return false;
+	else
+	{
+		SetCallOnConnect(); // SocketHandler must call OnConnect
+	}
+	SetRemoteAddress( (struct sockaddr *)&sa,sa_len);
+	Attach(s);
+
+	// 'true' means connected or connecting(not yet connected)
+	// 'false' means something failed
+	return true; //!Connecting();
 }
 
 
 bool TcpSocket::Open(const std::string &host,port_t port)
 {
-	ipaddr_t l;
-	if (!u2ip(host,l))
+	if (!Handler().ResolverEnabled() || isip(host) )
 	{
-		return false;
-	}
-
-	// check for pooling
-	PoolSocket *pools = Handler().FindConnection(SOCK_STREAM, "tcp", l, port);
-	if (pools)
-	{
-		CopyConnection( pools );
-		delete pools;
-
-		SetIsClient();
-		SetCallOnConnect();
-DEB(printf("Reusing connection\n");)
-		return true;
-	}
-
-	// if not, create new connection
-	SOCKET s = CreateSocket4(SOCK_STREAM, "tcp");
-	if (s == INVALID_SOCKET)
-	{
-		return false;
-	}
-
-	// l is valid
-	{
-		struct sockaddr_in sa;
-		socklen_t sa_len = sizeof(sa);
-
-		SetIsClient();
-		SetClientRemoteAddr(l);
-		SetClientRemotePort(port);
-
-		memset(&sa,0,sizeof(sa));
-		sa.sin_family = AF_INET;
-		sa.sin_port = htons( port );
-		memcpy(&sa.sin_addr,&l,4);
-
-		if (!SetNonblocking(true, s))
+		ipaddr_t l;
+		if (!u2ip(host,l))
 		{
-			closesocket(s);
 			return false;
 		}
-		int n = connect(s, (struct sockaddr *)&sa, sa_len);
-		if (n == -1)
-		{
-#ifdef _WIN32
-			int errcode;
-			errcode = WSAGetLastError();
-			if (errcode != WSAEWOULDBLOCK)
-#else
-			if (Errno != EINPROGRESS)
-#endif
-			{
-				Handler().LogError(this, "connect", Errno, StrError(Errno), LOG_LEVEL_FATAL);
-				closesocket(s);
-				return false;
-			}
-			else
-			{
-				SetConnecting(true);
-			}
-		}
-		else
-		{
-			SetCallOnConnect();
-		}
-		SetRemoteAddress((struct sockaddr *)&sa,sa_len);
-		Attach(s);
-		return !Connecting();
+		return Open(l, port);
 	}
-	return false;
+	// resolve using async resolver thread
+	m_resolver_id = Resolve(host, port);
+	return true;
 }
 
 
+void TcpSocket::Resolved(int id,ipaddr_t a,port_t port)
+{
+	if (id == m_resolver_id)
+	{
+		if (a && port)
+		{
+			Open(a, port);
+			if (!Handler().Valid(this))
+			{
+				Handler().Add(this);
+			}
+			return;
+		}
+		else
+		{
+			Handler().LogError(this, "Resolved", 0, "Resolver failed", LOG_LEVEL_FATAL);
+		}
+	}
+	else
+	{
+		Handler().LogError(this, "Resolved", id, "Resolver returned wrong job id", LOG_LEVEL_FATAL);
+	}
+	SetCloseAndDelete();
+}
+
+
+// halfbaked IPV6 code
 #ifdef IPPROTO_IPV6
 bool TcpSocket::Open6(const std::string &host,port_t port)
 {
@@ -261,9 +253,7 @@ bool TcpSocket::Open6(const std::string &host,port_t port)
 		if (n == -1)
 		{
 #ifdef _WIN32
-			int errcode;
-			errcode = WSAGetLastError();
-			if (errcode != WSAEWOULDBLOCK)
+			if (Errno != WSAEWOULDBLOCK)
 #else
 			if (Errno != EINPROGRESS)
 #endif
@@ -279,13 +269,13 @@ bool TcpSocket::Open6(const std::string &host,port_t port)
 		}
 		else
 		{
-			SetCallOnConnect();
+			SetCallOnConnect(); // SocketHandler must call OnConnect
 		}
 		SetRemoteAddress((struct sockaddr *)&sa,sa_len);
 		Attach(s);
-		return !Connecting();
+		return true; //!Connecting();
 	}
-	return false;
+	return false; // u2ip failed
 }
 #endif
 
@@ -515,5 +505,93 @@ TcpSocket::TcpSocket(const TcpSocket& s)
 #ifdef _WIN32
 #pragma warning(default:4355)
 #endif
+
+
+void TcpSocket::OnSocks4Connect()
+{
+	char request[1000];
+	request[0] = 4; // socks v4
+	request[1] = 1; // command code: CONNECT
+	unsigned short port = htons(GetClientRemotePort()); // send port in network byte order
+	memcpy(request + 2, &port, 2);
+	memcpy(request + 4, &GetClientRemoteAddr(), 4); // ipaddr_t is already in network byte order
+	strcpy(request + 8, Handler().GetSocks4Userid().c_str());
+	size_t length = Handler().GetSocks4Userid().size() + 8 + 1;
+	SendBuf(request, length);
+	m_socks4_state = 0;
+}
+
+
+void TcpSocket::OnSocks4ConnectFailed()
+{
+	Handler().LogError(this,"OnSocks4ConnectFailed",0,"connection to socks4 server failed, trying direct connection",LOG_LEVEL_WARNING);
+	if (!Handler().Socks4TryDirect())
+	{
+		OnConnectFailed(); // just in case
+		SetCloseAndDelete();
+	}
+	else
+	{
+		closesocket(GetSocket());
+		Open(GetClientRemoteAddr(), GetClientRemotePort(), true); // open directly
+	}
+}
+
+
+bool TcpSocket::OnSocks4Read()
+{
+	switch (m_socks4_state)
+	{
+	case 0:
+		ibuf.Read(&m_socks4_vn, 1);
+		m_socks4_state = 1;
+		break;
+	case 1:
+		ibuf.Read(&m_socks4_cd, 1);
+		m_socks4_state = 2;
+		break;
+	case 2:
+		if (GetInputLength() > 1)
+		{
+			ibuf.Read( (char *)&m_socks4_dstport, 2);
+			m_socks4_state = 3;
+		}
+		else
+		{
+			return true;
+		}
+		break;
+	case 3:
+		if (GetInputLength() > 3)
+		{
+			ibuf.Read( (char *)&m_socks4_dstip, 4);
+			SetSocks4(false);
+			
+			switch (m_socks4_cd)
+			{
+			case 90:
+				OnConnect();
+				break;
+			case 91:
+			case 92:
+			case 93:
+				Handler().LogError(this,"OnSocks4Read",m_socks4_cd,"socks4 server reports connect failed",LOG_LEVEL_FATAL);
+				OnConnectFailed();
+				SetCloseAndDelete();
+				break;
+			default:
+				Handler().LogError(this,"OnSocks4Read",m_socks4_cd,"socks4 server unrecognized response",LOG_LEVEL_FATAL);
+				SetCloseAndDelete();
+				break;
+			}
+		}
+		else
+		{
+			return true;
+		}
+		break;
+	}
+	return false;
+}
 
 

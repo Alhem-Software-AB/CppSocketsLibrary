@@ -9,6 +9,8 @@
 // ----------------------------------------
 // Solaris
 typedef unsigned short port_t;
+#define s6_addr16 _S6_un._S6_u8
+#define MSG_NOSIGNAL 0
 
 #elif defined __FreeBSD__
 // ----------------------------------------

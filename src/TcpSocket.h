@@ -53,7 +53,7 @@ public:
 	TcpSocket(SocketHandler& ,size_t isize,size_t osize);
 	~TcpSocket();
 
-	bool Open(ipaddr_t,port_t);
+	bool Open(ipaddr_t,port_t,bool skip_socks = false);
 	bool Open(const std::string &host,port_t port);
 	bool Open6(const std::string& host,port_t port);
 
@@ -71,6 +71,13 @@ public:
 	unsigned long GetBytesReceived() { return ibuf.ByteCounter(); }
 	unsigned long GetBytesSent() { return obuf.ByteCounter(); }
 
+	void OnSocks4Connect();
+	void OnSocks4ConnectFailed();
+	/** returns 'need_more' */
+	bool OnSocks4Read();
+
+	void Resolved(int id,ipaddr_t a,port_t port);
+
 protected:
 	TcpSocket(const TcpSocket& s);
 	void OnRead();
@@ -83,7 +90,12 @@ protected:
 
 private:
 	TcpSocket& operator=(const TcpSocket& ) { return *this; }
-
+	int m_socks4_state;
+	char m_socks4_vn;
+	char m_socks4_cd;
+	unsigned short m_socks4_dstport;
+	unsigned long m_socks4_dstip;
+	int m_resolver_id;
 };
 
 

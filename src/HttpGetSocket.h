@@ -48,6 +48,7 @@ public:
 	size_t GetPos() { return m_content_ptr; }
 
 	void url_this(const std::string& url_in,std::string& host,port_t& port,std::string& url,std::string& file);
+	const std::string& GetContent() { return m_content; }
 
 protected:
 	HttpGetSocket(const HttpGetSocket& s) : HTTPSocket(s) {}
@@ -64,6 +65,7 @@ private:
 	size_t m_content_length;
 	std::string m_content_type;
 	size_t m_content_ptr;
+	std::string m_content;
 };
 
 
