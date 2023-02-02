@@ -1,10 +1,17 @@
-/*
- **	File ......... SocketHandler.h
- **	Published ....  2004-02-13
- **	Author ....... grymse@alhem.net
+/** \file SocketHandler.h
+ **	\date  2004-02-13
+ **	\author grymse@alhem.net
 **/
 /*
 Copyright (C) 2004,2005  Anders Hedstrom
+
+This library is made available under the terms of the GNU GPL.
+
+If you would like to use this library in a closed-source application,
+a separate license agreement is available. For information about 
+the closed-source license agreement for the C++ sockets library,
+please visit http://www.alhem.net/Sockets/license.html and/or
+email license@alhem.net.
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -65,8 +72,9 @@ public:
 	int Select(long sec,long usec);
 	/** Check that a socket really is handled by this socket handler. */
 	bool Valid(Socket *);
-	/** Override and return false to deny all incoming connections. */
-	virtual bool OkToAccept();
+	/** Override and return false to deny all incoming connections. 
+		\param p ListenSocket class pointer (use GetPort to identify which one) */
+	virtual bool OkToAccept(Socket *p);
 	/** Get status of read/write/exception file descriptor set for a socket. */
 	void Get(SOCKET s,bool& r,bool& w,bool& e);
 

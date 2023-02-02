@@ -1,10 +1,17 @@
-/*
- **	File ......... ListenSocket.h
- **	Published ....  2004-02-13
- **	Author ....... grymse@alhem.net
+/** \file ListenSocket.h
+ **	\date  2004-02-13
+ **	\author grymse@alhem.net
 **/
 /*
 Copyright (C) 2004,2005  Anders Hedstrom
+
+This library is made available under the terms of the GNU GPL.
+
+If you would like to use this library in a closed-source application,
+a separate license agreement is available. For information about 
+the closed-source license agreement for the C++ sockets library,
+please visit http://www.alhem.net/Sockets/license.html and/or
+email license@alhem.net.
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -36,6 +43,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 namespace SOCKETS_NAMESPACE {
 #endif
 
+#ifdef _DEBUG
+#define DEB(x) x
+#else
+#define DEB(x) 
+#endif
+
 
 /** Binds incoming port number to new Socket class X. 
 	\ingroup basic */
@@ -47,7 +60,8 @@ public:
 		\param h SocketHandler reference
 		\param use_creator Optional use of creator (default true) */
 	ListenSocket(SocketHandler& h,bool use_creator = true) : Socket(h), m_port(0), m_depth(0), m_creator(NULL)
-	,m_bHasCreate(false) {
+	,m_bHasCreate(false)
+	{
 		if (use_creator)
 		{
 			m_creator = new X(h);
@@ -217,6 +231,7 @@ public:
 	/** OnRead on a ListenSocket receives an incoming connection. */
 	void OnRead()
 	{
+DEB(printf("ListenSocket<%d>::OnRead()\n", GetPort());)
 		struct sockaddr sa;
 		socklen_t sa_len = sizeof(sa);
 		SOCKET a_s = accept(GetSocket(), &sa, &sa_len);
@@ -226,6 +241,19 @@ public:
 			Handler().LogError(this, "accept", Errno, StrError(Errno), LOG_LEVEL_ERROR);
 			return;
 		}
+		if (!Handler().OkToAccept(this))
+		{
+			Handler().LogError(this, "accept", -1, "Not OK to accept", LOG_LEVEL_WARNING);
+			closesocket(a_s);
+			return;
+		}
+		if (Handler().GetCount() >= FD_SETSIZE)
+		{
+			Handler().LogError(this, "accept", (int)Handler().GetCount(), "SocketHandler fd_set limit reached", LOG_LEVEL_FATAL);
+			closesocket(a_s);
+			return;
+		}
+DEB(printf("  ListenSocket<%d> new file descriptor = %d\n", GetPort(), a_s);)
 		Socket *tmp = m_bHasCreate ? m_creator -> Create() : new X(Handler());
 		TcpSocket *tcp = dynamic_cast<TcpSocket *>(tmp);
 		tmp -> SetIpv6( IsIpv6() );
@@ -238,22 +266,11 @@ public:
 		tmp -> Init();
 		Handler().Add(tmp);
 		tmp -> SetDeleteByHandler(true);
-		if (Handler().OkToAccept())
-		{
-			if (tmp -> IsSSL()) // SSL Enabled socket
-				tmp -> OnSSLAccept();
-			else
-				tmp -> OnAccept();
-		}
+		if (tmp -> IsSSL()) // SSL Enabled socket
+			tmp -> OnSSLAccept();
 		else
-		{
-			Handler().LogError(this, "accept", -1, "Not OK to accept", LOG_LEVEL_FATAL);
-			tmp -> SetCloseAndDelete();
-		}
-
+			tmp -> OnAccept();
 	}
-
-//	X *GetCreator() { return m_creator; }
 
 	/** This method is not supposed to be used, because accept() is
 	    handled automatically in the OnRead() method. */
@@ -261,7 +278,6 @@ public:
         {
                 return accept(socket, saptr, lenptr);
         }
-
 
 protected:
 	ListenSocket(const ListenSocket& ) {}

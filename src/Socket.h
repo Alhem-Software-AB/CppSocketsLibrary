@@ -1,10 +1,17 @@
-/*
- **	File ......... Socket.h
- **	Published ....  2004-02-13
- **	Author ....... grymse@alhem.net
+/** \file Socket.h
+ ** \date  2004-02-13
+ ** \author grymse@alhem.net
 **/
 /*
 Copyright (C) 2004,2005  Anders Hedstrom
+
+This software is made available under the terms of the GNU GPL.
+
+If you would like to use this library in a closed-source application,
+a separate license agreement is available. For information about 
+the closed-source license agreement for the C++ sockets library,
+please visit http://www.alhem.net/Sockets/license.html and/or
+email license@alhem.net.
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -42,7 +49,7 @@ class SocketThread;
 //	typedef std::list<std::string> string_v;
 
 /** \defgroup basic Basic sockets */
-/** Socket base class. 
+/** Socket base class.
 	\ingroup basic */
 class Socket
 {
@@ -66,7 +73,7 @@ public:
 	 */
 	virtual void Init();
 
-	/** Assign this socket a file descriptor created 
+	/** Assign this socket a file descriptor created
 		by a call to socket() or otherwise. */
 	void Attach(SOCKET s);
 	/** Return file descriptor assigned to this socket. */
@@ -74,7 +81,7 @@ public:
 	/** Close connection immediately - internal use.
 		\sa SetCloseAndDelete */
 	virtual int Close();
-	/** Create a socket file descriptor. 
+	/** Create a socket file descriptor.
 		\param af Address family AF_INET / AF_INET6 / ...
 		\param type SOCK_STREAM / SOCK_DGRAM / ...
 		\param protocol "tcp" / "udp" / ... */
@@ -113,7 +120,7 @@ public:
 	virtual void OnSocks4ConnectFailed();
 	/** Socks4 client support internal use. \sa TcpSocket */
 	virtual bool OnSocks4Read();
-	/** Called when the last write caused the tcp output buffer to 
+	/** Called when the last write caused the tcp output buffer to
 	 * become empty. */
 //	virtual void OnWriteComplete();
 	/** SSL client/server support - internal use. \sa TcpSocket */
@@ -213,7 +220,7 @@ public:
 	time_t Inactive() { return time(NULL) - m_tActive; }
 */
 	/** Callback fires when a new socket thread has started and this
-		socket is ready for operation again. 
+		socket is ready for operation again.
 		\sa ResolvSocket */
 	virtual void OnDetached();
 	/** Internal use. */
@@ -270,10 +277,10 @@ public:
 	void SetClientRemotePort(port_t p);
 	/** Returns port number of last connect() call. */
 	port_t GetClientRemotePort();
-	/** Instruct a client socket to stay open in the connection pool after use. 
-		If you have connected to a server using tcp, you can call SetRetain 
+	/** Instruct a client socket to stay open in the connection pool after use.
+		If you have connected to a server using tcp, you can call SetRetain
 		to leave the connection open after your socket instance has been deleted.
-		The next connection you make to the same server will reuse the already 
+		The next connection you make to the same server will reuse the already
 		opened connection, if it is still available.
 	*/
 	void SetRetain();
@@ -301,9 +308,9 @@ public:
 		\sa OnOptions */
 	void SetKeepalive(bool x);
 
-	/** Request an asynchronous dns resolution. 
+	/** Request an asynchronous dns resolution.
 		\param host hostname to be resolved
-		\param port port number passed along for the ride 
+		\param port port number passed along for the ride
 		\return Resolve ID */
 	int Resolve(const std::string& host,port_t port);
 	/** Callback returning a resolved address.
@@ -377,7 +384,7 @@ public:
 
 	//
 #ifdef _THREADSAFE_SOCKETS
-	/** Returns read/write mutex in threadsafe mode. 
+	/** Returns read/write mutex in threadsafe mode.
 		\sa OnWrite
 		\sa SendBuf */
 	Mutex& GetMutex();
@@ -391,7 +398,7 @@ public:
 	/** Set flush before close to make a tcp socket completely empty its
 		output buffer before closing the connection. */
 	void SetFlushBeforeClose(bool = true);
-	/** Check flush before status. 
+	/** Check flush before status.
 		\return true if the socket should send all data before closing */
 	bool GetFlushBeforeClose();
 
@@ -435,7 +442,7 @@ static	WSAInitializer m_winsock_init; ///< Winsock initialization singleton clas
 	std::string m_socket_protocol; ///< Protocol, from socket() call
 	bool m_bClient; ///< only client connections are pooled
 	ipaddr_t m_client_remote_addr; ///< Address used by connect()
-	port_t m_client_remote_port; ///< Port number used by connect() 
+	port_t m_client_remote_port; ///< Port number used by connect()
 	bool m_bRetain; ///< keep connection on close
 	bool m_bLost; ///< connection lost
 	bool m_call_on_connect; ///< OnConnect will be called next SocketHandler cycle if true

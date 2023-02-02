@@ -1,12 +1,13 @@
-VERSION =	1.9.6
+VERSION =	1.9.7
+DIFF_VERSION =	1.9.6
 
-INCLUDE =	-I/usr/devel/include -I.
+INCLUDE =	-I.
 PREFIX =	/usr/local
 # .h files installed to $(PREFIX)/include/Sockets
 # static lib .a files installed to $(PREFIX)/lib
 
 CFLAGS =	-Wall -g -O2 $(INCLUDE) -MD -D_VERSION='"$(VERSION)"'
-CFLAGS +=	-D_DEBUG
+#CFLAGS +=	-D_DEBUG
 #CFLAGS +=	-D_THREADSAFE_SOCKETS
 
 # uncomment depending on your operating system
@@ -30,10 +31,11 @@ CFLAGS += 	-DHAVE_OPENSSL
 
 CPPFLAGS =	$(CFLAGS) 
 
+HTDOCS =	/usr/local/apache/www.alhem.net/htdocs
 
 PROGS =		
 
-all:		libSockets.a $(PROGS) libSocketsEx.a Sockets-config
+all:		libSockets.a $(PROGS) libSocketsEx.a Sockets-config 
 
 Sockets-config:	Sockets-config.o
 		g++ -o $@ $^
@@ -68,7 +70,7 @@ OBJS =		CircularBuffer.o \
 		MemFile.o \
 		socket_include.o \
 		Mutex.o \
-		Lock.o
+		Lock.o 
 
 libSockets.a:	$(OBJS)
 		ar cru $@ $(OBJS)
@@ -81,6 +83,11 @@ EX =		Uid.o \
 libSocketsEx.a:	$(EX)
 		ar cru $@ $(EX)
 		ranlib $@
+
+diff:
+		diff -C 3 $(HTDOCS)/Sockets/Sockets-$(DIFF_VERSION) . | \
+			/usr/local/bin/d2html > \
+			$(HTDOCS)/Sockets/latest_diff.html
 
 install:	all
 		@mkdir -p $(PREFIX)/lib
@@ -111,8 +118,8 @@ tar:		clean
 		tar czf Sockets-$(VERSION).tar.gz $(FILES)
 		zip -l Sockets-$(VERSION).zip $(FILES)
 		/usr/local/bin/tarfix.sh Sockets-$(VERSION)
-		cp Sockets-$(VERSION).tar.gz /usr/local/apache/www.libsockets.net/htdocs
-		cp Sockets-$(VERSION).zip /usr/local/apache/www.alhem.net/htdocs/Sockets
+		cp Sockets-$(VERSION).tar.gz $(HTDOCS)/Sockets
+		cp Sockets-$(VERSION).zip $(HTDOCS)/Sockets
 
 docs:		clean
 		doxygen dox2.cfg

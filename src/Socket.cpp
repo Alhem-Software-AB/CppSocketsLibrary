@@ -1,10 +1,17 @@
-/*
- **	File ......... Socket.cpp
- **	Published ....  2004-02-13
- **	Author ....... grymse@alhem.net
+/** \file Socket.cpp
+ **	\date  2004-02-13
+ **	\author grymse@alhem.net
 **/
 /*
 Copyright (C) 2004,2005  Anders Hedstrom
+
+This library is made available under the terms of the GNU GPL.
+
+If you would like to use this library in a closed-source application,
+a separate license agreement is available. For information about 
+the closed-source license agreement for the C++ sockets library,
+please visit http://www.alhem.net/Sockets/license.html and/or
+email license@alhem.net.
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -35,6 +42,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "Utility.h"
 
 #include "Socket.h"
+#include "TcpSocket.h"
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
@@ -126,6 +134,30 @@ void Socket::OnWrite()
 
 void Socket::OnException()
 {
+#ifdef _WIN32
+	if (Connecting())
+	{
+		TcpSocket *tcp = dynamic_cast<TcpSocket *>(this);
+		if (Socks4())
+			OnSocks4ConnectFailed();
+		else
+		if (tcp && (tcp -> GetConnectionRetry() == -1 ||
+			(tcp -> GetConnectionRetry() &&
+			 tcp -> GetConnectionRetries() < tcp -> GetConnectionRetry() )))
+		{
+			// even though the connection failed at once, only retry after
+			// the connection timeout
+			// should we even try to connect again, when CheckConnect returns
+			// false it's because of a connection error - not a timeout...
+		}
+		else
+		{
+			SetCloseAndDelete();
+			OnConnectFailed();
+		}
+		return;
+	}
+#endif
 	// errno valid here?
 	int err;
 	socklen_t errlen = sizeof(err);
@@ -134,7 +166,7 @@ void Socket::OnException()
 #else
 	getsockopt(m_socket, SOL_SOCKET, SO_ERROR, &err, &errlen);
 #endif
-	Handler().LogError(this, "exception on select", Errno, StrError(Errno), LOG_LEVEL_FATAL);
+	Handler().LogError(this, "exception on select", err, StrError(err), LOG_LEVEL_FATAL);
 	SetCloseAndDelete();
 }
 
@@ -1310,7 +1342,6 @@ bool Socket::GetFlushBeforeClose()
 {
 	return m_flush_before_close;
 }
-
 
 
 #ifdef SOCKETS_NAMESPACE

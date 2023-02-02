@@ -1,10 +1,17 @@
-/*
- **	File ......... SocketHandler.cpp
- **	Published ....  2004-02-13
- **	Author ....... grymse@alhem.net
+/** \file SocketHandler.cpp
+ **	\date  2004-02-13
+ **	\author grymse@alhem.net
 **/
 /*
 Copyright (C) 2004,2005  Anders Hedstrom
+
+This library is made available under the terms of the GNU GPL.
+
+If you would like to use this library in a closed-source application,
+a separate license agreement is available. For information about 
+the closed-source license agreement for the C++ sockets library,
+please visit http://www.alhem.net/Sockets/license.html and/or
+email license@alhem.net.
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -148,28 +155,13 @@ void SocketHandler::Add(Socket *p)
 	}
 	m_add[p -> GetSocket()] = p;
 	// ...
-	while (m_add.size() && m_sockets.size() < FD_SETSIZE )
+DEB(	printf("File descriptors in add queue:");
+	for (socket_m::iterator it = m_add.begin(); it != m_add.end(); it++)
 	{
-		socket_m::iterator it = m_add.begin();
 		SOCKET s = (*it).first;
-		Socket *p = (*it).second;
-DEB(printf("adding file descriptor %d ptr 0x%08x\n", s, (unsigned long)p);)
-		// call Open before Add'ing a socket...
-		if (p -> Connecting())
-		{
-			Set(s,false,true);
-		}
-		else
-		{
-			if (p -> IsDisableRead())
-				Set(s, false, false);
-			else
-				Set(s,true,false);
-		}
-		m_maxsock = (s > m_maxsock) ? s : m_maxsock;
-		m_sockets[s] = p;
-		m_add.erase(it);
+		printf(" %d", s);
 	}
+	printf("\n");) // DEB
 }
 
 
@@ -228,12 +220,60 @@ void SocketHandler::Set(SOCKET s,bool bRead,bool bWrite,bool bException)
 int SocketHandler::Select(long sec,long usec)
 {
 	struct timeval tv;
+#ifdef MACOSX
+	fd_set rfds;
+	fd_set wfds;
+	fd_set efds;
+#else
 	fd_set rfds = m_rfds;
 	fd_set wfds = m_wfds;
 	fd_set efds = m_efds;
+#endif
 	int n;
 
 	// ...
+	if (m_add.size() )
+	{
+		if (m_sockets.size() >= FD_SETSIZE)
+		{
+			LogError(NULL, "Select", (int)m_sockets.size(), "FD_SETSIZE reached", LOG_LEVEL_WARNING);
+		}
+		else
+		while (m_add.size() && m_sockets.size() < FD_SETSIZE )
+		{
+			socket_m::iterator it = m_add.begin();
+			SOCKET s = (*it).first;
+			Socket *p = (*it).second;
+			// call Open before Add'ing a socket...
+			if (p -> Connecting())
+			{
+				Set(s,false,true);
+			}
+			else
+			{
+				if (p -> IsDisableRead())
+					Set(s, false, false);
+				else
+					Set(s,true,false);
+			}
+			m_maxsock = (s > m_maxsock) ? s : m_maxsock;
+			m_sockets[s] = p;
+			m_add.erase(it);
+DEB(printf("adding file descriptor %d ptr 0x%08x\n", s, (unsigned long)p);)
+DEB(printf("  m_sockets.size() = %d  FD_SETSIZE = %d\n",
+	m_sockets.size(), FD_SETSIZE);)
+		}
+#ifndef MACOSX
+		rfds = m_rfds;
+		wfds = m_wfds;
+		efds = m_efds;
+#endif
+	}
+#ifdef MACOSX
+	FD_COPY(&m_rfds, &rfds);
+	FD_COPY(&m_wfds, &wfds);
+	FD_COPY(&m_efds, &efds);
+#endif
 	tv.tv_sec = sec;
 	tv.tv_usec = usec;
 	n = select( (int)(m_maxsock + 1),&rfds,&wfds,&efds,&tv);
@@ -257,6 +297,7 @@ DEB(
 					printf("%4d: Exception\n",i);
 			}
 		}
+		exit(-1); // %! remove....
 ) // DEB
 #endif
 	}
@@ -290,7 +331,10 @@ DEB(
 						if (tcp && tcp -> IsReconnect())
 							p -> OnReconnect();
 						else
+						{
+							LogError(p, "Calling OnConnect", 0, "Because CallOnConnect", LOG_LEVEL_INFO);
 							p -> OnConnect();
+						}
 					}
 					p -> SetCallOnConnect( false );
 				}
@@ -356,7 +400,10 @@ DEB(
 									if (tcp && tcp -> IsReconnect())
 										p -> OnReconnect();
 									else
+									{
+										LogError(p, "Calling OnConnect", 0, "After CheckConnect", LOG_LEVEL_INFO);
 										p -> OnConnect();
+									}
 								}
 							}
 							else
@@ -476,7 +523,7 @@ DEB(
 				{
 					if (tcp && tcp -> GetOutputLength() && tcp -> GetFlushBeforeClose() && !tcp -> IsSSL() ) // wait until all data sent
 					{
-						LogError(p, "Closing", tcp -> GetOutputLength(), "Sending all data before closing", LOG_LEVEL_INFO);
+						LogError(p, "Closing", (int)tcp -> GetOutputLength(), "Sending all data before closing", LOG_LEVEL_INFO);
 					}
 					else
 					if (tcp && tcp -> IsConnected() && tcp -> Reconnect())
@@ -503,7 +550,7 @@ DEB(
 					{
 						if (tcp && tcp -> GetOutputLength())
 						{
-							LogError(p, "Closing", tcp -> GetOutputLength(), "Closing socket while data still left to send", LOG_LEVEL_WARNING);
+							LogError(p, "Closing", (int)tcp -> GetOutputLength(), "Closing socket while data still left to send", LOG_LEVEL_WARNING);
 						}
 //DEB(printf("%s: calling Close for socket %d\n",m_slave ? "slave" : "master",s);)
 						if (p -> Retain() && !p -> Lost())
@@ -602,7 +649,7 @@ void SocketHandler::RegStdLog(StdLog *x)
 }
 
 
-bool SocketHandler::OkToAccept()
+bool SocketHandler::OkToAccept(Socket *)
 {
 	return true;
 }

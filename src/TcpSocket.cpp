@@ -1,10 +1,17 @@
-/*
- **	File ......... TcpSocket.cpp
- **	Published ....  2004-02-13
- **	Author ....... grymse@alhem.net
+/** \file TcpSocket.cpp
+ **	\date  2004-02-13
+ **	\author grymse@alhem.net
 **/
 /*
 Copyright (C) 2004,2005  Anders Hedstrom
+
+This library is made available under the terms of the GNU GPL.
+
+If you would like to use this library in a closed-source application,
+a separate license agreement is available. For information about 
+the closed-source license agreement for the C++ sockets library,
+please visit http://www.alhem.net/Sockets/license.html and/or
+email license@alhem.net.
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -125,6 +132,12 @@ DEB(		printf("SSL_CTX_free()\n");)
 
 bool TcpSocket::Open(ipaddr_t ip,port_t port,bool skip_socks)
 {
+	if (Handler().GetCount() >= FD_SETSIZE)
+	{
+		Handler().LogError(this, "Open", 0, "no space left in fd_set", LOG_LEVEL_FATAL);
+		SetCloseAndDelete();
+		return false;
+	}
 	SetConnecting(false);
 	SetSocks4(false);
 	// check for pooling
@@ -138,6 +151,7 @@ bool TcpSocket::Open(ipaddr_t ip,port_t port,bool skip_socks)
 
 			SetIsClient();
 			SetCallOnConnect(); // SocketHandler must call OnConnect
+			Handler().LogError(this, "SetCallOnConnect", 0, "Found pooled connection", LOG_LEVEL_INFO);
 DEB(printf("Reusing connection\n");)
 			return true;
 		}
@@ -215,6 +229,7 @@ DEB(printf("Reusing connection\n");)
 	{
 		Handler().LogError(this, "connect", 0, "connection established", LOG_LEVEL_INFO);
 		SetCallOnConnect(); // SocketHandler must call OnConnect
+		Handler().LogError(this, "SetCallOnConnect", n, "connect() returns != -1", LOG_LEVEL_INFO);
 	}
 	SetRemoteAddress( (struct sockaddr *)&sa,sa_len);
 	Attach(s);
@@ -228,6 +243,12 @@ DEB(printf("Reusing connection\n");)
 #ifdef IPPROTO_IPV6
 bool TcpSocket::Open(in6_addr ip,port_t port,bool skip_socks)
 {
+	if (Handler().GetCount() >= FD_SETSIZE)
+	{
+		Handler().LogError(this, "Open", 0, "no space left in fd_set", LOG_LEVEL_FATAL);
+		SetCloseAndDelete();
+		return false;
+	}
 	SetConnecting(false);
 	SetSocks4(false);
 	// check for pooling
@@ -241,6 +262,7 @@ bool TcpSocket::Open(in6_addr ip,port_t port,bool skip_socks)
 
 			SetIsClient();
 			SetCallOnConnect(); // SocketHandler must call OnConnect
+			Handler().LogError(this, "SetCallOnConnect", 0, "Found pooled connection", LOG_LEVEL_INFO);
 DEB(printf("Reusing connection\n");)
 			return true;
 		}
@@ -298,6 +320,7 @@ DEB(printf("Reusing connection\n");)
 	{
 		Handler().LogError(this, "connect", 0, "connection established", LOG_LEVEL_INFO);
 		SetCallOnConnect(); // SocketHandler must call OnConnect
+		Handler().LogError(this, "SetCallOnConnect", n, "connect() returns != -1", LOG_LEVEL_INFO);
 	}
 	SetRemoteAddress( (struct sockaddr *)&sa,sa_len);
 	Attach(s);
@@ -311,6 +334,12 @@ DEB(printf("Reusing connection\n");)
 
 bool TcpSocket::Open(const std::string &host,port_t port)
 {
+	if (Handler().GetCount() >= FD_SETSIZE)
+	{
+		Handler().LogError(this, "Open", 0, "no space left in fd_set", LOG_LEVEL_FATAL);
+		SetCloseAndDelete();
+		return false;
+	}
 #ifdef IPPROTO_IPV6
 	if (IsIpv6())
 	{
@@ -388,10 +417,12 @@ DEB(		printf("TcpSocket(SSL)::OnRead()\n");)
 			case SSL_ERROR_ZERO_RETURN:
 DEB(				printf("SSL_read() returns zero - closing socket\n");)
 				SetCloseAndDelete(true);
+				SetFlushBeforeClose(false);
 				break;
 			default:
 DEB(				printf("SSL read problem, errcode = %d\n",n);)
 				SetCloseAndDelete(true); // %!
+				SetFlushBeforeClose(false);
 			}
 		}
 		else
@@ -399,6 +430,7 @@ DEB(				printf("SSL read problem, errcode = %d\n",n);)
 		{
 			Handler().LogError(this, "SSL_read", 0, "read returns 0", LOG_LEVEL_FATAL);
 			SetCloseAndDelete(true);
+			SetFlushBeforeClose(false);
 		}
 		else
 		{
@@ -412,7 +444,7 @@ DEB(			printf("TcpSocket(SSL) OnRead read %d bytes\n",n);)
 		return;
 #endif // HAVE_OPENSSL
 	}
-DEB(printf("TcpSocket::OnRead()\n");)
+//DEB(printf("TcpSocket::OnRead()\n");)
 	int n = (int)ibuf.Space();
 	char buf[TCP_BUFSIZE_READ];
 	n = TCP_BUFSIZE_READ; // %! patch away
@@ -421,6 +453,7 @@ DEB(printf("TcpSocket::OnRead()\n");)
 	{
 		Handler().LogError(this, "read", Errno, StrError(Errno), LOG_LEVEL_FATAL);
 		SetCloseAndDelete(true); // %!
+		SetFlushBeforeClose(false);
 		SetLost();
 	}
 	else
@@ -428,6 +461,7 @@ DEB(printf("TcpSocket::OnRead()\n");)
 	{
 		Handler().LogError(this, "read", 0, "read returns 0", LOG_LEVEL_FATAL);
 		SetCloseAndDelete(true);
+		SetFlushBeforeClose(false);
 		SetLost();
 	}
 	else
@@ -464,12 +498,14 @@ DEB(		printf("OnWrite: %d bytes sent\n",n);)
 		{
 		// check code
 			SetCloseAndDelete(true);
+			SetFlushBeforeClose(false);
 DEB(			perror("write() error");)
 		}
 		else
 		if (!n)
 		{
 			SetCloseAndDelete(true);
+			SetFlushBeforeClose(false);
 DEB(			printf("write() returns 0\n");)
 		}
 		else
@@ -477,6 +513,7 @@ DEB(			printf("write() returns 0\n");)
 DEB(			printf(" %d bytes written\n",n);)
 			obuf.Remove(n);
 		}
+		//
 		{
 			bool br;
 			bool bw;
@@ -529,6 +566,7 @@ signal is not sent when the write call specified the MSG_NOSIGNAL flag.
 		{	
 			Handler().LogError(this, "write", Errno, StrError(Errno), LOG_LEVEL_FATAL);
 			SetCloseAndDelete(true); // %!
+			SetFlushBeforeClose(false);
 			SetLost();
 		}
 	}
@@ -560,6 +598,7 @@ signal is not sent when the write call specified the MSG_NOSIGNAL flag.
 			p -> ptr += sz;
 		}
 	}
+	//
 	{
 		bool br;
 		bool bw;
@@ -733,8 +772,10 @@ void TcpSocket::OnSocks4ConnectFailed()
 	}
 	else
 	{
-		closesocket(GetSocket());
-		Open(GetClientRemoteAddr(), GetClientRemotePort(), true); // open directly
+//		closesocket(GetSocket());
+		// %! do another add because Open will allocate a new file descriptor
+//		Open(GetClientRemoteAddr(), GetClientRemotePort(), true); // open directly
+		SetRetryClientConnect();
 	}
 }
 
@@ -772,6 +813,7 @@ bool TcpSocket::OnSocks4Read()
 			{
 			case 90:
 				OnConnect();
+				Handler().LogError(this, "OnSocks4Read", 0, "Connection established", LOG_LEVEL_INFO);
 				break;
 			case 91:
 			case 92:
@@ -902,6 +944,7 @@ DEB(		printf(" SSLNegotiate is_client, SSL_connect returns %d\n",r);)
 			SetNonblocking(false);
 DEB(			printf("TcpSocket::SSLNegotiate() init OK\n");)
 			OnConnect();
+			Handler().LogError(this, "SSLNegotiate", 0, "Connection established", LOG_LEVEL_INFO);
 			return true;
 		}
 		else
