@@ -63,7 +63,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 //#define ENABLE_SOCKS4
 
 
-/* Asynchronous resolver. Needs ENABLE_TRIGGERS. */
+/* Asynchronous resolver. */
 #define ENABLE_RESOLVER
 
 
@@ -78,7 +78,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define ENABLE_DETACH
 
 
-/* Enable socket to socket triggers. Used by resolver. */
+/* Enable socket to socket triggers. Not yet in use. */
 //#define ENABLE_TRIGGERS
 
 

@@ -71,9 +71,9 @@ HttpdCookies::~HttpdCookies()
 	}
 }
 
-bool HttpdCookies::getvalue(const std::string& name,std::string& buffer) //char *buffer,size_t length)
+bool HttpdCookies::getvalue(const std::string& name,std::string& buffer) const
 {
-	for (cookie_v::iterator it = m_cookies.begin(); it != m_cookies.end(); it++)
+	for (cookie_v::const_iterator it = m_cookies.begin(); it != m_cookies.end(); it++)
 	{
 		COOKIE *c = *it;
 		if (!strcasecmp(c -> name.c_str(),name.c_str()))
@@ -119,11 +119,11 @@ void HttpdCookies::replacevalue(const std::string& name,int i)
 	replacevalue(name, Utility::l2string(i));
 }
 
-size_t HttpdCookies::getlength(const std::string& name)
+size_t HttpdCookies::getlength(const std::string& name) const
 {
 	COOKIE *c = NULL;
 
-	for (cookie_v::iterator it = m_cookies.begin(); it != m_cookies.end(); it++)
+	for (cookie_v::const_iterator it = m_cookies.begin(); it != m_cookies.end(); it++)
 	{
 		c = *it;
 		if (!strcasecmp(c -> name.c_str(),name.c_str()))
@@ -216,7 +216,7 @@ void HttpdCookies::setcookie(HTTPSocket *sock, const std::string& domain, const 
 }
 
 
-const std::string& HttpdCookies::expiredatetime()
+const std::string& HttpdCookies::expiredatetime() const
 {
 	time_t t = time(NULL);
 	struct tm tp;

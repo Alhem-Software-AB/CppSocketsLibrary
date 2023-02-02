@@ -253,6 +253,12 @@ public:
 
 	virtual int Protocol();
 
+	/** Trigger limit for callback OnTransferLimit. */
+	void SetTransferLimit(size_t sz);
+	/** This callback fires when the output buffer drops below the value
+	    set by SetTransferLimit. Default: 0 (disabled). */
+	virtual void OnTransferLimit();
+
 protected:
 	TcpSocket(const TcpSocket& );
 	void OnRead();
@@ -300,6 +306,8 @@ private:
 #endif
 	output_l m_obuf; ///< output buffer
 	OUTPUT *m_obuf_top; ///< output buffer on top
+	size_t m_transfer_limit;
+	size_t m_output_length;
 
 #ifdef HAVE_OPENSSL
 static	SSLInitializer m_ssl_init;

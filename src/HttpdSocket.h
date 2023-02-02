@@ -59,11 +59,11 @@ public:
 		a response to an incoming request. */
 	virtual void Exec() = 0;
 	/** Get current date in http rfc format. */
-	const std::string& GetHttpDate();
+	const std::string& GetHttpDate() const;
 	/** Get pointer to cookie class. */
 	HttpdCookies *GetCookies();
 	/** Get pointer to query string/form data class. */
-	HttpdForm *GetForm();
+	const HttpdForm *GetForm() const;
 
 protected:
 	HttpdSocket(const HttpdSocket& s) : HTTPSocket(s) {}

@@ -81,6 +81,8 @@ TcpSocket::TcpSocket(ISocketHandler& h) : StreamSocket(h)
 ,m_buf(new char[TCP_BUFSIZE_READ + 1])
 #endif
 ,m_obuf_top(NULL)
+,m_transfer_limit(0)
+,m_output_length(0)
 #ifdef HAVE_OPENSSL
 ,m_ssl_ctx(NULL)
 ,m_ssl(NULL)
@@ -116,6 +118,8 @@ TcpSocket::TcpSocket(ISocketHandler& h,size_t isize,size_t osize) : StreamSocket
 ,m_buf(new char[TCP_BUFSIZE_READ + 1])
 #endif
 ,m_obuf_top(NULL)
+,m_transfer_limit(0)
+,m_output_length(0)
 #ifdef HAVE_OPENSSL
 ,m_ssl_ctx(NULL)
 ,m_ssl(NULL)
@@ -457,7 +461,7 @@ DEB(				fprintf(stderr, "SSL read problem, errcode = %d\n",n);)
 		else
 		if (!n)
 		{
-			Handler().LogError(this, "SSL_read", 0, "read returns 0", LOG_LEVEL_FATAL);
+			OnDisconnect();
 			SetCloseAndDelete(true);
 			SetFlushBeforeClose(false);
 #ifdef ENABLE_POOL
@@ -501,6 +505,7 @@ DEB(				fprintf(stderr, "SSL read problem, errcode = %d\n",n);)
 		else
 		if (!n)
 		{
+			OnDisconnect();
 			SetCloseAndDelete(true);
 			SetFlushBeforeClose(false);
 #ifdef ENABLE_POOL
@@ -654,6 +659,7 @@ void TcpSocket::OnWrite()
 	// if all blocks are sent, reset m_wfds
 
 	bool repeat = false;
+	size_t sz = m_transfer_limit ? GetOutputLength() : 0;
 	do
 	{
 		output_l::iterator it = m_obuf.begin();
@@ -663,6 +669,7 @@ void TcpSocket::OnWrite()
 		if (n > 0)
 		{
 			size_t left = p -> Remove(n);
+			m_output_length -= n;
 			if (!left)
 			{
 				delete p;
@@ -679,6 +686,11 @@ void TcpSocket::OnWrite()
 			}
 		}
 	} while (repeat);
+
+	if (m_transfer_limit && sz > m_transfer_limit && GetOutputLength() < m_transfer_limit)
+	{
+		OnTransferLimit();
+	}
 
 	// check output buffer set, set/reset m_wfds accordingly
 	{
@@ -767,6 +779,7 @@ DEB(			int errnr = SSL_get_error(m_ssl, n);
 void TcpSocket::Buffer(const char *buf, size_t len)
 {
 	size_t ptr = 0;
+	m_output_length += len;
 	while (ptr < len)
 	{
 		// buf/len => pbuf/sz
@@ -1334,10 +1347,13 @@ size_t TcpSocket::GetInputLength()
 
 size_t TcpSocket::GetOutputLength()
 {
+	return m_output_length;
+/*
 	size_t len = 0;
 	for (output_l::iterator it = m_obuf.begin(); it != m_obuf.end(); it++)
 		len += (*it) -> Len();
 	return len;
+*/
 }
 
 
@@ -1645,6 +1661,17 @@ void TcpSocket::OnException()
 int TcpSocket::Protocol()
 {
 	return IPPROTO_TCP;
+}
+
+
+void TcpSocket::SetTransferLimit(size_t sz)
+{
+	m_transfer_limit = sz;
+}
+
+
+void TcpSocket::OnTransferLimit()
+{
 }
 
 

@@ -31,6 +31,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define _SOCKETS_IEventHandler_H
 
 #include "sockets-config.h"
+
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
 #endif
@@ -51,7 +52,7 @@ public:
 	virtual bool GetTimeUntilNextEvent(struct timeval *) = 0;
 	/** Will fire events whose time has come. */
 	virtual void CheckEvents() = 0;
-	/** Schedule and event for an owner.
+	/** Schedule event for an owner.
 		\param from Event owner
 		\param sec Seconds until event
 		\param usec Microseconds until event */

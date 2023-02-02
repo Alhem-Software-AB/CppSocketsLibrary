@@ -501,19 +501,19 @@ void HttpdSocket::Reset()
 }
 
 
-const std::string& HttpdSocket::GetHttpDate() 
+const std::string& HttpdSocket::GetHttpDate() const
 {
 	return m_http_date; 
 }
 
 
-HttpdCookies *HttpdSocket::GetCookies() 
+HttpdCookies *HttpdSocket::GetCookies()
 {
 	return m_cookies; 
 }
 
 
-HttpdForm *HttpdSocket::GetForm() 
+const HttpdForm *HttpdSocket::GetForm() const
 {
 	return m_form; 
 }

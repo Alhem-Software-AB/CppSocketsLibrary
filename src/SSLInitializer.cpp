@@ -43,14 +43,13 @@ namespace SOCKETS_NAMESPACE {
 #endif
 
 
-BIO *SSLInitializer::bio_err = NULL;
-std::string SSLInitializer::m_rand_file;
-long SSLInitializer::m_rand_size = 1024;
-
 
 SSLInitializer::SSLInitializer()
 {
 DEB(	fprintf(stderr, "SSLInitializer()\n");)
+
+	bio_err = NULL;
+	m_rand_size = 1024;
 
 	/* An error write context */
 	bio_err = BIO_new_fp(stderr, BIO_NOCLOSE);

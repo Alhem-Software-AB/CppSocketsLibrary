@@ -1,6 +1,6 @@
 /**
- **	\file SSLInitializer.h
- **	\date  2007-04-30
+ **	\file 
+ **	\date  2007-06-05
  **	\author grymse@alhem.net
 **/
 /*
@@ -20,56 +20,24 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
-#ifndef __SOCKETS_SSLInitializer_H
-#define __SOCKETS_SSLInitializer_H
-#include "sockets-config.h"
-#ifdef HAVE_OPENSSL
-
-#include <openssl/ssl.h>
-#include <string>
-
+#ifndef _SOCKETS_IBase_H
+#define _SOCKETS_IBase_H
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
 #endif
 
 
-class SSLInitializer
+class IBase
 {
 public:
-	/**
-		init openssl
-		bio_err
-		create random file
-	*/
-	SSLInitializer();
-
-	/**
-		remove random file
-	*/
-	~SSLInitializer();
-
-	void DeleteRandFile();
-
-	/** SSL; mutex locking function callback. */
-static	void SSL_locking_function(int mode, int n, const char *file, int line);
-
-	/** Return thread id. */
-static	unsigned long SSL_id_function();
-
-	BIO *bio_err;
-
-private:
-	std::string m_rand_file;
-	long m_rand_size;
+	virtual ~IBase() {}
 
 };
-
-
 
 
 #ifdef SOCKETS_NAMESPACE
 } // namespace SOCKETS_NAMESPACE {
 #endif
-#endif // HAVE_OPENSSL
-#endif // __SOCKETS_SSLInitializer_H
+
+#endif // _SOCKETS_IBase_H

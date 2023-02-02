@@ -49,14 +49,14 @@ public:
 	bool fopen(const std::string&, const std::string&);
 	void fclose();
 
-	size_t fread(char *, size_t, size_t);
+	size_t fread(char *, size_t, size_t) const;
 	size_t fwrite(const char *, size_t, size_t);
 
-	char *fgets(char *, int);
+	char *fgets(char *, int) const;
 	void fprintf(const char *format, ...);
 
-	off_t size();
-	bool eof();
+	off_t size() const;
+	bool eof() const;
 
 private:
 	File(const File& ) {} // copy constructor

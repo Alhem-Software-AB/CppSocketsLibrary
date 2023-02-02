@@ -81,29 +81,30 @@ public:
 
 	void EnableRaw(bool);
 
-	void strcpyval(std::string&,const char *);
+	/** Encode characters '<' '>' '&' as &lt; &gt; &amp; */
+	void strcpyval(std::string&,const char *) const;
 
 	/* get names */
-	bool getfirst(std::string& n);
-	bool getnext(std::string& n);
+	bool getfirst(std::string& n) const;
+	bool getnext(std::string& n) const;
 
 	/* get names and values */
-	bool getfirst(std::string& n,std::string& v);
-	bool getnext(std::string& n,std::string& v);
+	bool getfirst(std::string& n,std::string& v) const;
+	bool getnext(std::string& n,std::string& v) const;
 
 	/* get value */
-	int getvalue(const std::string& ,std::string& );
-	std::string getvalue(const std::string& );
-	size_t getlength(const std::string& );
+	int getvalue(const std::string& ,std::string& ) const;
+	std::string getvalue(const std::string& ) const;
+	size_t getlength(const std::string& ) const;
 	cgi_v& getbase();
 
-	const std::string& GetBoundary();
+	const std::string& GetBoundary() const;
 
 private:
 	HttpdForm(const HttpdForm& ) {}
 	HttpdForm& operator=(const HttpdForm& ) { return *this; }
 	cgi_v m_cgi;
-	cgi_v::iterator m_current;
+	mutable cgi_v::const_iterator m_current;
 	std::string m_strBoundary;
 	bool raw;
 };

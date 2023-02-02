@@ -98,7 +98,7 @@ void MemFile::fclose()
 
 
 /// \todo: fix for reads much larger than BLOCKSIZE
-size_t MemFile::fread(char *ptr, size_t size, size_t nmemb)
+size_t MemFile::fread(char *ptr, size_t size, size_t nmemb) const
 {
 	size_t p = m_read_ptr % BLOCKSIZE;
 	size_t sz = size * nmemb;
@@ -143,15 +143,15 @@ size_t MemFile::fwrite(const char *ptr, size_t size, size_t nmemb)
 {
 	size_t p = m_write_ptr % BLOCKSIZE;
 	size_t sz = size * nmemb;
-	if (p + sz < BLOCKSIZE)
+	if (p + sz <= BLOCKSIZE)
 	{
 		memcpy(m_current_write -> data + p, ptr, sz);
 		m_write_ptr += sz;
 	}
 	else
 	{
-		size_t sz1 = BLOCKSIZE - p;
-		size_t sz2 = size - sz1;
+		size_t sz1 = BLOCKSIZE - p; // size left
+		size_t sz2 = sz - sz1;
 		memcpy(m_current_write -> data + p, ptr, sz1);
 		block_t *next = new block_t;
 		m_current_write -> next = next;
@@ -164,7 +164,7 @@ size_t MemFile::fwrite(const char *ptr, size_t size, size_t nmemb)
 
 
 
-char *MemFile::fgets(char *s, int size)
+char *MemFile::fgets(char *s, int size) const
 {
 	int n = 0;
 	while (n < size - 1 && !eof())
@@ -201,13 +201,13 @@ void MemFile::fprintf(const char *format, ...)
 }
 
 
-off_t MemFile::size()
+off_t MemFile::size() const
 {
 	return (off_t)m_write_ptr;
 }
 
 
-bool MemFile::eof()
+bool MemFile::eof() const
 {
 	return m_b_read_caused_eof; //(m_read_ptr < m_write_ptr) ? false : true;
 }

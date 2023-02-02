@@ -434,7 +434,7 @@ void HttpdForm::EnableRaw(bool b)
 }
 
 
-void HttpdForm::strcpyval(std::string& v,const char *value) //,size_t len)
+void HttpdForm::strcpyval(std::string& v,const char *value) const
 {
 	v = "";
 	for (size_t i = 0; i < strlen(value); i++)
@@ -461,14 +461,14 @@ void HttpdForm::strcpyval(std::string& v,const char *value) //,size_t len)
 }
 
 
-bool HttpdForm::getfirst(std::string& n) //char *n,size_t len)
+bool HttpdForm::getfirst(std::string& n) const
 {
 	m_current = m_cgi.begin();
 	return getnext(n);
 }
 
 
-bool HttpdForm::getnext(std::string& n) //char *n,size_t len)
+bool HttpdForm::getnext(std::string& n) const
 {
 	if (m_current != m_cgi.end() )
 	{
@@ -485,14 +485,14 @@ bool HttpdForm::getnext(std::string& n) //char *n,size_t len)
 }
 
 
-bool HttpdForm::getfirst(std::string& n,std::string& v) //char *n,size_t len,char *v,size_t vlen)
+bool HttpdForm::getfirst(std::string& n,std::string& v) const
 {
 	m_current = m_cgi.begin();
 	return getnext(n,v);
 }
 
 
-bool HttpdForm::getnext(std::string& n,std::string& v) //char *n,size_t len,char *v,size_t vlen)
+bool HttpdForm::getnext(std::string& n,std::string& v) const
 {
 	if (m_current != m_cgi.end() )
 	{
@@ -517,12 +517,12 @@ bool HttpdForm::getnext(std::string& n,std::string& v) //char *n,size_t len,char
 }
 
 
-int HttpdForm::getvalue(const std::string& n,std::string& v) //char *v,size_t len)
+int HttpdForm::getvalue(const std::string& n,std::string& v) const
 {
 	CGI *cgi = NULL;
 	int r = 0;
 
-	for (cgi_v::iterator it = m_cgi.begin(); it != m_cgi.end(); it++)
+	for (cgi_v::const_iterator it = m_cgi.begin(); it != m_cgi.end(); it++)
 	{
 		cgi = *it;
 		if (cgi -> name == n)
@@ -550,9 +550,9 @@ int HttpdForm::getvalue(const std::string& n,std::string& v) //char *v,size_t le
 }
 
 
-std::string HttpdForm::getvalue(const std::string& n)
+std::string HttpdForm::getvalue(const std::string& n) const
 {
-	for (cgi_v::iterator it = m_cgi.begin(); it != m_cgi.end(); it++)
+	for (cgi_v::const_iterator it = m_cgi.begin(); it != m_cgi.end(); it++)
 	{
 		CGI *cgi = *it;
 		if (cgi -> name == n)
@@ -564,12 +564,12 @@ std::string HttpdForm::getvalue(const std::string& n)
 }
 
 
-size_t HttpdForm::getlength(const std::string& n)
+size_t HttpdForm::getlength(const std::string& n) const
 {
 	CGI *cgi = NULL;
 	size_t l;
 
-	for (cgi_v::iterator it = m_cgi.begin(); it != m_cgi.end(); it++)
+	for (cgi_v::const_iterator it = m_cgi.begin(); it != m_cgi.end(); it++)
 	{
 		cgi = *it;
 		if (cgi -> name == n)
@@ -603,7 +603,7 @@ HttpdForm::cgi_v& HttpdForm::getbase()
 }
 
 
-const std::string& HttpdForm::GetBoundary()
+const std::string& HttpdForm::GetBoundary() const
 {
 	return m_strBoundary;
 }

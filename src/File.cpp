@@ -69,7 +69,7 @@ void File::fclose()
 
 
 
-size_t File::fread(char *ptr, size_t size, size_t nmemb)
+size_t File::fread(char *ptr, size_t size, size_t nmemb) const
 {
 	return m_fil ? ::fread(ptr, size, nmemb, m_fil) : 0;
 }
@@ -82,7 +82,7 @@ size_t File::fwrite(const char *ptr, size_t size, size_t nmemb)
 
 
 
-char *File::fgets(char *s, int size)
+char *File::fgets(char *s, int size) const
 {
 	return m_fil ? ::fgets(s, size, m_fil) : NULL;
 }
@@ -97,7 +97,7 @@ void File::fprintf(const char *format, ...)
 }
 
 
-off_t File::size()
+off_t File::size() const
 {
 	struct stat st;
 	if (stat(m_path.c_str(), &st) == -1)
@@ -108,7 +108,7 @@ off_t File::size()
 }
 
 
-bool File::eof()
+bool File::eof() const
 {
 	if (m_fil)
 	{

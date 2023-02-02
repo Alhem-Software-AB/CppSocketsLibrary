@@ -61,14 +61,14 @@ public:
 	bool fopen(const std::string& path, const std::string& mode);
 	void fclose();
 
-	size_t fread(char *ptr, size_t size, size_t nmemb);
+	size_t fread(char *ptr, size_t size, size_t nmemb) const;
 	size_t fwrite(const char *ptr, size_t size, size_t nmemb);
 
-	char *fgets(char *s, int size);
+	char *fgets(char *s, int size) const;
 	void fprintf(const char *format, ...);
 
-	off_t size();
-	bool eof();
+	off_t size() const;
+	bool eof() const;
 
 private:
 	MemFile(const MemFile& ) {} // copy constructor
@@ -78,11 +78,11 @@ static	std::map<std::string,block_t *> m_files;
 	std::string m_path;
 	bool m_temporary;
 	block_t *m_base;
-	block_t *m_current_read;
+	mutable block_t *m_current_read;
 	block_t *m_current_write;
-	size_t m_read_ptr;
+	mutable size_t m_read_ptr;
 	size_t m_write_ptr;
-	bool m_b_read_caused_eof;
+	mutable bool m_b_read_caused_eof;
 };
 
 
