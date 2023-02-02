@@ -53,7 +53,7 @@ namespace SOCKETS_NAMESPACE {
 #endif
 
 
-std::map<int, Mutex *> SSLInitializer::m_mmap;
+std::map<int, IMutex *> SSLInitializer::m_mmap;
 Mutex SSLInitializer::m_mmap_mutex;
 
 
@@ -126,7 +126,7 @@ void SSLInitializer::DeleteRandFile()
 
 void SSLInitializer::SSL_locking_function(int mode, int n, const char *file, int line)
 {
-	Mutex *mutex = NULL;
+	IMutex *mutex = NULL;
 	{
 		Lock lock(m_mmap_mutex);
 		if (m_mmap.find(n) == m_mmap.end())

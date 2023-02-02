@@ -35,6 +35,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "Parse.h"
 #include "IFile.h"
 #include "HttpdForm.h"
+#include "IFileUpload.h"
+#include "IStream.h"
 #include "Debug.h"
 
 #ifdef SOCKETS_NAMESPACE
@@ -50,10 +52,13 @@ namespace SOCKETS_NAMESPACE {
 
 
 HttpdForm::HttpdForm(IFile *infil, const std::string& content_type, size_t content_length) : raw(false)
+, m_file_upload(NULL)
+, m_upload_stream(NULL)
 {
 DEB(	Debug deb("HttpdForm");)
 	CGI *cgi = NULL;
 	size_t extra = 2;
+	int cl = (int)content_length;
 
 	m_current = m_cgi.end();
 DEB(	deb << "Content-Type: " << content_type << Debug::endl();)
@@ -85,7 +90,8 @@ DEB(			Debug deb("HttpdForm; parsing, boundary = " + m_strBoundary);)
 			std::string current_filename;
 			char *slask = new char[TMPSIZE];
 			infil -> fgets(slask, TMPSIZE);
-			while (!infil -> eof())
+			cl -= strlen(slask);
+			while (cl >= 0 && !infil -> eof())
 			{
 				while (strlen(slask) && (slask[strlen(slask) - 1] == 13 || slask[strlen(slask) - 1] == 10))
 				{
@@ -105,12 +111,13 @@ DEB(			Debug deb("HttpdForm; parsing, boundary = " + m_strBoundary);)
 				{
 					// Get headers until empty line
 					infil -> fgets(slask, TMPSIZE);
+					cl -= strlen(slask);
 					while (strlen(slask) && (slask[strlen(slask) - 1] == 13 || slask[strlen(slask) - 1] == 10))
 					{
 						slask[strlen(slask) - 1] = 0;
 					}
 DEB(					deb << "Parsing header, line = " << slask << Debug::endl();)
-					while (!infil -> eof() && *slask)
+					while (cl >= 0 && !infil -> eof() && *slask)
 					{
 						Parse pa(slask,":");
 						std::string h = pa.getword();
@@ -178,6 +185,7 @@ DEB(										deb << "  Found filename = " << current_filename << Debug::endl();
 						}
 						// get next header value
 						infil -> fgets(slask, TMPSIZE);
+						cl -= strlen(slask);
 						while (strlen(slask) && (slask[strlen(slask) - 1] == 13 || slask[strlen(slask) - 1] == 10))
 						{
 							slask[strlen(slask) - 1] = 0;
@@ -188,10 +196,12 @@ DEB(										deb << "  Found filename = " << current_filename << Debug::endl();
 					{
 						std::string val;
 						infil -> fgets(slask, TMPSIZE);
-						while (!infil -> eof() && strncmp(slask,m_strBoundary.c_str(),m_strBoundary.size() ))
+						cl -= strlen(slask);
+						while (cl >= 0 && !infil -> eof() && strncmp(slask,m_strBoundary.c_str(),m_strBoundary.size() ))
 						{
 							val += slask;
 							infil -> fgets(slask, TMPSIZE);
+							cl -= strlen(slask);
 						}
 						// remove trailing cr/linefeed
 						while (!val.empty() && (val[val.size() - 1] == 13 || val[val.size() - 1] == 10))
@@ -201,11 +211,15 @@ DEB(										deb << "  Found filename = " << current_filename << Debug::endl();
 						cgi = new CGI(current_name, val);
 						m_cgi.push_back(cgi);
 DEB(						deb << current_name << ": " << val << Debug::endl();)
+						if (!cl)
+						{
+							break;
+						}
 					}
 					else // current_filename.size() > 0
 					{
 						// read until m_strBoundary...
-						FILE *fil;
+						FILE *fil = NULL;
 						int out = 0;
 						char c;
 						char fn[2000]; // where post'd file will be saved
@@ -222,14 +236,22 @@ DEB(						deb << current_name << ": " << val << Debug::endl();)
 #else
 						sprintf(fn,"/tmp/%s",current_filename.c_str());
 #endif
-						if ((fil = fopen(fn, "wb")) != NULL)
+						if (m_file_upload && !m_upload_stream)
+							m_upload_stream = &m_file_upload -> IFileUploadBegin(current_name, current_filename, content_type);
+						else
+							fil = fopen(fn, "wb");
+						if (fil || m_upload_stream)
 						{
 							infil -> fread(&c,1,1);
-							while (!infil -> eof())
+							cl -= 1;
+							while (cl >= 0 && !infil -> eof())
 							{
 								if (out)
 								{
-									fwrite(&tempcmp[tc],1,1,fil); // %! ??? should we write value of 'c' here?
+									if (m_upload_stream)
+										m_upload_stream -> IStreamWrite(&tempcmp[tc], 1);
+									else
+										fwrite(&tempcmp[tc],1,1,fil);
 								}
 								tempcmp[tc] = c;
 								tc++;
@@ -254,18 +276,34 @@ DEB(						deb << current_name << ": " << val << Debug::endl();)
 									}
 								}
 								infil -> fread(&c,1,1);
+								cl -= 1;
 							}
-							fclose(fil);
+							if (m_file_upload && m_upload_stream)
+							{
+								m_file_upload -> IFileUploadEnd();
+								m_upload_stream = NULL;
+							}
+							else
+							if (fil)
+							{
+								fclose(fil);
+							}
 
 							cgi = new CGI(current_name,fn,fn);
 							m_cgi.push_back(cgi);
 						
 							strcpy(slask, m_strBoundary.c_str());
-							infil -> fgets(slask + strlen(slask), TMPSIZE); // next line
+							size_t l = strlen(slask);
+							infil -> fgets(slask + l, TMPSIZE); // next line
+							cl -= strlen(slask + l);
 						}
 						else
 						{
 							// couldn't open file
+							break;
+						}
+						if (!cl)
+						{
 							break;
 						}
 					}
@@ -282,7 +320,7 @@ DEB(						deb << current_name << ": " << val << Debug::endl();)
 		{
 			delete[] tempcmp;
 		}
-	}
+	} // end of multipart
 	else
 	if (strstr(content_type.c_str(), "x-www-form-urlencoded"))
 	{
@@ -297,7 +335,7 @@ DEB(						deb << current_name << ": " << val << Debug::endl();)
 		cl--;
 		while (cl >= 0 && !infil -> eof())
 		{
-			switch (c)
+			switch (c) // built-in url decoder
 			{
 				case '=': /* end of name */
 					name = slask;
@@ -356,6 +394,8 @@ DEB(						deb << current_name << ": " << val << Debug::endl();)
 // HttpdForm(buffer,l) -- request_method GET
 
 HttpdForm::HttpdForm(const std::string& buffer,size_t l) : raw(false)
+, m_file_upload(NULL)
+, m_upload_stream(NULL)
 {
 	CGI *cgi = NULL;
 	std::string slask;
@@ -607,6 +647,12 @@ HttpdForm::cgi_v& HttpdForm::getbase()
 const std::string& HttpdForm::GetBoundary() const
 {
 	return m_strBoundary;
+}
+
+
+void HttpdForm::SetFileUpload(IFileUpload& cb)
+{
+	m_file_upload = &cb;
 }
 
 

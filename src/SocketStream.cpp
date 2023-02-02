@@ -33,6 +33,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "TcpSocket.h"
 
 
+#ifdef SOCKETS_NAMESPACE
+namespace SOCKETS_NAMESPACE {
+#endif
+
 SocketStream::SocketStream(ISocketHandler& h, TcpSocket *sock) : m_handler(h), m_socket(sock)
 {
 }
@@ -57,3 +61,6 @@ void SocketStream::IStreamWrite(const char *buf, size_t sz)
 }
 
 
+#ifdef SOCKETS_NAMESPACE
+} // namespace SOCKETS_NAMESPACE {
+#endif

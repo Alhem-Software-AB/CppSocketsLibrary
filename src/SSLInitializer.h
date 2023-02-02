@@ -33,6 +33,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "sockets-config.h"
 #ifdef HAVE_OPENSSL
 
+#ifdef _WIN32
+#include <winsock2.h>
+#endif
 #include <openssl/ssl.h>
 #include <string>
 #include <map>
@@ -72,7 +75,7 @@ static	unsigned long SSL_id_function();
 private:
 	std::string m_rand_file;
 	long m_rand_size;
-static	std::map<int, Mutex *> m_mmap;
+static	std::map<int, IMutex *> m_mmap;
 static	Mutex m_mmap_mutex;
 
 };

@@ -57,6 +57,13 @@ StreamWriter& StreamWriter::operator<<(const std::string& str)
 }
 
 
+StreamWriter& StreamWriter::operator<<(short x)
+{
+  *this << Utility::l2string(x);
+  return *this;
+}
+
+
 StreamWriter& StreamWriter::operator<<(int x)
 {
   *this << Utility::l2string(x);
@@ -74,13 +81,6 @@ StreamWriter& StreamWriter::operator<<(long x)
 StreamWriter& StreamWriter::operator<<(double x)
 {
   *this << Utility::ToString(x);
-  return *this;
-}
-
-
-StreamWriter& StreamWriter::operator<<(int64_t x)
-{
-  *this << Utility::bigint2string(x);
   return *this;
 }
 

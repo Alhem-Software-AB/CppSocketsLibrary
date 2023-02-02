@@ -42,6 +42,8 @@ namespace SOCKETS_NAMESPACE {
 
 
 class IFile;
+class IFileUpload;
+class IStream;
 
 /** Parse/store a http query_string/form-data body. 
 	\ingroup webserver */
@@ -100,6 +102,9 @@ public:
 
 	const std::string& GetBoundary() const;
 
+	/** Enable IFileUpload callback */
+	void SetFileUpload(IFileUpload& cb);
+
 private:
 	HttpdForm(const HttpdForm& ) {}
 	HttpdForm& operator=(const HttpdForm& ) { return *this; }
@@ -107,6 +112,8 @@ private:
 	mutable cgi_v::const_iterator m_current;
 	std::string m_strBoundary;
 	bool raw;
+	IFileUpload *m_file_upload;
+	IStream *m_upload_stream;
 };
 
 

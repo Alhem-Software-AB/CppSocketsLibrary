@@ -1,10 +1,9 @@
-/**
- **	\file FileStream.cpp
- **	\date  2008-12-20
+/** \file IFileUpload.h
+ **	\date  2009-04-22
  **	\author grymse@alhem.net
 **/
 /*
-Copyright (C) 2008  Anders Hedstrom
+Copyright (C) 2004-2009  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL.
 
@@ -28,31 +27,34 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
-#include "FileStream.h"
-#include "IFile.h"
+#ifndef _SOCKETS_IFileUpload_H
+#define _SOCKETS_IFileUpload_H
 
+#include "sockets-config.h"
+#include <string>
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
 #endif
 
-FileStream::FileStream(IFile& file) : m_file(file)
+class IStream;
+
+/** Multipart form file upload callback.
+	\ingroup webserver */
+class IFileUpload
 {
-}
+public:
+	virtual ~IFileUpload() {}
 
+	virtual IStream& IFileUploadBegin(const std::string& input_name, const std::string& filename, const std::string& content_type) = 0;
 
-size_t FileStream::IStreamRead(char *buf, size_t max_sz)
-{
-  return m_file.fread(buf, 1, max_sz);
-}
-
-
-void FileStream::IStreamWrite(const char *buf, size_t sz)
-{
-  m_file.fwrite(buf, 1, sz);
-}
+	virtual void IFileUploadEnd() = 0;
+};
 
 
 #ifdef SOCKETS_NAMESPACE
-} // namespace SOCKETS_NAMESPACE {
+}
 #endif
+
+#endif // _SOCKETS_IFileUpload_H
+

@@ -49,6 +49,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "Exception.h"
 #endif
 #include "Ipv4Address.h"
+#ifdef ENABLE_IPV6
+#include "Ipv6Address.h"
+#endif
 
 #ifdef _DEBUG
 #define DEB(x) x; fflush(stderr);

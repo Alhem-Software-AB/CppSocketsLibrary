@@ -48,10 +48,10 @@ public:
 
 	StreamWriter& operator<<(const char *);
 	StreamWriter& operator<<(const std::string&);
+	StreamWriter& operator<<(short);
 	StreamWriter& operator<<(int);
 	StreamWriter& operator<<(long);
 	StreamWriter& operator<<(double);
-	StreamWriter& operator<<(int64_t);
 
 private:
 	IStream& m_stream;

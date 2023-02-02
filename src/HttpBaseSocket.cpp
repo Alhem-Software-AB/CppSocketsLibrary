@@ -106,6 +106,7 @@ void HttpBaseSocket::OnHeaderComplete()
 
 void HttpBaseSocket::OnData(const char *buf,size_t sz)
 {
+DEB(	Debug deb("HttpBaseSocket::OnData");)
 	m_req.Write( buf, sz );
 	m_body_size_left -= sz;
 	if (!m_body_size_left)
@@ -121,6 +122,7 @@ void HttpBaseSocket::OnData(const char *buf,size_t sz)
 // --------------------------------------------------------------------------------------
 void HttpBaseSocket::Execute()
 {
+DEB(	Debug deb("HttpBaseSocket::Execute()");)
 	// parse form data / query_string and cookie header if available
 	m_req.ParseBody();
 
