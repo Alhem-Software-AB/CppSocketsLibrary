@@ -2,7 +2,7 @@
  **	\date  2004-10-08
 **/
 /*
-Copyright (C) 2004-2007  Anders Hedström (grymse@alhem.net)
+Copyright (C) 2004-2008  Anders Hedström (grymse@alhem.net)
 
 This library is made available under the terms of the GNU GPL.
 

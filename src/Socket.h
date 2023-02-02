@@ -3,9 +3,9 @@
  ** \author grymse@alhem.net
 **/
 /*
-Copyright (C) 2004-2007  Anders Hedstrom
+Copyright (C) 2004-2008  Anders Hedstrom
 
-This software is made available under the terms of the GNU GPL.
+This library is made available under the terms of the GNU GPL.
 
 If you would like to use this library in a closed-source application,
 a separate license agreement is available. For information about 

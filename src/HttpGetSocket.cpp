@@ -3,7 +3,7 @@
  **	\author grymse@alhem.net
 **/
 /*
-Copyright (C) 2004-2007  Anders Hedstrom
+Copyright (C) 2004-2008  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL.
 
@@ -66,7 +66,7 @@ HttpGetSocket::HttpGetSocket(ISocketHandler& h,const std::string& url_in,const s
 }
 
 
-HttpGetSocket::HttpGetSocket(ISocketHandler& h,const std::string& host,port_t port,const std::string& url,const std::string& to_file) : HttpClientSocket(h)
+HttpGetSocket::HttpGetSocket(ISocketHandler& h,const std::string& host,port_t port,const std::string& url,const std::string& to_file) : HttpClientSocket(h, host, port, url)
 {
 	SetUrl(url);
 	if (to_file.size())

@@ -1,9 +1,10 @@
-/** \file Mutex.h
- **	\date  2004-10-30
+/**
+ **	\file StreamWriter.h
+ **	\date  2008-12-20
  **	\author grymse@alhem.net
 **/
 /*
-Copyright (C) 2004-2008  Anders Hedstrom
+Copyright (C) 2008  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL.
 
@@ -27,43 +28,38 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
-#ifndef _SOCKETS_Mutex_H
-#define _SOCKETS_Mutex_H
+#ifndef _STREAMWRITER_H
+#define _STREAMWRITER_H
 
 #include "sockets-config.h"
-#ifndef _WIN32
-#include <pthread.h>
-#else
-#include <windows.h>
-#endif
-#include "IMutex.h"
+#include <string>
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
 #endif
 
-/** Mutex container class, used by Lock. 
-	\ingroup threading */
-class Mutex : public IMutex
+class IStream;
+
+class StreamWriter
 {
 public:
-	Mutex();
-	~Mutex();
+	StreamWriter(IStream& stream);
+	virtual ~StreamWriter() {}
 
-	virtual void Lock() const;
-	virtual void Unlock() const;
+	StreamWriter& operator<<(const char *);
+	StreamWriter& operator<<(const std::string&);
+	StreamWriter& operator<<(int);
+	StreamWriter& operator<<(long);
+	StreamWriter& operator<<(double);
+	StreamWriter& operator<<(int64_t);
 
 private:
-#ifdef _WIN32
-	HANDLE m_mutex;
-#else
-	mutable pthread_mutex_t m_mutex;
-#endif
+	IStream& m_stream;
+
 };
 
-
 #ifdef SOCKETS_NAMESPACE
-}
+} // namespace SOCKETS_NAMESPACE {
 #endif
-#endif // _SOCKETS_Mutex_H
 
+#endif // _STREAMWRITER_H

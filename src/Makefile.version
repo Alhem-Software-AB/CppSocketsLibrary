@@ -1,5 +1,5 @@
-VERSION =	2.3.2
-DIFF_VERSION =	2.3.1
+VERSION =	2.3.3
+DIFF_VERSION =	2.3.2
 
 # Sockets
 OBJS =		\
@@ -12,6 +12,7 @@ OBJS =		\
 		EventTime.o \
 		Exception.o \
 		File.o \
+		FileStream.o \
 		HTTPSocket.o \
 		HttpBaseSocket.o \
 		HttpClientSocket.o \
@@ -39,8 +40,10 @@ OBJS =		\
 		SmtpdSocket.o \
 		Socket.o \
 		SocketHandler.o \
+		SocketStream.o \
 		StdoutLog.o \
 		StreamSocket.o \
+		StreamWriter.o \
 		TcpSocket.o \
 		Thread.o \
 		UdpSocket.o \

@@ -1,9 +1,9 @@
-/** \file Mutex.h
- **	\date  2004-10-30
+/** \file IStream.h
+ **	\date  2008-11-15
  **	\author grymse@alhem.net
 **/
 /*
-Copyright (C) 2004-2008  Anders Hedstrom
+Copyright (C) 2008  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL.
 
@@ -27,43 +27,32 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
-#ifndef _SOCKETS_Mutex_H
-#define _SOCKETS_Mutex_H
+#ifndef _SOCKETS_IStream_H
+#define _SOCKETS_IStream_H
 
 #include "sockets-config.h"
-#ifndef _WIN32
-#include <pthread.h>
-#else
-#include <windows.h>
-#endif
-#include "IMutex.h"
+#include <string>
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
 #endif
 
-/** Mutex container class, used by Lock. 
-	\ingroup threading */
-class Mutex : public IMutex
+class IStream
 {
 public:
-	Mutex();
-	~Mutex();
+	virtual ~IStream() {}
 
-	virtual void Lock() const;
-	virtual void Unlock() const;
+	/** Try to read 'buf_sz' number of bytes from source.
+	    \return Number of bytes actually read. */
+	virtual size_t IStreamRead(char *buf, size_t buf_sz) = 0;
 
-private:
-#ifdef _WIN32
-	HANDLE m_mutex;
-#else
-	mutable pthread_mutex_t m_mutex;
-#endif
+	/** Write 'sz' bytes to destination. */
+	virtual void IStreamWrite(const char *buf, size_t sz) = 0;
+
 };
-
 
 #ifdef SOCKETS_NAMESPACE
 }
 #endif
-#endif // _SOCKETS_Mutex_H
 
+#endif // _SOCKETS_IStream_H

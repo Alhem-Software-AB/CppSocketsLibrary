@@ -3,7 +3,7 @@
  **	\author grymse@alhem.net
 **/
 /*
-Copyright (C) 2004-2007  Anders Hedstrom
+Copyright (C) 2004-2008  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL.
 
@@ -47,7 +47,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
 #endif
-
 
 #ifdef _DEBUG
 #define DEB(x) x; fflush(stderr);
@@ -442,13 +441,55 @@ DEB(			fprintf(stderr, "m_maxsock: %d\n", m_maxsock);
 				}
 				if (t && m_sockets.find(i) == m_sockets.end())
 				{
-					fprintf(stderr, "Bad fd in fd_set: %d\n", i);
+					LogError(NULL, "Select", i, "Bad fd in fd_set", LOG_LEVEL_ERROR);
 				}
 			}
 ) // DEB
 			m_preverror = Errno;
 		}
 		/// \todo rebuild fd_set's from active sockets list (m_sockets) here
+		FD_ZERO(&rfds);
+		FD_ZERO(&wfds);
+		FD_ZERO(&efds);
+		for (socket_m::iterator it = m_sockets.begin(); it != m_sockets.end(); it++)
+		{
+			SOCKET s = it -> first;
+			Socket *p = it -> second;
+			if (s == p -> GetSocket())
+			{
+				fd_set fds;
+				FD_ZERO(&fds);
+				FD_SET(s, &fds);
+				struct timeval tv;
+				tv.tv_sec = 0;
+				tv.tv_usec = 0;
+				int n = select(s + 1, &fds, NULL, NULL, &tv);
+				if (n == -1)
+				{
+					// %! bad fd, remove
+					LogError(p, "Select", s, "Bad fd in fd_set (2)", LOG_LEVEL_ERROR);
+					m_fds_erase.push_back(s);
+				}
+				else
+				{
+					if (FD_ISSET(s, &m_rfds))
+						FD_SET(s, &rfds);
+					if (FD_ISSET(s, &m_wfds))
+						FD_SET(s, &wfds);
+					if (FD_ISSET(s, &m_efds))
+						FD_SET(s, &efds);
+				}
+			}
+			else
+			{
+				// %! mismatch
+				LogError(p, "Select", s, "Bad fd in fd_set (3)", LOG_LEVEL_ERROR);
+				m_fds_erase.push_back(s);
+			}
+		}
+		m_rfds = rfds;
+		m_wfds = wfds;
+		m_efds = efds;
 	}
 	else
 	if (!n)

@@ -4,7 +4,7 @@
  **/
 
 /*
-Copyright (C) 1999-2007  Anders Hedstrom
+Copyright (C) 1999-2008  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL.
 

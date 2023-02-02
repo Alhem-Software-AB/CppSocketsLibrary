@@ -3,7 +3,7 @@
  **	\author grymse@alhem.net
 **/
 /*
-Copyright (C) 2004-2007  Anders Hedstrom
+Copyright (C) 2004-2008  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL.
 
@@ -681,6 +681,11 @@ void TcpSocket::OnWrite()
 	size_t sz = m_transfer_limit ? GetOutputLength() : 0;
 	do
 	{
+		if (m_obuf.empty())
+		{
+			Handler().LogError(this, "OnWrite", m_output_length, "Empty output buffer in OnWrite", LOG_LEVEL_ERROR);
+			break;
+		}
 		output_l::iterator it = m_obuf.begin();
 		OUTPUT *p = *it;
 		repeat = false;
@@ -1409,6 +1414,14 @@ size_t TcpSocket::GetInputLength()
 }
 
 
+size_t TcpSocket::ReadInput(char *buf, size_t max_sz)
+{
+	size_t sz = max_sz < GetInputLength() ? max_sz : GetInputLength();
+	ibuf.Read(buf, sz);
+	return sz;
+}
+
+
 size_t TcpSocket::GetOutputLength()
 {
 	return m_output_length;
@@ -1482,6 +1495,12 @@ void TcpSocket::SetLineProtocol(bool x)
 {
 	StreamSocket::SetLineProtocol(x);
 	DisableInputBuffer(x);
+}
+
+
+const std::string& TcpSocket::GetLine() const
+{
+	return m_line;
 }
 
 

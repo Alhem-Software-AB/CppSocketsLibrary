@@ -1,9 +1,10 @@
-/** \file Mutex.h
- **	\date  2004-10-30
+/**
+ **	\file FileStream.cpp
+ **	\date  2008-12-20
  **	\author grymse@alhem.net
 **/
 /*
-Copyright (C) 2004-2008  Anders Hedstrom
+Copyright (C) 2008  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL.
 
@@ -27,43 +28,24 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
-#ifndef _SOCKETS_Mutex_H
-#define _SOCKETS_Mutex_H
+#include "FileStream.h"
+#include "IFile.h"
 
-#include "sockets-config.h"
-#ifndef _WIN32
-#include <pthread.h>
-#else
-#include <windows.h>
-#endif
-#include "IMutex.h"
 
-#ifdef SOCKETS_NAMESPACE
-namespace SOCKETS_NAMESPACE {
-#endif
-
-/** Mutex container class, used by Lock. 
-	\ingroup threading */
-class Mutex : public IMutex
+FileStream::FileStream(IFile& file) : m_file(file)
 {
-public:
-	Mutex();
-	~Mutex();
-
-	virtual void Lock() const;
-	virtual void Unlock() const;
-
-private:
-#ifdef _WIN32
-	HANDLE m_mutex;
-#else
-	mutable pthread_mutex_t m_mutex;
-#endif
-};
-
-
-#ifdef SOCKETS_NAMESPACE
 }
-#endif
-#endif // _SOCKETS_Mutex_H
+
+
+size_t FileStream::IStreamRead(char *buf, size_t max_sz)
+{
+  return m_file.fread(buf, 1, max_sz);
+}
+
+
+void FileStream::IStreamWrite(const char *buf, size_t sz)
+{
+  m_file.fwrite(buf, 1, sz);
+}
+
 

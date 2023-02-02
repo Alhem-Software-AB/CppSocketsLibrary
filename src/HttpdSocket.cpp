@@ -1,7 +1,7 @@
 /** \file HttpdSocket.cpp
 */
 /*
-Copyright (C) 2001-2007  Anders Hedstrom (grymse@alhem.net)
+Copyright (C) 2001-2008  Anders Hedstrom (grymse@alhem.net)
 
 This library is made available under the terms of the GNU GPL.
 

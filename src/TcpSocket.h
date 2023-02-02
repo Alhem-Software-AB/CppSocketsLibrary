@@ -3,7 +3,7 @@
  **	\author grymse@alhem.net
 **/
 /*
-Copyright (C) 2004-2007  Anders Hedstrom
+Copyright (C) 2004-2008  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL.
 
@@ -187,6 +187,8 @@ public:
 	virtual void OnWriteComplete();
 	/** Number of bytes in input buffer. */
 	size_t GetInputLength();
+	/** Read from input buffer. */
+	size_t ReadInput(char *buf, size_t sz);
 	/** Number of bytes in output buffer. */
 	size_t GetOutputLength();
 
@@ -237,11 +239,17 @@ public:
 	bool IsReconnect();
 #endif
 
+	/** Use this if you only use OnRawData to process received data. */
 	void DisableInputBuffer(bool = true);
 
 	void OnOptions(int,int,int,SOCKET);
 
 	void SetLineProtocol(bool = true);
+
+	/** Get the unfinished line when using SetLineProtocol = true.
+	    The finished line will always be reported with a call to OnLine.
+	 */
+	const std::string& GetLine() const;
 
 	// TCP options
 	bool SetTcpNodelay(bool = true);
@@ -256,6 +264,7 @@ public:
 
 protected:
 	TcpSocket(const TcpSocket& );
+
 	void OnRead();
 	void OnRead( char *buf, size_t n );
 	void OnWrite();

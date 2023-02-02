@@ -4,7 +4,15 @@
  **	\author grymse@alhem.net
 **/
 /*
-Copyright (C) 2007  Anders Hedstrom
+Copyright (C) 2007-2008  Anders Hedstrom
+
+This library is made available under the terms of the GNU GPL.
+
+If you would like to use this library in a closed-source application,
+a separate license agreement is available. For information about 
+the closed-source license agreement for the C++ sockets library,
+please visit http://www.alhem.net/Sockets/license.html and/or
+email license@alhem.net.
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -61,6 +69,24 @@ HttpClientSocket::HttpClientSocket(ISocketHandler& h,const std::string& url_in)
 {
 	std::string url;
 	url_this(url_in, m_protocol, m_host, m_port, url, m_url_filename);
+	SetUrl( url );
+}
+
+
+HttpClientSocket::HttpClientSocket(ISocketHandler& h,const std::string& host, port_t port, const std::string& url_in)
+:HTTPSocket(h)
+,m_data_ptr(NULL)
+,m_data_size(0)
+,m_content_length(0)
+,m_data_ptr_set(false)
+,m_fil(NULL)
+,m_content_ptr(0)
+,m_b_complete(false)
+,m_b_close_when_complete(false)
+{
+	std::string url;
+	std::string tmp = "http://" + host + ":" + Utility::l2string(port) + url_in;
+	url_this(tmp, m_protocol, m_host, m_port, url, m_url_filename);
 	SetUrl( url );
 }
 

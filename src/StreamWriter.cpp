@@ -1,10 +1,10 @@
 /**
- **	\file AjpBaseSocket.h
- **	\date  2007-10-05
+ **	\file StreamWriter.cpp
+ **	\date  2008-12-20
  **	\author grymse@alhem.net
 **/
 /*
-Copyright (C) 2007-2008  Anders Hedstrom
+Copyright (C) 2008  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL.
 
@@ -28,11 +28,8 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
-#ifndef _SOCKETS_AjpBaseSocket_H
-#define _SOCKETS_AjpBaseSocket_H
-
-#include "TcpSocket.h"
-#include <map>
+#include "StreamWriter.h"
+#include "IStream.h"
 #include "Utility.h"
 
 
@@ -40,54 +37,54 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 namespace SOCKETS_NAMESPACE {
 #endif
 
-class AjpBaseSocket : public TcpSocket
+
+StreamWriter::StreamWriter(IStream& stream) : m_stream(stream)
 {
-	class Initializer
-	{
-	public:
-		Initializer();
-		virtual ~Initializer() {}
+}
 
-		std::map<int, std::string> Method;
-		std::map<int, std::string> Header;
-		std::map<int, std::string> Attribute;
 
-		Utility::ncmap<int> ResponseHeader;
+StreamWriter& StreamWriter::operator<<(const char *buf)
+{
+  m_stream.IStreamWrite(buf, strlen(buf));
+  return *this;
+}
 
-	};
 
-public:
-	AjpBaseSocket(ISocketHandler& h);
+StreamWriter& StreamWriter::operator<<(const std::string& str)
+{
+  m_stream.IStreamWrite(str.c_str(), str.size());
+  return *this;
+}
 
-	void OnRawData(const char *buf, size_t sz);
 
-	virtual void OnHeader( short id, short len ) = 0;
-	virtual void OnPacket( const char *buf, size_t sz ) = 0;
+StreamWriter& StreamWriter::operator<<(int x)
+{
+  *this << Utility::l2string(x);
+  return *this;
+}
 
-protected:
-	unsigned char get_byte(const char *buf, int& ptr);
-	bool get_boolean(const char *buf, int& ptr);
-	short get_integer(const char *buf, int& ptr);
-	std::string get_string(const char *buf, int& ptr);
 
-	void put_byte(char *buf, int& ptr, unsigned char zz);
-	void put_boolean(char *buf, int& ptr, bool zz);
-	void put_integer(char *buf, int& ptr, short zz);
-	void put_string(char *buf, int& ptr, const std::string& zz);
+StreamWriter& StreamWriter::operator<<(long x)
+{
+  *this << Utility::l2string(x);
+  return *this;
+}
 
-	static Initializer Init;
 
-private:
-	int m_state;
-	int m_length;
-	int m_ptr;
-	char m_message[8192];
-};
+StreamWriter& StreamWriter::operator<<(double x)
+{
+  *this << Utility::ToString(x);
+  return *this;
+}
+
+
+StreamWriter& StreamWriter::operator<<(int64_t x)
+{
+  *this << Utility::bigint2string(x);
+  return *this;
+}
 
 
 #ifdef SOCKETS_NAMESPACE
 } // namespace SOCKETS_NAMESPACE {
 #endif
-
-#endif // _SOCKETS_AjpBaseSocket_H
-
