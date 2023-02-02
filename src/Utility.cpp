@@ -546,6 +546,30 @@ void Utility::SetEnv(const std::string& var,const std::string& value)
 }
 
 
+std::string Utility::Sa2String(struct sockaddr *sa)
+{
+#ifdef IPPROTO_IPV6
+	if (sa -> sa_family == AF_INET6)
+	{
+		struct sockaddr_in6 *sa6 = (struct sockaddr_in6 *)sa;
+		std::string tmp;
+		Utility::l2ip(sa6 -> sin6_addr, tmp);
+		return tmp + ":" + Utility::l2string(sa6 -> sin6_port);
+	}
+#endif
+	if (sa -> sa_family == AF_INET)
+	{
+		struct sockaddr_in *sa4 = (struct sockaddr_in *)sa;
+		ipaddr_t a;
+		memcpy(&a, &sa4 -> sin_addr, 4);
+		std::string tmp;
+		Utility::l2ip(a, tmp);
+		return tmp + ":" + Utility::l2string(sa4 -> sin_port);
+	}
+	return "";
+}
+
+
 #ifdef SOCKETS_NAMESPACE
 }
 #endif

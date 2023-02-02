@@ -40,12 +40,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <stdarg.h>
 #ifdef HAVE_OPENSSL
 #include <openssl/rand.h>
-#ifdef _WIN32
-// TODO: systray.exe??
-#define RANDOM "systray.exe"
-#else
-#define RANDOM "/dev/urandom"
-#endif
 #endif
 
 #include "TcpSocket.h"
@@ -511,11 +505,13 @@ void TcpSocket::OnRead()
 DEB(				printf("SSL_read() returns zero - closing socket\n");)
 				SetCloseAndDelete(true);
 				SetFlushBeforeClose(false);
+				SetLost();
 				break;
 			default:
 DEB(				printf("SSL read problem, errcode = %d\n",n);)
 				SetCloseAndDelete(true); // %!
 				SetFlushBeforeClose(false);
+				SetLost();
 			}
 		}
 		else
@@ -524,6 +520,8 @@ DEB(				printf("SSL read problem, errcode = %d\n",n);)
 			Handler().LogError(this, "SSL_read", 0, "read returns 0", LOG_LEVEL_FATAL);
 			SetCloseAndDelete(true);
 			SetFlushBeforeClose(false);
+			SetLost();
+			SetConnected(false); // avoid shutdown in Close()
 		}
 		else
 		{
@@ -559,6 +557,7 @@ DEB(				printf("SSL read problem, errcode = %d\n",n);)
 		SetCloseAndDelete(true);
 		SetFlushBeforeClose(false);
 		SetLost();
+		SetConnected(false); // avoid shutdown in Close()
 	}
 	else
 	{
@@ -591,6 +590,7 @@ void TcpSocket::OnWrite()
 			SetCloseAndDelete(true);
 			SetFlushBeforeClose(false);
 DEB(			perror("SSL_write() error");)
+			SetLost();
 		}
 		else
 		if (!n)
@@ -598,6 +598,7 @@ DEB(			perror("SSL_write() error");)
 			SetCloseAndDelete(true);
 			SetFlushBeforeClose(false);
 DEB(			printf("SSL_write() returns 0\n");)
+			SetLost();
 		}
 		else
 		{
@@ -1157,7 +1158,6 @@ DEB(		printf("Couldn't read CA list\n");)
 */
 
 	/* Load randomness */
-//	if (!(RAND_load_file(RANDOM, 1024*1024)))
 	if (!m_rand_file.size() || !RAND_load_file(m_rand_file.c_str(), m_rand_size))
 	{
 		Handler().LogError(this, "TcpSocket InitializeContext", 0, "Couldn't load randomness", LOG_LEVEL_ERROR);

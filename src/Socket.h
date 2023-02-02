@@ -276,9 +276,9 @@ public:
 	/** Check retain flag.
 		\return true if the socket should be moved to connection pool after use */
 	bool Retain();
-	/** Connection lost - error while reading/writing from a socket. */
+	/** Connection lost - error while reading/writing from a socket - TcpSocket only. */
 	void SetLost();
-	/** Check connection lost status flag.
+	/** Check connection lost status flag, used by TcpSocket only.
 		\return true if there was an error while r/w causing the socket to close */
 	bool Lost();
 	/** Instruct socket to call OnConnect callback next sockethandler cycle. */
@@ -307,6 +307,19 @@ public:
 		\param a resolved ip address
 		\param port port number passed to Resolve */
 	virtual void OnResolved(int id,ipaddr_t a,port_t port);
+	/** Request asynchronous reverse dns lookup.
+		\param a in_addr to be translated */
+	int Resolve(ipaddr_t a);
+	/** Request asynchronous reverse dns lookup.
+		\param a IP address to be translated */
+	int Resolve(const std::string& a);
+	/** Callback returning reverse resolve results.
+		\param id Resolve ID
+		\param name Resolved hostname */
+	virtual void OnResolved(int id,const std::string& name);
+	/** Callback indicating failed dns lookup.
+		\param id Resolve ID */
+	virtual void OnResolveFailed(int id);
 
 	/** socket still in socks4 negotiation mode */
 	bool Socks4();

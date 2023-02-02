@@ -34,6 +34,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #pragma warning(disable:4514)
 #endif
 
+// common defines affecting library and applications using library
+
+/* Define SOCKETS_DYNAMIC_TEMP to use dynamically allocated buffers
+   in read operations - helps on ECOS */
+#define SOCKETS_DYNAMIC_TEMP
+
+
 #if (defined(__unix__) || defined(unix)) && !defined(USG)
 #include <sys/param.h>
 #endif

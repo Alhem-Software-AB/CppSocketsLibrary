@@ -968,6 +968,46 @@ int SocketHandler::Resolve(Socket *p,const std::string& host,port_t port)
 }
 
 
+int SocketHandler::Resolve(Socket *p,ipaddr_t a)
+{
+	// check cache
+	ResolvSocket *resolv = new ResolvSocket(*this, p);
+	resolv -> SetId(++m_resolv_id);
+	resolv -> SetAddress(a);
+	resolv -> SetDeleteByHandler();
+	ipaddr_t local;
+	Utility::u2ip("127.0.0.1", local);
+	if (!resolv -> Open(local, m_resolver_port))
+	{
+		LogError(resolv, "Resolve", -1, "Can't connect to local resolve server", LOG_LEVEL_FATAL);
+	}
+	Add(resolv);
+	return m_resolv_id;
+}
+
+
+int SocketHandler::Resolve(Socket *p,const std::string& ip)
+{
+	// check cache
+	ResolvSocket *resolv = new ResolvSocket(*this, p);
+	resolv -> SetId(++m_resolv_id);
+	{
+		ipaddr_t a;
+		Utility::u2ip(ip, a);
+		resolv -> SetAddress(a);
+	}
+	resolv -> SetDeleteByHandler();
+	ipaddr_t local;
+	Utility::u2ip("127.0.0.1", local);
+	if (!resolv -> Open(local, m_resolver_port))
+	{
+		LogError(resolv, "Resolve", -1, "Can't connect to local resolve server", LOG_LEVEL_FATAL);
+	}
+	Add(resolv);
+	return m_resolv_id;
+}
+
+
 void SocketHandler::EnableResolver(port_t port)
 {
 	if (!m_resolver)

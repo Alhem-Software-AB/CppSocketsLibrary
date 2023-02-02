@@ -39,6 +39,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "SocketHandler.h"
 #include "Socket.h"
 #include "Utility.h"
+#include "SctpSocket.h"
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
@@ -190,6 +191,12 @@ public:
 		\param port Port (0 is random)
 		\param depth Listen queue depth */
 	int Bind(ipaddr_t a,port_t port,int depth = 20) {
+#ifdef IPPROTO_SCTP
+		if (dynamic_cast<SctpSocket *>(m_creator))
+		{
+			return Bind(a, port, "sctp", depth);
+		}
+#endif
 		return Bind(a, port, "tcp", depth);
 	}
 	/** Bind and listen to ipv4 interface.
@@ -200,7 +207,6 @@ public:
 	int Bind(ipaddr_t a,port_t port,const std::string& protocol,int depth) {
 		struct sockaddr_in sa;
 		SOCKET s;
-
 		if ( (s = CreateSocket(AF_INET, SOCK_STREAM, protocol)) == INVALID_SOCKET)
 		{
 			return -1;
@@ -235,6 +241,12 @@ public:
 		\param port Port (0 is random)
 		\param depth Listen queue depth */
 	int Bind(in6_addr a,port_t port,int depth = 20) {
+#ifdef IPPROTO_SCTP
+		if (dynamic_cast<SctpSocket *>(m_creator))
+		{
+			return Bind(a, port, "sctp", depth);
+		}
+#endif
 		return Bind(a, port, "tcp", depth);
 	}
 	/** Bind and listen to ipv6 interface.
@@ -335,6 +347,8 @@ public:
         {
                 return accept(socket, saptr, lenptr);
         }
+
+        bool HasCreator() { return m_bHasCreate; }
 
 protected:
 	ListenSocket(const ListenSocket& ) {}

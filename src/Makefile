@@ -1,5 +1,5 @@
-VERSION =	2.0.6
-DIFF_VERSION =	2.0.5
+VERSION =	2.0.7
+DIFF_VERSION =	2.0.6
 
 INCLUDE =	-I.
 PREFIX =	/usr/local
@@ -15,11 +15,7 @@ CFLAGS =	-Wall -g $(INCLUDE) -MD -D_VERSION='"$(VERSION)"'
 CFLAGS +=	-O2
 
 # Enable insane amounts of debug output to stdout/stderr:
-CFLAGS +=	-D_DEBUG
-
-# Define SOCKETS_DYNAMIC_TEMP to use dynamically allocated buffers
-# in read operations - helps on ECOS
-CFLAGS +=	-DSOCKETS_DYNAMIC_TEMP
+#CFLAGS +=	-D_DEBUG
 
 # The flag _THREADSAFE_SOCKETS does NOT mean that all operations in 
 # SocketHandler/Socket derivatives becomes thread safe unfortunately.
@@ -85,7 +81,8 @@ OBJS =		CircularBuffer.o \
 		Mutex.o \
 		Lock.o \
 		EventTime.o Event.o IEventOwner.o EventHandler.o \
-		HttpClientSocket.o
+		HttpClientSocket.o \
+		SctpSocket.o
 
 libSockets.a:	$(OBJS)
 		ar cru $@ $(OBJS)

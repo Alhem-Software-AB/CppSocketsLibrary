@@ -48,7 +48,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 namespace SOCKETS_NAMESPACE {
 #endif
 
-
+#ifdef _DEBUG
+#define DEB(x) x
+#else
+#define DEB(x)
+#endif
 
 
 ResolvSocket::ResolvSocket(SocketHandler& h,Socket *parent)
@@ -72,6 +76,7 @@ void ResolvSocket::OnLine(const std::string& line)
 	{
 		m_query = pa.getword();
 		m_data = pa.getrest();
+DEB(		printf("ResolvSocket server; query=%s, data=%s\n", m_query.c_str(), m_data.c_str());)
 		if (!Detach()) // detach failed?
 		{
 			SetCloseAndDelete();
@@ -81,6 +86,19 @@ void ResolvSocket::OnLine(const std::string& line)
 	std::string key = pa.getword();
 	std::string value = pa.getrest();
 
+	if (key == "Failed" && m_parent)
+	{
+DEB(		printf("************ Resolve failed\n");)
+		m_parent -> OnResolveFailed(m_resolv_id);
+		m_parent = NULL;
+	}
+	else
+	if (key == "Name" && !m_resolv_host.size() && m_parent)
+	{
+		m_parent -> OnResolved(m_resolv_id, value);
+		m_parent = NULL;
+	}
+	else
 	if (key == "A" && m_parent)
 	{
 		ipaddr_t l;
@@ -93,6 +111,7 @@ void ResolvSocket::OnLine(const std::string& line)
 
 void ResolvSocket::OnDetached()
 {
+DEB(	printf("ResolvSocket::OnDetached(); query=%s, data=%s\n", m_query.c_str(), m_data.c_str());)
 #ifndef _WIN32
 	if (m_query == "getaddrinfo")
 	{
@@ -214,7 +233,42 @@ void ResolvSocket::OnDetached()
 	else
 	if (m_query == "gethostbyaddr")
 	{
-		Send("Not Implemented\n\n");
+		// input: ipv4 ip address
+		ipaddr_t a;
+		Utility::u2ip(m_data.c_str(), a);
+		struct hostent *h = gethostbyaddr( (const char *)&a, sizeof(a), AF_INET);
+		if (h)
+		{
+			Send("Name: " + (std::string)h -> h_name + "\n");
+			size_t i = 0;
+			while (h -> h_aliases[i])
+			{
+				Send("Alias: " + (std::string)h -> h_aliases[i] + "\n");
+				i++;
+			}
+			Send("AddrType: " + Utility::l2string(h -> h_addrtype) + "\n");
+			Send("Length: " + Utility::l2string(h -> h_length) + "\n");
+			i = 0;
+			while (h -> h_addr_list[i])
+			{
+				// let's assume 4 byte IPv4 addresses
+				char ip[40];
+				*ip = 0;
+				for (int j = 0; j < 4; j++)
+				{
+					if (*ip)
+						strcat(ip,".");
+					sprintf(ip + strlen(ip),"%u",(unsigned char)h -> h_addr_list[i][j]);
+				}
+				Send("A: " + (std::string)ip + "\n");
+				i++;
+			}
+		}
+		else
+		{
+			Send("Failed\n");
+		}
+		Send("\n");
 	}
 	else
 	{
@@ -228,8 +282,26 @@ void ResolvSocket::OnDetached()
 
 void ResolvSocket::OnConnect()
 {
-	std::string msg = "gethostbyname " + m_resolv_host + "\n";
+	if (m_resolv_host.size())
+	{
+		std::string msg = "gethostbyname " + m_resolv_host + "\n";
+		Send( msg );
+		return;
+	}
+	std::string tmp;
+	Utility::l2ip(m_resolv_address, tmp);
+	std::string msg = "gethostbyaddr " + tmp + "\n";
 	Send( msg );
+}
+
+
+void ResolvSocket::OnDelete()
+{
+	if (m_parent)
+	{
+		m_parent -> OnResolveFailed(m_resolv_id);
+		m_parent = NULL;
+	}
 }
 
 

@@ -47,9 +47,11 @@ public:
 	void OnAccept() { m_bServer = true; }
 	void OnLine(const std::string& line);
 	void OnDetached();
+	void OnDelete();
 
 	void SetId(int x) { m_resolv_id = x; }
 	void SetHost(const std::string& x) { m_resolv_host = x; }
+	void SetAddress(ipaddr_t x) { m_resolv_address = x; }
 	void SetPort(port_t x) { m_resolv_port = x; }
 	void OnConnect();
 
@@ -64,6 +66,7 @@ private:
 	int m_resolv_id;
 	std::string m_resolv_host;
 	port_t m_resolv_port;
+	ipaddr_t m_resolv_address;
 };
 
 

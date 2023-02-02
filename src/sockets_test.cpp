@@ -165,6 +165,16 @@ public:
 			}
 		}
 		else
+/*
+		if (cmd == "reverse")
+		{
+			ipaddr_t a;
+			Utility::u2ip(arg, a); // ip -> ipaddr_t
+			int id = Socket::Resolve(a, 0);
+			Send("Resolve id = " + Utility::l2string(id) + "\n");
+		}
+		else
+*/
 		if (cmd == "detach")
 		{
 			if (!Detach())
@@ -190,6 +200,14 @@ public:
 	void OnDelete() {
 		printf("OrderSocket::OnDelete()\n");
 	}
+	void OnResolved(int id,ipaddr_t a,port_t port)
+	{
+	}
+	void OnResolved(int id,const std::string& name,port_t port)
+	{
+		Send("Resolve id " + Utility::l2string(id) + " = " + name + "\n");
+	}
+/*
 	void OnResolved(const char *p,size_t l) {
 		printf("OnResolved, %d bytes:\n", l);
 		for (size_t i = 0; i < l; i++)
@@ -202,6 +220,7 @@ public:
 		}
 		printf("\n");
 	}
+*/
 	void OnDetached() {
 		Send("\nDetached.\nCmd>");
 	}

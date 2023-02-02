@@ -692,6 +692,18 @@ int Socket::Resolve(const std::string& host,port_t port)
 }
 
 
+int Socket::Resolve(ipaddr_t a)
+{
+	return Handler().Resolve(this, a);
+}
+
+
+int Socket::Resolve(const std::string& a)
+{
+	return Handler().Resolve(this, a);
+}
+
+
 void Socket::OnSocks4Connect()
 {
 	Handler().LogError(this, "OnSocks4Connect", 0, "Use with TcpSocket only");
@@ -725,6 +737,16 @@ void Socket::OnWriteComplete()
 
 
 void Socket::OnResolved(int,ipaddr_t,port_t)
+{
+}
+
+
+void Socket::OnResolved(int,const std::string&)
+{
+}
+
+
+void Socket::OnResolveFailed(int)
 {
 }
 

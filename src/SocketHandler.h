@@ -133,6 +133,10 @@ public:
 	bool ResolverEnabled();
 	/** Queue a dns request. */
 	int Resolve(Socket *,const std::string& host,port_t);
+
+	int Resolve(Socket *,ipaddr_t a);
+	
+	int Resolve(Socket *,const std::string&);
 	/** Get listen port of asynchronous dns server. */
 	port_t GetResolverPort();
 	/** Resolver thread ready for queries. */

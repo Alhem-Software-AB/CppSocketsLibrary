@@ -102,7 +102,13 @@ public:
 		\sa ResolveLocal */
 	static const std::string& GetLocalAddress6();
 #endif
+	/** Set environment variable.
+		\param var Name of variable to set
+		\param value Value */
 	static void SetEnv(const std::string& var,const std::string& value);
+	/** Convert sockaddr struct to human readable string.
+		\param sa Ptr to sockaddr struct */
+	static std::string Sa2String(struct sockaddr *sa);
 
 private:
 	static std::string m_host; ///< local hostname
