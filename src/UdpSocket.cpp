@@ -3,7 +3,7 @@
  **	\author grymse@alhem.net
 **/
 /*
-Copyright (C) 2004-2006  Anders Hedstrom
+Copyright (C) 2004-2007  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL.
 
@@ -33,7 +33,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #else
 #include <errno.h>
 #endif
-#include <stdio.h>
 
 #include "ISocketHandler.h"
 #include "UdpSocket.h"

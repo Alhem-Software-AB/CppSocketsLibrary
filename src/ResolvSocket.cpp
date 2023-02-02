@@ -3,7 +3,7 @@
  **	\author grymse@alhem.net
 **/
 /*
-Copyright (C) 2004-2006  Anders Hedstrom
+Copyright (C) 2004-2007  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL.
 
@@ -27,21 +27,13 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
-#include <stdio.h>
 #ifdef _WIN32
 #pragma warning(disable:4786)
 #else
 #include <netdb.h>
 #endif
-/*
-#if defined(_WIN32) || defined(__CYGWIN__)
-#pragma warning(disable:4786)
-#include <winsock.h>
-#else
-#include <netdb.h>
-#endif
-*/
 #include "ResolvSocket.h"
+#ifdef ENABLE_RESOLVER
 #include "Utility.h"
 #include "Parse.h"
 #include "ISocketHandler.h"
@@ -125,50 +117,6 @@ DEB(		printf("************ Resolve failed\n");)
 void ResolvSocket::OnDetached()
 {
 DEB(	printf("ResolvSocket::OnDetached(); query=%s, data=%s\n", m_query.c_str(), m_data.c_str());)
-#ifndef _WIN32
-	if (m_query == "getaddrinfo")
-	{
-		struct addrinfo hints;
-		struct addrinfo *res;
-		memset(&hints, 0, sizeof(hints));
-		hints.ai_flags |= AI_CANONNAME;
-		int n = getaddrinfo(m_data.c_str(), NULL, &hints, &res);
-		if (!n)
-		{
-			struct addrinfo *resl = res;
-			while (resl)
-			{
-				Send("Flags: " + Utility::l2string(resl -> ai_flags) + "\n");
-				Send("Family: " + Utility::l2string(resl -> ai_family) + "\n");
-				Send("Socktype: " + Utility::l2string(resl -> ai_socktype) + "\n");
-				Send("Protocol: " + Utility::l2string(resl -> ai_protocol) + "\n");
-				Send("Addrlen: " + Utility::l2string(resl -> ai_addrlen) + "\n");
-				std::string tmp;
-				Base64 bb;
-				bb.encode( (unsigned char *)resl -> ai_addr, resl -> ai_addrlen, tmp, false);
-				Send("Address: " + tmp + "\n");
-				// base64-encoded sockaddr
-				Send("Canonname: ");
-				Send( resl -> ai_canonname );
-				Send("\n");
-				Send("\n");
-				//
-				resl = resl -> ai_next;
-			}
-			freeaddrinfo(res);
-		}
-		else
-		{
-			std::string error = "Error: ";
-#ifndef __CYGWIN__
-			error += gai_strerror(n);
-#endif
-			Send( error + "\n" );
-			Send("\n");
-		}
-	}
-	else
-#endif // _WIN32
 	if (m_query == "gethostbyname")
 	{
 		struct sockaddr_in sa;
@@ -300,3 +248,4 @@ void ResolvSocket::OnDelete()
 }
 #endif
 
+#endif // ENABLE_RESOLVER

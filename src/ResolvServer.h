@@ -3,7 +3,7 @@
  **	\author grymse@alhem.net
 **/
 /*
-Copyright (C) 2004-2006  Anders Hedstrom
+Copyright (C) 2004-2007  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL.
 
@@ -29,7 +29,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #ifndef _RESOLVSERVER_H
 #define _RESOLVSERVER_H
-
+#include "sockets-config.h"
+#ifdef ENABLE_RESOLVER
+#include "socket_include.h"
 #include "Thread.h"
 
 #ifdef SOCKETS_NAMESPACE
@@ -66,4 +68,5 @@ private:
 }
 #endif
 
+#endif // ENABLE_RESOLVER
 #endif // _RESOLVSERVER_H

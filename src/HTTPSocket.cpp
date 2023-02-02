@@ -3,7 +3,7 @@
  **	\author grymse@alhem.net
 **/
 /*
-Copyright (C) 2004-2006  Anders Hedstrom
+Copyright (C) 2004-2007  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL.
 
@@ -30,7 +30,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifdef _WIN32
 #pragma warning(disable:4786)
 #endif
-#include <stdio.h>
 #include <stdarg.h>
 #include "Parse.h"
 #include "HTTPSocket.h"
@@ -60,89 +59,11 @@ HTTPSocket::~HTTPSocket()
 }
 
 
-/*
-void HTTPSocket::OnRead()
-{
-	TcpSocket::OnRead();
-	if (!m_header)
-	{
-		if (ibuf.GetLength())
-		{
-			size_t n = ibuf.GetLength();
-#ifdef SOCKETS_DYNAMIC_TEMP
-			char *tmp = m_buf;
-#else
-			char tmp[TCP_BUFSIZE_READ];
-#endif
-			n = (n >= TCP_BUFSIZE_READ) ? TCP_BUFSIZE_READ : n;
-			ibuf.Read(tmp,n);
-
-			OnData(tmp,n);
-		}
-	}
-}
-
-
-void HTTPSocket::ReadLine()
-{
-	if (ibuf.GetLength())
-	{
-		size_t n = ibuf.GetLength();
-#ifdef SOCKETS_DYNAMIC_TEMP
-		char *tmp = m_buf;
-#else
-		char tmp[TCP_BUFSIZE_READ];
-#endif
-		n = (n >= TCP_BUFSIZE_READ) ? TCP_BUFSIZE_READ : n;
-		ibuf.Read(tmp,n);
-
-		for (size_t i = 0; i < n; i++)
-		{
-			if (!m_header)
-			{
-				OnData(tmp + i,n - i);
-				break;
-			}
-			switch (tmp[i])
-			{
-			case 13: // ignore
-				break;
-			case 10: // end of line
-				OnLine(m_line);
-				m_line = "";
-				break;
-			default:
-				m_line += tmp[i];
-			}
-		}
-	}
-}
-*/
 void HTTPSocket::OnRawData(const char *buf,size_t len)
 {
 	if (!m_header)
 	{
 		OnData(buf, len);
-		return;
-	}
-	for (size_t i = 0; i < len; i++)
-	{
-		if (!m_header)
-		{
-			OnData(buf + i,len - i);
-			break;
-		}
-		switch (buf[i])
-		{
-		case 13: // ignore
-			break;
-		case 10: // end of line
-			OnLine(m_line);
-			m_line = "";
-			break;
-		default:
-			m_line += buf[i];
-		}
 	}
 }
 
@@ -195,11 +116,13 @@ void HTTPSocket::OnLine(const std::string& line)
 	/* If remote end tells us to keep connection alive, and we're operating
 	in http/1.1 mode (not http/1.0 mode), then we mark the socket to be
 	retained. */
+#ifdef ENABLE_POOL
 	if (!strcasecmp(key.c_str(), "connection") &&
 	    !strcasecmp(value.c_str(), "keep-alive") )
 	{
 		SetRetain();
 	}
+#endif
 }
 
 

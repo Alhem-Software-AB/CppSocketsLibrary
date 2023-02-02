@@ -3,7 +3,7 @@
  ** \author grymse@alhem.net
 **/
 /*
-Copyright (C) 2004-2006  Anders Hedstrom
+Copyright (C) 2004-2007  Anders Hedstrom
 
 This software is made available under the terms of the GNU GPL.
 
@@ -29,6 +29,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #ifndef _SOCKETBASE_H
 #define _SOCKETBASE_H
+#include "sockets-config.h"
 
 #include <string>
 #include <vector>
@@ -50,8 +51,6 @@ class ISocketHandler;
 class SocketThread;
 class SocketAddress;
 
-
-//	typedef std::list<std::string> string_v;
 
 /** \defgroup basic Basic sockets */
 /** Socket base class.
@@ -117,6 +116,7 @@ public:
 	virtual void OnConnectFailed();
 	/** Called when a socket is created, to set socket options. */
 	virtual void OnOptions(int family,int type,int protocol,SOCKET) = 0;
+#ifdef ENABLE_SOCKS4
 	/** Socks4 client support internal use. \sa TcpSocket */
 	virtual void OnSocks4Connect();
 	/** Socks4 client support internal use. \sa TcpSocket */
@@ -125,6 +125,7 @@ public:
 	virtual bool OnSocks4Read();
 	/** Called when the last write caused the tcp output buffer to
 	 * become empty. */
+#endif
 //	virtual void OnWriteComplete();
 	/** SSL client/server support - internal use. \sa TcpSocket */
 	virtual void OnSSLConnect();
@@ -132,14 +133,18 @@ public:
 	virtual void OnSSLAccept();
 	/** Connection retry callback - return false to abort connection attempts */
 	virtual bool OnConnectRetry();
+#ifdef ENABLE_RECONNECT
 	/** a reconnect has been made */
 	virtual void OnReconnect();
+#endif
 	/** SSL negotiation failed for client connect. */
 	virtual void OnSSLConnectFailed();
 	/** SSL negotiation failed for server accept. */
 	virtual void OnSSLAcceptFailed();
+#ifdef ENABLE_RECONNECT
 	/** When a socket is set to reconnect, and a disconnect has been detected. */
 	virtual void OnDisconnect();
+#endif
 
 	/** Check whether a connection has been established. */
 	virtual bool CheckConnect();
@@ -263,6 +268,7 @@ public:
 	/** Get address/port of last connect() call. */
 	std::auto_ptr<SocketAddress> GetClientRemoteAddress();
 
+#ifdef ENABLE_POOL
 	/** Instruct a client socket to stay open in the connection pool after use.
 		If you have connected to a server using tcp, you can call SetRetain
 		to leave the connection open after your socket instance has been deleted.
@@ -273,6 +279,7 @@ public:
 	/** Check retain flag.
 		\return true if the socket should be moved to connection pool after use */
 	bool Retain();
+#endif
 	/** Connection lost - error while reading/writing from a socket - TcpSocket only. */
 	void SetLost();
 	/** Check connection lost status flag, used by TcpSocket only.
@@ -284,8 +291,10 @@ public:
 		\return true if OnConnect() should be called a.s.a.p */
 	bool CallOnConnect();
 
+#ifdef ENABLE_POOL
 	/** Copy connection parameters from sock. */
 	void CopyConnection(Socket *sock);
+#endif
 
 	/** Socket option SO_REUSEADDR.
 		\sa OnOptions */
@@ -294,6 +303,7 @@ public:
 		\sa OnOptions */
 	void SetKeepalive(bool x);
 
+#ifdef ENABLE_RESOLVER
 	/** Request an asynchronous dns resolution.
 		\param host hostname to be resolved
 		\param port port number passed along for the ride
@@ -317,7 +327,9 @@ public:
 	/** Callback indicating failed dns lookup.
 		\param id Resolve ID */
 	virtual void OnResolveFailed(int id);
+#endif
 
+#ifdef ENABLE_SOCKS4
 	/** socket still in socks4 negotiation mode */
 	bool Socks4();
 	/** Set flag indicating Socks4 handshaking in progress */
@@ -340,6 +352,7 @@ public:
 	/** Get socks4 userid.
 		\return Socks4 userid */
 	const std::string& GetSocks4Userid();
+#endif
 
 	/** Set timeout to use for connection attempt.
 		\param x Timeout in seconds */
@@ -464,15 +477,19 @@ static	WSAInitializer m_winsock_init; ///< Winsock initialization singleton clas
 	int m_socket_type; ///< Type of socket, from socket() call
 	std::string m_socket_protocol; ///< Protocol, from socket() call
 	bool m_bClient; ///< only client connections are pooled
+#ifdef ENABLE_POOL
 	bool m_bRetain; ///< keep connection on close
+#endif
 	bool m_bLost; ///< connection lost
 	bool m_call_on_connect; ///< OnConnect will be called next ISocketHandler cycle if true
 	bool m_opt_reuse; ///< Socket option reuseaddr
 	bool m_opt_keepalive; ///< Socket option keep-alive
+#ifdef ENABLE_SOCKS4
 	bool m_bSocks4; ///< socks4 negotiation mode (TcpSocket)
 	ipaddr_t m_socks4_host; ///< socks4 server address
 	port_t m_socks4_port; ///< socks4 server port number
 	std::string m_socks4_userid; ///< socks4 server usedid
+#endif
 	int m_connect_timeout; ///< Connection timeout (seconds)
 	bool m_b_enable_ssl; ///< Enable SSL for this TcpSocket
 	bool m_b_ssl; ///< ssl negotiation mode (TcpSocket)

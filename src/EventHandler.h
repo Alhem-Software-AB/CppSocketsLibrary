@@ -3,7 +3,7 @@
  **	\author grymse@alhem.net
 **/
 /*
-Copyright (C) 2005,2006  Anders Hedstrom
+Copyright (C) 2005,2007  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL.
 
@@ -41,6 +41,7 @@ namespace SOCKETS_NAMESPACE {
 class StdLog;
 class IEventOwner;
 class Event;
+class EventSocket;
 
 /** SocketHandler implementing the IEventHandler interface.
 	\ingroup timer */
@@ -62,11 +63,15 @@ public:
 	/** Stop event loop. */
 	void SetQuit(bool = true);
 
+	void Add(Socket *);
+
 private:
 	EventHandler(const EventHandler& ) {} // copy constructor
 	EventHandler& operator=(const EventHandler& ) { return *this; } // assignment operator
 	std::list<Event *> m_events;
 	bool m_quit;
+	EventSocket *m_socket;
+	port_t m_port;
 };
 
 

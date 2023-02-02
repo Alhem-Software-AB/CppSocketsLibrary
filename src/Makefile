@@ -13,6 +13,7 @@ CFLAGS =	-Wall -g $(INCLUDE) -MD -D_VERSION='"$(VERSION)"'
 #CFLAGS +=	-O0
 CFLAGS +=	-O2
 
+
 # uncomment depending on your operating system
 #CFLAGS +=	-DLINUX
 #CFLAGS +=	-DMACOSX 
@@ -25,22 +26,19 @@ CFLAGS +=	-O2
 # cygwin
 #CFLAGS +=	-D__CYGWIN__
 
-# if you want the library to use openssl, make sure the next line is uncommented
-CFLAGS += 	-DHAVE_OPENSSL
 
-# if you want to use the SCTP protocol, uncomment the symbol USE_SCTP
-#CFLAGS +=	-DUSE_SCTP
-
-# uncomment these three lines if the library should be in its own namespace
+# uncomment these lines if the library should be in its own namespace
 #CFLAGS +=	-DSOCKETS_NAMESPACE=sockets
 #CFLAGS +=	-DSOCKETS_NAMESPACE_STR='"sockets"'
+
 
 # Enable insane amounts of debug output to stdout/stderr:
 #CFLAGS +=	-D_DEBUG
 
+
 CPPFLAGS =	$(CFLAGS) 
 
-HTDOCS =	/usr/local/apache/www.alhem.net/htdocs
+LIBS =		-lSockets -lpthread -lssl -lcrypto
 
 PROGS =		Sockets-config
 
@@ -49,61 +47,21 @@ all:		libSockets.a libSocketsEx.a $(PROGS)
 Sockets-config:	Sockets-config.o
 		$(CXX) -o $@ $^
 
-OBJS =		CircularBuffer.o \
-		Socket.o \
-		SocketHandler.o \
-		TcpSocket.o \
-		UdpSocket.o \
-		Parse.o \
-		Base64.o \
-		HttpGetSocket.o \
-		HTTPSocket.o \
-		Thread.o SocketThread.o \
-		StdoutLog.o \
-		HttpPutSocket.o \
-		HttpPostSocket.o \
-		HttpDebugSocket.o \
-		Utility.o \
-		PoolSocket.o \
-		ResolvServer.o \
-		ResolvSocket.o \
-		HttpdSocket.o \
-		HttpdCookies.o \
-		HttpdForm.o \
-		File.o \
-		MemFile.o \
-		socket_include.o \
-		Mutex.o \
-		Lock.o \
-		EventTime.o Event.o IEventOwner.o EventHandler.o \
-		HttpClientSocket.o \
-		SctpSocket.o \
-		ISocketHandler.o \
-		Ipv4Address.o Ipv6Address.o \
-		Semaphore.o \
-		RandomNumber.o
-
 libSockets.a:	$(OBJS)
 		ar cru $@ $(OBJS)
 		ranlib $@
-
-# SocketsEx
-EX =		Uid.o \
-		NullCrypt.o \
-		CTcpSocket.o \
-		MinderSocket.o MinionSocket.o MinderHandler.o
 
 libSocketsEx.a:	$(EX)
 		ar cru $@ $(EX)
 		ranlib $@
 
-LIBS =		-lSockets -lpthread -lssl -lcrypto
+clean:
+		rm -f *.o *~ slask *.d $(PROGS) *.a */*~
 
-stressclient:	stressclient.o libSockets.a
-		g++ -o $@ $^ $(LIBS)
+-include	*.d
 
-echoserver:	echoserver.o libSockets.a
-		g++ -o $@ $^ $(LIBS)
+# everything which follows is www.alhem.net/Sockets website maintenance stuff, please ignore
+HTDOCS =	/usr/local/apache/www.alhem.net/htdocs
 
 diff:
 		diff -C 3 $(HTDOCS)/Sockets/Sockets-$(DIFF_VERSION) . | \
@@ -122,17 +80,12 @@ install:	all
 		@mkdir -p $(PREFIX)/bin
 		install Sockets-config $(PREFIX)/bin
 
-clean:
-		rm -f *.o *~ slask *.d $(PROGS) *.a */*~
-
--include	*.d
-
 # no binary files, zip will translate lf to cr lf
 FILES =		*.h *.cpp Makefile Makefile.* Project/*.ds* \
 		README.macosx gpl.txt mkdot.sh \
 		Project.net/Sockets/*.vcproj Project.net/Sockets/*.sln \
 		Project.net/Test/*.vcproj \
-		DevCpp/*.dev 
+		DevCpp/*.dev tests/Makefile tests/*.cpp
 
 tar:		clean
 		rm -f MinderSocket_T.h
@@ -144,6 +97,7 @@ tar:		clean
 		/usr/local/bin/tarfix.sh Sockets-$(VERSION)
 		cp Sockets-$(VERSION).tar.gz $(HTDOCS)/Sockets
 		cp Sockets-$(VERSION).zip $(HTDOCS)/Sockets
+		cp tests/sockets_test.cpp /usr/local/apache/www.alhem.net/htdocs/Sockets/
 
 docs:		clean
 		doxygen dox2.cfg

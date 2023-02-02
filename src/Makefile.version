@@ -1,3 +1,45 @@
-VERSION =	2.1.1
-DIFF_VERSION =	2.1
+VERSION =	2.1.2
+DIFF_VERSION =	2.1.1
+
+# Sockets
+OBJS =		CircularBuffer.o \
+		Socket.o \
+		SocketHandler.o \
+		TcpSocket.o \
+		UdpSocket.o \
+		Parse.o \
+		Base64.o \
+		HttpGetSocket.o \
+		HTTPSocket.o \
+		Thread.o SocketThread.o \
+		StdoutLog.o \
+		HttpPutSocket.o \
+		HttpPostSocket.o \
+		HttpDebugSocket.o \
+		Utility.o \
+		PoolSocket.o \
+		ResolvServer.o \
+		ResolvSocket.o \
+		HttpdSocket.o \
+		HttpdCookies.o \
+		HttpdForm.o \
+		File.o \
+		MemFile.o \
+		socket_include.o \
+		Mutex.o \
+		Lock.o \
+		EventTime.o Event.o IEventOwner.o EventHandler.o \
+		HttpClientSocket.o \
+		SctpSocket.o \
+		ISocketHandler.o \
+		Ipv4Address.o Ipv6Address.o \
+		Semaphore.o \
+		RandomNumber.o \
+		EventSocket.o
+
+# SocketsEx
+EX =		Uid.o \
+		NullCrypt.o \
+		CTcpSocket.o \
+		MinderSocket.o MinionSocket.o MinderHandler.o
 

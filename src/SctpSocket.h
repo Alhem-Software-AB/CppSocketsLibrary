@@ -4,7 +4,7 @@
  **	\author grymse@alhem.net
 **/
 /*
-Copyright (C) 2006  Anders Hedstrom
+Copyright (C) 2007  Anders Hedstrom
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #ifndef _SOCKETS_NAMESPACE_SCTPSOCKET_H
 #define _SOCKETS_NAMESPACE_SCTPSOCKET_H
+#include "sockets-config.h"
 
 #include <map>
 #include "Socket.h"

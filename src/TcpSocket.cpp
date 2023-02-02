@@ -3,7 +3,7 @@
  **	\author grymse@alhem.net
 **/
 /*
-Copyright (C) 2004-2006  Anders Hedstrom
+Copyright (C) 2004-2007  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL.
 
@@ -34,7 +34,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <errno.h>
 #endif
 #include "ISocketHandler.h"
-#include <stdio.h>
 #include <fcntl.h>
 #include <assert.h>
 #include <stdarg.h>
@@ -79,16 +78,21 @@ TcpSocket::TcpSocket(ISocketHandler& h) : Socket(h)
 #ifdef SOCKETS_DYNAMIC_TEMP
 ,m_buf(new char[TCP_BUFSIZE_READ + 1])
 #endif
+#ifdef ENABLE_SOCKS4
 ,m_socks4_state(0)
+#endif
 ,m_resolver_id(0)
 ,m_ssl_ctx(NULL)
 ,m_ssl(NULL)
 ,m_sbio(NULL)
+#ifdef ENABLE_RECONNECT
 ,m_b_reconnect(false)
 ,m_b_is_reconnect(false)
+#endif
 ,m_b_input_buffer_disabled(false)
 ,m_bytes_sent(0)
 ,m_bytes_received(0)
+,m_skip_c(false)
 {
 #ifdef HAVE_OPENSSL
 	if (!m_b_rand_file_generated)
@@ -135,16 +139,21 @@ TcpSocket::TcpSocket(ISocketHandler& h,size_t isize,size_t osize) : Socket(h)
 #ifdef SOCKETS_DYNAMIC_TEMP
 ,m_buf(new char[TCP_BUFSIZE_READ + 1])
 #endif
+#ifdef ENABLE_SOCKS4
 ,m_socks4_state(0)
+#endif
 ,m_resolver_id(0)
 ,m_ssl_ctx(NULL)
 ,m_ssl(NULL)
 ,m_sbio(NULL)
+#ifdef ENABLE_RECONNECT
 ,m_b_reconnect(false)
 ,m_b_is_reconnect(false)
+#endif
 ,m_b_input_buffer_disabled(false)
 ,m_bytes_sent(0)
 ,m_bytes_received(0)
+,m_skip_c(false)
 {
 #ifdef HAVE_OPENSSL
 	if (!m_b_rand_file_generated)
@@ -248,8 +257,11 @@ bool TcpSocket::Open(SocketAddress& ad,SocketAddress& bind_ad,bool skip_socks)
 		return false;
 	}
 	SetConnecting(false);
+#ifdef ENABLE_SOCKS4
 	SetSocks4(false);
+#endif
 	// check for pooling
+#ifdef ENABLE_POOL
 	if (Handler().PoolEnabled())
 	{
 		PoolSocket *pools = Handler().FindConnection(SOCK_STREAM, "tcp", ad);
@@ -264,6 +276,7 @@ bool TcpSocket::Open(SocketAddress& ad,SocketAddress& bind_ad,bool skip_socks)
 			return true;
 		}
 	}
+#endif
 	// if not, create new connection
 	SOCKET s = CreateSocket(ad.GetFamily(), SOCK_STREAM, "tcp");
 	if (s == INVALID_SOCKET)
@@ -284,6 +297,7 @@ bool TcpSocket::Open(SocketAddress& ad,SocketAddress& bind_ad,bool skip_socks)
 	{
 		bind(s, bind_ad, bind_ad);
 	}
+#ifdef ENABLE_SOCKS4
 	if (!skip_socks && GetSocks4Host() && GetSocks4Port())
 	{
 		Ipv4Address sa(GetSocks4Host(), GetSocks4Port());
@@ -298,6 +312,7 @@ bool TcpSocket::Open(SocketAddress& ad,SocketAddress& bind_ad,bool skip_socks)
 		SetRemoteAddress(sa);
 	}
 	else
+#endif
 	{
 		n = connect(s, ad, ad);
 		SetRemoteAddress(ad);
@@ -316,12 +331,15 @@ bool TcpSocket::Open(SocketAddress& ad,SocketAddress& bind_ad,bool skip_socks)
 			SetConnecting( true ); // this flag will control fd_set's
 		}
 		else
+#ifdef ENABLE_SOCKS4
 		if (Socks4() && Handler().Socks4TryDirect() ) // retry
 		{
 			closesocket(s);
 			return Open(ad, true);
 		}
 		else
+#endif
+#ifdef ENABLE_RECONNECT
 		if (Reconnect())
 		{
 			Handler().LogError(this, "connect: failed, reconnect pending", Errno, StrError(Errno), LOG_LEVEL_INFO);
@@ -329,6 +347,7 @@ bool TcpSocket::Open(SocketAddress& ad,SocketAddress& bind_ad,bool skip_socks)
 			SetConnecting( true ); // this flag will control fd_set's
 		}
 		else
+#endif
 		{
 			Handler().LogError(this, "connect: failed", Errno, StrError(Errno), LOG_LEVEL_FATAL);
 			SetCloseAndDelete();
@@ -367,8 +386,10 @@ bool TcpSocket::Open(const std::string &host,port_t port)
 		return Open(ad, local);
 	}
 #endif
+#ifdef ENABLE_RESOLVER
 	if (!Handler().ResolverEnabled() || Utility::isipv4(host) )
 	{
+#endif
 		ipaddr_t l;
 		if (!Utility::u2ip(host,l))
 		{
@@ -378,13 +399,16 @@ bool TcpSocket::Open(const std::string &host,port_t port)
 		Ipv4Address ad(l, port);
 		Ipv4Address local;
 		return Open(ad, local);
+#ifdef ENABLE_RESOLVER
 	}
 	// resolve using async resolver thread
 	m_resolver_id = Resolve(host, port);
 	return true;
+#endif
 }
 
 
+#ifdef ENABLE_RESOLVER
 void TcpSocket::OnResolved(int id,ipaddr_t a,port_t port)
 {
 	if (id == m_resolver_id)
@@ -438,6 +462,7 @@ void TcpSocket::OnResolved(int id,in6_addr& a,port_t port)
 		SetCloseAndDelete();
 	}
 }
+#endif
 
 
 void TcpSocket::OnRead()
@@ -489,7 +514,7 @@ DEB(				printf("SSL read problem, errcode = %d\n",n);)
 		if (n > 0 && n <= TCP_BUFSIZE_READ)
 		{
 			m_bytes_received += n;
-			OnRawData(buf,n);
+//			OnRawData(buf,n);
 			if (!m_b_input_buffer_disabled && !ibuf.Write(buf,n))
 			{
 				// overflow
@@ -527,7 +552,7 @@ DEB(				printf("SSL read problem, errcode = %d\n",n);)
 		if (n > 0 && n <= TCP_BUFSIZE_READ)
 		{
 			m_bytes_received += n;
-			OnRawData(buf,n);
+//			OnRawData(buf,n);
 			if (!m_b_input_buffer_disabled && !ibuf.Write(buf,n))
 			{
 				// overflow
@@ -540,34 +565,62 @@ DEB(				printf("SSL read problem, errcode = %d\n",n);)
 		}
 	}
 	// unbuffered
-	if (LineProtocol())
+	if (n > 0 && n <= TCP_BUFSIZE_READ)
 	{
-		size_t x = 0;
-
-		buf[n] = 0;
-		for (int i = 0; i < n; i++)
+		if (LineProtocol())
 		{
-			while (buf[i] == 13 || buf[i] == 10)
+			size_t x = 0;
+
+			buf[n] = 0;
+			int i = 0;
+			if (m_skip_c && (buf[i] == 13 || buf[i] == 10) && buf[i] != m_c)
 			{
-				char c = buf[i];
-				buf[i] = 0;
-				if (buf[x])
-				{
-					m_line += (buf + x);
-				}
-				OnLine( m_line );
+				m_skip_c = false;
 				i++;
-				if (i < n && (buf[i] == 13 || buf[i] == 10) && buf[i] != c)
+			}
+			for (; i < n && LineProtocol(); i++)
+			{
+				while ((buf[i] == 13 || buf[i] == 10) && LineProtocol())
 				{
+					char c = buf[i];
+					buf[i] = 0;
+					if (buf[x])
+					{
+						m_line += (buf + x);
+					}
+					OnLine( m_line );
 					i++;
+					m_skip_c = true;
+					m_c = c;
+					if (i < n && (buf[i] == 13 || buf[i] == 10) && buf[i] != c)
+					{
+						m_skip_c = false;
+						i++;
+					}
+					x = i;
+					m_line = "";
 				}
-				x = i;
-				m_line = "";
+				if (!LineProtocol())
+				{
+					break;
+				}
+			}
+			if (!LineProtocol())
+			{
+				if (i < n)
+				{
+					OnRawData(buf + i, n - i);
+				}
+			}
+			else
+			if (buf[x])
+			{
+				m_line += (buf + x);
 			}
 		}
-		if (buf[x])
+		else
 		{
-			m_line += (buf + x);
+			OnRawData(buf, n);
 		}
 	}
 	if (m_b_input_buffer_disabled)
@@ -575,6 +628,7 @@ DEB(				printf("SSL read problem, errcode = %d\n",n);)
 		return;
 	}
 	// further processing: socks4 and line protocol
+#ifdef ENABLE_SOCKS4
 	if (Socks4())
 	{
 		bool need_more = false;
@@ -583,6 +637,7 @@ DEB(				printf("SSL read problem, errcode = %d\n",n);)
 			need_more = OnSocks4Read();
 		}
 	}
+#endif
 /*
 	else
 	if (LineProtocol())
@@ -637,11 +692,13 @@ void TcpSocket::OnWrite()
 			return;
 		}
 		// failed
+#ifdef ENABLE_SOCKS4
 		if (Socks4())
 		{
 			OnSocks4ConnectFailed();
 			return;
 		}
+#endif
 		if (GetConnectionRetry() == -1 ||
 			(GetConnectionRetry() && GetConnectionRetries() < GetConnectionRetry()) )
 		{
@@ -900,6 +957,7 @@ TcpSocket::TcpSocket(const TcpSocket& s)
 #endif
 
 
+#ifdef ENABLE_SOCKS4
 void TcpSocket::OnSocks4Connect()
 {
 	char request[1000];
@@ -1007,9 +1065,10 @@ bool TcpSocket::OnSocks4Read()
 	}
 	return false;
 }
+#endif
 
 
-void TcpSocket::Sendf(char *format, ...)
+void TcpSocket::Sendf(const char *format, ...)
 {
 	va_list ap;
 	va_start(ap, format);
@@ -1116,9 +1175,11 @@ bool TcpSocket::SSLNegotiate()
 					OnWrite();
 				}
 			}
+#ifdef ENABLE_RECONNECT
 			if (IsReconnect())
 				OnReconnect();
 			else
+#endif
 			{
 //				Handler().LogError(this, "Calling OnConnect", 0, "SSLNegotiate", LOG_LEVEL_INFO);
 				OnConnect();
@@ -1352,10 +1413,12 @@ SSL *TcpSocket::GetSsl()
 }
 
 
+#ifdef ENABLE_RECONNECT
 void TcpSocket::SetReconnect(bool x)
 {
 	m_b_reconnect = x;
 }
+#endif
 
 
 void TcpSocket::OnRawData(const char *buf_in,size_t len)
@@ -1393,6 +1456,7 @@ uint64_t TcpSocket::GetBytesSent(bool clear)
 }
 
 
+#ifdef ENABLE_RECONNECT
 bool TcpSocket::Reconnect()
 {
 	return m_b_reconnect;
@@ -1409,6 +1473,7 @@ bool TcpSocket::IsReconnect()
 {
 	return m_b_is_reconnect;
 }
+#endif
 
 
 const std::string& TcpSocket::GetPassword()

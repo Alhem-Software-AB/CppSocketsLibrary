@@ -3,7 +3,7 @@
  **	\author grymse@alhem.net
 **/
 /*
-Copyright (C) 2004-2006  Anders Hedstrom
+Copyright (C) 2004-2007  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL.
 
@@ -34,7 +34,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <errno.h>
 #include <netdb.h>
 #endif
-#include <stdio.h>
 #include <ctype.h>
 #include <fcntl.h>
 
@@ -74,15 +73,19 @@ Socket::Socket(ISocketHandler& h)
 ,m_parent(NULL)
 ,m_socket_type(0)
 ,m_bClient(false)
+#ifdef ENABLE_POOL
 ,m_bRetain(false)
+#endif
 ,m_bLost(false)
 ,m_call_on_connect(false)
 ,m_opt_reuse(true)
 ,m_opt_keepalive(true)
+#ifdef ENABLE_SOCKS4
 ,m_bSocks4(false)
 ,m_socks4_host(h.GetSocks4Host())
 ,m_socks4_port(h.GetSocks4Port())
 ,m_socks4_userid(h.GetSocks4Userid())
+#endif
 ,m_connect_timeout(5)
 ,m_b_enable_ssl(false)
 ,m_b_ssl(false)
@@ -106,7 +109,11 @@ Socket::Socket(ISocketHandler& h)
 Socket::~Socket()
 {
 	Handler().Remove(this);
-	if (m_socket != INVALID_SOCKET && !m_bRetain)
+	if (m_socket != INVALID_SOCKET
+#ifdef ENABLE_POOL
+		 && !m_bRetain
+#endif
+		)
 	{
 		Close();
 	}
@@ -133,9 +140,11 @@ void Socket::OnException()
 #ifdef _WIN32
 	if (Connecting())
 	{
+#ifdef ENABLE_SOCKS4
 		if (Socks4())
 			OnSocks4ConnectFailed();
 		else
+#endif
 		if (GetConnectionRetry() == -1 ||
 			(GetConnectionRetry() &&
 			 GetConnectionRetries() < GetConnectionRetry() ))
@@ -641,6 +650,7 @@ port_t Socket::GetPort()
 }
 
 
+#ifdef ENABLE_POOL
 void Socket::CopyConnection(Socket *sock)
 {
 	Attach( sock -> GetSocket() );
@@ -665,8 +675,10 @@ void Socket::CopyConnection(Socket *sock)
 */
 	SetRemoteAddress( *sock -> GetRemoteSocketAddress() );
 }
+#endif
 
 
+#ifdef ENABLE_RESOLVER
 int Socket::Resolve(const std::string& host,port_t port)
 {
 	return Handler().Resolve(this, host, port);
@@ -689,8 +701,10 @@ int Socket::Resolve(in6_addr& a)
 {
 	return Handler().Resolve(this, a);
 }
+#endif
 
 
+#ifdef ENABLE_SOCKS4
 void Socket::OnSocks4Connect()
 {
 	Handler().LogError(this, "OnSocks4Connect", 0, "Use with TcpSocket only");
@@ -714,6 +728,7 @@ void Socket::SetSocks4Host(const std::string& host)
 {
 	Utility::u2ip(host, m_socks4_host);
 }
+#endif
 
 
 /*
@@ -723,6 +738,7 @@ void Socket::OnWriteComplete()
 */
 
 
+#ifdef ENABLE_RESOLVER
 void Socket::OnResolved(int,ipaddr_t,port_t)
 {
 }
@@ -741,6 +757,7 @@ void Socket::OnReverseResolved(int,const std::string&)
 void Socket::OnResolveFailed(int)
 {
 }
+#endif
 
 
 Socket *Socket::Create()
@@ -765,9 +782,11 @@ bool Socket::OnConnectRetry()
 }
 
 
+#ifdef ENABLE_RECONNECT
 void Socket::OnReconnect()
 {
 }
+#endif
 
 
 bool Socket::SSLNegotiate()
@@ -854,6 +873,7 @@ const std::string& Socket::GetSocketProtocol()
 }
 
 
+#ifdef ENABLE_POOL
 void Socket::SetRetain()
 {
 	if (m_bClient) m_bRetain = true;
@@ -864,6 +884,7 @@ bool Socket::Retain()
 {
 	return m_bRetain;
 }
+#endif
 
 
 void Socket::SetLost()
@@ -903,6 +924,7 @@ void Socket::SetKeepalive(bool x)
 }
 
 
+#ifdef ENABLE_SOCKS4
 bool Socket::Socks4()
 {
 	return m_bSocks4;
@@ -949,6 +971,7 @@ const std::string& Socket::GetSocks4Userid()
 {
 	return m_socks4_userid;
 }
+#endif
 
 
 void Socket::SetConnectTimeout(int x)
@@ -1098,9 +1121,11 @@ void Socket::ResetConnectionRetries()
 }
 
 
+#ifdef ENABLE_RECONNECT
 void Socket::OnDisconnect()
 {
 }
+#endif
 
 
 void Socket::SetErasedByHandler(bool x)

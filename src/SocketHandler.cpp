@@ -3,7 +3,7 @@
  **	\author grymse@alhem.net
 **/
 /*
-Copyright (C) 2004-2006  Anders Hedstrom
+Copyright (C) 2004-2007  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL.
 
@@ -27,7 +27,6 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
-#include <stdio.h>
 #ifdef _WIN32
 #pragma warning(disable:4786)
 #include <stdlib.h>
@@ -63,12 +62,18 @@ SocketHandler::SocketHandler(StdLog *p)
 #ifdef _WIN32
 ,m_preverror(-1)
 #endif
+#ifdef ENABLE_SOCKS4
 ,m_socks4_host(0)
 ,m_socks4_port(0)
 ,m_bTryDirect(false)
+#endif
+#ifdef ENABLE_RESOLVER
 ,m_resolv_id(0)
 ,m_resolver(NULL)
+#endif
+#ifdef ENABLE_POOL
 ,m_b_enable_pool(false)
+#endif
 {
 	FD_ZERO(&m_rfds);
 	FD_ZERO(&m_wfds);
@@ -82,12 +87,18 @@ SocketHandler::SocketHandler(Mutex& mutex,StdLog *p)
 #ifdef _WIN32
 ,m_preverror(-1)
 #endif
+#ifdef ENABLE_SOCKS4
 ,m_socks4_host(0)
 ,m_socks4_port(0)
 ,m_bTryDirect(false)
+#endif
+#ifdef ENABLE_RESOLVER
 ,m_resolv_id(0)
 ,m_resolver(NULL)
+#endif
+#ifdef ENABLE_POOL
 ,m_b_enable_pool(false)
+#endif
 {
 	m_mutex.Lock();
 	FD_ZERO(&m_rfds);
@@ -98,10 +109,12 @@ SocketHandler::SocketHandler(Mutex& mutex,StdLog *p)
 
 SocketHandler::~SocketHandler()
 {
+#ifdef ENABLE_RESOLVER
 	if (m_resolver)
 	{
 		m_resolver -> Quit();
 	}
+#endif
 	{
 		while (m_sockets.size())
 		{
@@ -129,10 +142,12 @@ SocketHandler::~SocketHandler()
 			}
 		}
 	}
+#ifdef ENABLE_RESOLVER
 	if (m_resolver)
 	{
 		delete m_resolver;
 	}
+#endif
 	if (m_b_use_mutex)
 	{
 		m_mutex.Unlock();
@@ -442,9 +457,11 @@ DEB(
 					if (p -> IsSSL()) // SSL Enabled socket
 						p -> OnSSLConnect();
 					else
+#ifdef ENABLE_SOCKS4
 					if (p -> Socks4())
 						p -> OnSocks4Connect();
 					else
+#endif
 					{
 						TcpSocket *tcp = dynamic_cast<TcpSocket *>(p);
 						if (tcp)
@@ -454,9 +471,11 @@ DEB(
 								p -> OnWrite();
 							}
 						}
+#ifdef ENABLE_RECONNECT
 						if (tcp && tcp -> IsReconnect())
 							p -> OnReconnect();
 						else
+#endif
 						{
 //							LogError(p, "Calling OnConnect", 0, "Because CallOnConnect", LOG_LEVEL_INFO);
 							p -> OnConnect();
@@ -529,12 +548,14 @@ DEB(
 				if (p -> Connecting() && p -> GetConnectTime() >= p -> GetConnectTimeout() )
 				{
 					LogError(p, "connect", -1, "connect timeout", LOG_LEVEL_FATAL);
+#ifdef ENABLE_SOCKS4
 					if (p -> Socks4())
 					{
 						p -> OnSocks4ConnectFailed();
 						// retry direct connection
 					}
 					else
+#endif
 					if (p -> GetConnectionRetry() == -1 ||
 						(p -> GetConnectionRetry() && p -> GetConnectionRetries() < p -> GetConnectionRetry()) )
 					{
@@ -666,6 +687,7 @@ DEB(
 						}
 					}
 					else
+#ifdef ENABLE_RECONNECT
 					if (tcp && p -> IsConnected() && tcp -> Reconnect())
 					{
 						SOCKET nn = *it; //(*it3).first;
@@ -700,12 +722,14 @@ DEB(
 						m_fds_erase.push_back(nn);
 					}
 					else
+#endif
 					{
 						SOCKET nn = *it; //(*it3).first;
 						if (tcp && p -> IsConnected() && tcp -> GetOutputLength())
 						{
 							LogError(p, "Closing", (int)tcp -> GetOutputLength(), "Closing socket while data still left to send", LOG_LEVEL_WARNING);
 						}
+#ifdef ENABLE_POOL
 						if (p -> Retain() && !p -> Lost())
 						{
 							PoolSocket *p2 = new PoolSocket(*this, p);
@@ -715,6 +739,7 @@ DEB(
 							p -> SetCloseAndDelete(false); // added - remove from m_fds_close
 						}
 						else
+#endif // ENABLE_POOL
 						{
 							Set(p -> GetSocket(),false,false,false);
 							p -> Close();
@@ -833,76 +858,7 @@ size_t SocketHandler::GetCount()
 }
 
 
-/*
-PoolSocket *SocketHandler::FindConnection(int type,const std::string& protocol,ipaddr_t a,port_t port)
-{
-	for (socket_m::iterator it = m_sockets.begin(); it != m_sockets.end() && m_sockets.size(); it++)
-	{
-		PoolSocket *pools = dynamic_cast<PoolSocket *>(it -> second);
-		if (pools)
-		{
-			if (pools -> GetSocketType() == type &&
-			    pools -> GetSocketProtocol() == protocol &&
-			    pools -> GetClientRemoteAddr() == a &&
-			    pools -> GetClientRemotePort() == port)
-			{
-				m_sockets.erase(it);
-				pools -> SetRetain(); // avoid Close in Socket destructor
-				return pools; // Caller is responsible that this socket is deleted
-			}
-		}
-	}
-	return NULL;
-}
-
-
-#ifdef IPPROTO_IPV6
-PoolSocket *SocketHandler::FindConnection(int type,const std::string& protocol,in6_addr a,port_t port)
-{
-	for (socket_m::iterator it = m_sockets.begin(); it != m_sockets.end() && m_sockets.size(); it++)
-	{
-		PoolSocket *pools = dynamic_cast<PoolSocket *>(it -> second);
-		if (pools)
-		{
-			if (pools -> GetSocketType() == type &&
-			    pools -> GetSocketProtocol() == protocol &&
-			    !Utility::in6_addr_compare(pools -> GetClientRemoteAddr6(), a) &&
-			    pools -> GetClientRemotePort() == port)
-			{
-				m_sockets.erase(it);
-				pools -> SetRetain(); // avoid Close in Socket destructor
-				return pools; // Caller is responsible that this socket is deleted
-			}
-		}
-	}
-	return NULL;
-}
-#endif
-*/
-
-
-PoolSocket *SocketHandler::FindConnection(int type,const std::string& protocol,SocketAddress& ad)
-{
-	for (socket_m::iterator it = m_sockets.begin(); it != m_sockets.end() && m_sockets.size(); it++)
-	{
-		PoolSocket *pools = dynamic_cast<PoolSocket *>(it -> second);
-		if (pools)
-		{
-			if (pools -> GetSocketType() == type &&
-			    pools -> GetSocketProtocol() == protocol &&
-// %!			    pools -> GetClientRemoteAddress() &&
-			    *pools -> GetClientRemoteAddress() == ad)
-			{
-				m_sockets.erase(it);
-				pools -> SetRetain(); // avoid Close in Socket destructor
-				return pools; // Caller is responsible that this socket is deleted
-			}
-		}
-	}
-	return NULL;
-}
-
-
+#ifdef ENABLE_SOCKS4
 void SocketHandler::SetSocks4Host(ipaddr_t a)
 {
 	m_socks4_host = a;
@@ -925,8 +881,10 @@ void SocketHandler::SetSocks4Userid(const std::string& id)
 {
 	m_socks4_userid = id;
 }
+#endif
 
 
+#ifdef ENABLE_RESOLVER
 int SocketHandler::Resolve(Socket *p,const std::string& host,port_t port)
 {
 	// check cache
@@ -1016,14 +974,10 @@ bool SocketHandler::ResolverReady()
 {
 	return m_resolver ? m_resolver -> Ready() : false;
 }
+#endif
 
 
-void SocketHandler::EnablePool(bool x)
-{
-	m_b_enable_pool = x;
-}
-
-
+#ifdef ENABLE_SOCKS4
 void SocketHandler::SetSocks4TryDirect(bool x)
 {
 	m_bTryDirect = x;
@@ -1052,8 +1006,10 @@ bool SocketHandler::Socks4TryDirect()
 {
 	return m_bTryDirect;
 }
+#endif
 
 
+#ifdef ENABLE_RESOLVER
 bool SocketHandler::ResolverEnabled() 
 { 
 	return m_resolver ? true : false; 
@@ -1064,12 +1020,43 @@ port_t SocketHandler::GetResolverPort()
 { 
 	return m_resolver_port; 
 }
+#endif
+
+
+#ifdef ENABLE_POOL
+PoolSocket *SocketHandler::FindConnection(int type,const std::string& protocol,SocketAddress& ad)
+{
+	for (socket_m::iterator it = m_sockets.begin(); it != m_sockets.end() && m_sockets.size(); it++)
+	{
+		PoolSocket *pools = dynamic_cast<PoolSocket *>(it -> second);
+		if (pools)
+		{
+			if (pools -> GetSocketType() == type &&
+			    pools -> GetSocketProtocol() == protocol &&
+// %!			    pools -> GetClientRemoteAddress() &&
+			    *pools -> GetClientRemoteAddress() == ad)
+			{
+				m_sockets.erase(it);
+				pools -> SetRetain(); // avoid Close in Socket destructor
+				return pools; // Caller is responsible that this socket is deleted
+			}
+		}
+	}
+	return NULL;
+}
+
+
+void SocketHandler::EnablePool(bool x)
+{
+	m_b_enable_pool = x;
+}
 
 
 bool SocketHandler::PoolEnabled() 
 { 
 	return m_b_enable_pool; 
 }
+#endif
 
 
 void SocketHandler::Remove(Socket *p)
@@ -1195,4 +1182,3 @@ printf("%5d: %s: %s\n", s, (which_one == LIST_CALLONCONNECT) ? "CallOnConnect" :
 #ifdef SOCKETS_NAMESPACE
 }
 #endif
-

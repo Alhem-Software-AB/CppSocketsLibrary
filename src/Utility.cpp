@@ -3,7 +3,7 @@
  **	\author grymse@alhem.net
 **/
 /*
-Copyright (C) 2004-2006  Anders Hedstrom
+Copyright (C) 2004-2007  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL.
 
@@ -518,8 +518,50 @@ std::auto_ptr<SocketAddress> Utility::CreateAddress(struct sockaddr *sa,socklen_
 
 bool Utility::u2ip(const std::string& host, struct sockaddr_in& sa, int ai_flags)
 {
-	struct addrinfo hints;
 	memset(&sa, 0, sizeof(sa));
+	sa.sin_family = AF_INET;
+#ifdef NO_GETADDRINFO
+	if ((ai_flags & AI_NUMERICHOST) != 0 || isipv4(host))
+	{
+		Parse pa((char *)host.c_str(), ".");
+		union {
+			struct {
+				unsigned char b1;
+				unsigned char b2;
+				unsigned char b3;
+				unsigned char b4;
+			} a;
+			ipaddr_t l;
+		} u;
+		u.a.b1 = static_cast<unsigned char>(pa.getvalue());
+		u.a.b2 = static_cast<unsigned char>(pa.getvalue());
+		u.a.b3 = static_cast<unsigned char>(pa.getvalue());
+		u.a.b4 = static_cast<unsigned char>(pa.getvalue());
+		memcpy(&sa.sin_addr, &u.l, sizeof(sa.sin_addr));
+		return true;
+	}
+#ifndef LINUX
+	struct hostent *he = gethostbyname( host.c_str() );
+	if (!he)
+	{
+		return false;
+	}
+	memcpy(&sa.sin_addr, he -> h_addr, sizeof(sa.sin_addr));
+#else
+	struct hostent he;
+	struct hostent *result;
+	int myerrno;
+	char buf[2000];
+	int n = gethostbyname_r(host.c_str(), &he, buf, sizeof(buf), &result, &myerrno);
+	if (n)
+	{
+		return false;
+	}
+	memcpy(&sa.sin_addr, he.h_addr, 4);
+#endif
+	return true;
+#else
+	struct addrinfo hints;
 	memset(&hints, 0, sizeof(hints));
 	// AI_NUMERICHOST
 	// AI_CANONNAME
@@ -563,14 +605,86 @@ bool Utility::u2ip(const std::string& host, struct sockaddr_in& sa, int ai_flags
 	error += gai_strerror(n);
 #endif
 	return false;
+#endif // NO_GETADDRINFO
 }
 
 
 #ifdef IPPROTO_IPV6
 bool Utility::u2ip(const std::string& host, struct sockaddr_in6& sa, int ai_flags)
 {
-	struct addrinfo hints;
 	memset(&sa, 0, sizeof(sa));
+	sa.sin6_family = AF_INET6;
+#ifdef NO_GETADDRINFO
+	if ((ai_flags & AI_NUMERICHOST) != 0 || isipv6(host))
+	{
+		std::list<std::string> vec;
+		size_t x = 0;
+		for (size_t i = 0; i <= host.size(); i++)
+		{
+			if (i == host.size() || host[i] == ':')
+			{
+				std::string s = host.substr(x, i - x);
+				//
+				if (strstr(s.c_str(),".")) // x.x.x.x
+				{
+					Parse pa(s,".");
+					char slask[100]; // u2ip temporary hex2string conversion
+					unsigned long b0 = static_cast<unsigned long>(pa.getvalue());
+					unsigned long b1 = static_cast<unsigned long>(pa.getvalue());
+					unsigned long b2 = static_cast<unsigned long>(pa.getvalue());
+					unsigned long b3 = static_cast<unsigned long>(pa.getvalue());
+					sprintf(slask,"%lx",b0 * 256 + b1);
+					vec.push_back(slask);
+					sprintf(slask,"%lx",b2 * 256 + b3);
+					vec.push_back(slask);
+				}
+				else
+				{
+					vec.push_back(s);
+				}
+				//
+				x = i + 1;
+			}
+		}
+		size_t sz = vec.size(); // number of byte pairs
+		size_t i = 0; // index in in6_addr.in6_u.u6_addr16[] ( 0 .. 7 )
+		unsigned short addr16[8];
+		for (std::list<std::string>::iterator it = vec.begin(); it != vec.end(); it++)
+		{
+			std::string bytepair = *it;
+			if (bytepair.size())
+			{
+				addr16[i++] = htons(Utility::hex2unsigned(bytepair));
+			}
+			else
+			{
+				addr16[i++] = 0;
+				while (sz++ < 8)
+				{
+					addr16[i++] = 0;
+				}
+			}
+		}
+		memcpy(&sa.sin6_addr, addr16, sizeof(addr16));
+		return true;
+	}
+#ifdef SOLARIS
+	int errnum = 0;
+	struct hostent *he = getipnodebyname( host.c_str(), AF_INET6, 0, &errnum );
+#else
+	struct hostent *he = gethostbyname2( host.c_str(), AF_INET6 );
+#endif
+	if (!he)
+	{
+		return false;
+	}
+	memcpy(&sa.sin6_addr,he -> h_addr_list[0],he -> h_length);
+#ifdef SOLARIS
+	free(he);
+#endif
+	return true;
+#else
+	struct addrinfo hints;
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_flags = ai_flags;
 	hints.ai_family = AF_INET6;
@@ -607,34 +721,15 @@ bool Utility::u2ip(const std::string& host, struct sockaddr_in6& sa, int ai_flag
 	error += gai_strerror(n);
 #endif
 	return false;
+#endif // NO_GETADDRINFO
 }
-#endif
+#endif // IPPROTO_IPV6
 
 
 bool Utility::reverse(struct sockaddr *sa, socklen_t sa_len, std::string& hostname, int flags)
 {
-	hostname = "";
-	char host[NI_MAXHOST];
-	// NI_NOFQDN
-	// NI_NUMERICHOST
-	// NI_NAMEREQD
-	// NI_NUMERICSERV
-	// NI_DGRAM
-	int n = getnameinfo(sa, sa_len, host, sizeof(host), NULL, 0, flags);
-	if (n)
-	{
-		// EAI_AGAIN
-		// EAI_BADFLAGS
-		// EAI_FAIL
-		// EAI_FAMILY
-		// EAI_MEMORY
-		// EAI_NONAME
-		// EAI_OVERFLOW
-		// EAI_SYSTEM
-		return false;
-	}
-	hostname = host;
-	return true;
+	std::string service;
+	return Utility::reverse(sa, sa_len, hostname, service, flags);
 }
 
 
@@ -642,6 +737,89 @@ bool Utility::reverse(struct sockaddr *sa, socklen_t sa_len, std::string& hostna
 {
 	hostname = "";
 	service = "";
+#ifdef NO_GETADDRINFO
+	switch (sa -> sa_family)
+	{
+	case AF_INET:
+		if (flags & NI_NUMERICHOST)
+		{
+			union {
+				struct {
+					unsigned char b1;
+					unsigned char b2;
+					unsigned char b3;
+					unsigned char b4;
+				} a;
+				ipaddr_t l;
+			} u;
+			struct sockaddr_in *sa_in = (struct sockaddr_in *)sa;
+			memcpy(&u.l, &sa_in -> sin_addr, sizeof(u.l));
+			char tmp[100];
+			sprintf(tmp, "%u.%u.%u.%u", u.a.b1, u.a.b2, u.a.b3, u.a.b4);
+			hostname = tmp;
+			return true;
+		}
+		else
+		{
+			struct sockaddr_in *sa_in = (struct sockaddr_in *)sa;
+			struct hostent *h = gethostbyaddr( (const char *)&sa_in -> sin_addr, sizeof(sa_in -> sin_addr), AF_INET);
+			if (h)
+			{
+				hostname = h -> h_name;
+				return true;
+			}
+		}
+		break;
+	case AF_INET6:
+		if (flags & NI_NUMERICHOST)
+		{
+			char slask[100]; // l2ip temporary
+			*slask = 0;
+			unsigned int prev = 0;
+			bool skipped = false;
+			bool ok_to_skip = true;
+			{
+				unsigned short addr16[8];
+				struct sockaddr_in6 *sa_in6 = (struct sockaddr_in6 *)sa;
+				memcpy(addr16, &sa_in6 -> sin6_addr, sizeof(addr16));
+				for (size_t i = 0; i < 8; i++)
+				{
+					unsigned short x = ntohs(addr16[i]);
+					if (*slask && (x || !ok_to_skip || prev))
+						strcat(slask,":");
+					if (x || !ok_to_skip)
+					{
+						sprintf(slask + strlen(slask),"%x", x);
+						if (x && skipped)
+							ok_to_skip = false;
+					}
+					else
+					{
+						skipped = true;
+					}
+					prev = x;
+				}
+			}
+			if (!*slask)
+				strcpy(slask, "::");
+			hostname = slask;
+			return true;
+		}
+		else
+		{
+			// %! TODO: ipv6 reverse lookup
+			struct sockaddr_in6 *sa_in = (struct sockaddr_in6 *)sa;
+			struct hostent *h = gethostbyaddr( (const char *)&sa_in -> sin6_addr, sizeof(sa_in -> sin6_addr), AF_INET6);
+			if (h)
+			{
+				hostname = h -> h_name;
+				return true;
+			}
+		}
+		break;
+	}
+	return false;
+#else
 	char host[NI_MAXHOST];
 	char serv[NI_MAXSERV];
 	// NI_NOFQDN
@@ -665,11 +843,16 @@ bool Utility::reverse(struct sockaddr *sa, socklen_t sa_len, std::string& hostna
 	hostname = host;
 	service = serv;
 	return true;
+#endif // NO_GETADDRINFO
 }
 
 
 bool Utility::u2service(const std::string& name, int& service, int ai_flags)
 {
+#ifdef NO_GETADDRINFO
+	// %!
+	return false;
+#else
 	struct addrinfo hints;
 	service = 0;
 	memset(&hints, 0, sizeof(hints));
@@ -693,10 +876,10 @@ bool Utility::u2service(const std::string& name, int& service, int ai_flags)
 		return true;
 	}
 	return false;
+#endif // NO_GETADDRINFO
 }
 
 
 #ifdef SOCKETS_NAMESPACE
 }
 #endif
-

@@ -3,7 +3,7 @@
  **	\author grymse@alhem.net
 **/
 /*
-Copyright (C) 2004-2006  Anders Hedstrom
+Copyright (C) 2004-2007  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL.
 
@@ -31,7 +31,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <sys/param.h>
 #endif
 
-#include <stdio.h>
 #include <assert.h>
 #if defined(_WIN32) || defined(__CYGWIN__)
 #include <objbase.h>
@@ -96,7 +95,7 @@ Uid::Uid(const std::string& uidstr)
 }
 
 
-Uid::Uid(unsigned char *buf)
+Uid::Uid(const unsigned char *buf)
 {
 	memcpy(m_bufuid, buf, 16);
 }

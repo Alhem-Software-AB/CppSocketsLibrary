@@ -3,7 +3,7 @@
  **	\author grymse@alhem.net
 **/
 /*
-Copyright (C) 2004-2006  Anders Hedstrom
+Copyright (C) 2004-2007  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL.
 
@@ -29,6 +29,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #ifndef _SOCKET_INCLUDE_H
 #define _SOCKET_INCLUDE_H
+#include "sockets-config.h"
 
 #ifdef _WIN32
 #pragma warning(disable:4514)
@@ -41,6 +42,18 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define SOCKETS_DYNAMIC_TEMP
 
 
+// getaddrinfo / getnameinfo replacements
+#ifdef NO_GETADDRINFO
+#ifndef AI_NUMERICHOST
+#define AI_NUMERICHOST 1
+#endif
+#ifndef NI_NUMERICHOST
+#define NI_NUMERICHOST 1
+#endif
+#endif
+
+
+// platform specific stuff
 #if (defined(__unix__) || defined(unix)) && !defined(USG)
 #include <sys/param.h>
 #endif
@@ -184,11 +197,11 @@ namespace SOCKETS_NAMESPACE {
 #define WIN32_LEAN_AND_MEAN
 #include <winsock2.h>
 #include <ws2tcpip.h>
-#if MSC_VER == 1200
+#if MSC_VER < 1200
 #ifndef __CYGWIN__
 #include <tpipv6.h>  // For IPv6 Tech Preview.
 #endif
-#endif // MSC_VER == 1200
+#endif // MSC_VER < 1200
 
 
 #define MSG_NOSIGNAL 0

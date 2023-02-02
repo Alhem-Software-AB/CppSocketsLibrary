@@ -565,3 +565,12 @@ Version 2.1.1
 93d90
 < stressclient.cpp
 
+Version 2.1.2
+--------------------------
+10a11,12
+> EventSocket.cpp
+> EventSocket.h
+85a88,89
+> sockets-config.h
+> sockets_test.cpp
+

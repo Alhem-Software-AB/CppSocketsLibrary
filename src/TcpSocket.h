@@ -3,7 +3,7 @@
  **	\author grymse@alhem.net
 **/
 /*
-Copyright (C) 2004-2006  Anders Hedstrom
+Copyright (C) 2004-2007  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL.
 
@@ -29,7 +29,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #ifndef _TCPSOCKET_H
 #define _TCPSOCKET_H
-
+#include "sockets-config.h"
 #include "Socket.h"
 #include "CircularBuffer.h"
 #ifdef HAVE_OPENSSL
@@ -126,7 +126,7 @@ public:
 		\param f Dummy flags -- not used */
 	void Send(const std::string &s,int f = 0);
 	/** Send string using printf formatting. */
-	void Sendf(char *format, ...);
+	void Sendf(const char *format, ...);
 	/** Send buffer of bytes.
 		\param buf Buffer pointer
 		\param len Length of data
@@ -176,6 +176,7 @@ public:
 		the ssl context for an incoming connection. */
 	virtual void InitSSLServer();
 
+#ifdef ENABLE_RECONNECT
 	/** Flag that says a broken connection will try to reconnect. */
 	void SetReconnect(bool = true);
 	/** Check reconnect on lost connection flag status. */
@@ -184,6 +185,7 @@ public:
 	void SetIsReconnect(bool x = true);
 	/** Socket is reconnecting. */
 	bool IsReconnect();
+#endif
 
 	/** SSL; Get ssl password. */
 	const std::string& GetPassword();
@@ -229,11 +231,13 @@ static	int password_cb(char *buf,int num,int rwflag,void *userdata);
 
 private:
 	TcpSocket& operator=(const TcpSocket& ) { return *this; }
+#ifdef ENABLE_SOCKS4
 	int m_socks4_state; ///< socks4 support
 	char m_socks4_vn; ///< socks4 support, temporary variable
 	char m_socks4_cd; ///< socks4 support, temporary variable
 	unsigned short m_socks4_dstport; ///< socks4 support
 	unsigned long m_socks4_dstip; ///< socks4 support
+#endif
 	int m_resolver_id; ///< Resolver id (if any) for current Open call
 	// SSL
 	SSL_CTX *m_ssl_ctx; ///< ssl context
@@ -245,12 +249,16 @@ static	bool m_b_rand_file_generated; ///< rand_file is generated once
 static	std::string m_rand_file;
 static	long m_rand_size;
 	// state flags
+#ifdef ENABLE_RECONNECT
 	bool m_b_reconnect; ///< Reconnect on lost connection flag
 	bool m_b_is_reconnect; ///< Trying to reconnect
+#endif
 static	SSLInitializer m_ssl_init;
 	bool m_b_input_buffer_disabled;
 	uint64_t m_bytes_sent;
 	uint64_t m_bytes_received;
+	bool m_skip_c; ///< Skip second char of CRLF or LFCR sequence in OnRead
+	char m_c; ///< First char in CRLF or LFCR sequence
 };
 
 

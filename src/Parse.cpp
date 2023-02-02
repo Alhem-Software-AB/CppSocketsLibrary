@@ -4,7 +4,7 @@
  **/
 
 /*
-Copyright (C) 1999-2006  Anders Hedstrom
+Copyright (C) 1999-2007  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL.
 
@@ -28,8 +28,6 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
-
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -102,7 +100,7 @@ Parse::~Parse()
 
 #define C ((pa_the_ptr<pa_the_str.size()) ? pa_the_str[pa_the_ptr] : 0)
 
-short Parse::issplit(char c)
+short Parse::issplit(const char c)
 {
 	for (size_t i = 0; i < pa_splits.size(); i++)
 		if (pa_splits[i] == c)
@@ -110,7 +108,7 @@ short Parse::issplit(char c)
 	return 0;
 }
 
-void Parse::getsplit(void)
+void Parse::getsplit()
 {
 	size_t x;
 
@@ -130,7 +128,7 @@ void Parse::getsplit(void)
 	pa_ord = (x < pa_the_str.size()) ? pa_the_str.substr(x,pa_the_ptr - x) : "";
 }
 
-std::string Parse::getword(void)
+std::string Parse::getword()
 {
 	size_t x;
 	int disabled = 0;
@@ -249,18 +247,18 @@ void Parse::getrest(std::string&s)
 	s = (pa_the_ptr < pa_the_str.size()) ? pa_the_str.substr(pa_the_ptr) : "";
 }
 
-long Parse::getvalue(void)
+long Parse::getvalue()
 {
 	Parse::getword();
 	return atol(pa_ord.c_str());
 }
 
-void Parse::setbreak(char c)
+void Parse::setbreak(const char c)
 {
 	pa_breakchar = c;
 }
 
-int Parse::getwordlen(void)
+int Parse::getwordlen()
 {
 	size_t x,y = pa_the_ptr,len;
 
@@ -282,7 +280,7 @@ int Parse::getwordlen(void)
 	return (int)len;
 }
 
-int Parse::getrestlen(void)
+int Parse::getrestlen()
 {
 	size_t y = pa_the_ptr;
 	size_t len;
@@ -294,7 +292,7 @@ int Parse::getrestlen(void)
 	return (int)len;
 }
 
-void Parse::getline(void)
+void Parse::getline()
 {
 	size_t x;
 

@@ -3,7 +3,7 @@
  **	\author grymse@alhem.net
 **/
 /*
-Copyright (C) 2004-2006  Anders Hedstrom
+Copyright (C) 2004-2007  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL.
 
@@ -64,7 +64,7 @@ public:
 	size_t fwrite(const char *ptr, size_t size, size_t nmemb);
 
 	char *fgets(char *s, int size);
-	void fprintf(char *format, ...);
+	void fprintf(const char *format, ...);
 
 	off_t size();
 	bool eof();

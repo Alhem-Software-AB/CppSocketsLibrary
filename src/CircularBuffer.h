@@ -3,7 +3,7 @@
  **	\author grymse@alhem.net
 **/
 /*
-Copyright (C) 2004-2006  Anders Hedstrom
+Copyright (C) 2004-2007  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL.
 
@@ -59,7 +59,7 @@ public:
 	/** total buffer length */
 	size_t GetLength();
 	/** pointer to circular buffer beginning */
-	char *GetStart();
+	const char *GetStart();
 	/** return number of bytes from circular buffer beginning to buffer physical end */
 	size_t GetL();
 	/** return free space in buffer, number of bytes until buffer overrun */

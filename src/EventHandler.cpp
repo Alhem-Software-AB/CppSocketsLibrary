@@ -3,7 +3,7 @@
  **	\author grymse@alhem.net
 **/
 /*
-Copyright (C) 2005,2006  Anders Hedstrom
+Copyright (C) 2005,2007  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL.
 
@@ -34,6 +34,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "IEventOwner.h"
 #include "Event.h"
 #include "Socket.h"
+#include "EventSocket.h"
+#include "ListenSocket.h"
 
 
 #ifdef SOCKETS_NAMESPACE
@@ -41,12 +43,12 @@ namespace SOCKETS_NAMESPACE {
 #endif
 
 
-EventHandler::EventHandler(StdLog *p) : SocketHandler(p), m_quit(false)
+EventHandler::EventHandler(StdLog *p) : SocketHandler(p), m_quit(false), m_socket(NULL)
 {
 }
 
 
-EventHandler::EventHandler(Mutex& m,StdLog *p) : SocketHandler(m, p), m_quit(false)
+EventHandler::EventHandler(Mutex& m,StdLog *p) : SocketHandler(m, p), m_quit(false), m_socket(NULL)
 {
 }
 
@@ -88,6 +90,11 @@ void EventHandler::CheckEvents()
 	{
 		Event *e = *it;
 		Socket *s = dynamic_cast<Socket *>(e -> GetFrom());
+		/*
+		s == NULL    This is another object implementing 'IEventOwner' and not a socket.
+		s != NULL    This is a Socket implementing IEventOwner, and we can check that the
+			     object instance still is valid using SocketHandler::Valid.
+		*/
 		if (!s || (s && Valid(s)))
 		{
 			e -> GetFrom() -> OnEvent(e -> GetID());
@@ -108,6 +115,10 @@ long EventHandler::AddEvent(IEventOwner *from,long sec,long usec)
 		it++;
 	}
 	m_events.insert(it, e);
+	if (m_socket)
+	{
+		m_socket -> Send("\n");
+	}
 	return e -> GetID();
 }
 
@@ -140,11 +151,13 @@ void EventHandler::EventLoop()
 		struct timeval tv;
 		if (GetTimeUntilNextEvent(&tv))
 		{
+printf("Entering Select( &tv )\n");
 			Select(&tv);
 			CheckEvents();
 		}
 		else
 		{
+printf("Entering Select()\n");
 			Select();
 		}
 	}
@@ -169,6 +182,29 @@ void EventHandler::RemoveEvent(IEventOwner *from, long eid)
 			break;
 		}
 	}
+}
+
+
+void EventHandler::Add(Socket *p)
+{
+	if (!m_socket)
+	{
+		ListenSocket<EventSocket> *l = new ListenSocket<EventSocket>(*this);
+		l -> SetDeleteByHandler();
+		l -> Bind("127.0.0.1", 0);
+		m_port = l -> GetPort();
+		SocketHandler::Add(l);
+		m_socket = new EventSocket( *this );
+		m_socket -> SetDeleteByHandler();
+		m_socket -> SetConnectTimeout(5);
+		m_socket -> SetConnectionRetry(-1);
+#ifdef ENABLE_RECONNECT
+		m_socket -> SetReconnect(true);
+#endif
+		m_socket -> Open("127.0.0.1", m_port);
+		SocketHandler::Add(m_socket);
+	}
+	SocketHandler::Add( p );
 }
 
 

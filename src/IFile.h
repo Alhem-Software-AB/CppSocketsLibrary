@@ -3,7 +3,7 @@
  **	\author grymse@alhem.net
 **/
 /*
-Copyright (C) 2004-2006  Anders Hedstrom
+Copyright (C) 2004-2007  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL.
 
@@ -51,7 +51,7 @@ public:
 	virtual size_t fwrite(const char *, size_t, size_t) = 0;
 
 	virtual char *fgets(char *, int) = 0;
-	virtual void fprintf(char *format, ...) = 0;
+	virtual void fprintf(const char *format, ...) = 0;
 
 	virtual off_t size() = 0;
 	virtual bool eof() = 0;

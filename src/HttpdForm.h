@@ -4,7 +4,7 @@
  **/
 
 /*
-Copyright (C) 1999-2006  Anders Hedstrom
+Copyright (C) 1999-2007  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL.
 
@@ -80,18 +80,18 @@ public:
 
 	void EnableRaw(bool);
 
-	void strcpyval(std::string&,const char *); //,size_t);
+	void strcpyval(std::string&,const char *);
 
 	/* get names */
-	bool getfirst(std::string& n); //char *,size_t);
-	bool getnext(std::string& n); //char *,size_t);
+	bool getfirst(std::string& n);
+	bool getnext(std::string& n);
 
 	/* get names and values */
-	bool getfirst(std::string& n,std::string& v); //char *,size_t,char *,size_t);
-	bool getnext(std::string& n,std::string& v); //char *,size_t,char *,size_t);
+	bool getfirst(std::string& n,std::string& v);
+	bool getnext(std::string& n,std::string& v);
 
 	/* get value */
-	int getvalue(const std::string& ,std::string& ); //char *,size_t);
+	int getvalue(const std::string& ,std::string& );
 	std::string getvalue(const std::string& );
 	size_t getlength(const std::string& );
 	cgi_v& getbase();

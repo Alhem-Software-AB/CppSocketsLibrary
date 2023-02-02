@@ -3,7 +3,7 @@
  **	\author grymse@alhem.net
 **/
 /*
-Copyright (C) 2004-2006  Anders Hedstrom
+Copyright (C) 2004-2007  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL.
 
@@ -139,7 +139,7 @@ void Base64::encode(const char* input,size_t l,std::string& output, bool add_crl
 }
 
 
-void Base64::encode(unsigned char* input,size_t l,std::string& output,bool add_crlf)
+void Base64::encode(const unsigned char* input,size_t l,std::string& output,bool add_crlf)
 {
 	size_t i = 0;
 	size_t o = 0;

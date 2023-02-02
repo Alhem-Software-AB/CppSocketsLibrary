@@ -3,7 +3,7 @@
  **	\author grymse@alhem.net
 **/
 /*
-Copyright (C) 2004-2006  Anders Hedstrom
+Copyright (C) 2004-2007  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL.
 
@@ -52,7 +52,7 @@ public:
 	void encode(FILE *, std::string& , bool add_crlf = true);
 	void encode(const std::string&, std::string& , bool add_crlf = true);
 	void encode(const char *, size_t, std::string& , bool add_crlf = true);
-	void encode(unsigned char *, size_t, std::string& , bool add_crlf = true);
+	void encode(const unsigned char *, size_t, std::string& , bool add_crlf = true);
 
 	void decode(const std::string&, std::string& );
 	void decode(const std::string&, unsigned char *, size_t&);

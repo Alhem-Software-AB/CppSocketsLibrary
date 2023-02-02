@@ -1,7 +1,7 @@
 /** \file HttpdCookies.cpp
 */
 /*
-Copyright (C) 2003-2006  Anders Hedstrom
+Copyright (C) 2003-2007  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL.
 

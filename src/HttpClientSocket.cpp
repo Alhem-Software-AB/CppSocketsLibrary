@@ -4,7 +4,7 @@
  **	\author grymse@alhem.net
 **/
 /*
-Copyright (C) 2006  Anders Hedstrom
+Copyright (C) 2007  Anders Hedstrom
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License

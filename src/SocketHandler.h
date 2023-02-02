@@ -3,7 +3,7 @@
  **	\author grymse@alhem.net
 **/
 /*
-Copyright (C) 2004-2006  Anders Hedstrom
+Copyright (C) 2004-2007  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL.
 
@@ -44,7 +44,9 @@ namespace SOCKETS_NAMESPACE {
 
 
 class Socket;
+#ifdef ENABLE_POOL
 class PoolSocket;
+#endif
 class ResolvServer;
 class Mutex;
 
@@ -97,6 +99,7 @@ public:
 	void AddList(SOCKET s,list_t which_one,bool add);
 
 	// Connection pool
+#ifdef ENABLE_POOL
 	/** Find available open connection (used by connection pool). */
 	PoolSocket *FindConnection(int type,const std::string& protocol,SocketAddress&);
 	/** Enable connection pool (by default disabled). */
@@ -104,8 +107,10 @@ public:
 	/** Check pool status. 
 		\return true if connection pool is enabled */
 	bool PoolEnabled();
+#endif // ENABLE_POOL
 
 	// Socks4
+#ifdef ENABLE_SOCKS4
 	/** Set socks4 server ip that all new tcp sockets should use. */
 	void SetSocks4Host(ipaddr_t);
 	/** Set socks4 server hostname that all new tcp sockets should use. */
@@ -128,8 +133,10 @@ public:
 	/** Check status of socks4 try direct flag.
 		\return true if direct connection should be tried if connection to socks4 server fails */
 	bool Socks4TryDirect();
+#endif // ENABLE_SOCKS4
 
 	// DNS resolve server
+#ifdef ENABLE_RESOLVER
 	/** Enable asynchronous DNS. 
 		\param port Listen port of asynchronous dns server */
 	void EnableResolver(port_t port = 16667);
@@ -148,6 +155,7 @@ public:
 	port_t GetResolverPort();
 	/** Resolver thread ready for queries. */
 	bool ResolverReady();
+#endif
 
 	/** Sanity check of those accursed lists. */
 	void CheckSanity();
@@ -166,14 +174,20 @@ private:
 #ifdef _WIN32
 	int m_preverror; ///< debug select() error
 #endif
+#ifdef ENABLE_SOCKS4
 	ipaddr_t m_socks4_host; ///< Socks4 server host ip
 	port_t m_socks4_port; ///< Socks4 server port number
 	std::string m_socks4_userid; ///< Socks4 userid
 	bool m_bTryDirect; ///< Try direct connection if socks4 server fails
+#endif
+#ifdef ENABLE_RESOLVER
 	int m_resolv_id; ///< Resolver id counter
 	ResolvServer *m_resolver; ///< Resolver thread pointer
 	port_t m_resolver_port; ///< Resolver listen port
+#endif
+#ifdef ENABLE_POOL
 	bool m_b_enable_pool; ///< Connection pool enabled if true
+#endif
 	socket_v m_fds; ///< Active file descriptor list
 	socket_v m_fds_erase; ///< File descriptors that are to be erased from m_sockets
 	socket_v m_fds_callonconnect; ///< checklist CallOnConnect

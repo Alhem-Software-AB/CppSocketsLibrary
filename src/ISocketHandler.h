@@ -3,7 +3,7 @@
  **	\author grymse@alhem.net
 **/
 /*
-Copyright (C) 2004-2006  Anders Hedstrom
+Copyright (C) 2004-2007  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL.
 
@@ -29,6 +29,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #ifndef _ISOCKETHANDLER_H
 #define _ISOCKETHANDLER_H
+#include "sockets-config.h"
 
 #include <map>
 #include <list>
@@ -119,6 +120,7 @@ public:
 	// -------------------------------------------------------------------------
 	// Connection pool
 	// -------------------------------------------------------------------------
+#ifdef ENABLE_POOL
 	/** Find available open connection (used by connection pool). */
 	virtual PoolSocket *FindConnection(int type,const std::string& protocol,SocketAddress&) {
 		return NULL;
@@ -130,10 +132,12 @@ public:
 	virtual bool PoolEnabled() {
 		return false;
 	}
+#endif // ENABLE_POOL
 
 	// -------------------------------------------------------------------------
 	// Socks4
 	// -------------------------------------------------------------------------
+#ifdef ENABLE_SOCKS4
 	/** Set socks4 server ip that all new tcp sockets should use. */
 	virtual void SetSocks4Host(ipaddr_t) {}
 	/** Set socks4 server hostname that all new tcp sockets should use. */
@@ -162,10 +166,12 @@ public:
 	virtual bool Socks4TryDirect() {
 		return false;
 	}
+#endif // ENABLE_SOCKS4
 
 	// -------------------------------------------------------------------------
 	// DNS resolve server
 	// -------------------------------------------------------------------------
+#ifdef ENABLE_RESOLVER
 	/** Enable asynchronous DNS. 
 		\param port Listen port of asynchronous dns server */
 	virtual void EnableResolver(port_t = 16667) {}
@@ -198,6 +204,7 @@ public:
 	virtual bool ResolverReady() {
 		return false;
 	}
+#endif
 
 protected:
 	StdLog *m_stdlog; ///< Registered log class, or NULL

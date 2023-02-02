@@ -3,7 +3,7 @@
  **	\author grymse@alhem.net
 **/
 /*
-Copyright (C) 2004-2006  Anders Hedstrom
+Copyright (C) 2004-2007  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL.
 
@@ -29,6 +29,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #ifndef _POOLSOCKET_H
 #define _POOLSOCKET_H
+#include "sockets-config.h"
+
+#ifdef ENABLE_POOL
 
 #include "Socket.h"
 
@@ -62,4 +65,5 @@ private:
 }
 #endif
 
+#endif // ENABLE_POOL
 #endif // _POOLSOCKET_H

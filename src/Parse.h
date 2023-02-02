@@ -4,7 +4,7 @@
  **/
 
 /*
-Copyright (C) 1999-2006  Anders Hedstrom
+Copyright (C) 1999-2007  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL.
 
@@ -56,27 +56,27 @@ public:
 	Parse(const std::string&,const std::string&);
 	Parse(const std::string&,const std::string&,short);
 	~Parse();
-	short issplit(char);
-	void getsplit(void);
+	short issplit(const char);
+	void getsplit();
 	void getsplit(std::string&);
-	std::string getword(void);
+	std::string getword();
 	void getword(std::string&);
 	void getword(std::string&,std::string&,int);
 	std::string getrest();
 	void getrest(std::string&);
-	long getvalue(void);
-	void setbreak(char);
-	int getwordlen(void);
-	int getrestlen(void);
-	void enablebreak(char c) {
+	long getvalue();
+	void setbreak(const char);
+	int getwordlen();
+	int getrestlen();
+	void enablebreak(const char c) {
 		pa_enable = c;
 	}
-	void disablebreak(char c) {
+	void disablebreak(const char c) {
 		pa_disable = c;
 	}
-	void getline(void);
+	void getline();
 	void getline(std::string&);
-	size_t getptr(void) { return pa_the_ptr; }
+	size_t getptr() { return pa_the_ptr; }
 	void EnableQuote(bool b) { pa_quote = b; }
 
 private:

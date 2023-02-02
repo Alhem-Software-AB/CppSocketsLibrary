@@ -3,7 +3,7 @@
  **	\author grymse@alhem.net
 **/
 /*
-Copyright (C) 2004-2006  Anders Hedstrom
+Copyright (C) 2004-2007  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL.
 
@@ -45,7 +45,7 @@ class Uid
 public:
 	Uid();
 	Uid(const std::string& );
-	Uid(unsigned char *);
+	Uid(const unsigned char *);
 	~Uid();
 
 	std::string GetUid();
