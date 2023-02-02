@@ -34,10 +34,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "sockets-config.h"
 
 #include <list>
+#include <map>
 
 #include "socket_include.h"
 #include "Socket.h"
 #include "StdLog.h"
+#include "IBase.h"
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
@@ -59,7 +61,7 @@ class IMutex;
 
 /** Socket container class, event generator. 
 	\ingroup basic */
-class ISocketHandler
+class ISocketHandler : public IBase
 {
 	friend class Socket;
 
@@ -85,8 +87,6 @@ public:
 #endif
 
 public:
-	virtual ~ISocketHandler() {}
-
 	/** Get mutex reference for threadsafe operations. */
 	virtual IMutex& GetMutex() const = 0;
 
@@ -132,6 +132,9 @@ public:
 
 	/** Called by Socket when a socket changes state. */
 	virtual void AddList(SOCKET s,list_t which_one,bool add) = 0;
+
+	/** Use with care, always lock with h.GetMutex() if multithreaded */
+	virtual const std::map<SOCKET, Socket *>& AllSockets() = 0;
 
 	// -------------------------------------------------------------------------
 	// Connection pool

@@ -302,6 +302,8 @@ static	int SSL_password_cb(char *buf,int num,int rwflag,void *userdata);
 private:
 	TcpSocket& operator=(const TcpSocket& ) { return *this; }
 
+	/** */
+	void SendFromOutputBuffer();
 	/** the actual send() */
 	int TryWrite(const char *buf, size_t len);
 	/** add data to output buffer top */
@@ -321,6 +323,7 @@ private:
 	OUTPUT *m_obuf_top; ///< output buffer on top
 	size_t m_transfer_limit;
 	size_t m_output_length;
+	size_t m_repeat_length;
 
 #ifdef HAVE_OPENSSL
 static	SSLInitializer m_ssl_init;

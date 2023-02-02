@@ -91,6 +91,7 @@ TcpSocket::TcpSocket(ISocketHandler& h) : StreamSocket(h)
 ,m_obuf_top(NULL)
 ,m_transfer_limit(0)
 ,m_output_length(0)
+,m_repeat_length(0)
 #ifdef HAVE_OPENSSL
 ,m_ssl_ctx(NULL)
 ,m_ssl(NULL)
@@ -128,6 +129,7 @@ TcpSocket::TcpSocket(ISocketHandler& h,size_t isize,size_t osize) : StreamSocket
 ,m_obuf_top(NULL)
 ,m_transfer_limit(0)
 ,m_output_length(0)
+,m_repeat_length(0)
 #ifdef HAVE_OPENSSL
 ,m_ssl_ctx(NULL)
 ,m_ssl(NULL)
@@ -682,6 +684,13 @@ void TcpSocket::OnWrite()
 		OnConnectFailed();
 		return;
 	}
+
+	SendFromOutputBuffer();
+}
+
+
+void TcpSocket::SendFromOutputBuffer()
+{
 	// try send next block in buffer
 	// if full block is sent, repeat
 	// if all blocks are sent, reset m_wfds
@@ -745,51 +754,39 @@ int TcpSocket::TryWrite(const char *buf, size_t len)
 #ifdef HAVE_OPENSSL
 	if (IsSSL())
 	{
-		// check that file descriptor is ready for write before calling SSL_write
-		fd_set wfds;
-		FD_ZERO(&wfds);
-		FD_SET(GetSocket(), &wfds);
-		struct timeval tv;
-		tv.tv_sec = 0;
-		tv.tv_usec = 0;
-		n = select(GetSocket() + 1, NULL, &wfds, NULL, &tv);
-		if (n > 0 && FD_ISSET(GetSocket(), &wfds))
+		n = SSL_write(m_ssl, buf, (int)(m_repeat_length ? m_repeat_length : len));
+		if (n == -1)
 		{
-			n = SSL_write(m_ssl, buf, (int)len);
-			if (n == -1)
+			int errnr = SSL_get_error(m_ssl, n);
+			if ( errnr == SSL_ERROR_WANT_READ || errnr == SSL_ERROR_WANT_WRITE )
 			{
-				int errnr = SSL_get_error(m_ssl, n);
-				if ( errnr != SSL_ERROR_WANT_READ && errnr != SSL_ERROR_WANT_WRITE )
-				{
-					OnDisconnect();
-					OnDisconnect(TCP_DISCONNECT_WRITE|TCP_DISCONNECT_ERROR|TCP_DISCONNECT_SSL, errnr);
-					SetCloseAndDelete(true);
-					SetFlushBeforeClose(false);
-					SetLost();
-					{
-						char errbuf[256];
-						ERR_error_string_n(errnr, errbuf, 256);
-						Handler().LogError(this, "OnWrite/SSL_write", errnr, errbuf, LOG_LEVEL_FATAL);
-					}
-				}
-				return 0;
+				m_repeat_length = m_repeat_length ? m_repeat_length : len;
 			}
 			else
-			if (!n)
 			{
 				OnDisconnect();
-				OnDisconnect(TCP_DISCONNECT_WRITE|TCP_DISCONNECT_SSL, 0);
+				OnDisconnect(TCP_DISCONNECT_WRITE|TCP_DISCONNECT_ERROR|TCP_DISCONNECT_SSL, errnr);
 				SetCloseAndDelete(true);
 				SetFlushBeforeClose(false);
 				SetLost();
-DEB(				{
-					int errnr = SSL_get_error(m_ssl, n);
+				{
 					char errbuf[256];
 					ERR_error_string_n(errnr, errbuf, 256);
-					fprintf(stderr, "SSL_write() returns 0: %d : %s\n",errnr, errbuf);
-				})
+					Handler().LogError(this, "OnWrite/SSL_write", errnr, errbuf, LOG_LEVEL_FATAL);
+				}
 			}
+			return 0;
 		}
+		else
+		if (!n)
+		{
+			OnDisconnect();
+			OnDisconnect(TCP_DISCONNECT_WRITE|TCP_DISCONNECT_SSL, 0);
+			SetCloseAndDelete(true);
+			SetFlushBeforeClose(false);
+			SetLost();
+		}
+		m_repeat_length = 0;
 	}
 	else
 #endif // HAVE_OPENSSL
@@ -888,6 +885,12 @@ void TcpSocket::SendBuf(const char *buf,size_t len,int)
 	if (m_obuf_top)
 	{
 		Buffer(buf, len);
+		return;
+	}
+	if (IsSSL())
+	{
+		Buffer(buf, len);
+		SendFromOutputBuffer();
 		return;
 	}
 	int n = TryWrite(buf, len);
@@ -1152,18 +1155,16 @@ bool TcpSocket::SSLNegotiate()
 			SetSSLNegotiate(false);
 			/// \todo: resurrect certificate check... client
 //			CheckCertificateChain( "");//ServerHOST);
-			SetNonblocking(false);
-			//
+			SetConnected();
+			if (GetOutputLength())
 			{
-				SetConnected();
-				if (GetOutputLength())
-				{
-					OnWrite();
-				}
+				OnWrite();
 			}
 #ifdef ENABLE_RECONNECT
 			if (IsReconnect())
+			{
 				OnReconnect();
+			}
 			else
 #endif
 			{
@@ -1201,14 +1202,10 @@ DEB(				fprintf(stderr, "SSL_connect() failed - closing socket, return code: %d\
 			SetSSLNegotiate(false);
 			/// \todo: resurrect certificate check... server
 //			CheckCertificateChain( "");//ClientHOST);
-			SetNonblocking(false);
-			//
+			SetConnected();
+			if (GetOutputLength())
 			{
-				SetConnected();
-				if (GetOutputLength())
-				{
-					OnWrite();
-				}
+				OnWrite();
 			}
 			OnAccept();
 			Handler().LogError(this, "SSLNegotiate/SSL_accept", 0, "Connection established", LOG_LEVEL_INFO);
@@ -1261,7 +1258,7 @@ void TcpSocket::InitializeContext(const std::string& context, const SSL_METHOD *
 	{
 		SSL_METHOD *meth = meth_in ? const_cast<SSL_METHOD *>(meth_in) : SSLv3_method();
 		m_ssl_ctx = m_client_contexts[context] = SSL_CTX_new(meth);
-		SSL_CTX_set_mode(m_ssl_ctx, SSL_MODE_ENABLE_PARTIAL_WRITE);
+		SSL_CTX_set_mode(m_ssl_ctx, SSL_MODE_AUTO_RETRY|SSL_MODE_ENABLE_PARTIAL_WRITE);
 	}
 	else
 	{
@@ -1278,7 +1275,7 @@ void TcpSocket::InitializeContext(const std::string& context,const std::string& 
 	{
 		SSL_METHOD *meth = meth_in ? const_cast<SSL_METHOD *>(meth_in) : SSLv3_method();
 		m_ssl_ctx = m_server_contexts[context] = SSL_CTX_new(meth);
-		SSL_CTX_set_mode(m_ssl_ctx, SSL_MODE_ENABLE_PARTIAL_WRITE);
+		SSL_CTX_set_mode(m_ssl_ctx, SSL_MODE_AUTO_RETRY|SSL_MODE_ENABLE_PARTIAL_WRITE);
 		// session id
 		if (context.size())
 			SSL_CTX_set_session_id_context(m_ssl_ctx, (const unsigned char *)context.c_str(), (unsigned int)context.size());
@@ -1314,7 +1311,7 @@ void TcpSocket::InitializeContext(const std::string& context,const std::string& 
 	{
 		SSL_METHOD *meth = meth_in ? const_cast<SSL_METHOD *>(meth_in) : SSLv3_method();
 		m_ssl_ctx = m_server_contexts[context] = SSL_CTX_new(meth);
-		SSL_CTX_set_mode(m_ssl_ctx, SSL_MODE_ENABLE_PARTIAL_WRITE);
+		SSL_CTX_set_mode(m_ssl_ctx, SSL_MODE_AUTO_RETRY|SSL_MODE_ENABLE_PARTIAL_WRITE);
 		// session id
 		if (context.size())
 			SSL_CTX_set_session_id_context(m_ssl_ctx, (const unsigned char *)context.c_str(), (unsigned int)context.size());

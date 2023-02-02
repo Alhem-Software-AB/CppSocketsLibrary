@@ -52,7 +52,7 @@ CPPFLAGS =	$(CFLAGS)
 
 PROGS =		$(CONFNAME)
 
-all:		$(LIBNAME) $(PROGS) 
+all:		$(LIBNAME) $(PROGS) pc
 
 shared:		$(SHAREDLIBNAME)
 
@@ -65,6 +65,14 @@ $(SHAREDLIBNAME): $(OBJS)
 
 $(CONFNAME):	Sockets-config.o
 		$(CXX) $(LDFLAGS) -o $@ $^
+
+pc:
+		@cat pkgconfig/libsockets2.pc.IN | \
+			sed -e "s/%VERSION%/$(VERSION)/g"| \
+			sed -e "s/%NAME%/$(NAME)/g" > pkgconfig/libsockets2.pc 
+		@cat pkgconfig/libSockets.pc.IN | \
+			sed -e "s/%VERSION%/$(VERSION)/g"| \
+			sed -e "s/%NAME%/$(NAME)/g" > pkgconfig/libSockets.pc 
 
 clean:
 		rm -f *.o *~ slask *.d $(PROGS) *.a *.so *.so.* */*~

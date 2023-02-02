@@ -1,5 +1,21 @@
 diff for next release always available @ http://www.alhem.net/Sockets/latest_diff.html
 
+next
+------
+SSL sockets now operate in nonblocking mode. A much better solution to the
+"hang" problem mentioned in 2.3.7.
+Added Path() method to IFile interface. Returns File path name or MemFile
+virtual path name.
+Added constructor in MemFile that takes a File as input. Will read the
+entire File to memory. Added constructor in MemFile that copies another
+memfile. Will use the source memfile when reading.
+Added reference count when a MemFile object is source for another memfile.
+
+Set OnTransferLimit back to 0 after a successful transfer of requested file
+(in Ajp13Socket and HttpBaseSocket). Reset IFile auto_ptr to
+decrease the reference count asap (by using fclose).
+
+
 2.3.7
 ------
 Moved some #include's outside the sockets namespace definition.

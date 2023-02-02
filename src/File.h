@@ -47,9 +47,11 @@ class File : public IFile
 {
 public:
 	File();
+	/** convenience: calls fopen() */
+	File(const std::string& path, const std::string& mode);
 	~File();
 
-	bool fopen(const std::string&, const std::string&);
+	bool fopen(const std::string& path, const std::string& mode);
 	void fclose() const;
 
 	size_t fread(char *, size_t, size_t) const;
@@ -63,6 +65,8 @@ public:
 
 	void reset_read() const;
 	void reset_write();
+
+	const std::string& Path() const;
 
 private:
 	File(const File& ) {} // copy constructor

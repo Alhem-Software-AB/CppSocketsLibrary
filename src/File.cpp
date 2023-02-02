@@ -48,6 +48,15 @@ File::File()
 }
 
 
+File::File(const std::string& path, const std::string& mode)
+:m_fil(NULL)
+,m_rptr(0)
+,m_wptr(0)
+{
+	fopen(path, mode);
+}
+
+
 File::~File()
 {
 	fclose();
@@ -159,6 +168,12 @@ void File::reset_read() const
 void File::reset_write()
 {
 	m_wptr = 0;
+}
+
+
+const std::string& File::Path() const
+{
+	return m_path;
 }
 
 

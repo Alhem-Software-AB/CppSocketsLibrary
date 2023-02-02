@@ -189,6 +189,7 @@ void HttpBaseSocket::OnTransferLimit()
 	}
 	if (!GetOutputLength())
 	{
+		SetTransferLimit(0);
 		m_res.GetFile().fclose();
 		OnResponseComplete();
 		if (!m_b_keepalive)

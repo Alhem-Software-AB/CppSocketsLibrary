@@ -367,6 +367,7 @@ void Ajp13Socket::OnTransferLimit()
 
 		SendBuf( msg, ptr );
 
+		SetTransferLimit(0);
 		m_res.GetFile().fclose();
 		OnResponseComplete();
 	}

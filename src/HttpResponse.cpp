@@ -202,10 +202,24 @@ void HttpResponse::Writef( const char *format, ... )
 
 
 // --------------------------------------------------------------------------------------
+const IFile& HttpResponse::GetFile() const
+{
+  return *m_file;
+}
+
+
+// --------------------------------------------------------------------------------------
 void HttpResponse::SetFile( const std::string& path )
 {
 	m_file = std::auto_ptr<IFile>(new File);
 	m_file -> fopen( path, "rb" );
+}
+
+
+// --------------------------------------------------------------------------------------
+void HttpResponse::SetFile( IFile *f )
+{
+	m_file = std::auto_ptr<IFile>(f);
 }
 
 

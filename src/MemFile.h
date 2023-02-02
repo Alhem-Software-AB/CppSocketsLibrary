@@ -34,7 +34,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "sockets-config.h"
 #include <map>
-#include "IFile.h"
+#include "File.h"
+#include "Mutex.h"
 
 #define BLOCKSIZE 32768
 
@@ -56,8 +57,12 @@ public:
 		char data[BLOCKSIZE];
 	};
 public:
+	/** Create temporary memory buffer, will be freed when object destructs */
 	MemFile();
-	MemFile(const std::string& path);
+	/** Copy buffer from source, reset read ptr */
+	MemFile(MemFile& );
+	/** Read file and write to this, create non-temporary memory buffer from f.Path() */
+	MemFile(File& f);
 	~MemFile();
 
 	bool fopen(const std::string& path, const std::string& mode);
@@ -75,13 +80,18 @@ public:
 	void reset_read() const;
 	void reset_write();
 
+	/** Reference count when copy constructor is used */
+	int RefCount() const;
+	void Increase();
+	void Decrease();
+
+	const std::string& Path() const;
+
 private:
-	MemFile(const MemFile& ) {} // copy constructor
 	MemFile& operator=(const MemFile& ) { return *this; } // assignment operator
 
-static	std::map<std::string,block_t *> m_files;
-	std::string m_path;
-	bool m_temporary;
+	MemFile& m_src;
+	bool m_src_valid;
 	block_t *m_base;
 	mutable block_t *m_current_read;
 	block_t *m_current_write;
@@ -89,6 +99,9 @@ static	std::map<std::string,block_t *> m_files;
 	mutable size_t m_read_ptr;
 	size_t m_write_ptr;
 	mutable bool m_b_read_caused_eof;
+	int m_ref_count;
+	mutable bool m_ref_decreased;
+	std::string m_path;
 };
 
 

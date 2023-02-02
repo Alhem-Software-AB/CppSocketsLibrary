@@ -62,6 +62,7 @@ public:
 	virtual void reset_read() const = 0;
 	virtual void reset_write() = 0;
 
+	virtual const std::string& Path() const = 0;
 };
 
 

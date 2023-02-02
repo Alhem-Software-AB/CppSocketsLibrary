@@ -70,10 +70,12 @@ public:
 	void Write( const char *buf, size_t sz );
 	void Writef( const char *format, ... );
 
-	const IFile& GetFile() const { return *m_file; }
+	const IFile& GetFile() const;
 
 	/** Replace memfile with file on disk, opened for read. */
 	void SetFile( const std::string& path );
+	/** Replace memfile with another IFile */
+	void SetFile( IFile *f );
 
 	void Reset();
 
