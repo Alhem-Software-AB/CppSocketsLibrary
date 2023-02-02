@@ -65,6 +65,7 @@ Socket::Socket(SocketHandler& h)
 ,m_pThread(NULL)
 ,m_ipv6(false)
 ,m_sa_len(0)
+,m_parent(NULL)
 {
 }
 
@@ -802,6 +803,25 @@ void Socket::OnConnectFailed()
 
 Socket::Socket(const Socket& s) : m_handler(s.Handler())
 {
+}
+
+
+Socket *Socket::GetParent()
+{
+	return m_parent;
+}
+
+
+void Socket::SetParent(Socket *x)
+{
+	m_parent = x;
+}
+
+
+port_t Socket::GetPort()
+{
+	Handler().LogError(this, "GetPort", 0, "GetPort only implemented for ListenSocket", LOG_LEVEL_WARNING);
+	return 0;
 }
 
 

@@ -132,6 +132,10 @@ public:
 	void SetIpv6(bool x = true) { m_ipv6 = x; }
 	bool IsIpv6() { return m_ipv6; }
 
+	Socket *GetParent();
+	void SetParent(Socket *);
+	virtual port_t GetPort();
+
 protected:
 	Socket(const Socket& ); // do not allow use of copy constructor
 	void DetachSocket(); // protected, friend class SocketHandler;
@@ -159,6 +163,7 @@ static	WSAInitializer m_winsock_init;
 	bool m_ipv6;
 	struct sockaddr m_sa; // remote, from accept
 	socklen_t m_sa_len;
+	Socket *m_parent;
 };
 
 

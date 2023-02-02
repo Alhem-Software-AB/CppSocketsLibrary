@@ -262,6 +262,7 @@ public:
 			X *tmp = new X(Handler());
 			tmp -> SetIpv6();
 			tmp -> Init();
+			tmp -> SetParent(this);
 			tmp -> Attach(a_s);
 			tmp -> SetRemoteAddress( (struct sockaddr *)saptr, len);
 			Handler().Add(tmp);
@@ -290,6 +291,7 @@ public:
 		}
 		X *tmp = new X(Handler());
 		tmp -> Init();
+		tmp -> SetParent(this);
 		tmp -> Attach(a_s);
 		tmp -> SetRemoteAddress( (struct sockaddr *)saptr, len);
 		Handler().Add(tmp);
