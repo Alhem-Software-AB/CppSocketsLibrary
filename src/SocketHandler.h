@@ -170,6 +170,8 @@ public:
 	port_t GetResolverPort();
 	/** Resolver thread ready for queries. */
 	bool ResolverReady();
+	/** Returns true if the socket is waiting for a resolve event. */
+	bool Resolving(Socket *);
 #endif // ENABLE_RESOLVER
 
 #ifdef ENABLE_TRIGGERS
@@ -240,6 +242,7 @@ private:
 	int m_resolv_id; ///< Resolver id counter
 	ResolvServer *m_resolver; ///< Resolver thread pointer
 	port_t m_resolver_port; ///< Resolver listen port
+	std::map<Socket *, bool> m_resolve_q; ///< resolve queue
 #endif
 #ifdef ENABLE_POOL
 	bool m_b_enable_pool; ///< Connection pool enabled if true

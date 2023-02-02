@@ -188,7 +188,10 @@ public:
 		\param len Length of the data */
 	virtual void OnRawData(const char *buf,size_t len);
 
-	/** Called when output buffer has been sent. */
+	/** Called when output buffer has been sent.
+	    Note: Will only be called IF the output buffer has been used.
+	    Send's that was successful without needing the output buffer
+	    will not generate a call to this method. */
 	virtual void OnWriteComplete();
 	/** Number of bytes in input buffer. */
 	size_t GetInputLength();

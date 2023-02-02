@@ -53,6 +53,7 @@ public:
 
 	/** Write response to this file */
 	void SetFilename(const std::string& );
+	const std::string& Filename() const { return m_filename; }
 
 	/** Store response in this buffer. */
 	void SetDataPtr(unsigned char *,size_t);

@@ -563,15 +563,18 @@ bool Utility::u2ip(const std::string& host, struct sockaddr_in& sa, int ai_flags
 	memcpy(&sa.sin_addr, he -> h_addr, sizeof(sa.sin_addr));
 #else
 	struct hostent he;
-	struct hostent *result;
-	int myerrno;
+	struct hostent *result = NULL;
+	int myerrno = 0;
 	char buf[2000];
 	int n = gethostbyname_r(host.c_str(), &he, buf, sizeof(buf), &result, &myerrno);
-	if (n)
+	if (n || !result)
 	{
 		return false;
 	}
-	memcpy(&sa.sin_addr, he.h_addr, 4);
+	if (he.h_addr_list && he.h_addr_list[0])
+		memcpy(&sa.sin_addr, he.h_addr, 4);
+	else
+		return false;
 #endif
 	return true;
 #else

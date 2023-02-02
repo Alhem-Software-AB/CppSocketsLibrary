@@ -363,6 +363,7 @@ bool TcpSocket::Open(const std::string &host,port_t port)
 #ifdef ENABLE_RESOLVER
 void TcpSocket::OnResolved(int id,ipaddr_t a,port_t port)
 {
+DEB(	fprintf(stderr, "TcpSocket::OnResolved id %d addr %x port %d\n", id, a, port);)
 	if (id == m_resolver_id)
 	{
 		if (a && port)

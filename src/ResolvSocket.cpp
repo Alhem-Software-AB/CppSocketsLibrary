@@ -130,7 +130,7 @@ void ResolvSocket::OnLine(const std::string& line)
 	{
 		m_query = pa.getword();
 		m_data = pa.getrest();
-DEB(		fprintf(stderr, "ResolvSocket server; query=%s, data=%s\n", m_query.c_str(), m_data.c_str());)
+DEB(		fprintf(stderr, " *** ResolvSocket server; query=%s, data=%s\n", m_query.c_str(), m_data.c_str());)
 		// %! check cache
 		{
 			Lock lock(m_cache_mutex);
@@ -139,7 +139,7 @@ DEB(		fprintf(stderr, "ResolvSocket server; query=%s, data=%s\n", m_query.c_str(
 				if (time(NULL) - m_cache_to[m_query][m_data] < 3600) // ttl
 				{
 					std::string result = m_cache[m_query][m_data];
-DEB(fprintf(stderr, "Returning cache for [%s][%s] = '%s'\n", m_query.c_str(), m_data.c_str(), result.c_str());)
+DEB(fprintf(stderr, " *** Returning cache for [%s][%s] = '%s'\n", m_query.c_str(), m_data.c_str(), result.c_str());)
 					Send("Cached\n");
 					if (!result.size()) /* failed */
 					{
@@ -183,6 +183,7 @@ DEB(fprintf(stderr, "Returning cache for [%s][%s] = '%s'\n", m_query.c_str(), m_
 	}
 	std::string key = pa.getword();
 	std::string value = pa.getrest();
+DEB(	fprintf(stderr, " *** ResolvSocket response;  %s: %s\n", key.c_str(), value.c_str());)
 
 	if (key == "Cached")
 	{
@@ -191,8 +192,8 @@ DEB(fprintf(stderr, "Returning cache for [%s][%s] = '%s'\n", m_query.c_str(), m_
 	else
 	if (key == "Failed" && m_parent)
 	{
-DEB(		fprintf(stderr, "************ Resolve failed\n");)
-		if (Handler().Valid(m_parent))
+DEB(		fprintf(stderr, " ************ Resolve failed\n");)
+		if (Handler().Resolving(m_parent) || Handler().Valid(m_parent))
 		{
 			m_parent -> OnResolveFailed(m_resolv_id);
 		}
@@ -200,7 +201,7 @@ DEB(		fprintf(stderr, "************ Resolve failed\n");)
 		if (!m_cached)
 		{
 			Lock lock(m_cache_mutex);
-DEB(fprintf(stderr, "Update cache for [%s][%s] = '%s'\n", m_query.c_str(), m_data.c_str(), value.c_str());)
+DEB(fprintf(stderr, " *** Update cache for [%s][%s] = '%s'\n", m_query.c_str(), m_data.c_str(), value.c_str());)
 			m_cache[m_query][m_data] = value;
 			m_cache_to[m_query][m_data] = time(NULL);
 		}
@@ -209,7 +210,7 @@ DEB(fprintf(stderr, "Update cache for [%s][%s] = '%s'\n", m_query.c_str(), m_dat
 	else
 	if (key == "Name" && !m_resolv_host.size() && m_parent)
 	{
-		if (Handler().Valid(m_parent))
+		if (Handler().Resolving(m_parent) || Handler().Valid(m_parent))
 		{
 			m_parent -> OnReverseResolved(m_resolv_id, value);
 		}
@@ -217,7 +218,7 @@ DEB(fprintf(stderr, "Update cache for [%s][%s] = '%s'\n", m_query.c_str(), m_dat
 		if (!m_cached)
 		{
 			Lock lock(m_cache_mutex);
-DEB(fprintf(stderr, "Update cache for [%s][%s] = '%s'\n", m_query.c_str(), m_data.c_str(), value.c_str());)
+DEB(fprintf(stderr, " *** Update cache for [%s][%s] = '%s'\n", m_query.c_str(), m_data.c_str(), value.c_str());)
 			m_cache[m_query][m_data] = value;
 			m_cache_to[m_query][m_data] = time(NULL);
 		}
@@ -226,17 +227,17 @@ DEB(fprintf(stderr, "Update cache for [%s][%s] = '%s'\n", m_query.c_str(), m_dat
 	else
 	if (key == "A" && m_parent)
 	{
-		ipaddr_t l;
-		Utility::u2ip(value, l); // ip2ipaddr_t
-		if (Handler().Valid(m_parent))
+		if (Handler().Resolving(m_parent) || Handler().Valid(m_parent))
 		{
+			ipaddr_t l;
+			Utility::u2ip(value, l); // ip2ipaddr_t
 			m_parent -> OnResolved(m_resolv_id, l, m_resolv_port);
 		}
 		// update cache
 		if (!m_cached)
 		{
 			Lock lock(m_cache_mutex);
-DEB(fprintf(stderr, "Update cache for [%s][%s] = '%s'\n", m_query.c_str(), m_data.c_str(), value.c_str());)
+DEB(fprintf(stderr, " *** Update cache for [%s][%s] = '%s'\n", m_query.c_str(), m_data.c_str(), value.c_str());)
 			m_cache[m_query][m_data] = value;
 			m_cache_to[m_query][m_data] = time(NULL);
 		}
@@ -247,17 +248,17 @@ DEB(fprintf(stderr, "Update cache for [%s][%s] = '%s'\n", m_query.c_str(), m_dat
 	else
 	if (key == "AAAA" && m_parent)
 	{
-		in6_addr a;
-		Utility::u2ip(value, a);
-		if (Handler().Valid(m_parent))
+		if (Handler().Resolving(m_parent) || Handler().Valid(m_parent))
 		{
+			in6_addr a;
+			Utility::u2ip(value, a);
 			m_parent -> OnResolved(m_resolv_id, a, m_resolv_port);
 		}
 		// update cache
 		if (!m_cached)
 		{
 			Lock lock(m_cache_mutex);
-DEB(fprintf(stderr, "Update cache for [%s][%s] = '%s'\n", m_query.c_str(), m_data.c_str(), value.c_str());)
+DEB(fprintf(stderr, " *** Update cache for [%s][%s] = '%s'\n", m_query.c_str(), m_data.c_str(), value.c_str());)
 			m_cache[m_query][m_data] = value;
 			m_cache_to[m_query][m_data] = time(NULL);
 		}
@@ -270,7 +271,7 @@ DEB(fprintf(stderr, "Update cache for [%s][%s] = '%s'\n", m_query.c_str(), m_dat
 
 void ResolvSocket::OnDetached()
 {
-DEB(	fprintf(stderr, "ResolvSocket::OnDetached(); query=%s, data=%s\n", m_query.c_str(), m_data.c_str());)
+DEB(	fprintf(stderr, " *** ResolvSocket::OnDetached(); query=%s, data=%s\n", m_query.c_str(), m_data.c_str());)
 	if (m_query == "gethostbyname")
 	{
 		struct sockaddr_in sa;
@@ -409,7 +410,7 @@ void ResolvSocket::OnDelete()
 {
 	if (m_parent)
 	{
-		if (Handler().Valid(m_parent))
+		if (Handler().Resolving(m_parent) || Handler().Valid(m_parent))
 		{
 			m_parent -> OnResolveFailed(m_resolv_id);
 		}
@@ -418,7 +419,7 @@ void ResolvSocket::OnDelete()
 		{
 			Lock lock(m_cache_mutex);
 			std::string value;
-DEB(fprintf(stderr, "Update cache for [%s][%s] = '%s'\n", m_query.c_str(), m_data.c_str(), value.c_str());)
+DEB(fprintf(stderr, " *** Update cache for [%s][%s] = '%s'\n", m_query.c_str(), m_data.c_str(), value.c_str());)
 			m_cache[m_query][m_data] = value;
 			m_cache_to[m_query][m_data] = time(NULL);
 		}

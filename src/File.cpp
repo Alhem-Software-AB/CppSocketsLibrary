@@ -49,6 +49,7 @@ File::File()
 
 File::~File()
 {
+	fclose();
 }
 
 
@@ -64,7 +65,10 @@ bool File::fopen(const std::string& path, const std::string& mode)
 void File::fclose()
 {
 	if (m_fil)
+	{
 		::fclose(m_fil);
+		m_fil = NULL;
+	}
 }
 
 
@@ -90,6 +94,8 @@ char *File::fgets(char *s, int size) const
 
 void File::fprintf(const char *format, ...)
 {
+	if (!m_fil)
+		return;
 	va_list ap;
 	va_start(ap, format);
 	vfprintf(m_fil, format, ap);

@@ -196,6 +196,8 @@ public:
 	virtual port_t GetResolverPort() = 0;
 	/** Resolver thread ready for queries. */
 	virtual bool ResolverReady() = 0;
+	/** Returns true if socket waiting for a resolve event. */
+	virtual bool Resolving(Socket *) = 0;
 #endif // ENABLE_RESOLVER
 
 #ifdef ENABLE_TRIGGERS

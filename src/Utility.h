@@ -32,16 +32,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "sockets-config.h"
 #include <ctype.h>
-#ifdef _WIN32
-typedef unsigned __int64 uint64_t;
-#else
-#include <stdlib.h>
-#ifdef SOLARIS
-# include <sys/types.h>
-#else
-# include <stdint.h>
-#endif
-#endif
 #include <memory>
 #include "socket_include.h"
 

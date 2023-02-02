@@ -65,6 +65,10 @@ public:
 	/** Get pointer to query string/form data class. */
 	const HttpdForm *GetForm() const;
 
+	size_t ContentLength() const { return m_content_length; }
+	const IFile *Body() const { return m_file; }
+	int RequestId() const { return m_request_id; }
+
 protected:
 	HttpdSocket(const HttpdSocket& s) : HTTPSocket(s) {}
 	/** Decode and send a base64-encoded string. 

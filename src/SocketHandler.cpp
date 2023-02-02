@@ -965,6 +965,15 @@ DEB(							fprintf(stderr, "Close() before OnDelete\n");)
 }
 
 
+#ifdef ENABLE_RESOLVER
+bool SocketHandler::Resolving(Socket *p0)
+{
+	std::map<Socket *, bool>::iterator it = m_resolve_q.find(p0);
+	return it != m_resolve_q.end();
+}
+#endif
+
+
 bool SocketHandler::Valid(Socket *p0)
 {
 	for (socket_m::iterator it = m_sockets.begin(); it != m_sockets.end(); it++)
@@ -985,6 +994,11 @@ bool SocketHandler::OkToAccept(Socket *)
 
 size_t SocketHandler::GetCount()
 {
+/*
+printf(" m_sockets : %d\n", m_sockets.size());
+printf(" m_add     : %d\n", m_add.size());
+printf(" m_delete  : %d\n", m_delete.size());
+*/
 	return m_sockets.size() + m_add.size() + m_delete.size();
 }
 
@@ -1029,6 +1043,8 @@ int SocketHandler::Resolve(Socket *p,const std::string& host,port_t port)
 		LogError(resolv, "Resolve", -1, "Can't connect to local resolve server", LOG_LEVEL_FATAL);
 	}
 	Add(resolv);
+	m_resolve_q[p] = true;
+DEB(	fprintf(stderr, " *** Resolve '%s:%d' id#%d  m_resolve_q size: %d  p: %p\n", host.c_str(), port, resolv -> GetId(), m_resolve_q.size(), p);)
 	return resolv -> GetId();
 }
 
@@ -1047,6 +1063,7 @@ int SocketHandler::Resolve6(Socket *p,const std::string& host,port_t port)
 		LogError(resolv, "Resolve", -1, "Can't connect to local resolve server", LOG_LEVEL_FATAL);
 	}
 	Add(resolv);
+	m_resolve_q[p] = true;
 	return resolv -> GetId();
 }
 #endif
@@ -1065,6 +1082,7 @@ int SocketHandler::Resolve(Socket *p,ipaddr_t a)
 		LogError(resolv, "Resolve", -1, "Can't connect to local resolve server", LOG_LEVEL_FATAL);
 	}
 	Add(resolv);
+	m_resolve_q[p] = true;
 	return resolv -> GetId();
 }
 
@@ -1083,6 +1101,7 @@ int SocketHandler::Resolve(Socket *p,in6_addr& a)
 		LogError(resolv, "Resolve", -1, "Can't connect to local resolve server", LOG_LEVEL_FATAL);
 	}
 	Add(resolv);
+	m_resolve_q[p] = true;
 	return resolv -> GetId();
 }
 #endif
@@ -1189,6 +1208,11 @@ bool SocketHandler::PoolEnabled()
 
 void SocketHandler::Remove(Socket *p)
 {
+#ifdef ENABLE_RESOLVER
+	std::map<Socket *, bool>::iterator it = m_resolve_q.find(p);
+	if (it != m_resolve_q.end())
+		m_resolve_q.erase(it);
+#endif
 	if (p -> ErasedByHandler())
 	{
 		return;
