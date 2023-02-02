@@ -26,9 +26,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifdef _WIN32
 typedef unsigned __int64 uint64_t;
 #else
-#ifndef SOLARIS
-#include <stdint.h>
+# ifndef SOLARIS
+#  include <stdint.h>
+# endif
 #endif
+#ifdef MACOSX
+# include <ctype.h>
+# include <stdlib.h>
 #endif
 #include "Base64.h"
 

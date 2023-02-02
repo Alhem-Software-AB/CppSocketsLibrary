@@ -30,6 +30,7 @@ typedef	in_port_t port_t;
 #elif defined MACOSX 
 // ----------------------------------------
 // Mac OS X
+#include <string.h>
 typedef unsigned long ipaddr_t;
 #define s6_addr16 __u6_addr.__u6_addr16
 #define MSG_NOSIGNAL 0 // oops - thanks Derek

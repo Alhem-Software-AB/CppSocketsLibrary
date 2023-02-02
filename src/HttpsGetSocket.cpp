@@ -162,7 +162,7 @@ void HttpsGetSocket::OnHeaderComplete()
 	m_fil = fopen(m_to_file.c_str(),"wb");
 	if (!m_fil)
 	{
-		Handler().LogError(this, "OnHeaderComplete", errno, strerror(errno), LOG_LEVEL_FATAL);
+		Handler().LogError(this, "OnHeaderComplete", Errno, StrError(Errno), LOG_LEVEL_FATAL);
 		SetCloseAndDelete();
 	}
 }

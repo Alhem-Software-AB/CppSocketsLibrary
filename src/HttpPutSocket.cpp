@@ -74,7 +74,7 @@ void HttpPutSocket::SetFile(const std::string& file)
 	}
 	else
 	{
-		Handler().LogError(this, "SetFile", errno, strerror(errno), LOG_LEVEL_FATAL);
+		Handler().LogError(this, "SetFile", Errno, StrError(Errno), LOG_LEVEL_FATAL);
 		SetCloseAndDelete();
 	}
 }

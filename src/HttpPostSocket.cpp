@@ -101,7 +101,7 @@ void HttpPostSocket::AddFile(const std::string& name,const std::string& filename
 	}
 	else
 	{
-		Handler().LogError(this, "AddFile", errno, strerror(errno), LOG_LEVEL_FATAL);
+		Handler().LogError(this, "AddFile", Errno, StrError(Errno), LOG_LEVEL_FATAL);
 		SetCloseAndDelete();
 	}
 }

@@ -1,4 +1,4 @@
-VERSION =	1.7.3
+VERSION =	1.7.4
 
 INCLUDE =	-I/usr/devel/include -I.
 PREFIX =	/usr/local
@@ -79,24 +79,30 @@ clean:
 
 -include	*.d
 
+# no binary files, zip will translate lf to cr lf
+FILES =		*.h *.cpp Makefile Project/*.ds* \
+		README.macosx gpl.txt mkdot.sh \
+		Project.net/Sockets/*.vcproj Project.net/Sockets/*.sln \
+		Project.net/Test/*.vcproj
+
 tar:		clean
 		rm -f Mutex.*
 		rm -f MinderSocket_T.h
 		rm -f uuid.h
 		rm -f Stdin.*
 		./mkdot.sh
-		tar czf Sockets-$(VERSION).tar.gz *.h *.cpp Makefile Project/*.ds* \
-			README.macosx gpl.txt mkdot.sh \
-			Project.net/Sockets/*.vcproj Project.net/Sockets/*.sln \
-			Project.net/Test/*.vcproj
+		tar czf Sockets-$(VERSION).tar.gz $(FILES)
+		zip -l Sockets-$(VERSION).zip $(FILES)
 		doxygen doxygen.cfg
 		/usr/local/bin/tarfix.sh Sockets-$(VERSION)
 		cp Sockets-$(VERSION).tar.gz /usr/local/apache/www.libsockets.net/htdocs
+		cp Sockets-$(VERSION).zip /usr/local/apache/www.alhem.net/htdocs/Sockets
 
 docs:		clean
 		rm -f Mutex.*
 		rm -f MinderSocket_T.h
 		rm -f uuid.h
 		rm -f Stdin.*
+		rm sockets_test.cpp
 		./mkdot.sh
 		doxygen doxygen.cfg
