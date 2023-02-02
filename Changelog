@@ -61,3 +61,12 @@ Version 1.2.1
 Version 1.2.2
 --------------------------
 
+Version 1.3rc1
+--------------------------
+32a33,34
+> SocketThread.cpp
+> SocketThread.h
+36a39,40
+> Thread.cpp
+> Thread.h
+

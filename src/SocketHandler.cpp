@@ -186,82 +186,101 @@ DEB(
 		{
 			SOCKET i = (*it2).first;
 			Socket *p = (*it2).second;
-			if (p && !p -> IsDetached() )
+			if (p)
 			{
-				if (p -> SSLConnecting())
+				if (!p -> IsDetached() )
 				{
-					if (p -> SSLCheckConnect())
+					if (p -> SSLConnecting())
 					{
-						p -> OnSSLInitDone();
-					}
-				}
-				else
-				if (n > 0)
-				{
-					if (FD_ISSET(i, &rfds))
-					{
-						p -> OnRead();
-						if (p -> LineProtocol())
+						if (p -> SSLCheckConnect())
 						{
-							p -> ReadLine();
+							p -> OnSSLInitDone();
 						}
-//						p -> Touch();
 					}
-					if (FD_ISSET(i, &wfds))
+					else
+					if (n > 0)
 					{
-						if (p -> Connecting())
+						if (FD_ISSET(i, &rfds))
 						{
-							if (p -> CheckConnect())
+							p -> OnRead();
+							if (p -> LineProtocol())
 							{
-DEB(								printf("calling OnConnect\n");)
-								p -> OnConnect();
+								p -> ReadLine();
 							}
 //							p -> Touch();
 						}
-						else
+						if (FD_ISSET(i, &wfds))
 						{
-							p -> OnWrite();
-//							p -> Touch();
+							if (p -> Connecting())
+							{
+								if (p -> CheckConnect())
+								{
+DEB(									printf("calling OnConnect\n");)
+									p -> OnConnect();
+								}
+//								p -> Touch();
+							}
+							else
+							{
+								p -> OnWrite();
+//								p -> Touch();
+							}
+						}
+						if (FD_ISSET(i, &efds))
+						{
+							p -> OnException();
 						}
 					}
-					if (FD_ISSET(i, &efds))
-					{
-						p -> OnException();
-					}
-				}
-			}
-		}
+				} // if (!detached)
+			} // if (p)
+		} // for
 	}
 	for (socket_m::iterator it3 = m_sockets.begin(); it3 != m_sockets.end(); it3++)
 	{
+		SOCKET s = (*it3).first;
 		Socket *p = (*it3).second;
-		if (p && !p -> IsDetached())
+		if (p)
 		{
+			if (p -> IsDetach()) // socket.m_detach )
+			{
+				Set(s, false, false, false);
+				p -> SetDetached(true); //socket.m_detached = true;
+				// %! check m_detached in loops above(below)
+				p -> SetDeleteByHandler(false); //socket.SetDeleteByHandler(false)
+				p -> DetachSocket(); //socket.DetachSocket;
+			}
+			else
+			if (p -> IsDetached()) // socket.m_detached ) // && !socket.m_detach
+			{
+				// Set(s, ?
+				p -> SetDetached(false); //socket.m_detached = false;
+				p -> SetDeleteByHandler(); //socket.SetDeleteByHandler();
+			}
+			if (!p -> IsDetached())
+			{
 /*
-			if (p && p -> Timeout() && p -> Inactive() > p -> Timeout())
-			{
-				p -> SetCloseAndDelete();
-			}
-*/
-			if (p && p -> Connecting() && p -> GetConnectTime() > 5)
-			{
-//				fprintf(stderr,"Connect timeout - removing socket\n");
-				p -> SetCloseAndDelete(true);
-			}
-			if (p && p -> CloseAndDelete() )
-			{
-				Set(p -> GetSocket(),false,false,false);
-				p -> Close();
-				p -> OnDelete();
-				if (p -> DeleteByHandler())
+				if (p && p -> Timeout() && p -> Inactive() > p -> Timeout())
 				{
-					delete p;
+					p -> SetCloseAndDelete();
 				}
-				m_sockets.erase(it3);
-				break;
-			}
-			if (p -> IsDetach())
-			{
+*/
+				if (p && p -> Connecting() && p -> GetConnectTime() > 5)
+				{
+//					fprintf(stderr,"Connect timeout - removing socket\n");
+					p -> SetCloseAndDelete(true);
+				}
+				if (p && p -> CloseAndDelete() )
+				{
+					Set(p -> GetSocket(),false,false,false);
+					p -> Close();
+					p -> OnDelete();
+					if (p -> DeleteByHandler())
+					{
+						delete p;
+					}
+					m_sockets.erase(it3);
+					break;
+				}
 			}
 		}
 	}

@@ -184,7 +184,7 @@ void MinderSocket::SendHello()
 		SetCloseAndDelete();
 		return;
 	}
-	msg += m_app;
+	msg += Utility::base64(m_app);
 	msg += ":" + static_cast<MinderHandler&>(Handler()).GetID();
 	msg += ":" + local_ip;
 	msg += ":" + Utility::l2string(local_port);

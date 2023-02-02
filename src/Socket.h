@@ -30,11 +30,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 
 class SocketHandler;
+class SocketThread;
+
 
 	typedef std::vector<std::string> string_v;
 
 class Socket
 {
+	friend class SocketHandler;
 public:
 	Socket(SocketHandler&);
 	virtual ~Socket();
@@ -56,7 +59,6 @@ public:
 	virtual void OnAccept();
 	virtual void OnLine(const std::string& ) {}
 	virtual void OnSSLInitDone() {}
-	virtual void OnDetached() {}
 
 	virtual bool CheckConnect();
 	virtual void ReadLine() {}
@@ -96,13 +98,16 @@ public:
 	void Touch() { m_tActive = time(NULL); }
 	time_t Inactive() { return time(NULL) - m_tActive; }
 */
+	virtual void OnDetached() {} // Threading
 	void SetDetach(bool x = true) { m_detach = x; }
 	bool IsDetach() { return m_detach; }
 	void SetDetached(bool x = true) { m_detached = x; }
 	bool IsDetached() { return m_detached; }
+	bool Detach();
 
 protected:
 	struct sockaddr m_sa; // remote, from accept
+	void DetachSocket(); // protected, friend class SocketHandler;
 
 private:
 	SocketHandler& m_handler;
@@ -118,9 +123,8 @@ private:
 //	time_t m_timeout;
 	bool m_detach;
 	bool m_detached;
+	SocketThread *m_pThread;
 };
-
-
 
 
 #endif // _SOCKETBASE_H

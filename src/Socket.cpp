@@ -31,6 +31,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "socket_include.h"
 #include "Parse.h"
 #include "SocketHandler.h"
+#include "SocketThread.h"
 
 #include "Socket.h"
 
@@ -54,6 +55,7 @@ Socket::Socket(SocketHandler& h)
 //,m_timeout(0)
 ,m_detach(false)
 ,m_detached(false)
+,m_pThread(NULL)
 {
 }
 
@@ -422,6 +424,26 @@ bool Socket::Ready()
 	if (m_socket != -1 && !Connecting() && !CloseAndDelete())
 		return true;
 	return false;
+}
+
+
+bool Socket::Detach()
+{
+	if (!DeleteByHandler())
+		return false;
+	if (m_pThread)
+		return false;
+	if (m_detached)
+		return false;
+	m_detach = true;
+	return true;
+}
+
+
+void Socket::DetachSocket()
+{
+	m_pThread = new SocketThread(*this);
+	m_pThread -> SetRelease(true);
 }
 
 

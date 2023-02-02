@@ -1,10 +1,8 @@
-VERSION =	1.2.2
+VERSION =	1.3rc1-pthreads
 
 INCLUDE =	-I/usr/devel/include -I.
-CFLAGS =	-Wall -g -O2 $(INCLUDE) -MD -D_VERSION='"$(VERSION)"'
+CFLAGS =	-Wall -g -O2 $(INCLUDE) -MD -D_VERSION='"$(VERSION)"' 
 CPPFLAGS =	$(CFLAGS) 
-#LIBS =		-L/usr/devel/lib -Lopenssl -L/usr/local/ssl/lib \
-#		-lssl -lcrypto 
 
 OBJS =		CircularBuffer.o \
 		Socket.o \
@@ -19,7 +17,8 @@ OBJS =		CircularBuffer.o \
 		HttpsGetSocket.o \
 		CTcpSocket.o \
 		HTTPSocket.o \
-		HttpsSocket.o 
+		HttpsSocket.o \
+		Thread.o SocketThread.o
 # SocketsEx
 EX =		Uid.o \
 		MinderSocket.o MinionSocket.o MinderHandler.o
@@ -48,9 +47,7 @@ clean:
 -include	*.d
 
 tar:		clean
-		rm -f Thread.*
 		rm -f Mutex.*
-		rm -f SocketThread.*
 		rm -f MinderSocket_T.h
 		./mkdot.sh
 		tar czf /usr/local/apache/www.alhem.net/htdocs/Sockets/Sockets-$(VERSION).tar.gz *.h *.cpp Makefile Project/*.dsp
