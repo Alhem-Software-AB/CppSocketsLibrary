@@ -266,6 +266,11 @@ printf("OnWrite abort because: not ready\n");
 	}
 */
 	int n = writesocket(GetSocket(),obuf.GetStart(),obuf.GetL());
+/*
+When writing onto a connection-oriented socket that has been shut down (by the  local
+or the remote end) SIGPIPE is sent to the writing process and EPIPE is returned.  The
+signal is not sent when the write call specified the MSG_NOSIGNAL flag.
+*/
 DEB(	printf("OnWrite: %d bytes sent\n",n);)
 	if (n == -1)
 	{

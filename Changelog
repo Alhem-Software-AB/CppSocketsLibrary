@@ -100,3 +100,11 @@ Version 1.5.2
 > Stdin.cpp
 > Stdin.h
 
+Version 1.5.3
+--------------------------
+6a7
+> gpl.txt
+38,39d38
+< Stdin.cpp
+< Stdin.h
+

@@ -53,6 +53,9 @@ public:
 	bool Valid(Socket *);
 	virtual bool OkToAccept();
 
+	/** ResolveLocal before calling any GetLocal method */
+	void ResolveLocal();
+
 	const std::string& GetLocalHostname();
 	ipaddr_t GetLocalIP();
 	const std::string& GetLocalAddress();
@@ -81,6 +84,7 @@ private:
 	struct in6_addr m_local_ip6;
 #endif
 	std::string m_local_addr6;
+	bool m_local_resolved;
 };
 
 

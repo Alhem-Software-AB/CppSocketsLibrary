@@ -211,18 +211,30 @@ void Base64::decode(const std::string& input, unsigned char *output, size_t& sz)
 		{
 			unsigned char b1 = (rstr[(int)input[i]] << 2 & 0xfc) +
 					(rstr[(int)input[i + 1]] >> 4 & 0x03);
-			output[j++] = b1;
+			if (output)
+			{
+				output[j] = b1;
+			}
+			j++;
 			if (input[i + 2] != '=')
 			{
 				unsigned char b2 = (rstr[(int)input[i + 1]] << 4 & 0xf0) +
 						(rstr[(int)input[i + 2]] >> 2 & 0x0f);
-				output[j++] = b2;
+				if (output)
+				{
+					output[j] = b2;
+				}
+				j++;
 			}
 			if (input[i + 3] != '=')
 			{
 				unsigned char b3 = (rstr[(int)input[i + 2]] << 6 & 0xc0) +
 						rstr[(int)input[i + 3]];
-				output[j++] = b3;
+				if (output)
+				{
+					output[j] = b3;
+				}
+				j++;
 			}
 			i += 4;
 		}

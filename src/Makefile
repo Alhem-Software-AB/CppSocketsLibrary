@@ -1,4 +1,4 @@
-VERSION =	1.5.2
+VERSION =	1.5.3
 
 INCLUDE =	-I/usr/devel/include -I.
 CFLAGS =	-Wall -g -O2 $(INCLUDE) -MD -D_VERSION='"$(VERSION)"' 
@@ -59,14 +59,17 @@ tar:		clean
 		rm -f Mutex.*
 		rm -f MinderSocket_T.h
 		rm -f uuid.h
+		rm -f Stdin.*
 		./mkdot.sh
 		tar czf /usr/local/apache/www.libsockets.net/htdocs/Sockets-$(VERSION).tar.gz *.h *.cpp Makefile Project/*.dsp \
-			README.macosx
+			README.macosx gpl.txt
 		cp Changelog /usr/local/apache/www.libsockets.net/htdocs
 		doxygen doxygen.cfg
 
 docs:		clean
 		rm -f Mutex.*
 		rm -f MinderSocket_T.h
+		rm -f uuid.h
+		rm -f Stdin.*
 		./mkdot.sh
 		doxygen doxygen.cfg

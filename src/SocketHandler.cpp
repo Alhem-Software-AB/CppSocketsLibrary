@@ -48,12 +48,35 @@ SocketHandler::SocketHandler()
 ,m_ip(0)
 ,m_preverror(-1)
 ,m_slave(false)
+,m_local_resolved(false)
 {
-	char h[256];
-
 	FD_ZERO(&m_rfds);
 	FD_ZERO(&m_wfds);
 	FD_ZERO(&m_efds);
+}
+
+
+SocketHandler::~SocketHandler()
+{
+	if (!m_slave)
+	{
+		for (socket_m::iterator it = m_sockets.begin(); it != m_sockets.end(); it++)
+		{
+			Socket *p = (*it).second;
+			p -> Close();
+//			p -> OnDelete();
+			if (p -> DeleteByHandler())
+			{
+				delete p;
+			}
+		}
+	}
+}
+
+
+void SocketHandler::ResolveLocal()
+{
+	char h[256];
 
 	// get local hostname and translate into ip-address
 	*h = 0;
@@ -77,24 +100,7 @@ SocketHandler::SocketHandler()
 	}
 #endif
 	m_host = h;
-}
-
-
-SocketHandler::~SocketHandler()
-{
-	if (!m_slave)
-	{
-		for (socket_m::iterator it = m_sockets.begin(); it != m_sockets.end(); it++)
-		{
-			Socket *p = (*it).second;
-			p -> Close();
-//			p -> OnDelete();
-			if (p -> DeleteByHandler())
-			{
-				delete p;
-			}
-		}
-	}
+	m_local_resolved = true;
 }
 
 
@@ -309,18 +315,24 @@ DEB(									printf("calling OnConnect\n");)
 
 const std::string& SocketHandler::GetLocalHostname()
 {
+	if (!m_local_resolved)
+		LogError(NULL, "GetLocalHostname", 0, "local address not resolved");
 	return m_host;
 }
 
 
 ipaddr_t SocketHandler::GetLocalIP()
 {
+	if (!m_local_resolved)
+		LogError(NULL, "GetLocalHostname", 0, "local address not resolved");
 	return m_ip;
 }
 
 
 const std::string& SocketHandler::GetLocalAddress()
 {
+	if (!m_local_resolved)
+		LogError(NULL, "GetLocalHostname", 0, "local address not resolved");
 	return m_addr;
 }
 
@@ -393,6 +405,8 @@ void SocketHandler::LogError(Socket *p,const std::string& user_text,int err,cons
 #ifdef IPPROTO_IPV6
 const struct in6_addr& SocketHandler::GetLocalIP6()
 {
+	if (!m_local_resolved)
+		LogError(NULL, "GetLocalHostname", 0, "local address not resolved");
 	return m_local_ip6;
 }
 #endif
@@ -400,6 +414,8 @@ const struct in6_addr& SocketHandler::GetLocalIP6()
 
 const std::string& SocketHandler::GetLocalAddress6()
 {
+	if (!m_local_resolved)
+		LogError(NULL, "GetLocalHostname", 0, "local address not resolved");
 	return m_local_addr6;
 }
 

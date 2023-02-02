@@ -79,8 +79,10 @@ typedef int socklen_t;
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
-#define readsocket read
-#define writesocket write
+//#define readsocket read
+//#define writesocket write
+#define readsocket(a,b,c) recv(a,b,c,MSG_NOSIGNAL)
+#define writesocket(a,b,c) send(a,b,c,MSG_NOSIGNAL)
 #define closesocket close
 #define SocketStartup()
 #define SocketCleanup()
