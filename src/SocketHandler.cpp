@@ -883,6 +883,28 @@ DEB(		fprintf(stderr, "Trying to add fd %d,  m_add.size() %d\n", (int)s, (int)m_
 		}
 		else
 		{
+			m_b_check_callonconnect |= p -> CallOnConnect();
+			m_b_check_detach |= p -> IsDetach();
+			m_b_check_timeout |= p -> CheckTimeout();
+			m_b_check_retry |= p -> RetryClientConnect();
+/*
+			if (p -> CallOnConnect())
+			{
+				m_b_check_callonconnect = true;
+			}
+			if (p -> IsDetach())
+			{
+				m_b_check_detach = true;
+			}
+			if (p -> CheckTimeout())
+			{
+				m_b_check_timeout = true;
+			}
+			if (p -> RetryClientConnect())
+			{
+				m_b_check_retry = true;
+			}
+*/
 			StreamSocket *scp = dynamic_cast<StreamSocket *>(p);
 			if (scp && scp -> Connecting()) // 'Open' called before adding socket
 			{
@@ -999,15 +1021,6 @@ void SocketHandler::CheckCallOnConnect()
 			m_b_check_callonconnect = true;
 		}
 	}
-	// %! preserve m_b_check parameter for newly added sockets
-	for (std::list<Socket *>::iterator it = m_add.begin(); it != m_add.end() && !m_b_check_callonconnect; ++it)
-	{
-		Socket *p = *it;
-		if (p -> CallOnConnect())
-		{
-			m_b_check_callonconnect = true;
-		}
-	}
 }
 
 
@@ -1030,15 +1043,6 @@ void SocketHandler::CheckDetach()
 //			m_fds_erase.push_back(p -> UniqueIdentifier());
 			m_b_check_detach = true;
 			break; // 'it' is invalid
-		}
-	}
-	// %! preserve m_b_check parameter for newly added sockets
-	for (std::list<Socket *>::iterator it = m_add.begin(); it != m_add.end() && !m_b_check_detach; ++it)
-	{
-		Socket *p = *it;
-		if (p -> IsDetach())
-		{
-			m_b_check_detach = true;
 		}
 	}
 }
@@ -1071,15 +1075,6 @@ void SocketHandler::CheckTimeout(time_t tnow)
 			m_b_check_timeout = true;
 		}
 	}
-	// %! preserve m_b_check parameter for newly added sockets
-	for (std::list<Socket *>::iterator it = m_add.begin(); it != m_add.end() && !m_b_check_timeout; ++it)
-	{
-		Socket *p = *it;
-		if (p -> CheckTimeout())
-		{
-			m_b_check_timeout = true;
-		}
-	}
 }
 
 
@@ -1106,15 +1101,6 @@ DEB(					fprintf(stderr, "Close() before retry client connect\n");)
 			}
 			Add(p);
 			m_fds_erase.push_back(p -> UniqueIdentifier());
-			m_b_check_retry = true;
-		}
-	}
-	// %! preserve m_b_check parameter for newly added sockets
-	for (std::list<Socket *>::iterator it = m_add.begin(); it != m_add.end() && !m_b_check_retry; ++it)
-	{
-		Socket *p = *it;
-		if (p -> RetryClientConnect())
-		{
 			m_b_check_retry = true;
 		}
 	}
@@ -1217,15 +1203,6 @@ DEB(							fprintf(stderr, "Close() before OnDelete\n");)
 				}
 				DeleteSocket(p);
 			}
-			m_b_check_close = true;
-		}
-	}
-	// %! preserve m_b_check parameter for newly added sockets
-	for (std::list<Socket *>::iterator it = m_add.begin(); it != m_add.end() && !m_b_check_close; ++it)
-	{
-		Socket *p = *it;
-		if (p -> CloseAndDelete())
-		{
 			m_b_check_close = true;
 		}
 	}

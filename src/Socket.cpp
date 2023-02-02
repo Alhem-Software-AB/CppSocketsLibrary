@@ -125,11 +125,7 @@ Socket::Socket(ISocketHandler& h)
 
 Socket::~Socket()
 {
-#ifdef ENABLE_DETACH
-	if (IsDetached())
-		m_slave_handler -> Remove(this);
-#endif
-	m_handler.Remove(this);
+	Handler().Remove(this);
 	if (m_socket != INVALID_SOCKET
 #ifdef ENABLE_POOL
 		 && !m_bRetain
