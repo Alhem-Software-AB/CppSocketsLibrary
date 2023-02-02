@@ -43,6 +43,8 @@ public:
 	/** Send response. */
 	virtual void Respond(const HttpResponse& res) = 0;
 
+	/** Called when the body part of the response has been sent. */
+	virtual void OnResponseComplete() = 0;
 };
 
 

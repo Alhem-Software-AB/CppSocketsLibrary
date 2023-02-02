@@ -25,6 +25,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include <string>
 #include <map>
+#include "Utility.h"
+
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
@@ -75,12 +77,12 @@ public:
 	void SetUserAgent(const std::string& value);
 	const std::string& UserAgent() const;
 
-	const std::map<std::string, std::string>& Headers() const;
+	const Utility::ncmap<std::string>& Headers() const;
 
 	virtual void Reset();
 
 private:
-	std::map<std::string, std::string> m_header;
+	Utility::ncmap<std::string> m_header;
 	std::string m_null;
 
 }; // end of class

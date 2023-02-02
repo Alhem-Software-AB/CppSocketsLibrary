@@ -74,11 +74,11 @@ public:
 	void SetAttribute(const std::string& key, long value);
 	const std::string& Attribute(const std::string& key) const;
 
-	const std::map<std::string, std::string>& Attributes() const;
+	const Utility::ncmap<std::string>& Attributes() const;
 
 	/** Cookies */
 	void AddCookie(const std::string& );
-	const std::map<std::string, std::string>& CookieMap() const { return m_cookie; }
+	const Utility::ncmap<std::string>& CookieMap() const { return m_cookie; }
 
 	/** Open file for body data */
 	void InitBody( size_t sz );
@@ -107,12 +107,12 @@ private:
 	std::string m_server_name;
 	int m_server_port;
 	bool m_is_ssl;
-	std::map<std::string, std::string> m_attribute;
+	Utility::ncmap<std::string> m_attribute;
 	std::string m_null;
 	mutable std::auto_ptr<IFile> m_body_file;
 	mutable std::auto_ptr<HttpdForm> m_form;
 	HttpdCookies m_cookies;
-	std::map<std::string, std::string> m_cookie;
+	Utility::ncmap<std::string> m_cookie;
 
 }; // end of class
 

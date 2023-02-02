@@ -51,6 +51,9 @@ HTTPSocket::HTTPSocket(ISocketHandler& h)
 ,m_body_size_left(0)
 ,m_b_http_1_1(false)
 ,m_b_keepalive(false)
+,m_b_chunked(false)
+,m_chunk_size(0)
+,m_chunk_state(0)
 {
 	SetLineProtocol();
 	DisableInputBuffer();
@@ -66,9 +69,96 @@ void HTTPSocket::OnRawData(const char *buf,size_t len)
 {
 	if (!m_header)
 	{
+		if (m_b_chunked)
+		{
+			size_t ptr = 0;
+			while (ptr < len)
+			{
+				switch (m_chunk_state)
+				{
+				case 4:
+					while (ptr < len && (m_chunk_line.size() < 2 || m_chunk_line.substr(m_chunk_line.size() - 2) != "\r\n"))
+						m_chunk_line += buf[ptr++];
+					if (m_chunk_line.size() > 1 && m_chunk_line.substr(m_chunk_line.size() - 2) == "\r\n")
+					{
+						OnDataComplete();
+						// prepare for next request(or response)
+						m_b_chunked = false;
+						SetLineProtocol( true );
+						m_first = true;
+						m_header = true;
+						m_body_size_left = 0;
+						if (len - ptr > 0)
+						{
+							char tmp[TCP_BUFSIZE_READ];
+							memcpy(tmp, buf + ptr, len - ptr);
+							tmp[len - ptr] = 0;
+							OnRead( tmp, len - ptr );
+							ptr = len;
+						}
+					}
+					break;
+				case 0:
+					while (ptr < len && (m_chunk_line.size() < 2 || m_chunk_line.substr(m_chunk_line.size() - 2) != "\r\n"))
+						m_chunk_line += buf[ptr++];
+					if (m_chunk_line.size() > 1 && m_chunk_line.substr(m_chunk_line.size() - 2) == "\r\n")
+					{
+						m_chunk_line.resize(m_chunk_line.size() - 2);
+						Parse pa(m_chunk_line, ";");
+						std::string size_str = pa.getword();
+						m_chunk_size = Utility::hex2unsigned(size_str);
+						if (!m_chunk_size)
+						{
+							m_chunk_state = 4;
+							m_chunk_line = "";
+						}
+						else
+						{
+							m_chunk_state = 1;
+							m_chunk_line = "";
+						}
+					}
+					break;
+				case 1:
+					{
+						size_t left = len - ptr;
+						size_t sz = m_chunk_size < left ? m_chunk_size : left;
+						OnData(buf + ptr, sz);
+						m_chunk_size -= sz;
+						ptr += sz;
+						if (!m_chunk_size)
+						{
+							m_chunk_state = 2;
+						}
+					}
+					break;
+				case 2: // skip CR
+					ptr++;
+					m_chunk_state = 3;
+					break;
+				case 3: // skip LF
+					ptr++;
+					m_chunk_state = 0;
+					break;
+				}
+			}
+		}
+		else
 		if (!m_b_http_1_1 || !m_b_keepalive)
 		{
 			OnData(buf, len);
+			/*
+				request is HTTP/1.0 _or_ HTTP/1.1 and not keep-alive
+
+				This means we destroy the connection after the response has been delivered,
+				hence no need to reset all internal state variables for a new incoming
+				request.
+			*/
+			m_body_size_left -= len;
+			if (!m_body_size_left)
+			{
+				OnDataComplete();
+			}
 		}
 		else
 		{
@@ -77,6 +167,8 @@ void HTTPSocket::OnRawData(const char *buf,size_t len)
 			m_body_size_left -= sz;
 			if (!m_body_size_left)
 			{
+				OnDataComplete();
+				// prepare for next request(or response)
 				SetLineProtocol( true );
 				m_first = true;
 				m_header = true;
@@ -133,12 +225,16 @@ void HTTPSocket::OnLine(const std::string& line)
 	}
 	if (!line.size())
 	{
-		if (m_body_size_left || !m_b_http_1_1 || !m_b_keepalive)
+		if (m_body_size_left || !m_b_http_1_1 || !m_b_keepalive || m_b_chunked)
 		{
 			SetLineProtocol(false);
 			m_header = false;
 		}
 		OnHeaderComplete();
+		if (!m_body_size_left && !m_b_chunked)
+		{
+			OnDataComplete();
+		}
 		return;
 	}
 	Parse pa(line,":");
@@ -152,6 +248,10 @@ void HTTPSocket::OnLine(const std::string& line)
 	if (m_b_http_1_1 && Utility::ToLower(key) == "connection")
 	{
 		m_b_keepalive = Utility::ToLower(value) != "close";
+	}
+	if (Utility::ToLower(key) == "transfer-encoding" && Utility::ToLower(value) == "chunked")
+	{
+		m_b_chunked = true;
 	}
 	/* If remote end tells us to keep connection alive, and we're operating
 	in http/1.1 mode (not http/1.0 mode), then we mark the socket to be
@@ -333,7 +433,6 @@ void HTTPSocket::SetStatusText(const std::string& x)
 
 void HTTPSocket::AddResponseHeader(const std::string& x,const std::string& y)
 {
-	// %! check if 'x' already present in m_response_header
 	m_response_header[x] = y;
 }
 
@@ -389,7 +488,6 @@ void HTTPSocket::url_this(const std::string& url_in,std::string& protocol,std::s
 
 bool HTTPSocket::ResponseHeaderIsSet(const std::string& name)
 {
-	// %! make case insensitive
 	string_m::iterator it = m_response_header.find( name );
 	if (it != m_response_header.end())
 	{
@@ -399,7 +497,7 @@ bool HTTPSocket::ResponseHeaderIsSet(const std::string& name)
 	for (it2 = m_response_header_append.begin(); it2 != m_response_header_append.end(); it2++)
 	{
 		std::pair<std::string, std::string>& ref = *it2;
-		if (ref.first == name )
+		if (!strcasecmp(ref.first.c_str(), name.c_str()) )
 		{
 			return true;
 		}

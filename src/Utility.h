@@ -34,10 +34,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <ctype.h>
 #include <memory>
 #include "socket_include.h"
+#include <map>
+#include <string>
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
 #endif
+
+#define TWIST_LEN     624
 
 class SocketAddress;
 
@@ -45,6 +49,31 @@ class SocketAddress;
 	\ingroup util */
 class Utility
 {
+	/**
+		The Mersenne Twister
+		http://www.math.keio.ac.jp/~matumoto/emt.html
+	*/
+	class Rng {
+	public:
+		Rng(unsigned long seed);
+
+		unsigned long Get();
+
+	private:
+		int m_value;
+		unsigned long m_tmp[TWIST_LEN];
+	};
+	class ncmap_compare {
+	public:
+		bool operator()(const std::string& x, const std::string& y) const {
+			return strcasecmp(x.c_str(), y.c_str()) < 0;
+		}
+	};
+public:
+	template<typename Y> class ncmap : public std::map<std::string, Y, ncmap_compare> {
+	public:
+		ncmap() {}
+	};
 public:
 	static std::string base64(const std::string& str_in);
 	static std::string base64d(const std::string& str_in);
@@ -130,6 +159,9 @@ public:
 	static std::string ToUpper(const std::string& str);
 
 	static std::string ToString(double d);
+
+	/** Returns a random 32-bit integer */
+	static unsigned long Rnd();
 
 private:
 	static std::string m_host; ///< local hostname

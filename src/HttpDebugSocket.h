@@ -53,6 +53,7 @@ public:
 	void OnHeader(const std::string& key,const std::string& value);
 	void OnHeaderComplete();
 	void OnData(const char *,size_t);
+	void OnDataComplete();
 
 private:
 	HttpDebugSocket(const HttpDebugSocket& s) : HTTPSocket(s) {} // copy constructor

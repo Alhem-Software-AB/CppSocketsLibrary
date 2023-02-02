@@ -377,14 +377,23 @@ void UdpSocket::Send(const std::string& str, int flags)
 }
 
 
-#ifndef _WIN32
+#if defined(LINUX) || defined(MACOSX)
 int UdpSocket::ReadTS(char *ioBuf, int inBufSize, struct sockaddr *from, socklen_t fromlen, struct timeval *ts)
 {
 	struct msghdr msg;
 	struct iovec vec[1];
 	union {
 		struct cmsghdr cm;
-		char data[CMSG_SPACE(sizeof(struct timeval))];
+#ifdef MACOSX
+#ifdef __DARWIN_UNIX03
+#define ALIGNBYTES __DARWIN_ALIGNBYTES
+#endif
+#define myALIGN(p) (((unsigned int)(p) + ALIGNBYTES) &~ ALIGNBYTES)
+#define myCMSG_SPACE(l) (myALIGN(sizeof(struct cmsghdr)) + myALIGN(l))
+		char data[ myCMSG_SPACE(sizeof(struct timeval)) ];
+#else
+		char data[ CMSG_SPACE(sizeof(struct timeval)) ];
+#endif
 	} cmsg_un;
 	struct cmsghdr *cmsg;
 	struct timeval *tv;
@@ -446,7 +455,7 @@ void UdpSocket::OnRead()
 		{
 			struct timeval ts;
 			Utility::GetTime(&ts);
-#ifdef _WIN32
+#if !defined(LINUX) && !defined(MACOSX)
 			int n = recvfrom(GetSocket(), m_ibuf, m_ibufsz, 0, (struct sockaddr *)&sa, &sa_len);
 #else
 			int n = ReadTS(m_ibuf, m_ibufsz, (struct sockaddr *)&sa, sa_len, &ts);
@@ -500,7 +509,7 @@ void UdpSocket::OnRead()
 	{
 		struct timeval ts;
 		Utility::GetTime(&ts);
-#ifdef _WIN32
+#if !defined(LINUX) && !defined(MACOSX)
 		int n = recvfrom(GetSocket(), m_ibuf, m_ibufsz, 0, (struct sockaddr *)&sa, &sa_len);
 #else
 		int n = ReadTS(m_ibuf, m_ibufsz, (struct sockaddr *)&sa, sa_len, &ts);

@@ -204,22 +204,19 @@ bool HttpRequest::IsSsl() const
 // --------------------------------------------------------------------------------------
 void HttpRequest::SetAttribute(const std::string& key, const std::string& value)
 {
-	// %! make case insensitive
 	m_attribute[key] = value;
 }
 
 
 void HttpRequest::SetAttribute(const std::string& key, long value)
 {
-	// %! make case insensitive
 	m_attribute[key] = Utility::l2string(value);
 }
 
 
 const std::string& HttpRequest::Attribute(const std::string& key) const
 {
-	std::map<std::string, std::string>::const_iterator it;
-	// %! make case insensitive
+	Utility::ncmap<std::string>::const_iterator it;
 	if ( (it = m_attribute.find(key)) != m_attribute.end())
 		return it -> second;
 	return m_null;
@@ -227,7 +224,7 @@ const std::string& HttpRequest::Attribute(const std::string& key) const
 
 
 // --------------------------------------------------------------------------------------
-const std::map<std::string, std::string>& HttpRequest::Attributes() const
+const Utility::ncmap<std::string>& HttpRequest::Attributes() const
 {
 	return m_attribute;
 }
@@ -283,7 +280,7 @@ DEB(	else
 // --------------------------------------------------------------------------------------
 void HttpRequest::ParseBody()
 {
-	std::map<std::string, std::string>::const_iterator it;
+	Utility::ncmap<std::string>::const_iterator it;
 	if ( (it = m_attribute.find("query_string")) != m_attribute.end())
 	{
 		std::string qs = it -> second;

@@ -274,9 +274,9 @@ void Ajp13Socket::Respond(const HttpResponse& res)
 		put_integer(msg, ptr, res.HttpStatusCode() );
 		put_string(msg, ptr, res.HttpStatusMsg() );
 		put_integer(msg, ptr, (short)res.Headers().size() );
-		for (std::map<std::string, std::string>::const_iterator it = res.Headers().begin(); it != res.Headers().end(); ++it)
+		for (Utility::ncmap<std::string>::const_iterator it = res.Headers().begin(); it != res.Headers().end(); ++it)
 		{
-			std::map<std::string, int>::const_iterator it2 = Init.ResponseHeader.find( it -> first );
+			Utility::ncmap<int>::const_iterator it2 = Init.ResponseHeader.find( it -> first );
 			if (it2 != Init.ResponseHeader.end())
 			{
 				put_integer(msg, ptr, it2 -> second);
@@ -291,7 +291,7 @@ void Ajp13Socket::Respond(const HttpResponse& res)
 		{
 			for (std::list<std::string>::iterator it = vec.begin(); it != vec.end(); it++)
 			{
-				std::map<std::string, int>::const_iterator it2 = Init.ResponseHeader.find( "set-cookie" );
+				Utility::ncmap<int>::const_iterator it2 = Init.ResponseHeader.find( "set-cookie" );
 				if (it2 != Init.ResponseHeader.end())
 				{
 					put_integer(msg, ptr, it2 -> second);
@@ -360,6 +360,8 @@ void Ajp13Socket::OnTransferLimit()
 		memcpy( msg + 2, &len, 2 );
 
 		SendBuf( msg, ptr );
+
+		OnResponseComplete();
 	}
 }
 

@@ -188,7 +188,7 @@ public:
 protected:
 	UdpSocket(const UdpSocket& s) : Socket(s) {}
 	void OnRead();
-#ifndef _WIN32
+#if defined(LINUX) || defined(MACOSX)
 	/** This method emulates socket recvfrom, but uses messages so we can get the timestamp */
 	int ReadTS(char *ioBuf, int inBufSize, struct sockaddr *from, socklen_t fromlen, struct timeval *ts);
 #endif

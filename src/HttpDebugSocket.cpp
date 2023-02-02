@@ -94,7 +94,7 @@ void HttpDebugSocket::OnHeader(const std::string& key,const std::string& value)
 
 void HttpDebugSocket::OnHeaderComplete()
 {
-	if (m_content_length)
+	if (m_content_length || IsChunked())
 	{
 		Send("</pre><h3>Request Body</h3><pre style='background: #e0e0e0'>");
 	}
@@ -111,6 +111,16 @@ void HttpDebugSocket::OnData(const char *p,size_t l)
 	SendBuf(p,l);
 	m_read_ptr += (int)l;
 	if (m_read_ptr >= m_content_length && m_content_length)
+	{
+		Send("</pre><hr></body></html>");
+		SetCloseAndDelete();
+	}
+}
+
+
+void HttpDebugSocket::OnDataComplete()
+{
+	if (!CloseAndDelete())
 	{
 		Send("</pre><hr></body></html>");
 		SetCloseAndDelete();

@@ -24,7 +24,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define _SOCKETS_SctpSocket_H
 #include "sockets-config.h"
 
-#include <map>
 #include "StreamSocket.h"
 #ifdef USE_SCTP
 #include <netinet/sctp.h>

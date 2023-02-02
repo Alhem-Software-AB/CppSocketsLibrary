@@ -154,7 +154,11 @@ namespace SOCKETS_NAMESPACE {
 // ----------------------------------------
 // Mac OS X
 #include <string.h>
+#ifdef __DARWIN_UNIX03
+typedef unsigned short port_t;
+#else
 #include <mach/port.h>
+#endif // __DARWIN_UNIX03
 typedef unsigned long ipaddr_t;
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {

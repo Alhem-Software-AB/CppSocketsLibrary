@@ -31,8 +31,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define _SOCKETS_HTTPSocket_H
 
 #include "sockets-config.h"
-#include <map>
 #include "TcpSocket.h"
+#include "Utility.h"
+
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
@@ -44,7 +45,7 @@ namespace SOCKETS_NAMESPACE {
 class HTTPSocket : public TcpSocket
 {
 	/** map to hold http header values. */
-	typedef std::map<std::string,std::string> string_m;
+	typedef Utility::ncmap<std::string> string_m;
 public:
 	HTTPSocket(ISocketHandler& );
 	~HTTPSocket();
@@ -63,6 +64,8 @@ public:
 	virtual void OnHeaderComplete() = 0;
 	/** Chunk of http body data recevied. */
 	virtual void OnData(const char *,size_t) = 0;
+	/** The full request/response body has been received. */
+	virtual void OnDataComplete() {}
 
 	/** Get http method from incoming request, ie GET/POST/PUT etc */
 	const std::string& GetMethod();
@@ -115,6 +118,9 @@ public:
 	/** Parse url. If protocol is https, EnableSSL() will be called. */
 	void url_this(const std::string& url_in,std::string& protocol,std::string& host,port_t& port,std::string& url,std::string& file);
 
+	/** Transfer coding 'chunked' */
+	bool IsChunked() { return m_b_chunked; }
+
 protected:
 	HTTPSocket(const HTTPSocket& s) : TcpSocket(s) {}
 	/** Reset state of socket to sucessfully implement keep-alive. */
@@ -139,6 +145,10 @@ private:
 	bool m_b_http_1_1;
 	bool m_b_keepalive;
 	std::list<std::pair<std::string, std::string> > m_response_header_append;
+	bool m_b_chunked;
+	size_t m_chunk_size;
+	int m_chunk_state;
+	std::string m_chunk_line;
 };
 
 

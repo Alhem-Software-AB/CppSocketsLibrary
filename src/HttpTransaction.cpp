@@ -47,22 +47,19 @@ HttpTransaction::~HttpTransaction()
 // --------------------------------------------------------------------------------------
 void HttpTransaction::SetHeader(const std::string& key, const std::string& value)
 {
-	// %! make case insensitive
 	m_header[key] = value;
 }
 
 
 void HttpTransaction::SetHeader(const std::string& key, long value)
 {
-	// %! make case insensitive
 	m_header[key] = Utility::l2string(value);
 }
 
 
 const std::string& HttpTransaction::Header(const std::string& key) const
 {
-	std::map<std::string, std::string>::const_iterator it;
-	// %! make case insensitive
+	Utility::ncmap<std::string>::const_iterator it;
 	if ((it = m_header.find(key)) != m_header.end())
 		return it -> second;
 	return m_null;
@@ -224,7 +221,7 @@ const std::string& HttpTransaction::UserAgent() const
 
 
 // --------------------------------------------------------------------------------------
-const std::map<std::string, std::string>& HttpTransaction::Headers() const
+const Utility::ncmap<std::string>& HttpTransaction::Headers() const
 {
 	return m_header;
 }

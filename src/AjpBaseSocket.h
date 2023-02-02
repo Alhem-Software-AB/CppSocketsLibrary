@@ -25,6 +25,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "TcpSocket.h"
 #include <map>
+#include "Utility.h"
+
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
@@ -42,7 +44,7 @@ class AjpBaseSocket : public TcpSocket
 		std::map<int, std::string> Header;
 		std::map<int, std::string> Attribute;
 
-		std::map<std::string, int> ResponseHeader;
+		Utility::ncmap<int> ResponseHeader;
 
 	};
 

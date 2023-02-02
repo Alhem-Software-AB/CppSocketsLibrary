@@ -27,6 +27,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "IFile.h"
 #include "Utility.h"
 #include "HttpResponse.h"
+#include "Debug.h"
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
@@ -35,7 +36,7 @@ namespace SOCKETS_NAMESPACE {
 #ifdef _DEBUG
 #define DEB(x) x
 #else
-#define DEB(x)
+#define DEB(x) x
 #endif
 
 
@@ -141,6 +142,7 @@ DEB(printf(" *** keepalive: true\n");)
 // --------------------------------------------------------------------------------------
 void HttpBaseSocket::Respond(const HttpResponse& res)
 {
+DEB(	Debug deb("HttpBaseSocket::Respond");)
 //	res.SetHeader("connection", "close");
 
 	SetHttpVersion( res.HttpVersion() );
@@ -151,7 +153,7 @@ void HttpBaseSocket::Respond(const HttpResponse& res)
 	{
 		AddResponseHeader( "content-length", Utility::l2string( res.GetFile().size() ) );
 	}
-	for (std::map<std::string, std::string>::const_iterator it = res.Headers().begin(); it != res.Headers().end(); ++it)
+	for (Utility::ncmap<std::string>::const_iterator it = res.Headers().begin(); it != res.Headers().end(); ++it)
 	{
 		AddResponseHeader( it -> first, it -> second );
 	}
@@ -171,6 +173,7 @@ void HttpBaseSocket::Respond(const HttpResponse& res)
 // --------------------------------------------------------------------------------------
 void HttpBaseSocket::OnTransferLimit()
 {
+DEB(	Debug deb("HttpBaseSocket::OnTransferLimit");)
 	char msg[32768];
 	size_t n = m_res_file -> fread(msg, 1, 32768);
 	while (n > 0)
@@ -185,6 +188,7 @@ void HttpBaseSocket::OnTransferLimit()
 	}
 	if (!GetOutputLength())
 	{
+		OnResponseComplete();
 		if (!m_b_keepalive)
 		{
 			SetCloseAndDelete();

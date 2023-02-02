@@ -68,7 +68,7 @@ private:
 	std::string m_http_version;
 	int m_http_status_code;
 	std::string m_http_status_msg;
-	std::map<std::string, std::string> m_cookie;
+	Utility::ncmap<std::string> m_cookie;
 	IFile *m_file;
 
 }; // end of class
