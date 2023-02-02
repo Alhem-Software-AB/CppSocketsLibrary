@@ -48,7 +48,7 @@ EventHandler::EventHandler(StdLog *p) : SocketHandler(p), m_quit(false), m_socke
 }
 
 
-EventHandler::EventHandler(Mutex& m,StdLog *p) : SocketHandler(m, p), m_quit(false), m_socket(NULL)
+EventHandler::EventHandler(IMutex& m,StdLog *p) : SocketHandler(m, p), m_quit(false), m_socket(NULL)
 {
 }
 

@@ -109,9 +109,6 @@ public:
 	    Set 'current node' to 'p'. */
 	xmlNodePtr GetNextElement(xmlNodePtr node,const std::string& name) const;
 
-	/** Utf8 decrypt. */
-	std::string FromUtf8(const std::string& ) const;
-
 	/** Check that child element with name 'name' exists. */
 	bool Exists(const std::string& name) const;
 

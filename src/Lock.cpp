@@ -27,7 +27,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
-#include "Mutex.h"
+#include "IMutex.h"
 #include "Lock.h"
 
 #ifdef SOCKETS_NAMESPACE
@@ -35,7 +35,7 @@ namespace SOCKETS_NAMESPACE {
 #endif
 
 
-Lock::Lock(const Mutex& m) : m_mutex(m)
+Lock::Lock(const IMutex& m) : m_mutex(m)
 {
 	m_mutex.Lock();
 }

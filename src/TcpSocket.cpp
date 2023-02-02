@@ -49,8 +49,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "Utility.h"
 #include "Ipv4Address.h"
 #include "Ipv6Address.h"
-#include "Mutex.h"
 #include "IFile.h"
+#include "Lock.h"
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
@@ -67,6 +67,9 @@ namespace SOCKETS_NAMESPACE {
 // statics
 #ifdef HAVE_OPENSSL
 SSLInitializer TcpSocket::m_ssl_init;
+Mutex TcpSocket::m_server_ssl_mutex;
+std::map<std::string, SSL_CTX *> TcpSocket::m_client_contexts;
+std::map<std::string, SSL_CTX *> TcpSocket::m_server_contexts;
 #endif
 
 
@@ -739,8 +742,11 @@ int TcpSocket::TryWrite(const char *buf, size_t len)
 				SetCloseAndDelete(true);
 				SetFlushBeforeClose(false);
 				SetLost();
-				const char *errbuf = ERR_error_string(errnr, NULL);
-				Handler().LogError(this, "OnWrite/SSL_write", errnr, errbuf, LOG_LEVEL_FATAL);
+				{
+					char errbuf[256];
+					ERR_error_string_n(errnr, errbuf, 256);
+					Handler().LogError(this, "OnWrite/SSL_write", errnr, errbuf, LOG_LEVEL_FATAL);
+				}
 			}
 			return 0;
 		}
@@ -752,9 +758,12 @@ int TcpSocket::TryWrite(const char *buf, size_t len)
 			SetCloseAndDelete(true);
 			SetFlushBeforeClose(false);
 			SetLost();
-DEB(			int errnr = SSL_get_error(m_ssl, n);
-			const char *errbuf = ERR_error_string(errnr, NULL);
-			fprintf(stderr, "SSL_write() returns 0: %d : %s\n",errnr, errbuf);)
+DEB(			{
+				int errnr = SSL_get_error(m_ssl, n);
+				char errbuf[256];
+				ERR_error_string_n(errnr, errbuf, 256);
+				fprintf(stderr, "SSL_write() returns 0: %d : %s\n",errnr, errbuf);
+			})
 		}
 	}
 	else
@@ -1222,29 +1231,30 @@ void TcpSocket::InitSSLServer()
 
 void TcpSocket::InitializeContext(const std::string& context, SSL_METHOD *meth_in)
 {
+	static Mutex mutex;
+	Lock lock(mutex);
 	/* Create our context*/
-	static std::map<std::string, SSL_CTX *> client_contexts;
-	if (client_contexts.find(context) == client_contexts.end())
+	if (m_client_contexts.find(context) == m_client_contexts.end())
 	{
 		SSL_METHOD *meth = meth_in ? meth_in : SSLv3_method();
-		m_ssl_ctx = client_contexts[context] = SSL_CTX_new(meth);
+		m_ssl_ctx = m_client_contexts[context] = SSL_CTX_new(meth);
 		SSL_CTX_set_mode(m_ssl_ctx, SSL_MODE_AUTO_RETRY);
 	}
 	else
 	{
-		m_ssl_ctx = client_contexts[context];
+		m_ssl_ctx = m_client_contexts[context];
 	}
 }
 
 
 void TcpSocket::InitializeContext(const std::string& context,const std::string& keyfile,const std::string& password,SSL_METHOD *meth_in)
 {
+	Lock lock(m_server_ssl_mutex);
 	/* Create our context*/
-	static std::map<std::string, SSL_CTX *> server_contexts;
-	if (server_contexts.find(context) == server_contexts.end())
+	if (m_server_contexts.find(context) == m_server_contexts.end())
 	{
 		SSL_METHOD *meth = meth_in ? meth_in : SSLv3_method();
-		m_ssl_ctx = server_contexts[context] = SSL_CTX_new(meth);
+		m_ssl_ctx = m_server_contexts[context] = SSL_CTX_new(meth);
 		SSL_CTX_set_mode(m_ssl_ctx, SSL_MODE_AUTO_RETRY);
 		// session id
 		if (context.size())
@@ -1254,7 +1264,7 @@ void TcpSocket::InitializeContext(const std::string& context,const std::string& 
 	}
 	else
 	{
-		m_ssl_ctx = server_contexts[context];
+		m_ssl_ctx = m_server_contexts[context];
 	}
 
 	/* Load our keys and certificates*/
@@ -1275,12 +1285,12 @@ void TcpSocket::InitializeContext(const std::string& context,const std::string& 
 
 void TcpSocket::InitializeContext(const std::string& context,const std::string& certfile,const std::string& keyfile,const std::string& password,SSL_METHOD *meth_in)
 {
+	Lock lock(m_server_ssl_mutex);
 	/* Create our context*/
-	static std::map<std::string, SSL_CTX *> server_contexts;
-	if (server_contexts.find(context) == server_contexts.end())
+	if (m_server_contexts.find(context) == m_server_contexts.end())
 	{
 		SSL_METHOD *meth = meth_in ? meth_in : SSLv3_method();
-		m_ssl_ctx = server_contexts[context] = SSL_CTX_new(meth);
+		m_ssl_ctx = m_server_contexts[context] = SSL_CTX_new(meth);
 		SSL_CTX_set_mode(m_ssl_ctx, SSL_MODE_AUTO_RETRY);
 		// session id
 		if (context.size())
@@ -1290,7 +1300,7 @@ void TcpSocket::InitializeContext(const std::string& context,const std::string& 
 	}
 	else
 	{
-		m_ssl_ctx = server_contexts[context];
+		m_ssl_ctx = m_server_contexts[context];
 	}
 
 	/* Load our keys and certificates*/

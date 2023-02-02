@@ -35,18 +35,18 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 namespace SOCKETS_NAMESPACE {
 #endif
 
-class Mutex;
+class IMutex;
 
-/** Mutex encapsulation class. 
+/** IMutex encapsulation class. 
 	\ingroup threading */
 class Lock
 {
 public:
-	Lock(const Mutex&);
+	Lock(const IMutex&);
 	~Lock();
 
 private:
-	const Mutex& m_mutex;
+	const IMutex& m_mutex;
 };
 
 

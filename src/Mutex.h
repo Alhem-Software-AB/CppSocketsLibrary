@@ -36,6 +36,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #else
 #include <windows.h>
 #endif
+#include "IMutex.h"
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
@@ -43,15 +44,15 @@ namespace SOCKETS_NAMESPACE {
 
 /** Mutex container class, used by Lock. 
 	\ingroup threading */
-class Mutex
+class Mutex : public IMutex
 {
-	friend class Lock;
 public:
 	Mutex();
 	~Mutex();
 
-	void Lock() const;
-	void Unlock() const;
+	virtual void Lock() const;
+	virtual void Unlock() const;
+
 private:
 #ifdef _WIN32
 	HANDLE m_mutex;

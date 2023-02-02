@@ -46,7 +46,7 @@ class Socket;
 #ifdef ENABLE_RESOLVER
 class ResolvServer;
 #endif
-class Mutex;
+class IMutex;
 
 /** Socket container class, event generator. 
 	\ingroup basic */
@@ -64,12 +64,12 @@ public:
 	/** SocketHandler threadsafe constructor.
 		\param mutex Externally declared mutex variable
 		\param log Optional log class pointer */
-	SocketHandler(Mutex& mutex,StdLog *log = NULL);
+	SocketHandler(IMutex& mutex,StdLog *log = NULL);
 
 	~SocketHandler();
 
 	/** Get mutex reference for threadsafe operations. */
-	Mutex& GetMutex() const;
+	IMutex& GetMutex() const;
 
 	/** Register StdLog object for error callback. 
 		\param log Pointer to log class */
@@ -208,7 +208,7 @@ protected:
 	/** Remove socket from socket map, used by Socket class. */
 	void Remove(Socket *);
 	StdLog *m_stdlog; ///< Registered log class, or NULL
-	Mutex& m_mutex; ///< Thread safety mutex
+	IMutex& m_mutex; ///< Thread safety mutex
 	bool m_b_use_mutex; ///< Mutex correctly initialized
 
 private:

@@ -59,7 +59,7 @@ class IFile;
 	\ingroup basic */
 class Socket
 {
-	friend class ISocketHandler;
+//	friend class ISocketHandler;
 #ifdef ENABLE_DETACH
 	/** Detached socket run thread. 
 		\ingroup internal */

@@ -21,9 +21,9 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #include "XmlNode.h"
-#include "Parse.h"
 #include "XmlDocument.h"
 #include "XmlException.h"
+#include "Utility.h"
 
 #ifdef ENABLE_XML
 
@@ -93,7 +93,7 @@ std::string XmlNode::GetProperty(const std::string& name) const
 	}
 	std::string str = (char *)p;
 	xmlFree(p);
-	return FromUtf8(str);
+	return Utility::FromUtf8(str);
 }
 
 
@@ -130,7 +130,7 @@ const std::string& XmlNode::GetNodeName() const
 {
 	if (m_current)
 	{
-		m_current_name = FromUtf8((char *)m_current -> name);
+		m_current_name = Utility::FromUtf8((char *)m_current -> name);
 	}
 	else
 	{
@@ -149,7 +149,7 @@ const std::string& XmlNode::GetContent() const
 		xmlNodePtr p2 = GetChildrenNode();
 		if (p2 && p2 -> content)
 		{
-			m_content = FromUtf8((char *)p2 -> content);
+			m_content = Utility::FromUtf8((char *)p2 -> content);
 		}
 		SetCurrent(p);
 	}
@@ -169,7 +169,7 @@ const std::string& XmlNode::GetNodeNsPrefix() const
 {
 	if (m_current && m_current -> ns && m_current -> ns -> prefix)
 	{
-		m_ns_prefix = FromUtf8((char *)m_current -> ns -> prefix);
+		m_ns_prefix = Utility::FromUtf8((char *)m_current -> ns -> prefix);
 	}
 	else
 	{
@@ -183,7 +183,7 @@ const std::string& XmlNode::GetNodeNsHref() const
 {
 	if (m_current && m_current -> ns && m_current -> ns -> href)
 	{
-		m_ns_href = FromUtf8((char *)m_current -> ns -> href);
+		m_ns_href = Utility::FromUtf8((char *)m_current -> ns -> href);
 	}
 	else
 	{
@@ -245,29 +245,6 @@ xmlNodePtr XmlNode::GetNextElement(xmlNodePtr p,const std::string& name) const
 }
 
 
-std::string XmlNode::FromUtf8(const std::string& str) const
-{
-	if (!str.size())
-		return "";
-	std::string r;
-	for (size_t i = 0; i < str.size(); i++)
-	{
-		if (i < str.size() - 1 && (str[i] & 0xe0) == 0xc0 && (str[i + 1] & 0xc0) == 0x80)
-		{
-			int c1 = str[i] & 0x1f;
-			int c2 = str[++i] & 0x3f;
-			int c = (c1 << 6) + c2;
-			r += (char)c;
-		}
-		else
-		{
-			r += str[i];
-		}
-	}
-	return r;
-}
-
-
 XmlNode::operator xmlNodePtr() const
 {
 	return m_current;
@@ -317,8 +294,8 @@ std::map<std::string, std::string> XmlNode::GetNsMap() const
 	int i = 0;
 	while (p[i])
 	{
-		std::string href = FromUtf8((char *)p[i] -> href);
-		std::string prefix = p[i] -> prefix ? FromUtf8((char *)p[i] -> prefix) : "";
+		std::string href = Utility::FromUtf8((char *)p[i] -> href);
+		std::string prefix = p[i] -> prefix ? Utility::FromUtf8((char *)p[i] -> prefix) : "";
 		vec[prefix] = href;
 		++i;
 	}
@@ -333,8 +310,8 @@ std::map<std::string, std::string> XmlNode::GetNsMapRe() const
 	int i = 0;
 	while (p[i])
 	{
-		std::string href = FromUtf8((char *)p[i] -> href);
-		std::string prefix = p[i] -> prefix ? FromUtf8((char *)p[i] -> prefix) : "";
+		std::string href = Utility::FromUtf8((char *)p[i] -> href);
+		std::string prefix = p[i] -> prefix ? Utility::FromUtf8((char *)p[i] -> prefix) : "";
 		vec[href] = prefix;
 		if (!p[i] -> next)
 			break;

@@ -52,7 +52,7 @@ typedef enum {
 } list_t;
 
 class SocketAddress;
-class Mutex;
+class IMutex;
 
 
 /** Socket container class, event generator. 
@@ -86,7 +86,7 @@ public:
 	virtual ~ISocketHandler() {}
 
 	/** Get mutex reference for threadsafe operations. */
-	virtual Mutex& GetMutex() const = 0;
+	virtual IMutex& GetMutex() const = 0;
 
 	/** Register StdLog object for error callback. 
 		\param log Pointer to log class */

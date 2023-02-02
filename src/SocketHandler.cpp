@@ -40,7 +40,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "ResolvSocket.h"
 #include "ResolvServer.h"
 #include "TcpSocket.h"
-#include "Mutex.h"
+#include "IMutex.h"
 #include "Utility.h"
 #include "SocketAddress.h"
 
@@ -89,7 +89,7 @@ SocketHandler::SocketHandler(StdLog *p)
 }
 
 
-SocketHandler::SocketHandler(Mutex& mutex,StdLog *p)
+SocketHandler::SocketHandler(IMutex& mutex,StdLog *p)
 :m_stdlog(p)
 ,m_mutex(mutex)
 ,m_b_use_mutex(true)
@@ -181,7 +181,7 @@ DEB(		fprintf(stderr, "/Emptying sockets list in SocketHandler destructor, %d in
 }
 
 
-Mutex& SocketHandler::GetMutex() const
+IMutex& SocketHandler::GetMutex() const
 {
 	return m_mutex; 
 }
@@ -689,7 +689,7 @@ DEB(			fprintf(stderr, "Checking %d socket(s) for timeout\n", tmp.size());)
 //				if (p -> RetryClientConnect())
 				{
 					TcpSocket *tcp = dynamic_cast<TcpSocket *>(p);
-					SOCKET nn = *it; //(*it3).first;
+					SOCKET nn = *it;
 					tcp -> SetRetryClientConnect(false);
 DEB(					fprintf(stderr, "Close() before retry client connect\n");)
 					p -> Close(); // removes from m_fds_retry
@@ -767,7 +767,7 @@ DEB(						fprintf(stderr, " close(1)\n");)
 #ifdef ENABLE_RECONNECT
 					if (tcp && p -> IsConnected() && tcp -> Reconnect())
 					{
-						SOCKET nn = *it; //(*it3).first;
+						SOCKET nn = *it;
 DEB(						fprintf(stderr, " close(2) fd %d\n", nn);)
 						p -> SetCloseAndDelete(false);
 						tcp -> SetIsReconnect();
@@ -791,7 +791,7 @@ DEB(						fprintf(stderr, "Close() before reconnect\n");)
 					else
 #endif
 					{
-						SOCKET nn = *it; //(*it3).first;
+						SOCKET nn = *it;
 DEB(						fprintf(stderr, " close(3) fd %d GetSocket() %d\n", nn, p -> GetSocket());)
 						if (tcp && p -> IsConnected() && tcp -> GetOutputLength())
 						{
@@ -1227,7 +1227,7 @@ void SocketHandler::Remove(Socket *p)
 	}
 	for (socket_m::iterator it2 = m_add.begin(); it2 != m_add.end(); it2++)
 	{
-		if ((*it2).second == p)
+		if (it2 -> second == p)
 		{
 			LogError(p, "Remove", -2, "Socket destructor called while still in use", LOG_LEVEL_WARNING);
 			m_add.erase(it2);

@@ -31,7 +31,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <map>
 #include "Utility.h"
 #include <openssl/rand.h>
-#include "Mutex.h"
+#include "Lock.h"
 
 #ifdef _DEBUG
 #define DEB(x) x
@@ -44,6 +44,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 namespace SOCKETS_NAMESPACE {
 #endif
 
+
+std::map<int, Mutex *> SSLInitializer::m_mmap;
+Mutex SSLInitializer::m_mmap_mutex;
 
 
 SSLInitializer::SSLInitializer()
@@ -115,18 +118,18 @@ void SSLInitializer::DeleteRandFile()
 
 void SSLInitializer::SSL_locking_function(int mode, int n, const char *file, int line)
 {
-static	std::map<int, Mutex *> mmap;
-	if (mmap.find(n) == mmap.end())
+	Lock lock(m_mmap_mutex);
+	if (m_mmap.find(n) == m_mmap.end())
 	{
-		mmap[n] = new Mutex;
+		m_mmap[n] = new Mutex;
 	}
 	if (mode & CRYPTO_LOCK)
 	{
-		mmap[n] -> Lock();
+		m_mmap[n] -> Lock();
 	}
 	else
 	{
-		mmap[n] -> Unlock();
+		m_mmap[n] -> Unlock();
 	}
 }
 

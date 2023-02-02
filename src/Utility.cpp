@@ -1215,6 +1215,29 @@ const std::string Utility::Stack()
 }
 
 
+const std::string Utility::FromUtf8(const std::string& str)
+{
+	if (!str.size())
+		return "";
+	std::string r;
+	for (size_t i = 0; i < str.size(); i++)
+	{
+		if (i < str.size() - 1 && (str[i] & 0xe0) == 0xc0 && (str[i + 1] & 0xc0) == 0x80)
+		{
+			int c1 = str[i] & 0x1f;
+			int c2 = str[++i] & 0x3f;
+			int c = (c1 << 6) + c2;
+			r += (char)c;
+		}
+		else
+		{
+			r += str[i];
+		}
+	}
+	return r;
+}
+
+
 #ifdef SOCKETS_NAMESPACE
 }
 #endif

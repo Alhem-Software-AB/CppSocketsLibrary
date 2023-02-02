@@ -39,7 +39,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "ISocketHandler.h"
 #include <sys/types.h>
 #include <sys/stat.h>
-#include "Parse.h"
 #include "Utility.h"
 #include "Lock.h"
 

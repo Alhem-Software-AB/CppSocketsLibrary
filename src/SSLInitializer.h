@@ -27,6 +27,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include <openssl/ssl.h>
 #include <string>
+#include <map>
+#include "Mutex.h"
 
 
 #ifdef SOCKETS_NAMESPACE
@@ -62,6 +64,8 @@ static	unsigned long SSL_id_function();
 private:
 	std::string m_rand_file;
 	long m_rand_size;
+static	std::map<int, Mutex *> m_mmap;
+static	Mutex m_mmap_mutex;
 
 };
 

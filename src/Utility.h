@@ -184,6 +184,9 @@ public:
 
 	static const std::string Stack();
 
+	/** Utf8 decrypt. */
+	static const std::string FromUtf8(const std::string& );
+
 private:
 	static std::string m_host; ///< local hostname
 	static ipaddr_t m_ip; ///< local ip address

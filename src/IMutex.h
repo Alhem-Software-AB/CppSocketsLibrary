@@ -1,9 +1,9 @@
-/** \file EventHandler.h
- **	\date  2005-12-07
+/** \file IMutex.h
+ **	\date  2008-10-25
  **	\author grymse@alhem.net
 **/
 /*
-Copyright (C) 2005,2007  Anders Hedstrom
+Copyright (C) 2004-2008  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL.
 
@@ -27,59 +27,34 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
-#ifndef _SOCKETS_EventHandler_H
-#define _SOCKETS_EventHandler_H
+#ifndef _SOCKETS_IMutex_H
+#define _SOCKETS_IMutex_H
 
 #include "sockets-config.h"
-#include "SocketHandler.h"
-#include "IEventHandler.h"
+#ifndef _WIN32
+#include <pthread.h>
+#else
+#include <windows.h>
+#endif
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
 #endif
 
-
-class StdLog;
-class IEventOwner;
-class Event;
-class TcpSocket;
-
-/** SocketHandler implementing the IEventHandler interface.
-	\ingroup timer */
-class EventHandler : public SocketHandler,public IEventHandler
+/** IMutex interface.
+	\ingroup threading */
+class IMutex
 {
 public:
-	EventHandler(StdLog * = NULL);
-	EventHandler(IMutex&,StdLog * = NULL);
-	~EventHandler();
+	virtual ~IMutex() {}
 
-	bool GetTimeUntilNextEvent(struct timeval *tv);
-	void CheckEvents();
-	long AddEvent(IEventOwner *from,long sec,long usec);
-	void ClearEvents(IEventOwner *from);
-	void RemoveEvent(IEventOwner *from,long eid);
-
-	/** SocketHandler while() loop implemented with event functionality. */
-	void EventLoop();
-	/** Stop event loop. */
-	void SetQuit(bool = true);
-
-	void Add(Socket *);
-
-private:
-	EventHandler(const EventHandler& ) {} // copy constructor
-	EventHandler& operator=(const EventHandler& ) { return *this; } // assignment operator
-	std::list<Event *> m_events;
-	bool m_quit;
-	TcpSocket *m_socket;
-	port_t m_port;
+	virtual void Lock() const = 0;
+	virtual void Unlock() const = 0;
 };
-
 
 
 #ifdef SOCKETS_NAMESPACE
 }
 #endif
-
-#endif // _SOCKETS_EventHandler_H
+#endif // _SOCKETS_IMutex_H
 

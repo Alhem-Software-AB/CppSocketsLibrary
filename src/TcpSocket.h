@@ -35,6 +35,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <openssl/ssl.h>
 #include "SSLInitializer.h"
 #endif
+#include "Mutex.h"
+#include <map>
 
 
 #define TCP_BUFSIZE_READ 16400
@@ -315,6 +317,9 @@ static	SSLInitializer m_ssl_init;
 	SSL *m_ssl; ///< ssl 'socket'
 	BIO *m_sbio; ///< ssl bio
 	std::string m_password; ///< ssl password
+static	Mutex m_server_ssl_mutex;
+static	std::map<std::string, SSL_CTX *> m_client_contexts;
+static	std::map<std::string, SSL_CTX *> m_server_contexts;
 #endif
 
 #ifdef ENABLE_SOCKS4
