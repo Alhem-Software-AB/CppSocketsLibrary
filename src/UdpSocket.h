@@ -75,6 +75,7 @@ public:
 	/** multicast, ipv6 */
 	void SetMulticastHops(int = -1);
 	int GetMulticastHops();
+	bool IsConnected();
 
 protected:
 	UdpSocket(const UdpSocket& s) : Socket(s) {}

@@ -247,6 +247,7 @@ DEB(		printf("slave: %s\n",m_slave ? "YES" : "NO");
 		{
 			SOCKET i = (*it2).first;
 			Socket *p = (*it2).second;
+			TcpSocket *tcp = dynamic_cast<TcpSocket *>(p);
 			if (p)
 			{
 				if (p -> CallOnConnect() && p -> Ready() )
@@ -257,7 +258,20 @@ DEB(		printf("slave: %s\n",m_slave ? "YES" : "NO");
 					if (p -> Socks4())
 						p -> OnSocks4Connect();
 					else
-						p -> OnConnect();
+					{
+						if (tcp)
+						{
+							tcp -> SetConnected();
+							if (tcp -> GetOutputLength())
+							{
+								p -> OnWrite();
+							}
+						}
+						if (tcp && tcp -> IsReconnect())
+							p -> OnReconnect();
+						else
+							p -> OnConnect();
+					}
 					p -> SetCallOnConnect( false );
 				}
 				// new SSL negotiate method
@@ -279,7 +293,6 @@ DEB(		printf("slave: %s\n",m_slave ? "YES" : "NO");
 				{
 					if (FD_ISSET(i, &rfds))
 					{
-						TcpSocket *tcp = dynamic_cast<TcpSocket *>(p);
 						// LockWrite (save total output buffer size)
 						// Sockets with write lock won't call OnWrite in SendBuf
 						// That will happen in UnlockWrite, if necessary
@@ -311,7 +324,20 @@ DEB(		printf("slave: %s\n",m_slave ? "YES" : "NO");
 								if (p -> Socks4())
 									p -> OnSocks4Connect();
 								else
-									p -> OnConnect();
+								{
+									if (tcp)
+									{
+										tcp -> SetConnected();
+										if (tcp -> GetOutputLength())
+										{
+											p -> OnWrite();
+										}
+									}
+									if (tcp && tcp -> IsReconnect())
+										p -> OnReconnect();
+									else
+										p -> OnConnect();
+								}
 							}
 							else
 							{
@@ -319,6 +345,22 @@ DEB(		printf("slave: %s\n",m_slave ? "YES" : "NO");
 								if (p -> Socks4())
 								{
 									p -> OnSocks4ConnectFailed();
+								}
+								else
+								if (tcp && (tcp -> GetConnectionRetry() == -1 ||
+									(tcp -> GetConnectionRetry() &&
+									 tcp -> GetConnectionRetries() < tcp -> GetConnectionRetry() )))
+								{
+									tcp -> IncreaseConnectionRetries();
+									if (p -> OnConnectRetry())
+									{
+										tcp -> Open(p -> GetClientRemoteAddr(), p -> GetClientRemotePort());
+									}
+									else
+									{
+										p -> SetCloseAndDelete( true );
+										p -> OnConnectFailed();
+									}
 								}
 								else
 								{
@@ -352,6 +394,7 @@ DEB(		printf("slave: %s\n",m_slave ? "YES" : "NO");
 		{
 //			SOCKET s = (*it3).first;
 			Socket *p = (*it3).second;
+			TcpSocket *tcp = dynamic_cast<TcpSocket *>(p);
 			if (p)
 			{
 				if (!m_slave && p -> IsDetach())
@@ -377,6 +420,22 @@ DEB(		printf("slave: %s\n",m_slave ? "YES" : "NO");
 						// retry direct connection
 					}
 					else
+					if (tcp && (tcp -> GetConnectionRetry() == -1 ||
+						(tcp -> GetConnectionRetry() &&
+						 tcp -> GetConnectionRetries() < tcp -> GetConnectionRetry() )))
+					{
+						tcp -> IncreaseConnectionRetries();
+						if (p -> OnConnectRetry())
+						{
+							tcp -> Open(p -> GetClientRemoteAddr(), p -> GetClientRemotePort());
+						}
+						else
+						{
+							p -> SetCloseAndDelete( true );
+							p -> OnConnectFailed();
+						}
+					}
+					else
 					{
 						p -> SetCloseAndDelete(true);
 						p -> OnConnectFailed();
@@ -384,27 +443,39 @@ DEB(		printf("slave: %s\n",m_slave ? "YES" : "NO");
 				}
 				if (p && p -> CloseAndDelete() )
 				{
-//DEB(printf("%s: calling Close for socket %d\n",m_slave ? "slave" : "master",s);)
-					if (p -> Retain() && !p -> Lost())
+					if (tcp && tcp -> IsConnected() && tcp -> Reconnect())
 					{
-						PoolSocket *p2 = new PoolSocket(*this, p);
-						p2 -> SetDeleteByHandler();
-						Add(p2);
-//printf("Adding PoolSocket...\n");
+						p -> SetCloseAndDelete(false);
+						tcp -> SetIsReconnect();
+						tcp -> SetConnected(false);
+						p -> Close(); // dispose of old file descriptor (Open creates a new)
+						tcp -> Open(p -> GetClientRemoteAddr(), p -> GetClientRemotePort());
+						p -> Set(false, true);
 					}
 					else
 					{
-						Set(p -> GetSocket(),false,false,false);
-						p -> Close();
+//DEB(printf("%s: calling Close for socket %d\n",m_slave ? "slave" : "master",s);)
+						if (p -> Retain() && !p -> Lost())
+						{
+							PoolSocket *p2 = new PoolSocket(*this, p);
+							p2 -> SetDeleteByHandler();
+							Add(p2);
+//printf("Adding PoolSocket...\n");
+						}
+						else
+						{
+							Set(p -> GetSocket(),false,false,false);
+							p -> Close();
+						}
+						p -> OnDelete();
+						if (p -> DeleteByHandler())
+						{
+							delete p;
+						}
+						m_sockets.erase(it3);
+						repeat = true;
+						break;
 					}
-					p -> OnDelete();
-					if (p -> DeleteByHandler())
-					{
-						delete p;
-					}
-					m_sockets.erase(it3);
-					repeat = true;
-					break;
 				}
 			} // if (p)
 		}

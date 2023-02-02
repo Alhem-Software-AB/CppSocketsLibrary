@@ -100,6 +100,10 @@ public:
 	virtual void OnSSLConnect() {}
 	/** SSL client/server support - internal use. @see TcpSocket */
 	virtual void OnSSLAccept() {}
+	/** Connection retry callback - return false to abort connection attempts */
+	virtual bool OnConnectRetry() { return true; }
+	/** a reconnect has been made */
+	virtual void OnReconnect() {}
 
 	virtual bool CheckConnect();
 	virtual void ReadLine();

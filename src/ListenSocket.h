@@ -38,21 +38,27 @@ template <class X>
 class ListenSocket : public Socket
 {
 public:
-	ListenSocket(SocketHandler& h) : Socket(h), m_port(0), m_depth(0), m_creator(NULL)
+	ListenSocket(SocketHandler& h,bool use_creator = true) : Socket(h), m_port(0), m_depth(0), m_creator(NULL)
 	,m_bHasCreate(false) {
-		m_creator = new X(h);
-		Socket *tmp = m_creator -> Create();
-		if (tmp && dynamic_cast<X *>(tmp))
+		if (use_creator)
 		{
-			m_bHasCreate = true;
-		}
-		if (tmp)
-		{
-			delete tmp;
+			m_creator = new X(h);
+			Socket *tmp = m_creator -> Create();
+			if (tmp && dynamic_cast<X *>(tmp))
+			{
+				m_bHasCreate = true;
+			}
+			if (tmp)
+			{
+				delete tmp;
+			}
 		}
 	}
 	~ListenSocket() {
-		delete m_creator;
+		if (m_creator)
+		{
+			delete m_creator;
+		}
 	}
 
 	/** bind() to port 0 - a random port */
@@ -341,6 +347,14 @@ public:
 	}
 
 //	X *GetCreator() { return m_creator; }
+
+	/** This method is not supposed to be used, because accept() is
+	    handled automatically in the OnRead() method. */
+        virtual SOCKET Accept(SOCKET socket, struct sockaddr *saptr, socklen_t *lenptr)
+        {
+                return accept(socket, saptr, lenptr);
+        }
+
 
 protected:
 	ListenSocket(const ListenSocket& ) {}

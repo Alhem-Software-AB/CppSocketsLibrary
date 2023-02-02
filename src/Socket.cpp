@@ -517,17 +517,25 @@ void Socket::l2ip(const struct in6_addr& ip, std::string& str,bool mixed)
 	char slask[100];
 	*slask = 0;
 	unsigned int prev = 0;
+	bool skipped = false;
+	bool ok_to_skip = true;
 	if (mixed)
 	{
 		unsigned int x;
 		for (size_t i = 0; i < 6; i++)
 		{
 			x = ntohs(ip.s6_addr16[i]);
-			if (*slask && (x || prev))
+			if (*slask && (x || !ok_to_skip || prev))
 				strcat(slask,":");
-			if (x)
+			if (x || !ok_to_skip)
 			{
 				sprintf(slask + strlen(slask),"%X", x);
+				if (x && skipped)
+					ok_to_skip = false;
+			}
+			else
+			{
+				skipped = true;
 			}
 			prev = x;
 		}
@@ -541,11 +549,17 @@ void Socket::l2ip(const struct in6_addr& ip, std::string& str,bool mixed)
 		for (size_t i = 0; i < 8; i++)
 		{
 			unsigned int x = ntohs(ip.s6_addr16[i]);
-			if (*slask && (x || prev))
+			if (*slask && (x || !ok_to_skip || prev))
 				strcat(slask,":");
-			if (x)
+			if (x || !ok_to_skip)
 			{
 				sprintf(slask + strlen(slask),"%X", x);
+				if (x && skipped)
+					ok_to_skip = false;
+			}
+			else
+			{
+				skipped = true;
 			}
 			prev = x;
 		}

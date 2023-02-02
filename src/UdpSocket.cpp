@@ -646,3 +646,9 @@ int UdpSocket::GetMulticastHops()
 #endif // IPPROTO_IPV6
 
 
+bool UdpSocket::IsConnected()
+{
+	return m_connected;
+}
+
+

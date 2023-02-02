@@ -67,6 +67,11 @@ TcpSocket::TcpSocket(SocketHandler& h) : Socket(h)
 ,m_ssl(NULL)
 ,m_sbio(NULL)
 #endif
+,m_b_connected(false)
+,m_connection_retry(0)
+,m_retries(0)
+,m_b_reconnect(false)
+,m_b_is_reconnect(false)
 {
 }
 #ifdef _WIN32
@@ -88,6 +93,11 @@ TcpSocket::TcpSocket(SocketHandler& h,size_t isize,size_t osize) : Socket(h)
 ,m_ssl(NULL)
 ,m_sbio(NULL)
 #endif
+,m_b_connected(false)
+,m_connection_retry(0)
+,m_retries(0)
+,m_b_reconnect(false)
+,m_b_is_reconnect(false)
 {
 }
 #ifdef _WIN32
@@ -527,6 +537,10 @@ void TcpSocket::Send(const std::string &str)
 void TcpSocket::SendBuf(const char *buf,size_t len)
 {
 	int n = (int)obuf.GetLength();
+	if (!IsConnected())
+	{
+		Handler().LogError(this, "SendBuf", -1, "Attempt to write to a non-connected socket, will be sent on connect" ); // warning
+	}
 	if (!Ready())
 	{
 		Handler().LogError(this, "SendBuf", -1, "Attempt to write to a non-ready socket" ); // warning
@@ -574,7 +588,7 @@ void TcpSocket::SendBuf(const char *buf,size_t len)
 			// overflow
 		}
 	}
-	if (!n)
+	if (!n && IsConnected())
 	{
 		OnWrite();
 	}
@@ -1033,5 +1047,35 @@ SSL *TcpSocket::GetSsl()
 }
 
 #endif
+
+
+bool TcpSocket::IsConnected()
+{
+	return m_b_connected;
+}
+
+
+void TcpSocket::SetConnected(bool x)
+{
+	m_b_connected = x;
+}
+
+
+void TcpSocket::SetConnectionRetry(int x)
+{
+	m_connection_retry = x;
+}
+
+
+int TcpSocket::GetConnectionRetries()
+{
+	return m_retries;
+}
+
+
+void TcpSocket::SetReconnect(bool x)
+{
+	m_b_reconnect = x;
+}
 
 

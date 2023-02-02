@@ -99,6 +99,24 @@ public:
 	virtual void InitSSLClient();
 	virtual void InitSSLServer();
 
+	/** Flag that indicates a successful connection. */
+	bool IsConnected();
+	void SetConnected(bool = true);
+	/** n = 0 - no retry
+	    n > 0 - number of retries
+	    n = -1 - unlimited retries */
+	void SetConnectionRetry(int n);
+	int GetConnectionRetry() { return m_connection_retry; }
+	/** number of connection retries */
+	void IncreaseConnectionRetries() { m_retries++; }
+	int GetConnectionRetries();
+	/** Flag that says a broken connection will try to reconnect. */
+	void SetReconnect(bool = true);
+	bool Reconnect() { return m_b_reconnect; }
+	/** Flag to determine if a reconnect is in progress. */
+	void SetIsReconnect(bool x = true) { m_b_is_reconnect = x; }
+	bool IsReconnect() { return m_b_is_reconnect; }
+
 protected:
 	TcpSocket(const TcpSocket& s);
 	void OnRead();
@@ -134,6 +152,12 @@ private:
 static	BIO *bio_err;
 static	std::string m_password;
 #endif
+	// state flags
+	bool m_b_connected;
+	int m_connection_retry;
+	int m_retries;
+	bool m_b_reconnect;
+	bool m_b_is_reconnect;
 };
 
 
