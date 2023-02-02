@@ -43,6 +43,11 @@ namespace SOCKETS_NAMESPACE {
 #endif
 
 
+HttpGetSocket::HttpGetSocket(SocketHandler& h) : HttpClientSocket(h)
+{
+}
+
+
 HttpGetSocket::HttpGetSocket(SocketHandler& h,const std::string& url_in,const std::string& to_file) : HttpClientSocket(h, url_in)
 {
 	if (to_file.size())

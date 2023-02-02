@@ -49,6 +49,12 @@ namespace SOCKETS_NAMESPACE {
 #endif
 
 
+HttpPostSocket::HttpPostSocket(SocketHandler& h) : HttpClientSocket(h)
+,m_bMultipart(false)
+{
+}
+
+
 HttpPostSocket::HttpPostSocket(SocketHandler& h,const std::string& url_in) : HttpClientSocket(h, url_in)
 ,m_bMultipart(false)
 {

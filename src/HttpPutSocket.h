@@ -44,7 +44,9 @@ class SocketHandler;
 class HttpPutSocket : public HttpClientSocket
 {
 public:
-	// client constructor, url = 'http://host:port/resource'
+	HttpPutSocket(SocketHandler&);
+	/** client constructor, 
+		\param url_in = 'http://host:port/resource' */
 	HttpPutSocket(SocketHandler&,const std::string& url_in);
 	~HttpPutSocket();
 

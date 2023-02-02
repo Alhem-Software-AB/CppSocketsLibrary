@@ -42,6 +42,7 @@ namespace SOCKETS_NAMESPACE {
 class HttpGetSocket : public HttpClientSocket
 {
 public:
+	HttpGetSocket(SocketHandler&);
 	HttpGetSocket(SocketHandler&,const std::string& url,const std::string& to_file = "");
 	HttpGetSocket(SocketHandler&,const std::string& host,port_t port,const std::string& url,const std::string& to_file = "");
 	~HttpGetSocket();

@@ -38,6 +38,9 @@ public:
 	HttpClientSocket(SocketHandler&,const std::string& url_in);
 	~HttpClientSocket();
 
+	/** Parse url to protocol,host,port,url and file. */
+	void Url(const std::string& url_in,std::string& host,port_t& port);
+
 	void OnFirst();
 	void OnHeader(const std::string&,const std::string&);
 	void OnHeaderComplete();

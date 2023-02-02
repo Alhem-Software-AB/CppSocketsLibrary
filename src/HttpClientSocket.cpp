@@ -245,6 +245,16 @@ const std::string& HttpClientSocket::GetContentType()
 }
 
 
+void HttpClientSocket::Url(const std::string& url_in,std::string& host,port_t& port)
+{
+	std::string url;
+	url_this(url_in, m_protocol, m_host, m_port, url, m_url_filename);
+	SetUrl(url);
+	host = GetUrlHost();
+	port = GetUrlPort();
+}
+
+
 #ifdef SOCKETS_NAMESPACE
 } // namespace SOCKETS_NAMESPACE {
 #endif

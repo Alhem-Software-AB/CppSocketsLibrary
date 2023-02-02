@@ -47,6 +47,11 @@ namespace SOCKETS_NAMESPACE {
 #endif
 
 
+HttpPutSocket::HttpPutSocket(SocketHandler& h) : HttpClientSocket(h)
+{
+}
+
+
 HttpPutSocket::HttpPutSocket(SocketHandler& h,const std::string& url_in) : HttpClientSocket(h, url_in)
 {
 }
