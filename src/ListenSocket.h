@@ -191,7 +191,7 @@ public:
 		\param port Port (0 is random)
 		\param depth Listen queue depth */
 	int Bind(ipaddr_t a,port_t port,int depth = 20) {
-#ifdef IPPROTO_SCTP
+#ifdef USE_SCTP
 		if (dynamic_cast<SctpSocket *>(m_creator))
 		{
 			return Bind(a, port, "sctp", depth);
@@ -241,7 +241,7 @@ public:
 		\param port Port (0 is random)
 		\param depth Listen queue depth */
 	int Bind(in6_addr a,port_t port,int depth = 20) {
-#ifdef IPPROTO_SCTP
+#ifdef USE_SCTP
 		if (dynamic_cast<SctpSocket *>(m_creator))
 		{
 			return Bind(a, port, "sctp", depth);

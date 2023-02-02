@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <sys/select.h>
+#include <string.h>
 /*
 CFLAGS =	-Wall -g -O2 $(INCLUDE) -MD -D_VERSION='"$(VERSION)"' 
 # manual autoconf ....
@@ -15,8 +16,25 @@ CFLAGS += 	-DHAVE_OPENSSL
 
 */
 
-int main()
+int main(int argc,char *argv[])
 {
+	if (argc > 1 && !strcmp(argv[1], "-info"))
+	{
+#ifdef HAVE_OPENSSL
+		printf("SSL support\n");
+#endif
+#ifdef IPPROTO_IPV6
+		printf("IPv6 support\n");
+#endif
+#ifdef USE_SCTP
+#ifdef IPPROTO_SCTP
+		printf("SCTP support\n");
+#else
+		printf("No SCTP support\n");
+#endif
+#endif
+		return 0;
+	}
 	printf(" -D_VERSION='\"%s\"'", _VERSION);
 
 #ifdef LINUX
@@ -40,8 +58,8 @@ int main()
 #ifdef _DEBUG
 	printf(" -D_DEBUG");
 #endif
-#ifdef _THREADSAFE_SOCKETS // obsolete
-	printf(" -D_THREADSAFE_SOCKETS");
+#ifdef USE_SCTP
+	printf(" -DUSE_SCTP");
 #endif
 
 }

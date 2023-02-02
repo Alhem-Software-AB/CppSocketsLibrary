@@ -21,7 +21,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #include "SctpSocket.h"
-#ifdef IPPROTO_SCTP
+#ifdef USE_SCTP
 #include <Utility.h>
 #include "SocketHandler.h"
 #include <errno.h>
@@ -430,4 +430,4 @@ void SctpSocket::OnReceiveMessage(const char *buf,size_t sz,struct sockaddr *sa,
 #endif
 
 
-#endif // IPPROTO_SCTP
+#endif // USE_SCTP

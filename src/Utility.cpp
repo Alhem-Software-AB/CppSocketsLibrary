@@ -255,7 +255,7 @@ bool Utility::u2ip(const std::string& str, ipaddr_t& l)
 	}
 	else
 	{
-#if defined( _WIN32) || defined(MACOSX)
+#ifndef LINUX
 		struct hostent *he = gethostbyname( str.c_str() );
 		if (!he)
 		{
@@ -270,7 +270,6 @@ bool Utility::u2ip(const std::string& str, ipaddr_t& l)
 		int n = gethostbyname_r(str.c_str(), &he, buf, sizeof(buf), &result, &myerrno);
 		if (n)
 		{
-DEB(printf("Resolve strerror: %s\n", strerror(myerrno));)
 			return false;
 		}
 		memcpy(&l, he.h_addr, 4);

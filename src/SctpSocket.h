@@ -25,7 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include <map>
 #include "Socket.h"
-#ifdef IPPROTO_SCTP
+#ifdef USE_SCTP
 #include <netinet/sctp.h>
 
 #ifdef SOCKETS_NAMESPACE
@@ -85,5 +85,5 @@ private:
 } // namespace SOCKETS_NAMESPACE
 #endif
 
-#endif
+#endif // USE_SCTP
 #endif // _SOCKETS_NAMESPACE_SCTPSOCKET_H

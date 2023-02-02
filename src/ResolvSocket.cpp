@@ -155,7 +155,7 @@ DEB(	printf("ResolvSocket::OnDetached(); query=%s, data=%s\n", m_query.c_str(), 
 #endif // _WIN32
 	if (m_query == "gethostbyname")
 	{
-#if !defined( _WIN32) && !defined(MACOSX)
+#ifdef LINUX
 		struct hostent he;
 		struct hostent *result;
 		int myerrno;

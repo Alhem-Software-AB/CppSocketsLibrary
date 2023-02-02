@@ -1,5 +1,5 @@
-VERSION =	2.0.7a
-DIFF_VERSION =	2.0.7
+VERSION =	2.0.7b
+DIFF_VERSION =	2.0.7a
 
 INCLUDE =	-I.
 PREFIX =	/usr/local
@@ -13,16 +13,6 @@ CFLAGS =	-Wall -g $(INCLUDE) -MD -D_VERSION='"$(VERSION)"'
 # turn off optimization if compiling with gcc 2.9.x:
 #CFLAGS +=	-O0
 CFLAGS +=	-O2
-
-# Enable insane amounts of debug output to stdout/stderr:
-#CFLAGS +=	-D_DEBUG
-
-# The flag _THREADSAFE_SOCKETS does NOT mean that all operations in 
-# SocketHandler/Socket derivatives becomes thread safe unfortunately.
-# It merely enables a small fix to sync writing to the socket
-# output buffer / internal reading from that output buffer.
-# 2006-01-26: obsolete
-#CFLAGS +=	-D_THREADSAFE_SOCKETS
 
 # uncomment depending on your operating system
 #CFLAGS +=	-DLINUX
@@ -39,9 +29,15 @@ CFLAGS +=	-O2
 # if you want the library to use openssl, make sure the next line is uncommented
 CFLAGS += 	-DHAVE_OPENSSL
 
+# if you want to use the SCTP protocol, uncomment the symbol USE_SCTP
+#CFLAGS +=	-DUSE_SCTP
+
 # uncomment these three lines if the library should be in its own namespace
 #CFLAGS +=	-DSOCKETS_NAMESPACE=sockets
 #CFLAGS +=	-DSOCKETS_NAMESPACE_STR='"sockets"'
+
+# Enable insane amounts of debug output to stdout/stderr:
+#CFLAGS +=	-D_DEBUG
 
 CPPFLAGS =	$(CFLAGS) 
 
