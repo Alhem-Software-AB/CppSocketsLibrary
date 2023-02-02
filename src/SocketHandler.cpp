@@ -20,7 +20,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
-#include <stdio.h>
+//#include <stdio.h>
 #ifdef _WIN32
 #pragma warning(disable:4786)
 #include <stdlib.h>
@@ -101,6 +101,11 @@ SocketHandler::~SocketHandler()
 
 void SocketHandler::Add(Socket *p)
 {
+	if (p -> GetSocket() == -1)
+	{
+		LogError(p, "Add", -1, "Invalid socket", LOG_LEVEL_FATAL);
+		return;
+	}
 DEB(	printf("%s: add socket %d\n",m_slave ? "slave" : "master",p -> GetSocket());)
 	m_add[p -> GetSocket()] = p;
 	if (p -> Connecting())

@@ -1,4 +1,4 @@
-VERSION =	1.4
+VERSION =	1.4.1
 
 INCLUDE =	-I/usr/devel/include -I.
 CFLAGS =	-Wall -g -O2 $(INCLUDE) -MD -D_VERSION='"$(VERSION)"' 
@@ -27,7 +27,19 @@ EX =		Uid.o \
 
 PROGS =		
 
-all:		libSockets.a $(PROGS) libSocketsEx.a
+all:
+		@echo "'make linux'" or "'make macosx'" or "'make solaris'"
+		
+allt:		libSockets.a $(PROGS) libSocketsEx.a
+
+linux:		CFLAGS += -DLINUX
+linux:		allt
+
+macosx:		CFLAGS += -DMACOSX
+macosx:		allt
+
+solaris:	CFLAGS += -DSOLARIS
+solaris:	allt
 
 libSockets.a:	$(OBJS)
 		ar cru $@ $(OBJS)
@@ -52,7 +64,8 @@ tar:		clean
 		rm -f Mutex.*
 		rm -f MinderSocket_T.h
 		./mkdot.sh
-		tar czf /usr/local/apache/www.libsockets.net/htdocs/Sockets-$(VERSION).tar.gz *.h *.cpp Makefile Project/*.dsp
+		tar czf /usr/local/apache/www.libsockets.net/htdocs/Sockets-$(VERSION).tar.gz *.h *.cpp Makefile Project/*.dsp \
+			README.macosx
 		cp Changelog /usr/local/apache/www.libsockets.net/htdocs
 		doxygen doxygen.cfg
 

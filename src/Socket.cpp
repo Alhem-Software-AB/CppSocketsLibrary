@@ -333,10 +333,10 @@ std::string Socket::GetRemoteHostname()
 {
 	std::string str;
 	long l = GetRemoteIP();
-#ifdef _WIN32
-	struct hostent *he = gethostbyaddr( (char *)&l,sizeof(long),AF_INET);
-#else
+#ifdef LINUX
 	struct hostent *he = gethostbyaddr(&l,sizeof(long),AF_INET);
+#else // _WIN32, MACOSX and SOLARIS
+	struct hostent *he = gethostbyaddr( (char *)&l,sizeof(long),AF_INET);
 #endif
 	if (!he)
 	{

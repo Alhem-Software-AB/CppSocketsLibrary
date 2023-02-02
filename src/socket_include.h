@@ -1,8 +1,25 @@
 #ifndef _SOCKET_INCLUDE_H
 #define _SOCKET_INCLUDE_H
 
+#ifdef _WIN32
 typedef unsigned long ipaddr_t;
 typedef unsigned short port_t;
+#endif
+
+#ifdef LINUX
+typedef unsigned long ipaddr_t;
+typedef unsigned short port_t;
+#endif
+
+#ifdef SOLARIS
+//typedef unsigned long ipaddr_t;
+typedef unsigned short port_t;
+#endif
+
+#ifdef MACOSX
+typedef unsigned long ipaddr_t;
+//typedef unsigned short port_t;
+#endif
 
 // ---> note!
 // (modified) rip from httpsync.c

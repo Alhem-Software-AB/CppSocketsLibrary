@@ -43,6 +43,51 @@ public:
 	~ListenSocket() {
 	}
 
+	/** bind() to port 0 - a random port */
+	int Bind() {
+		int depth = 3; // think of maybe increasing this value if needed
+		ipaddr_t l = 0;
+		struct sockaddr_in sa;
+		SOCKET s;
+
+		s = CreateSocket(SOCK_STREAM);
+		if (s == -1)
+		{
+			perror("CreateSocket() failed");
+			return -1;
+		}
+
+		memset(&sa,0,sizeof(sa));
+		sa.sin_family = AF_INET; // hp -> h_addrtype;
+		sa.sin_port = htons(0); // choose any port
+		memcpy(&sa.sin_addr,&l,4);
+
+		if (bind(s, (struct sockaddr *)&sa, sizeof(sa)) == -1)
+		{
+			perror("bind() failed");
+			closesocket(s);
+			return -1;
+		}
+
+		if (listen(s, depth) == -1)
+		{
+			perror("listen() failed");
+			closesocket(s);
+			return -1;
+		}
+		
+		// Find out what port was choosen
+		int sockaddr_length = sizeof(sockaddr);
+		getsockname(s, (struct sockaddr *)&sa, (socklen_t*)&sockaddr_length);
+
+		m_port = sa.sin_port;
+		m_depth = depth;
+
+		Attach(s);
+		return 0;
+	}
+
+	/** bind to port with optional listen queue length (depth) */
 	int Bind(port_t port,int depth = 3) {
 		ipaddr_t l = 0;
 		struct sockaddr_in sa;
@@ -79,6 +124,8 @@ public:
 		Attach(s);
 		return 0;
 	}
+
+	/** bind to port on a specified address */
 	int Bind(const std::string& adapter,port_t port,int depth = 3) {
 		ipaddr_t l = 0;
 		ipaddr_t tmp;
@@ -123,6 +170,9 @@ public:
 
 	port_t GetPort() {
 		return m_port;
+	}
+	int GetDepth() {
+		return m_depth;
 	}
 
 	void OnRead() {
