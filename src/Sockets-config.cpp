@@ -23,13 +23,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <stdio.h>
 #include <string.h>
 #include "sockets-config.h"
-#include "socket_include.h"
+//#include "socket_include.h"
 #include <map>
 #include <string>
+#include <cstdlib>
 
 // ------------------------------------------------------------------
 static	bool any_set = false;
 static	std::map<std::string, std::string> mmap;
+static	bool quiet = false;
 
 // ------------------------------------------------------------------
 void show_info()
@@ -170,6 +172,9 @@ void set(const char *param, bool enable)
 	}
 	fclose(fil);
 	fclose(fil2);
+#ifdef _WIN32
+	unlink("sockets-config.h");
+#endif
 	rename("sockets-config.h.tmp", "sockets-config.h");
 	any_set = true;
 }
@@ -386,6 +391,9 @@ int main(int argc,char *argv[])
 		if (!strcmp(argv[i], "-v"))
 			any_set = true;
 		else
+		if (!strcmp(argv[i], "-q"))
+			quiet = true;
+		else
 		if (*argv[i] == '-')
 		{
 			fprintf(stderr, "Unknown command line option: %s\n", argv[i]);
@@ -401,6 +409,7 @@ int main(int argc,char *argv[])
 		fprintf(stderr, "\n");
 		fprintf(stderr, "  -info        Show compiled options\n");
 		fprintf(stderr, "  -v           Show configuration options\n");
+		fprintf(stderr, "  -q           Don't show extra info\n");
 		fprintf(stderr, "  -h           Show this help\n");
 		fprintf(stderr, "\n");
 		fprintf(stderr, "  --platform=  Select target platform\n");
@@ -441,7 +450,8 @@ int main(int argc,char *argv[])
 	}
 	if (any_set)
 	{
-		show_configuration();
+		if (!quiet)
+			show_configuration();
 		return 0;
 	}
 	printf(" -D_VERSION='\"%s\"'", _VERSION);

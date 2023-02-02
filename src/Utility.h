@@ -91,6 +91,9 @@ public:
 
 		const std::string& ToString() const { return m_url; }
 
+		const std::string& User() const { return m_user; }
+		const std::string& Auth() const { return m_auth; }
+
 	private:
 		std::string m_url;
 		std::string m_uri;
@@ -101,6 +104,8 @@ public:
 		std::string m_path;
 		std::string m_file;
 		std::string m_ext;
+		std::string m_user;
+		std::string m_auth;
 	};
 	class Path
 	{

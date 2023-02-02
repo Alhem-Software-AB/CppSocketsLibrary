@@ -38,7 +38,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
 #endif
-namespace Xml {
 
 
 XmlDocument::XmlDocument(const std::string& filename,const std::string& verify_ns,const std::string& verify_root)
@@ -95,7 +94,6 @@ XmlDocument::operator xmlDocPtr()
 }
 
 
-}
 #ifdef SOCKETS_NAMESPACE
 }
 #endif

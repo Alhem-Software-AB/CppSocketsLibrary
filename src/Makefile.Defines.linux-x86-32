@@ -1,4 +1,8 @@
-CXX =		g++
+ifeq ($(USE_CLANG),with_clang)
+	CXX =	clang++
+else
+	CXX =	g++
+endif
 
 CFLAGS +=	-Wall -g $(INCLUDE) -MD -D_VERSION='"$(VERSION)"'
 
@@ -24,4 +28,8 @@ LDFLAGSSO =	-shared \
 		-Wl,-lpthread \
 		-Wl,-h$(SONAME) \
 		-Wl,-call_shared
+
+.cpp.o:
+		@echo [$(CXX)] Compiling $<
+		$(CXX) $(CFLAGS) -o $@ -c $<
 

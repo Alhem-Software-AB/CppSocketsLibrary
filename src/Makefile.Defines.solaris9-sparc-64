@@ -18,3 +18,7 @@ LIBS +=		\
 
 OBJS +=		Semaphore.o
 
+.cpp.o:
+		@echo [$(CXX)] Compiling $<
+		@$(CXX) $(CFLAGS) -o $@ -c $<
+

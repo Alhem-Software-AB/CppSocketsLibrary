@@ -1,5 +1,14 @@
 diff for next release always available @ http://www.alhem.net/Sockets/latest_diff.html
 
+2.3.9.8
+--------
+Fix multiple include file problems on macosx, win32, and gcc 4.7.
+Add support for user/pw in HTTPSocket and Utility url parser.
+Switch to clang with environment variable 'USE_CLANG=with_clang'.
+Add support for certificate chains in tcp socket.
+UdpSocket bugfix, uninitialized variable.
+Remove extra namespace 'Xml' from libxml2 wrapper classes.
+
 2.3.9.7
 --------
 Faster detach, now also works from OnAccept.

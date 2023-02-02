@@ -47,6 +47,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #endif
 #include <map>
 #include <stdio.h>
+#ifndef _WIN32
+#include <netinet/tcp.h>
+#endif
 
 #include "TcpSocket.h"
 #include "Utility.h"
@@ -1293,8 +1296,10 @@ void TcpSocket::InitializeContext(const std::string& context, const SSL_METHOD *
 
 void TcpSocket::InitializeContext(const std::string& context,const std::string& keyfile,const std::string& password,const SSL_METHOD *meth_in)
 {
+	InitializeContext(context, keyfile, keyfile, password, meth_in);
+/*
 	Lock lock(m_server_ssl_mutex);
-	/* Create our context*/
+	// Create our context
 	if (m_server_contexts.find(context) == m_server_contexts.end())
 	{
 		const SSL_METHOD *meth = meth_in ? meth_in : SSLv3_method();
@@ -1311,7 +1316,7 @@ void TcpSocket::InitializeContext(const std::string& context,const std::string& 
 		m_ssl_ctx = m_server_contexts[context];
 	}
 
-	/* Load our keys and certificates*/
+	// Load our keys and certificates
 	if (!(SSL_CTX_use_certificate_file(m_ssl_ctx, keyfile.c_str(), SSL_FILETYPE_PEM)))
 	{
 		Handler().LogError(this, "TcpSocket InitializeContext", 0, "Couldn't read certificate file " + keyfile, LOG_LEVEL_FATAL);
@@ -1324,6 +1329,7 @@ void TcpSocket::InitializeContext(const std::string& context,const std::string& 
 	{
 		Handler().LogError(this, "TcpSocket InitializeContext", 0, "Couldn't read private key file " + keyfile, LOG_LEVEL_FATAL);
 	}
+*/
 }
 
 
@@ -1359,6 +1365,15 @@ void TcpSocket::InitializeContext(const std::string& context,const std::string& 
 	if (!(SSL_CTX_use_PrivateKey_file(m_ssl_ctx, keyfile.c_str(), SSL_FILETYPE_PEM)))
 	{
 		Handler().LogError(this, "TcpSocket InitializeContext", 0, "Couldn't read private key file " + keyfile, LOG_LEVEL_FATAL);
+	}
+}
+
+
+void TcpSocket::UseCertificateChainFile(const std::string& filename)
+{
+	if (!(SSL_CTX_use_certificate_chain_file(m_ssl_ctx, filename.c_str())))
+	{
+		Handler().LogError(this, "TcpSocket UseCertificateChainFile", 0, "Couldn't read certificate file " + filename, LOG_LEVEL_ERROR);
 	}
 }
 

@@ -1187,6 +1187,18 @@ Utility::Uri::Uri(const std::string& url) : m_url(url), m_port(0), m_path(url)
 			m_path = m_host.substr(pos);
 			m_host = m_host.substr(0, pos);
 		}
+		pos = m_host.find("@");
+		if (pos != std::string::npos)
+		{
+			m_user = m_host.substr(0, pos);
+			m_host = m_host.substr(pos + 1);
+		}
+		pos = m_user.find(":");
+		if (pos != std::string::npos)
+		{
+			m_auth = m_user.substr(pos + 1);
+			m_user = m_user.substr(0, pos);
+		}
 		pos = m_host.find(":");
 		if (pos != std::string::npos)
 		{

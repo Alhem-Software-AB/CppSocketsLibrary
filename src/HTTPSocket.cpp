@@ -458,6 +458,8 @@ void HTTPSocket::SetUri(const std::string& x)
 void HTTPSocket::url_this(const std::string& url_in,std::string& protocol,std::string& host,port_t& port,std::string& url,std::string& file)
 {
 	Parse pa(url_in,"/");
+	std::string user;
+	std::string auth;
 	protocol = pa.getword(); // http
 	if (!strcasecmp(protocol.c_str(), "https:"))
 	{
@@ -473,6 +475,16 @@ void HTTPSocket::url_this(const std::string& url_in,std::string& protocol,std::s
 		port = 80;
 	}
 	host = pa.getword();
+	size_t pos = host.find("@");
+	if (pos != std::string::npos)
+	{
+		user = host.substr(0, pos);
+		host = host.substr(pos + 1);
+		if (user.find(":") != std::string::npos)
+		{
+			AddResponseHeader("Authorization", "Basic " + Utility::base64(user));
+		}
+	}
 	if (strstr(host.c_str(),":"))
 	{
 		Parse pa(host,":");

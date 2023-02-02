@@ -36,7 +36,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
 #endif
-namespace Xml {
 
 
 XmlException::XmlException(const std::string& descr)
@@ -45,7 +44,6 @@ XmlException::XmlException(const std::string& descr)
 }
 
 
-}
 #ifdef SOCKETS_NAMESPACE
 }
 #endif

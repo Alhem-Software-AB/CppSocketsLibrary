@@ -285,6 +285,8 @@ protected:
 		\param password Password for private key 
 		\param meth_in SSL method */
 	void InitializeContext(const std::string& context, const std::string& certfile, const std::string& keyfile, const std::string& password, const SSL_METHOD *meth_in = NULL);
+	/** SSL; load certificate chain from file */
+	void UseCertificateChainFile(const std::string& filename);
 	/** SSL; Password callback method. */
 static	int SSL_password_cb(char *buf,int num,int rwflag,void *userdata);
 	/** SSL; Get pointer to ssl context structure. */

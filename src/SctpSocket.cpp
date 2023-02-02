@@ -266,7 +266,8 @@ int SctpSocket::AddConnection(SocketAddress& ad)
 		Handler().LogError(this, "SctpSocket", -1, "AddConnection called with invalid file descriptor", LOG_LEVEL_ERROR);
 		return -1;
 	}
-	int n = sctp_connectx(GetSocket(), ad, ad);
+//	int n = sctp_connectx(GetSocket(), ad, ad);
+	int n = sctp_connectx(GetSocket(), ad, 1, NULL);
 	if (n == -1)
 	{
 		Handler().LogError(this, "SctpSocket", -1, "sctp_connectx() failed", LOG_LEVEL_ERROR);

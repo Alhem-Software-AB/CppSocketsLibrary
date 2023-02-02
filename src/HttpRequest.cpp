@@ -39,6 +39,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "HttpdCookies.h"
 #include "Parse.h"
 #include "Exception.h"
+#ifdef MACOSX
+#include <crt_externs.h>
+#define environ (*_NSGetEnviron())
+#endif
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {

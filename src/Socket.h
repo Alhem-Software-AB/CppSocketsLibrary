@@ -36,11 +36,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <string>
 #include <vector>
 #include <list>
+#include "socket_include.h"
 #ifdef HAVE_OPENSSL
 #include <openssl/ssl.h>
 #endif
 
-#include "socket_include.h"
 #include <time.h>
 #include "SocketAddress.h"
 #include "Thread.h"

@@ -40,7 +40,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
 #endif
-namespace Xml {
 
 
 XmlNode::XmlNode(XmlDocument& doc)
@@ -349,7 +348,6 @@ const std::string XmlNode::FindProperty(const std::string& propname, bool climb)
 }
 
 
-}
 #ifdef SOCKETS_NAMESPACE
 }
 #endif

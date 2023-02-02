@@ -16,3 +16,7 @@ LIBS +=		c:/openssl/lib/mingw/ssleay32.a \
 		c:/openssl/lib/mingw/libeay32.a \
 		-lws2_32
 
+.cpp.o:
+		@echo [$(CXX)] Compiling $<
+		@$(CXX) $(CFLAGS) -o $@ -c $<
+

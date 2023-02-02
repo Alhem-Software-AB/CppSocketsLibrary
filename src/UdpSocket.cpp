@@ -605,7 +605,7 @@ void UdpSocket::SetBroadcast(bool b)
 bool UdpSocket::IsBroadcast()
 {
 	int is_broadcast = 0;
-	socklen_t size;
+	socklen_t size = sizeof(int);
 
 	if (GetSocket() == INVALID_SOCKET)
 	{

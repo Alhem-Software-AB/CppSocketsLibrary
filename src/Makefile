@@ -55,19 +55,22 @@ CPPFLAGS =	$(CFLAGS)
 
 PROGS =		$(CONFNAME)
 
-all:		$(LIBNAME) $(PROGS) pc
+all:		$(LIBNAME) $(PROGS) pc shared
 
 shared:		$(SHAREDLIBNAME)
 
 $(LIBNAME):	$(OBJS)
-		ar cru $@ $^
-		ranlib $@
+		@echo Creating $@
+		@ar cru $@ $^
+		@ranlib $@
 
 $(SHAREDLIBNAME): $(OBJS)
-		$(CXX) $(LDFLAGSSO) -o $@ $^
+		@echo Creating $@
+		@$(CXX) $(LDFLAGSSO) -o $@ $^ 
 
 $(CONFNAME):	Sockets-config.o
-		$(CXX) $(LDFLAGS) -o $@ $^
+		@echo Creating $@
+		@$(CXX) $(LDFLAGS) -o $@ $^
 
 pc:
 		@cat pkgconfig/libsockets2.pc.IN | \
@@ -140,6 +143,7 @@ tar:		clean
 		rm -f ICrypt.* NullCrypt.* CTcpSocket.*
 		rm -f Min*Socket.* Min*Handler.*
 		rm -f Uid.*
+		rm -f Session.*
 		tar czf Sockets-$(VERSION).tar.gz $(FILES)
 		/usr/local/bin/tarfix.sh Sockets-$(VERSION)
 		cp Sockets-$(VERSION).tar.gz $(HTDOCS)/Sockets
@@ -156,6 +160,7 @@ tmptar:		clean
 		rm -f ICrypt.* NullCrypt.* CTcpSocket.*
 		rm -f Min*Socket.* Min*Handler.*
 		rm -f Uid.*
+		rm -f Session.*
 		tar czf Sockets-$(VERSION).tar.gz $(FILES)
 		/usr/local/bin/tarfix.sh Sockets-$(VERSION)
 		cp Sockets-$(VERSION).tar.gz $(HTDOCS)/Sockets-tmp
@@ -174,6 +179,7 @@ docs:		clean
 		rm -f Min*Socket.* Min*Handler.*
 		rm -f Uid.*
 		rm -f tests/*.cpp
+		rm -f Session.*
 		./mkdot.sh
 		rm -rf /usr/local/apache/www.alhem.net/htdocs/Sockets/html
 		doxygen doxygen.cfg
@@ -191,7 +197,16 @@ tmpdocs:	clean
 		rm -f Min*Socket.* Min*Handler.*
 		rm -f Uid.*
 		rm -f tests/*.cpp
+		rm -f Session.*
 		./mkdot-tmp.sh
 		rm -rf /usr/local/apache/www.alhem.net/htdocs/Sockets-tmp/html
 		doxygen doxygen-tmp.cfg
 		svn up
+
+deb:
+		@$(MAKE) -C debian
+		@$(MAKE) -C debian-lib-dev
+
+publish:
+		@$(MAKE) -C debian publish
+		@$(MAKE) -C debian-lib-dev publish
