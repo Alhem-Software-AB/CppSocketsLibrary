@@ -62,7 +62,7 @@ bool CircularBuffer::Write(const char *s,size_t l)
 		m_owner.Handler().LogError(&m_owner, "CircularBuffer::Write", -1, "write buffer overflow");
 		return false; // overflow
 	}
-	m_count += l;
+	m_count += (unsigned long)l;
 	if (m_t + l > m_max) // block crosses circular border
 	{
 		size_t l1 = m_max - m_t; // size left until circular border crossing

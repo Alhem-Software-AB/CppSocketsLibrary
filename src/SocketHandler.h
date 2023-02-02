@@ -35,7 +35,7 @@ class PoolSocket;
 
 class SocketHandler
 {
-	typedef std::map<int,Socket *> socket_m;
+	typedef std::map<SOCKET,Socket *> socket_m;
 
 public:
 	SocketHandler(StdLog * = NULL);

@@ -80,7 +80,7 @@ void HttpDebugSocket::OnHeaderComplete()
 void HttpDebugSocket::OnData(const char *p,size_t l)
 {
 	SendBuf(p,l);
-	m_read_ptr += l;
+	m_read_ptr += (int)l;
 	if (m_read_ptr >= m_content_length && m_content_length)
 	{
 		Send("</pre><hr></body></html>");

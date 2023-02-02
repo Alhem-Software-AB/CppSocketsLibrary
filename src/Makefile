@@ -1,4 +1,4 @@
-VERSION =	1.7.2
+VERSION =	1.7.3
 
 INCLUDE =	-I/usr/devel/include -I.
 PREFIX =	/usr/local
@@ -85,8 +85,10 @@ tar:		clean
 		rm -f uuid.h
 		rm -f Stdin.*
 		./mkdot.sh
-		tar czf Sockets-$(VERSION).tar.gz *.h *.cpp Makefile Project/*.dsp \
-			README.macosx gpl.txt 
+		tar czf Sockets-$(VERSION).tar.gz *.h *.cpp Makefile Project/*.ds* \
+			README.macosx gpl.txt mkdot.sh \
+			Project.net/Sockets/*.vcproj Project.net/Sockets/*.sln \
+			Project.net/Test/*.vcproj
 		doxygen doxygen.cfg
 		/usr/local/bin/tarfix.sh Sockets-$(VERSION)
 		cp Sockets-$(VERSION).tar.gz /usr/local/apache/www.libsockets.net/htdocs

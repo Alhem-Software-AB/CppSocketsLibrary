@@ -106,7 +106,7 @@ void HttpPutSocket::OnConnect()
 	FILE *fil = fopen(m_filename.c_str(), "rb");
 	if (fil)
 	{
-		int n;
+		size_t n;
 		char buf[2000];
 		while ((n = fread(buf, 1, 2000, fil)) > 0)
 		{

@@ -196,7 +196,7 @@ DEB(		printf(" * add => m_sockets; new socket added\n");)
 	}
 	tv.tv_sec = sec;
 	tv.tv_usec = usec;
-	n = select(m_maxsock + 1,&rfds,&wfds,&efds,&tv);
+	n = select( (int)(m_maxsock + 1),&rfds,&wfds,&efds,&tv);
 	if (n == -1)
 	{
 		LogError(NULL, "select", Errno, StrError(Errno));

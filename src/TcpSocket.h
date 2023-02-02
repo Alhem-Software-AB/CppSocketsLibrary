@@ -62,8 +62,8 @@ public:
 	virtual void SendBuf(const char *,size_t);
 	virtual void OnRawData(const char *,size_t) {}
 
-	int GetInputLength() { return ibuf.GetLength(); }
-	int GetOutputLength() { return obuf.GetLength(); }
+	size_t GetInputLength() { return ibuf.GetLength(); }
+	size_t GetOutputLength() { return obuf.GetLength(); }
 
 	void ReadLine();
 	virtual void OnLine(const std::string& );

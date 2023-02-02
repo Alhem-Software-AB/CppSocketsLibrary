@@ -155,7 +155,7 @@ void HttpPostSocket::OnConnect()
 		AddResponseHeader( "Accept", "text/html, text/plain, */*;q=0.01" );
 		AddResponseHeader( "Connection", "close" );
 		AddResponseHeader( "Content-type", "application/x-www-form-urlencoded" );
-		AddResponseHeader( "Content-length", Utility::l2string(body.size()) );
+		AddResponseHeader( "Content-length", Utility::l2string((long)body.size()) );
 		SendRequest();
 
 		// send body
@@ -183,7 +183,7 @@ void HttpPostSocket::DoMultipartPost()
 				std::string value = *it;
 				tmp += value + "\r\n";
 			}
-			length += tmp.size();
+			length += (long)tmp.size();
 		}
 	}
 
@@ -199,7 +199,7 @@ void HttpPostSocket::DoMultipartPost()
 				"content-disposition: form-data; name=\"" + name + "\"; filename=\"" + filename + "\"\r\n"
 				"content-type: " + content_type + "\r\n"
 				"\r\n";
-			length += tmp.size();
+			length += (long)tmp.size();
 			length += content_length;
 			length += 2; // crlf after file
 		}
@@ -207,7 +207,7 @@ void HttpPostSocket::DoMultipartPost()
 
 	// end
 	tmp = "--" + m_boundary + "--\r\n";
-	length += tmp.size();
+	length += (long)tmp.size();
 
 	// build header, send body
 	SetMethod("POST");
@@ -256,7 +256,7 @@ void HttpPostSocket::DoMultipartPost()
 				if (fil)
 				{
 					char slask[2000];
-					int n;
+					size_t n;
 					while ((n = fread(slask, 1, 2000, fil)) > 0)
 					{
 						SendBuf(slask, n);

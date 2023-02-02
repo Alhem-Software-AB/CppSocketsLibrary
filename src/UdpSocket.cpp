@@ -42,7 +42,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #endif
 
 
-UdpSocket::UdpSocket(SocketHandler& h,size_t ibufsz) : Socket(h)
+UdpSocket::UdpSocket(SocketHandler& h,int ibufsz) : Socket(h)
 ,m_connected(false)
 ,m_ibuf(new char[ibufsz])
 ,m_ibufsz(ibufsz)
@@ -243,7 +243,7 @@ bool UdpSocket::Open6(const std::string& host,port_t port)
 
 
 /** send to specified address */
-void UdpSocket::SendToBuf(const std::string& h,port_t p,const char *data,size_t len,int flags)
+void UdpSocket::SendToBuf(const std::string& h,port_t p,const char *data,int len,int flags)
 {
 	if (GetSocket() == INVALID_SOCKET)
 	{
@@ -274,7 +274,7 @@ void UdpSocket::SendToBuf(const std::string& h,port_t p,const char *data,size_t 
 
 
 #ifdef IPPROTO_IPV6
-void UdpSocket::SendToBuf6(const std::string& h,port_t p,const char *data,size_t len,int flags)
+void UdpSocket::SendToBuf6(const std::string& h,port_t p,const char *data,int len,int flags)
 {
 	if (GetSocket() == INVALID_SOCKET)
 	{
@@ -309,20 +309,20 @@ void UdpSocket::SendToBuf6(const std::string& h,port_t p,const char *data,size_t
 
 void UdpSocket::SendTo(const std::string& a,port_t p,const std::string& str,int flags)
 {
-	SendToBuf(a,p,str.c_str(),str.size(),flags);
+	SendToBuf(a,p,str.c_str(),(int)str.size(),flags);
 }
 
 
 #ifdef IPPROTO_IPV6
 void UdpSocket::SendTo6(const std::string& a,port_t p,const std::string& str,int flags)
 {
-	SendToBuf6(a,p,str.c_str(),str.size(),flags);
+	SendToBuf6(a,p,str.c_str(),(int)str.size(),flags);
 }
 #endif
 
 
 /** send to connected address */
-void UdpSocket::SendBuf(const char *data,size_t len,int flags)
+void UdpSocket::SendBuf(const char *data,int len,int flags)
 {
 	if (!m_connected)
 	{
@@ -338,7 +338,7 @@ void UdpSocket::SendBuf(const char *data,size_t len,int flags)
 
 void UdpSocket::Send(const std::string& str,int flags)
 {
-	SendBuf(str.c_str(),str.size(),flags);
+	SendBuf(str.c_str(),(int)str.size(),flags);
 }
 
 

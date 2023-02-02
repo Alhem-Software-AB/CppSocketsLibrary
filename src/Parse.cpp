@@ -287,18 +287,19 @@ int Parse::getwordlen(void)
 		pa_the_ptr++;
 	len = pa_the_ptr - x;
 	pa_the_ptr = y;
-	return len;
+	return (int)len;
 }
 
 int Parse::getrestlen(void)
 {
-	int y = pa_the_ptr,len;
+	size_t y = pa_the_ptr;
+	size_t len;
 
 	while (C && (C == ' ' || C == 9 || issplit(C)))
 		pa_the_ptr++;
 	len = strlen(pa_the_str.c_str() + pa_the_ptr);
 	pa_the_ptr = y;
-	return len;
+	return (int)len;
 }
 
 void Parse::getline(void)

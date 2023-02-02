@@ -293,7 +293,7 @@ bool TcpSocket::Open6(const std::string &host,port_t port)
 #define BUFSIZE_READ TCP_BUFSIZE_READ
 void TcpSocket::OnRead()
 {
-	int n = ibuf.Space();
+	int n = (int)ibuf.Space();
 	char buf[BUFSIZE_READ];
 //	if (!n)
 //		return; // bad
@@ -346,7 +346,7 @@ printf("OnWrite abort because: not ready\n");
 		return;
 	}
 */
-	int n = send(GetSocket(),obuf.GetStart(),obuf.GetL(),MSG_NOSIGNAL);
+	int n = send(GetSocket(),obuf.GetStart(),(int)obuf.GetL(),MSG_NOSIGNAL);
 /*
 When writing onto a connection-oriented socket that has been shut down (by the  local
 or the remote end) SIGPIPE is sent to the writing process and EPIPE is returned.  The
@@ -401,7 +401,7 @@ void TcpSocket::Send(const std::string &str)
 
 void TcpSocket::SendBuf(const char *buf,size_t len)
 {
-	int n = obuf.GetLength();
+	int n = (int)obuf.GetLength();
 	if (!Ready())
 	{
 		Handler().LogError(this, "SendBuf", -1, "Attempt to write to a non-ready socket" );
