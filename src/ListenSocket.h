@@ -56,13 +56,13 @@ public:
 		memcpy(&sa.sin_addr, &l, 4);
 		if (bind(s, (struct sockaddr *)&sa, sizeof(sa)) == -1)
 		{
-			Handler().LogError(this, "bind", errno, strerror(errno), LOG_LEVEL_FATAL);
+			Handler().LogError(this, "bind", Errno, StrError(Errno), LOG_LEVEL_FATAL);
 			closesocket(s);
 			return -1;
 		}
 		if (listen(s, depth) == -1)
 		{
-			Handler().LogError(this, "listen", errno, strerror(errno), LOG_LEVEL_FATAL);
+			Handler().LogError(this, "listen", Errno, StrError(Errno), LOG_LEVEL_FATAL);
 			closesocket(s);
 			return -1;
 		}
@@ -92,13 +92,13 @@ public:
 		memcpy(&sa.sin_addr, &l, 4);
 		if (bind(s, (struct sockaddr *)&sa, sizeof(sa)) == -1)
 		{
-			Handler().LogError(this, "bind", errno, strerror(errno), LOG_LEVEL_FATAL);
+			Handler().LogError(this, "bind", Errno, StrError(Errno), LOG_LEVEL_FATAL);
 			closesocket(s);
 			return -1;
 		}
 		if (listen(s, depth) == -1)
 		{
-			Handler().LogError(this, "listen", errno, strerror(errno), LOG_LEVEL_FATAL);
+			Handler().LogError(this, "listen", Errno, StrError(Errno), LOG_LEVEL_FATAL);
 			closesocket(s);
 			return -1;
 		}
@@ -130,13 +130,13 @@ public:
 		memcpy(&sa.sin_addr, &l, 4);
 		if (bind(s, (struct sockaddr *)&sa, sizeof(sa)) == -1)
 		{
-			Handler().LogError(this, "bind", errno, strerror(errno), LOG_LEVEL_FATAL);
+			Handler().LogError(this, "bind", Errno, StrError(Errno), LOG_LEVEL_FATAL);
 			closesocket(s);
 			return -1;
 		}
 		if (listen(s, depth) == -1)
 		{
-			Handler().LogError(this, "listen", errno, strerror(errno), LOG_LEVEL_FATAL);
+			Handler().LogError(this, "listen", Errno, StrError(Errno), LOG_LEVEL_FATAL);
 			closesocket(s);
 			return -1;
 		}
@@ -172,12 +172,12 @@ public:
 				}
 				else
 				{
-					Handler().LogError(this, "listen", errno, strerror(errno), LOG_LEVEL_FATAL);
+					Handler().LogError(this, "listen", Errno, StrError(Errno), LOG_LEVEL_FATAL);
 				}
 			}
 			else
 			{
-				Handler().LogError(this, "bind", errno, strerror(errno), LOG_LEVEL_FATAL);
+				Handler().LogError(this, "bind", Errno, StrError(Errno), LOG_LEVEL_FATAL);
 			}
 			closesocket(s);
 		}
@@ -216,12 +216,12 @@ public:
 				}
 				else
 				{
-					Handler().LogError(this, "listen", errno, strerror(errno), LOG_LEVEL_FATAL);
+					Handler().LogError(this, "listen", Errno, StrError(Errno), LOG_LEVEL_FATAL);
 				}
 			}
 			else
 			{
-				Handler().LogError(this, "bind", errno, strerror(errno), LOG_LEVEL_FATAL);
+				Handler().LogError(this, "bind", Errno, StrError(Errno), LOG_LEVEL_FATAL);
 			}
 			closesocket(s);
 		}
@@ -256,7 +256,7 @@ public:
 			a_s = accept(GetSocket(), saptr, lenptr);
 			if (a_s == INVALID_SOCKET)
 			{
-				Handler().LogError(this, "accept", errno, strerror(errno), LOG_LEVEL_ERROR);
+				Handler().LogError(this, "accept", Errno, StrError(Errno), LOG_LEVEL_ERROR);
 				return;
 			}
 			X *tmp = new X(Handler());
@@ -285,7 +285,7 @@ public:
 		a_s = accept(GetSocket(), saptr, lenptr);
 		if (a_s == INVALID_SOCKET)
 		{
-			Handler().LogError(this, "accept", errno, strerror(errno), LOG_LEVEL_ERROR);
+			Handler().LogError(this, "accept", Errno, StrError(Errno), LOG_LEVEL_ERROR);
 			return;
 		}
 		X *tmp = new X(Handler());

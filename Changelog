@@ -122,3 +122,14 @@ Version 1.6.1
 Version 1.6.2
 --------------------------
 
+Version 1.6.3
+--------------------------
+7a8,9
+> HttpDebugSocket.cpp
+> HttpDebugSocket.h
+9a12,15
+> HttpPostSocket.cpp
+> HttpPostSocket.h
+> HttpPutSocket.cpp
+> HttpPutSocket.h
+

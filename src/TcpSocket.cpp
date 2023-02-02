@@ -24,10 +24,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #pragma warning(disable:4786)
 #define strcasecmp stricmp
 #include <stdlib.h>
+#else
+#include <errno.h>
 #endif
 #include <stdio.h>
 #include <fcntl.h>
-#include <errno.h>
 #include <assert.h>
 
 #include "SocketHandler.h"
@@ -105,10 +106,10 @@ bool TcpSocket::Open(ipaddr_t ip,port_t port)
 			errcode = WSAGetLastError();
 			if (errcode != WSAEWOULDBLOCK)
 #else
-			if (errno != EINPROGRESS)
+			if (Errno != EINPROGRESS)
 #endif
 			{
-				Handler().LogError(this, "connect", errno, strerror(errno), LOG_LEVEL_FATAL);
+				Handler().LogError(this, "connect", Errno, StrError(Errno), LOG_LEVEL_FATAL);
 				closesocket(s);
 				return false;
 			}
@@ -156,10 +157,10 @@ bool TcpSocket::Open(const std::string &host,port_t port)
 			errcode = WSAGetLastError();
 			if (errcode != WSAEWOULDBLOCK)
 #else
-			if (errno != EINPROGRESS)
+			if (Errno != EINPROGRESS)
 #endif
 			{
-				Handler().LogError(this, "connect", errno, strerror(errno), LOG_LEVEL_FATAL);
+				Handler().LogError(this, "connect", Errno, StrError(Errno), LOG_LEVEL_FATAL);
 				closesocket(s);
 				return false;
 			}
@@ -210,10 +211,10 @@ bool TcpSocket::Open6(const std::string &host,port_t port)
 			errcode = WSAGetLastError();
 			if (errcode != WSAEWOULDBLOCK)
 #else
-			if (errno != EINPROGRESS)
+			if (Errno != EINPROGRESS)
 #endif
 			{
-				Handler().LogError(this, "connect", errno, strerror(errno), LOG_LEVEL_FATAL);
+				Handler().LogError(this, "connect", Errno, StrError(Errno), LOG_LEVEL_FATAL);
 				closesocket(s);
 				return false;
 			}
@@ -242,7 +243,7 @@ void TcpSocket::OnRead()
 	n = readsocket(GetSocket(),buf,(n < BUFSIZE_READ) ? n : BUFSIZE_READ);
 	if (n == -1)
 	{
-		Handler().LogError(this, "read", errno, strerror(errno), LOG_LEVEL_FATAL);
+		Handler().LogError(this, "read", Errno, StrError(Errno), LOG_LEVEL_FATAL);
 		SetCloseAndDelete(true); // %!
 	}
 	else
@@ -293,10 +294,7 @@ signal is not sent when the write call specified the MSG_NOSIGNAL flag.
 */
 	if (n == -1)
 	{
-#ifdef _WIN32
-		int x = WSAGetLastError();
-#endif
-		Handler().LogError(this, "write", errno, strerror(errno), LOG_LEVEL_FATAL);
+		Handler().LogError(this, "write", Errno, StrError(Errno), LOG_LEVEL_FATAL);
 		SetCloseAndDelete(true); // %!
 	}
 	else

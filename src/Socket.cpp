@@ -43,6 +43,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #endif
 
 
+// statics
+#ifdef _WIN32
+WSAInitializer Socket::m_winsock_init;
+#endif
+
+
 Socket::Socket(SocketHandler& h)
 :m_handler(h)
 ,m_socket( INVALID_SOCKET )
@@ -101,7 +107,7 @@ void Socket::OnException()
 #else
 	getsockopt(m_socket, SOL_SOCKET, SO_ERROR, &err, &errlen);
 #endif
-	Handler().LogError(this, "exception on select", errno, strerror(errno), LOG_LEVEL_FATAL);
+	Handler().LogError(this, "exception on select", Errno, StrError(Errno), LOG_LEVEL_FATAL);
 	SetCloseAndDelete();
 }
 
@@ -128,7 +134,7 @@ bool Socket::CheckConnect()
 #endif
 	if (err)
 	{
-		Handler().LogError(this, "connect failed", err, strerror(err), LOG_LEVEL_FATAL);
+		Handler().LogError(this, "connect failed", err, StrError(err), LOG_LEVEL_FATAL);
 		SetCloseAndDelete( true );
 		OnConnectFailed();
 		r = false;
@@ -149,12 +155,12 @@ int Socket::Close()
 	if (shutdown(m_socket, SHUT_RDWR) == -1)
 	{
 		// failed...
-		Handler().LogError(this, "shutdown", errno, strerror(errno), LOG_LEVEL_ERROR);
+		Handler().LogError(this, "shutdown", Errno, StrError(Errno), LOG_LEVEL_ERROR);
 	}
 	if ((n = closesocket(m_socket)) == -1)
 	{
 		// failed...
-		Handler().LogError(this, "close", errno, strerror(errno), LOG_LEVEL_ERROR);
+		Handler().LogError(this, "close", Errno, StrError(Errno), LOG_LEVEL_ERROR);
 	}
 	m_socket = INVALID_SOCKET;
 	return n;
@@ -172,7 +178,7 @@ SOCKET Socket::CreateSocket4(int type, const std::string& protocol)
 		p = getprotobyname( protocol.c_str() );
 		if (!p)
 		{
-			Handler().LogError(this, "getprotobyname", errno, strerror(errno), LOG_LEVEL_FATAL);
+			Handler().LogError(this, "getprotobyname", Errno, StrError(Errno), LOG_LEVEL_FATAL);
 			return INVALID_SOCKET;
 		}
 	}
@@ -180,7 +186,7 @@ SOCKET Socket::CreateSocket4(int type, const std::string& protocol)
 	s = socket(AF_INET, type, p ? p -> p_proto : 0);
 	if (s == INVALID_SOCKET)
 	{
-		Handler().LogError(this, "socket", errno, strerror(errno), LOG_LEVEL_FATAL);
+		Handler().LogError(this, "socket", Errno, StrError(Errno), LOG_LEVEL_FATAL);
 		return INVALID_SOCKET;
 	}
 
@@ -189,7 +195,7 @@ SOCKET Socket::CreateSocket4(int type, const std::string& protocol)
 		optval = 1;
 		if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, (char *)&optval, sizeof(optval)) == -1)
 		{
-			Handler().LogError(this, "setsockopt(SOL_SOCKET, SO_REUSEADDR)", errno, strerror(errno), LOG_LEVEL_FATAL);
+			Handler().LogError(this, "setsockopt(SOL_SOCKET, SO_REUSEADDR)", Errno, StrError(Errno), LOG_LEVEL_FATAL);
 			closesocket(s);
 			return INVALID_SOCKET;
 		}
@@ -197,7 +203,7 @@ SOCKET Socket::CreateSocket4(int type, const std::string& protocol)
 		optval = 1;
 		if (setsockopt(s, SOL_SOCKET, SO_KEEPALIVE, (char *)&optval, sizeof(optval)) == -1)
 		{
-			Handler().LogError(this, "setsockopt(SOL_SOCKET, SO_KEEPALIVE)", errno, strerror(errno), LOG_LEVEL_FATAL);
+			Handler().LogError(this, "setsockopt(SOL_SOCKET, SO_KEEPALIVE)", Errno, StrError(Errno), LOG_LEVEL_FATAL);
 			closesocket(s);
 			return INVALID_SOCKET;
 		}
@@ -219,14 +225,14 @@ SOCKET Socket::CreateSocket6(int type, const std::string& protocol)
 		p = getprotobyname( protocol.c_str() );
 		if (!p)
 		{
-			Handler().LogError(this, "getprotobyname", errno, strerror(errno), LOG_LEVEL_FATAL);
+			Handler().LogError(this, "getprotobyname", Errno, StrError(Errno), LOG_LEVEL_FATAL);
 			return INVALID_SOCKET;
 		}
 	}
 	s = socket(AF_INET6, type, p ? p -> p_proto : 0);
 	if (s == INVALID_SOCKET)
 	{
-		Handler().LogError(this, "socket", errno, strerror(errno), LOG_LEVEL_FATAL);
+		Handler().LogError(this, "socket", Errno, StrError(Errno), LOG_LEVEL_FATAL);
 		return INVALID_SOCKET;
 	}
 	if (type == SOCK_STREAM)
@@ -234,7 +240,7 @@ SOCKET Socket::CreateSocket6(int type, const std::string& protocol)
 		optval = 1;
 		if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, (char *)&optval, sizeof(optval)) == -1)
 		{
-			Handler().LogError(this, "setsockopt(SOL_SOCKET, SO_REUSEADDR)", errno, strerror(errno), LOG_LEVEL_FATAL);
+			Handler().LogError(this, "setsockopt(SOL_SOCKET, SO_REUSEADDR)", Errno, StrError(Errno), LOG_LEVEL_FATAL);
 			closesocket(s);
 			return INVALID_SOCKET;
 		}
@@ -242,7 +248,7 @@ SOCKET Socket::CreateSocket6(int type, const std::string& protocol)
 		optval = 1;
 		if (setsockopt(s, SOL_SOCKET, SO_KEEPALIVE, (char *)&optval, sizeof(optval)) == -1)
 		{
-			Handler().LogError(this, "setsockopt(SOL_SOCKET, SO_KEEPALIVE)", errno, strerror(errno), LOG_LEVEL_FATAL);
+			Handler().LogError(this, "setsockopt(SOL_SOCKET, SO_KEEPALIVE)", Errno, StrError(Errno), LOG_LEVEL_FATAL);
 			closesocket(s);
 			return INVALID_SOCKET;
 		}
@@ -331,7 +337,7 @@ bool Socket::u2ip(const std::string& str, ipaddr_t& l)
 		struct hostent *he = gethostbyname( str.c_str() );
 		if (!he)
 		{
-			Handler().LogError(this, "gethostbyname", errno, strerror(errno), LOG_LEVEL_WARNING);
+			Handler().LogError(this, "gethostbyname", Errno, StrError(Errno), LOG_LEVEL_WARNING);
 			return false;
 		}
 		memcpy(&l, he -> h_addr, 4);
@@ -407,7 +413,7 @@ bool Socket::u2ip(const std::string& str, struct in6_addr& l)
 		struct hostent *he = gethostbyname2( str.c_str(), AF_INET6 );
 		if (!he)
 		{
-			Handler().LogError(this, "gethostbyname2", errno, strerror(errno), LOG_LEVEL_WARNING);
+			Handler().LogError(this, "gethostbyname2", Errno, StrError(Errno), LOG_LEVEL_WARNING);
 			return false;
 		}
 		memcpy(&l,he -> h_addr_list[0],he -> h_length);
@@ -652,7 +658,7 @@ bool Socket::SetNonblocking(bool bNb)
 	{
 		if (fcntl(m_socket, F_SETFL, O_NONBLOCK) == -1)
 		{
-			Handler().LogError(this, "fcntl(F_SETFL, O_NONBLOCK)", errno, strerror(errno), LOG_LEVEL_ERROR);
+			Handler().LogError(this, "fcntl(F_SETFL, O_NONBLOCK)", Errno, StrError(Errno), LOG_LEVEL_ERROR);
 			return false;
 		}
 	}
@@ -660,7 +666,7 @@ bool Socket::SetNonblocking(bool bNb)
 	{
 		if (fcntl(m_socket, F_SETFL, 0) == -1)
 		{
-			Handler().LogError(this, "fcntl(F_SETFL, 0)", errno, strerror(errno), LOG_LEVEL_ERROR);
+			Handler().LogError(this, "fcntl(F_SETFL, 0)", Errno, StrError(Errno), LOG_LEVEL_ERROR);
 			return false;
 		}
 	}
@@ -687,7 +693,7 @@ bool Socket::SetNonblocking(bool bNb, SOCKET s)
 	{
 		if (fcntl(s, F_SETFL, O_NONBLOCK) == -1)
 		{
-			Handler().LogError(this, "fcntl(F_SETFL, O_NONBLOCK)", errno, strerror(errno), LOG_LEVEL_ERROR);
+			Handler().LogError(this, "fcntl(F_SETFL, O_NONBLOCK)", Errno, StrError(Errno), LOG_LEVEL_ERROR);
 			return false;
 		}
 	}
@@ -695,7 +701,7 @@ bool Socket::SetNonblocking(bool bNb, SOCKET s)
 	{
 		if (fcntl(s, F_SETFL, 0) == -1)
 		{
-			Handler().LogError(this, "fcntl(F_SETFL, 0)", errno, strerror(errno), LOG_LEVEL_ERROR);
+			Handler().LogError(this, "fcntl(F_SETFL, 0)", Errno, StrError(Errno), LOG_LEVEL_ERROR);
 			return false;
 		}
 	}

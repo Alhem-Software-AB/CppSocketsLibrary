@@ -1,6 +1,20 @@
 #ifndef _SOCKET_INCLUDE_H
 #define _SOCKET_INCLUDE_H
 
+// ---> note!
+// (modified) rip from httpsync.c
+
+/**********************************************************/
+/*   WinSock and BSD-style sockets portability            */
+/* Macros and conditionals for portable sockets code
+ * 1. Write code using readsocket, writesocket, closesocket,
+ *    INVALID_SOCKET, SOCKET_ERROR, SOCKET, and INADDR_NONE
+ * 2. Always use SocketStartup() and SocketCleanup()
+ * 3. Conditional includes and definitions for those macros
+ *    allow operation under Windows and BSD-style sockets.
+ */
+
+
 #ifdef SOLARIS // Solaris
 typedef unsigned short port_t;
 
@@ -28,38 +42,6 @@ typedef unsigned short port_t;
 #endif
 
 
-/*
-#ifdef _USING_IPV6
-//#define CreateSocket CreateSocket6
-//#define GetRemoteIP GetRemoteIP6
-#define Bind Bind6
-#define Open Open6
-#define SendTo SendTo6
-#define SendToBuf SendToBuf6
-#else
-//#define CreateSocket CreateSocket4
-//#define GetRemoteIP GetRemoteIP4
-#define Bind Bind4
-#define Open Open4
-#define SendTo SendTo4
-#define SendToBuf SendToBuf4
-#endif
-*/
-
-
-// ---> note!
-// (modified) rip from httpsync.c
-
-/**********************************************************/
-/*   WinSock and BSD-style sockets portability            */
-/* Macros and conditionals for portable sockets code
- * 1. Write code using readsocket, writesocket, closesocket,
- *    INVALID_SOCKET, SOCKET_ERROR, SOCKET, and INADDR_NONE
- * 2. Always use SocketStartup() and SocketCleanup()
- * 3. Conditional includes and definitions for those macros
- *    allow operation under Windows and BSD-style sockets.
- */
-
 #ifdef _WIN32 /* Windows systems */
 
 /*
@@ -74,6 +56,8 @@ typedef int socklen_t;
 #include <winsock.h>
 #define readsocket(a,b,c) recv(a,b,c,0)
 #define writesocket(a,b,c) send(a,b,c,0)
+#define Errno WSAGetLastError()
+const char *StrError(int x);
 
 /* closesocket() does not need a macro.
  * INVALID_SOCKET, SOCKET_ERROR, SOCKET, and INADDR_NONE
@@ -83,6 +67,18 @@ typedef int socklen_t;
 #define SocketStartup() \
     if (WSAStartup(0x101,&libmibWSAdata)) exit(-1)
 #define SocketCleanup() WSACleanup()
+class WSAInitializer
+{
+public:
+	WSAInitializer() {
+		SocketStartup();
+	}
+	~WSAInitializer() {
+		SocketCleanup();
+	}
+private:
+	WSADATA libmibWSAdata;
+};
 
 #else /* Unix-style systems */
 
@@ -96,6 +92,9 @@ typedef int socklen_t;
 //#define writesocket write
 #define readsocket(a,b,c) recv(a,b,c,MSG_NOSIGNAL)
 #define writesocket(a,b,c) send(a,b,c,MSG_NOSIGNAL)
+#define Errno errno
+#define StrError strerror
+
 #define closesocket close
 #define SocketStartup()
 #define SocketCleanup()

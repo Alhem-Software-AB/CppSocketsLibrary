@@ -64,7 +64,9 @@ SocketHandler::~SocketHandler()
 		{
 			Socket *p = (*it).second;
 			p -> Close();
-			p -> OnDelete(); // hey, I turn this back on. what's the worst that could happen??!!
+//			p -> OnDelete(); // hey, I turn this back on. what's the worst that could happen??!!
+			// MinionSocket breaks, calling MinderHandler methods in OnDelete -
+			// MinderHandler is already gone when that happens...
 			if (p -> DeleteByHandler())
 			{
 				delete p;
@@ -184,7 +186,7 @@ int SocketHandler::Select(long sec,long usec)
 	n = select(m_maxsock + 1,&rfds,&wfds,&efds,&tv);
 	if (n == -1)
 	{
-		LogError(NULL, "select", errno, strerror(errno));
+		LogError(NULL, "select", Errno, StrError(Errno));
 #ifdef _WIN32
 DEB(
 		int errcode = WSAGetLastError();
@@ -293,6 +295,7 @@ DEB(									printf("calling OnConnect\n");)
 				if (p && p -> Connecting() && p -> GetConnectTime() > 5)
 				{
 					LogError(p, "connect", -1, "connect timeout", LOG_LEVEL_FATAL);
+					p -> OnConnectFailed();
 					p -> SetCloseAndDelete(true);
 				}
 				if (p && p -> CloseAndDelete() )

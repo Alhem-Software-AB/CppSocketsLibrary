@@ -137,6 +137,9 @@ protected:
 	void DetachSocket(); // protected, friend class SocketHandler;
 
 private:
+#ifdef _WIN32
+static	WSAInitializer m_winsock_init;
+#endif
 	Socket& operator=(const Socket& ) { return *this; }
 	//
 	SocketHandler& m_handler;
