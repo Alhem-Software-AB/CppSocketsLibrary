@@ -32,7 +32,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "StdLog.h"
 #include "SocketHandler.h"
 #include "UdpSocket.h"
-
+// include this to see strange sights
+//#include <linux/in6.h>
 
 #ifdef _DEBUG
 #define DEB(x) x
@@ -376,5 +377,207 @@ void UdpSocket::OnRead()
 	}
 	this -> OnRawData(m_ibuf, n, (struct sockaddr *)&sa, sa_len);
 }
+
+
+void UdpSocket::SetBroadcast(bool b)
+{
+	int one = 1;
+	int zero = 0;
+
+	if (b)
+	{
+		if (setsockopt(GetSocket(), SOL_SOCKET, SO_BROADCAST, (void*) &one, sizeof(one)) == -1)
+		{
+			Handler().LogError(this, "SetBroadcast", errno, strerror(errno), LOG_LEVEL_WARNING);
+		}
+	}
+	else
+	{
+		if (setsockopt(GetSocket(), SOL_SOCKET, SO_BROADCAST, (void*) &zero, sizeof(zero)) == -1)
+		{
+			Handler().LogError(this, "SetBroadcast", errno, strerror(errno), LOG_LEVEL_WARNING);
+		}
+	}
+}
+
+
+bool UdpSocket::IsBroadcast()
+{
+	int is_broadcast = 0;
+	socklen_t size;
+	if (getsockopt(GetSocket(), SOL_SOCKET, SO_BROADCAST, (void *)&is_broadcast, &size) == -1)
+	{
+		Handler().LogError(this, "IsBroadcast", errno, strerror(errno), LOG_LEVEL_WARNING);
+	}
+	return is_broadcast;
+}
+
+
+void UdpSocket::SetMulticastTTL(int ttl)
+{
+	if (setsockopt(GetSocket(), SOL_IP, IP_MULTICAST_TTL, (void *)&ttl, sizeof(int)) == -1)
+	{
+		Handler().LogError(this, "SetMulticastTTL", errno, strerror(errno), LOG_LEVEL_WARNING);
+	}
+}
+
+
+int UdpSocket::GetMulticastTTL()
+{
+	int ttl = 0;
+	socklen_t size = sizeof(int);
+	if (getsockopt(GetSocket(), SOL_IP, IP_MULTICAST_TTL, (void *)&ttl, &size) == -1)
+	{
+		Handler().LogError(this, "GetMulticastTTL", errno, strerror(errno), LOG_LEVEL_WARNING);
+	}
+	return ttl;
+}
+
+
+void UdpSocket::SetMulticastLoop(bool x)
+{
+#ifdef IPPROTO_IPV6
+	if (IsIpv6())
+	{
+		int val = x ? 1 : 0;
+		if (setsockopt(GetSocket(), IPPROTO_IPV6, IPV6_MULTICAST_LOOP, (void *)&val, sizeof(int)) == -1)
+		{
+			Handler().LogError(this, "SetMulticastLoop", errno, strerror(errno), LOG_LEVEL_WARNING);
+		}
+	}
+#endif
+	int val = x ? 1 : 0;
+	if (setsockopt(GetSocket(), SOL_IP, IP_MULTICAST_LOOP, (void *)&val, sizeof(int)) == -1)
+	{
+		Handler().LogError(this, "SetMulticastLoop", errno, strerror(errno), LOG_LEVEL_WARNING);
+	}
+}
+
+
+bool UdpSocket::IsMulticastLoop()
+{
+#ifdef IPPROTO_IPV6
+	if (IsIpv6())
+	{
+		int is_loop = 0;
+		socklen_t size = sizeof(int);
+		if (getsockopt(GetSocket(), IPPROTO_IPV6, IPV6_MULTICAST_LOOP, (void *)&is_loop, &size) == -1)
+		{
+			Handler().LogError(this, "IsMulticastLoop", errno, strerror(errno), LOG_LEVEL_WARNING);
+		}
+		return is_loop ? true : false;
+	}
+#endif
+	int is_loop = 0;
+	socklen_t size = sizeof(int);
+	if (getsockopt(GetSocket(), SOL_IP, IP_MULTICAST_LOOP, (void *)&is_loop, &size) == -1)
+	{
+		Handler().LogError(this, "IsMulticastLoop", errno, strerror(errno), LOG_LEVEL_WARNING);
+	}
+	return is_loop ? true : false;
+}
+
+
+void UdpSocket::AddMulticastMembership(const std::string& group,const std::string& local_if,int if_index)
+{
+#ifdef IPPROTO_IPV6
+	if (IsIpv6())
+	{
+		struct ipv6_mreq x;
+		struct in6_addr addr;
+		if (u2ip( group, addr ))
+		{
+			x.ipv6mr_multiaddr = addr;
+			x.ipv6mr_interface = if_index;
+			if (setsockopt(GetSocket(), IPPROTO_IPV6, IPV6_ADD_MEMBERSHIP, (void *)&x, sizeof(struct ipv6_mreq)) == -1)
+			{
+				Handler().LogError(this, "AddMulticastMembership", errno, strerror(errno), LOG_LEVEL_WARNING);
+			}
+		}
+		return;
+	}
+#endif
+	struct ip_mreq x; // ip_mreqn
+	ipaddr_t addr;
+	if (u2ip( group, addr ))
+	{
+		memcpy(&x.imr_multiaddr.s_addr, &addr, sizeof(addr));
+		u2ip( local_if, addr);
+		memcpy(&x.imr_interface.s_addr, &addr, sizeof(addr));
+//		x.imr_ifindex = if_index;
+		if (setsockopt(GetSocket(), SOL_IP, IP_ADD_MEMBERSHIP, (void *)&x, sizeof(struct ip_mreq)) == -1)
+		{
+			Handler().LogError(this, "AddMulticastMembership", errno, strerror(errno), LOG_LEVEL_WARNING);
+		}
+	}
+}
+
+
+void UdpSocket::DropMulticastMembership(const std::string& group,const std::string& local_if,int if_index)
+{
+#ifdef IPPROTO_IPV6
+	if (IsIpv6())
+	{
+		struct ipv6_mreq x;
+		struct in6_addr addr;
+		if (u2ip( group, addr ))
+		{
+			x.ipv6mr_multiaddr = addr;
+			x.ipv6mr_interface = if_index;
+			if (setsockopt(GetSocket(), IPPROTO_IPV6, IPV6_DROP_MEMBERSHIP, (void *)&x, sizeof(struct ipv6_mreq)) == -1)
+			{
+				Handler().LogError(this, "DropMulticastMembership", errno, strerror(errno), LOG_LEVEL_WARNING);
+			}
+		}
+		return;
+	}
+#endif
+	struct ip_mreq x; // ip_mreqn
+	ipaddr_t addr;
+	if (u2ip( group, addr ))
+	{
+		memcpy(&x.imr_multiaddr.s_addr, &addr, sizeof(addr));
+		u2ip( local_if, addr);
+		memcpy(&x.imr_interface.s_addr, &addr, sizeof(addr));
+//		x.imr_ifindex = if_index;
+		if (setsockopt(GetSocket(), SOL_IP, IP_DROP_MEMBERSHIP, (void *)&x, sizeof(struct ip_mreq)) == -1)
+		{
+			Handler().LogError(this, "DropMulticastMembership", errno, strerror(errno), LOG_LEVEL_WARNING);
+		}
+	}
+}
+
+
+#ifdef IPPROTO_IPV6
+void UdpSocket::SetMulticastHops(int hops)
+{
+	if (!IsIpv6())
+	{
+		Handler().LogError(this, "SetMulticastHops", 0, "Ipv6 only", LOG_LEVEL_ERROR);
+		return;
+	}
+	if (setsockopt(GetSocket(), IPPROTO_IPV6, IPV6_MULTICAST_HOPS, (void *)&hops, sizeof(int)) == -1)
+	{
+		Handler().LogError(this, "SetMulticastHops", errno, strerror(errno), LOG_LEVEL_WARNING);
+	}
+}
+
+
+int UdpSocket::GetMulticastHops()
+{
+	if (!IsIpv6())
+	{
+		Handler().LogError(this, "SetMulticastHops", 0, "Ipv6 only", LOG_LEVEL_ERROR);
+		return -1;
+	}
+	int hops = 0;
+	socklen_t size = sizeof(int);
+	if (getsockopt(GetSocket(), IPPROTO_IPV6, IPV6_MULTICAST_HOPS, (void *)&hops, &size) == -1)
+	{
+		Handler().LogError(this, "GetMulticastHops", errno, strerror(errno), LOG_LEVEL_WARNING);
+	}
+	return hops;
+}
+#endif // IPPROTO_IPV6
 
 

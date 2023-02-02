@@ -9,6 +9,10 @@ typedef unsigned short port_t;
 typedef unsigned long ipaddr_t;
 //typedef unsigned short port_t;
 #define s6_addr16 __u6_addr.__u6_addr16
+#define MSG_NOSIGNAL 0 // oops - thanks Derek
+#define SOL_IP IPPROTO_IP
+#define IPV6_ADD_MEMBERSHIP IPV6_JOIN_GROUP
+#define IPV6_DROP_MEMBERSHIP IPV6_LEAVE_GROUP
 
 #else // LINUX / _WIN32
 typedef unsigned long ipaddr_t;

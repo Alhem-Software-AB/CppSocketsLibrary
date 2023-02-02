@@ -56,7 +56,7 @@ void Base64::encode(FILE *fil, std::string& output, bool add_crlf)
 
 	output = "";
 	remain = fread(input,1,3,fil);
-	while (!feof(fil))
+	while (remain > 0)
 	{
 		if (add_crlf && o && o % 76 == 0)
 			output += "\n";

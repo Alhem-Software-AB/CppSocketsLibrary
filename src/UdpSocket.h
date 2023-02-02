@@ -55,6 +55,21 @@ public:
 	void SendBuf(const char *data,size_t,int flags = 0);
 	void Send(const std::string& ,int flags = 0);
 
+	/** broadcast */
+	void SetBroadcast(bool b = true);
+	bool IsBroadcast();
+
+	/** multicast */
+	void SetMulticastTTL(int ttl = 1);
+	int GetMulticastTTL();
+	void SetMulticastLoop(bool = true);
+	bool IsMulticastLoop();
+	void AddMulticastMembership(const std::string& group,const std::string& intf = "0.0.0.0",int if_index = 0);
+	void DropMulticastMembership(const std::string& group,const std::string& intf = "0.0.0.0",int if_index = 0);
+	/** multicast, ipv6 */
+	void SetMulticastHops(int = -1);
+	int GetMulticastHops();
+
 protected:
 	void OnRead();
 
