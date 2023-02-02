@@ -38,7 +38,7 @@ namespace SOCKETS_NAMESPACE {
 class MinderSocket : public TcpSocket
 {
 public:
-	MinderSocket(SocketHandler& ,const std::string& );
+	MinderSocket(ISocketHandler& ,const std::string& );
 	~MinderSocket();
 
 	void SetLocalIpPort(const std::string& x,port_t p) { local_ip = x; local_port = p; }

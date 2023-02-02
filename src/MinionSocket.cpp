@@ -48,7 +48,7 @@ namespace SOCKETS_NAMESPACE {
 //MinionSocket::connect_v MinionSocket::m_connect;
 
 
-MinionSocket::MinionSocket(SocketHandler& h) : CTcpSocket(h)
+MinionSocket::MinionSocket(ISocketHandler& h) : CTcpSocket(h)
 ,m_remote_id("")
 ,m_ip(0)
 ,m_port(0)
@@ -62,7 +62,7 @@ MinionSocket::MinionSocket(SocketHandler& h) : CTcpSocket(h)
 }
 
 
-MinionSocket::MinionSocket(SocketHandler& h,const std::string& id,ipaddr_t l,port_t s)
+MinionSocket::MinionSocket(ISocketHandler& h,const std::string& id,ipaddr_t l,port_t s)
 :CTcpSocket(h)
 ,m_remote_id(id)
 ,m_ip(l)

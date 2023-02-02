@@ -35,7 +35,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 namespace SOCKETS_NAMESPACE {
 #endif
 
-class SocketHandler;
+class ISocketHandler;
 
 /** HTTP request "echo" class. This class echoes a http request/body
 with a html formatted page. 
@@ -43,7 +43,7 @@ with a html formatted page.
 class HttpDebugSocket : public HTTPSocket
 {
 public:
-	HttpDebugSocket(SocketHandler&);
+	HttpDebugSocket(ISocketHandler&);
 	~HttpDebugSocket();
 
 	void Init();

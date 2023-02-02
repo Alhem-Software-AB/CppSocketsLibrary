@@ -32,7 +32,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #else
 #include <errno.h>
 #endif
-#include "SocketHandler.h"
+#include "ISocketHandler.h"
 #include <sys/types.h>
 #include <sys/stat.h>
 
@@ -47,12 +47,12 @@ namespace SOCKETS_NAMESPACE {
 #endif
 
 
-HttpPutSocket::HttpPutSocket(SocketHandler& h) : HttpClientSocket(h)
+HttpPutSocket::HttpPutSocket(ISocketHandler& h) : HttpClientSocket(h)
 {
 }
 
 
-HttpPutSocket::HttpPutSocket(SocketHandler& h,const std::string& url_in) : HttpClientSocket(h, url_in)
+HttpPutSocket::HttpPutSocket(ISocketHandler& h,const std::string& url_in) : HttpClientSocket(h, url_in)
 {
 }
 

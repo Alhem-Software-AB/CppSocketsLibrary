@@ -98,7 +98,7 @@ void MemFile::fclose()
 }
 
 
-// TODO: fix for reads much larger than BLOCKSIZE
+/// \todo: fix for reads much larger than BLOCKSIZE
 size_t MemFile::fread(char *ptr, size_t size, size_t nmemb)
 {
 	size_t p = m_read_ptr % BLOCKSIZE;
@@ -139,7 +139,7 @@ size_t MemFile::fread(char *ptr, size_t size, size_t nmemb)
 }
 
 
-// TODO: fix for writes that are much larger than BLOCKSIZE
+/// \todo: fix for writes that are much larger than BLOCKSIZE
 size_t MemFile::fwrite(const char *ptr, size_t size, size_t nmemb)
 {
 	size_t p = m_write_ptr % BLOCKSIZE;

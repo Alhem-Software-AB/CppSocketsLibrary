@@ -45,12 +45,13 @@ class HTTPSocket : public TcpSocket
 	/** map to hold http header values. */
 	typedef std::map<std::string,std::string> string_m;
 public:
-	HTTPSocket(SocketHandler& );
+	HTTPSocket(ISocketHandler& );
 	~HTTPSocket();
 
-	void OnRead();
+//	void OnRead();
 	/** Reimplementation of ReadLine(), to properly detect end of header start of body. */
-	void ReadLine();
+//	void ReadLine();
+	void OnRawData(const char *buf,size_t len);
 	void OnLine(const std::string& line);
 
 	/** Callback executes when first line has been received.

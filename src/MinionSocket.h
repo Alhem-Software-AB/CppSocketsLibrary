@@ -29,6 +29,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "CTcpSocket.h"
 #include "Parse.h"
 //#include "Utility.h"
+#include "ISocketHandler.h"
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
@@ -46,8 +47,8 @@ class ICrypt;
 class MinionSocket : public CTcpSocket
 {
 public:
-	MinionSocket(SocketHandler& );
-	MinionSocket(SocketHandler&,const std::string&,ipaddr_t,port_t);
+	MinionSocket(ISocketHandler& );
+	MinionSocket(ISocketHandler&,const std::string&,ipaddr_t,port_t);
 	~MinionSocket();
 
 //	ICrypt *AllocateCrypt();

@@ -34,6 +34,8 @@ namespace SOCKETS_NAMESPACE {
 
 #define SCTP_BUFSIZE_READ 16400
 
+class SocketAddress;
+
 
 class SctpSocket : public Socket
 {
@@ -41,25 +43,25 @@ public:
 	/** SctpSocket constructor.
 		\param h Owner
 		\param type SCTP_STREAM or SCTP_SEQPACKET */
-	SctpSocket(SocketHandler& h,int type);
+	SctpSocket(ISocketHandler& h,int type);
 	~SctpSocket();
-
-	int CreateSa(struct sockaddr_in&,const std::string&,port_t);
-#ifdef IPPROTO_IPV6
-	int CreateSa(struct sockaddr_in6&,const std::string&,port_t);
-#endif
 
 	/** bind() */
 	int Bind(const std::string&,port_t);
+	int Bind(SocketAddress&);
 	/** sctp_bindx() */
 	int AddAddress(const std::string&,port_t);
+	int AddAddress(SocketAddress&);
 	/** sctp_bindx() */
 	int RemoveAddress(const std::string&,port_t);
+	int RemoveAddress(SocketAddress&);
 
 	/** connect() */
 	int Open(const std::string&,port_t);
+	int Open(SocketAddress&);
 	/** sctp_connectx() */
 	int AddConnection(const std::string&,port_t);
+	int AddConnection(SocketAddress&);
 
 	/** Get peer addresses of an association. */
 	int getpaddrs(sctp_assoc_t id,std::list<std::string>&);
@@ -76,6 +78,7 @@ public:
 
 protected:
 	void OnRead();
+	void OnWrite();
 
 private:
 	int m_type; ///< SCTP_STREAM or SCTP_SEQPACKET

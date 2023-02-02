@@ -42,7 +42,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "ResolvSocket.h"
 #include "Utility.h"
 #include "Parse.h"
-#include "SocketHandler.h"
+#include "ISocketHandler.h"
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
@@ -55,7 +55,7 @@ namespace SOCKETS_NAMESPACE {
 #endif
 
 
-ResolvSocket::ResolvSocket(SocketHandler& h,Socket *parent)
+ResolvSocket::ResolvSocket(ISocketHandler& h,Socket *parent)
 :TcpSocket(h)
 ,m_bServer(false)
 ,m_parent(parent)

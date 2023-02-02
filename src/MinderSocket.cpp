@@ -47,7 +47,7 @@ char MinderSocket::g_UpdateUrl[256];
 #endif
 
 
-MinderSocket::MinderSocket(SocketHandler& h,const std::string& app)
+MinderSocket::MinderSocket(ISocketHandler& h,const std::string& app)
 :TcpSocket(h)
 ,m_app(app)
 ,my_ip(0)

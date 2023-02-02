@@ -42,7 +42,7 @@ namespace SOCKETS_NAMESPACE {
 
 
 
-HTTPSocket::HTTPSocket(SocketHandler& h)
+HTTPSocket::HTTPSocket(ISocketHandler& h)
 :TcpSocket(h)
 ,m_first(true)
 ,m_header(true)
@@ -51,6 +51,7 @@ HTTPSocket::HTTPSocket(SocketHandler& h)
 ,m_response(false)
 {
 	SetLineProtocol();
+	DisableInputBuffer();
 }
 
 
@@ -59,6 +60,7 @@ HTTPSocket::~HTTPSocket()
 }
 
 
+/*
 void HTTPSocket::OnRead()
 {
 	TcpSocket::OnRead();
@@ -112,6 +114,34 @@ void HTTPSocket::ReadLine()
 			default:
 				m_line += tmp[i];
 			}
+		}
+	}
+}
+*/
+void HTTPSocket::OnRawData(const char *buf,size_t len)
+{
+	if (!m_header)
+	{
+		OnData(buf, len);
+		return;
+	}
+	for (size_t i = 0; i < len; i++)
+	{
+		if (!m_header)
+		{
+			OnData(buf + i,len - i);
+			break;
+		}
+		switch (buf[i])
+		{
+		case 13: // ignore
+			break;
+		case 10: // end of line
+			OnLine(m_line);
+			m_line = "";
+			break;
+		default:
+			m_line += buf[i];
 		}
 	}
 }

@@ -34,7 +34,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #endif
 #include "Utility.h"
 #include "Parse.h"
-#include "SocketHandler.h"
+#include "ISocketHandler.h"
 #include "HttpGetSocket.h"
 
 
@@ -43,12 +43,12 @@ namespace SOCKETS_NAMESPACE {
 #endif
 
 
-HttpGetSocket::HttpGetSocket(SocketHandler& h) : HttpClientSocket(h)
+HttpGetSocket::HttpGetSocket(ISocketHandler& h) : HttpClientSocket(h)
 {
 }
 
 
-HttpGetSocket::HttpGetSocket(SocketHandler& h,const std::string& url_in,const std::string& to_file) : HttpClientSocket(h, url_in)
+HttpGetSocket::HttpGetSocket(ISocketHandler& h,const std::string& url_in,const std::string& to_file) : HttpClientSocket(h, url_in)
 {
 	if (to_file.size())
 	{
@@ -65,7 +65,7 @@ HttpGetSocket::HttpGetSocket(SocketHandler& h,const std::string& url_in,const st
 }
 
 
-HttpGetSocket::HttpGetSocket(SocketHandler& h,const std::string& host,port_t port,const std::string& url,const std::string& to_file) : HttpClientSocket(h)
+HttpGetSocket::HttpGetSocket(ISocketHandler& h,const std::string& host,port_t port,const std::string& url,const std::string& to_file) : HttpClientSocket(h)
 {
 	SetUrl(url);
 	if (to_file.size())

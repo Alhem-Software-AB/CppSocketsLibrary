@@ -23,8 +23,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "SctpSocket.h"
 #ifdef USE_SCTP
 #include <Utility.h>
-#include "SocketHandler.h"
+#include "ISocketHandler.h"
 #include <errno.h>
+#include "Ipv4Address.h"
+#include "Ipv6Address.h"
 
 
 #ifdef SOCKETS_NAMESPACE
@@ -33,7 +35,7 @@ namespace SOCKETS_NAMESPACE
 #endif
 
 
-SctpSocket::SctpSocket(SocketHandler& h,int type) : Socket(h)
+SctpSocket::SctpSocket(ISocketHandler& h,int type) : Socket(h)
 ,m_type(type)
 ,m_buf(new char[SCTP_BUFSIZE_READ])
 {
@@ -49,79 +51,34 @@ SctpSocket::~SctpSocket()
 }
 
 
-int SctpSocket::CreateSa(struct sockaddr_in& sa,const std::string& a,port_t port)
-{
-	ipaddr_t addr;
-	memset(&sa, 0, sizeof(sa));
-	if (Utility::u2ip(a, addr))
-	{
-		sa.sin_family = AF_INET;
-		sa.sin_port = htons( port );
-		memcpy(&sa.sin_addr, &addr, 4);
-		return 0;
-	}
-	Handler().LogError(this, "SctpSocket", 0, "CreateSa/u2ip failed", LOG_LEVEL_WARNING);
-	return -1;
-}
-
-
-#ifdef IPPROTO_IPV6
-int SctpSocket::CreateSa(struct sockaddr_in6& sa,const std::string& a,port_t port)
-{
-	in6_addr addr;
-	memset(&sa, 0, sizeof(sa));
-	if (Utility::u2ip(a, addr))
-	{
-		sa.sin6_family = AF_INET6;
-		sa.sin6_port = htons( port );
-		sa.sin6_flowinfo = 0;
-		sa.sin6_scope_id = 0;
-		sa.sin6_addr = addr;
-		return 0;
-	}
-	Handler().LogError(this, "SctpSocket", 0, "CreateSa/u2ip failed", LOG_LEVEL_WARNING);
-	return -1;
-}
-#endif
-
-
 int SctpSocket::Bind(const std::string& a,port_t p)
 {
 #ifdef IPPROTO_IPV6
 	if (IsIpv6())
 	{
-		struct sockaddr_in6 sa;
-		if (CreateSa(sa, a, p) == -1)
-		{
-			return -1;
-		}
-		if (GetSocket() == INVALID_SOCKET)
-		{
-			Attach(CreateSocket(AF_INET6, m_type, "sctp"));
-		}
-		if (GetSocket() != INVALID_SOCKET)
-		{
-			int n = bind(GetSocket(), (const sockaddr *)&sa, sizeof(sa));
-			if (n == -1)
-			{
-				Handler().LogError(this, "SctpSocket", -1, "bind() failed", LOG_LEVEL_ERROR);
-			}
-			return n;
-		}
+		Ipv6Address ad(a, p);
+		return Bind(ad);
 	}
 #endif
-	struct sockaddr_in sa;
-	if (CreateSa(sa, a, p) == -1)
+	Ipv4Address ad(a, p);
+	return Bind(ad);
+}
+
+
+int SctpSocket::Bind(SocketAddress& ad)
+{
+	if (!ad.IsValid())
 	{
+		Handler().LogError(this, "SctpSocket", -1, "invalid address", LOG_LEVEL_ERROR);
 		return -1;
 	}
 	if (GetSocket() == INVALID_SOCKET)
 	{
-		Attach(CreateSocket(AF_INET6, m_type, "sctp"));
+		Attach(CreateSocket(ad.GetFamily(), m_type, "sctp"));
 	}
 	if (GetSocket() != INVALID_SOCKET)
 	{
-		int n = bind(GetSocket(), (const sockaddr *)&sa, sizeof(sa));
+		int n = bind(GetSocket(), ad, ad);
 		if (n == -1)
 		{
 			Handler().LogError(this, "SctpSocket", -1, "bind() failed", LOG_LEVEL_ERROR);
@@ -134,33 +91,31 @@ int SctpSocket::Bind(const std::string& a,port_t p)
 
 int SctpSocket::AddAddress(const std::string& a,port_t p)
 {
+#ifdef IPPROTO_IPV6
+	if (IsIpv6())
+	{
+		Ipv6Address ad(a, p);
+		return AddAddress(ad);
+	}
+#endif
+	Ipv4Address ad(a, p);
+	return AddAddress(ad);
+}
+
+
+int SctpSocket::AddAddress(SocketAddress& ad)
+{
+	if (!ad.IsValid())
+	{
+		Handler().LogError(this, "SctpSocket", -1, "invalid address", LOG_LEVEL_ERROR);
+		return -1;
+	}
 	if (GetSocket() == INVALID_SOCKET)
 	{
 		Handler().LogError(this, "SctpSocket", -1, "AddAddress called with invalid file descriptor", LOG_LEVEL_ERROR);
 		return -1;
 	}
-#ifdef IPPROTO_IPV6
-	if (IsIpv6())
-	{
-		struct sockaddr_in6 sa;
-		if (CreateSa(sa, a, p) == -1)
-		{
-			return -1;
-		}
-		int n = sctp_bindx(GetSocket(), (sockaddr *)&sa, 1, SCTP_BINDX_ADD_ADDR);
-		if (n == -1)
-		{
-			Handler().LogError(this, "SctpSocket", -1, "sctp_bindx() failed", LOG_LEVEL_ERROR);
-		}
-		return n;
-	}
-#endif
-	struct sockaddr_in sa;
-	if (CreateSa(sa, a, p) == -1)
-	{
-		return -1;
-	}
-	int n = sctp_bindx(GetSocket(), (sockaddr *)&sa, 1, SCTP_BINDX_ADD_ADDR);
+	int n = sctp_bindx(GetSocket(), ad, ad, SCTP_BINDX_ADD_ADDR);
 	if (n == -1)
 	{
 		Handler().LogError(this, "SctpSocket", -1, "sctp_bindx() failed", LOG_LEVEL_ERROR);
@@ -171,33 +126,31 @@ int SctpSocket::AddAddress(const std::string& a,port_t p)
 
 int SctpSocket::RemoveAddress(const std::string& a,port_t p)
 {
+#ifdef IPPROTO_IPV6
+	if (IsIpv6())
+	{
+		Ipv6Address ad(a, p);
+		return RemoveAddress(ad);
+	}
+#endif
+	Ipv4Address ad(a, p);
+	return RemoveAddress(ad);
+}
+
+
+int SctpSocket::RemoveAddress(SocketAddress& ad)
+{
+	if (!ad.IsValid())
+	{
+		Handler().LogError(this, "SctpSocket", -1, "invalid address", LOG_LEVEL_ERROR);
+		return -1;
+	}
 	if (GetSocket() == INVALID_SOCKET)
 	{
 		Handler().LogError(this, "SctpSocket", -1, "RemoveAddress called with invalid file descriptor", LOG_LEVEL_ERROR);
 		return -1;
 	}
-#ifdef IPPROTO_IPV6
-	if (IsIpv6())
-	{
-		struct sockaddr_in6 sa;
-		if (CreateSa(sa, a, p) == -1)
-		{
-			return -1;
-		}
-		int n = sctp_bindx(GetSocket(), (sockaddr *)&sa, 1, SCTP_BINDX_REM_ADDR);
-		if (n == -1)
-		{
-			Handler().LogError(this, "SctpSocket", -1, "sctp_bindx() failed", LOG_LEVEL_ERROR);
-		}
-		return n;
-	}
-#endif
-	struct sockaddr_in sa;
-	if (CreateSa(sa, a, p) == -1)
-	{
-		return -1;
-	}
-	int n = sctp_bindx(GetSocket(), (sockaddr *)&sa, 1, SCTP_BINDX_REM_ADDR);
+	int n = sctp_bindx(GetSocket(), ad, ad, SCTP_BINDX_REM_ADDR);
 	if (n == -1)
 	{
 		Handler().LogError(this, "SctpSocket", -1, "sctp_bindx() failed", LOG_LEVEL_ERROR);
@@ -211,51 +164,25 @@ int SctpSocket::Open(const std::string& a,port_t p)
 #ifdef IPPROTO_IPV6
 	if (IsIpv6())
 	{
-		struct sockaddr_in6 sa;
-		if (CreateSa(sa, a, p) == -1)
-		{
-			return -1;
-		}
-		if (GetSocket() == INVALID_SOCKET)
-		{
-			Attach(CreateSocket(AF_INET6, m_type, "sctp"));
-		}
-		if (GetSocket() != INVALID_SOCKET)
-		{
-			if (!SetNonblocking(true))
-			{
-				return -1;
-			}
-			int n = connect(GetSocket(), (const sockaddr *)&sa, sizeof(sa));
-			if (n == -1)
-			{
-				// check error code that means a connect is in progress
-#ifdef _WIN32
-				if (Errno == WSAEWOULDBLOCK)
-#else
-				if (Errno == EINPROGRESS)
-#endif
-				{
-					Handler().LogError(this, "connect: connection pending", Errno, StrError(Errno), LOG_LEVEL_INFO);
-					SetConnecting( true ); // this flag will control fd_set's
-				}
-				else
-				{
-					Handler().LogError(this, "SctpSocket", -1, "connect() failed", LOG_LEVEL_ERROR);
-				}
-			}
-			return n;
-		}
+		Ipv6Address ad(a, p);
+		return Open(ad);
 	}
 #endif
-	struct sockaddr_in sa;
-	if (CreateSa(sa, a, p) == -1)
+	Ipv4Address ad(a, p);
+	return Open(ad);
+}
+
+
+int SctpSocket::Open(SocketAddress& ad)
+{
+	if (!ad.IsValid())
 	{
+		Handler().LogError(this, "SctpSocket", -1, "invalid address", LOG_LEVEL_ERROR);
 		return -1;
 	}
 	if (GetSocket() == INVALID_SOCKET)
 	{
-		Attach(CreateSocket(AF_INET6, m_type, "sctp"));
+		Attach(CreateSocket(ad.GetFamily(), m_type, "sctp"));
 	}
 	if (GetSocket() != INVALID_SOCKET)
 	{
@@ -263,7 +190,7 @@ int SctpSocket::Open(const std::string& a,port_t p)
 		{
 			return -1;
 		}
-		int n = connect(GetSocket(), (const sockaddr *)&sa, sizeof(sa));
+		int n = connect(GetSocket(), ad, ad);
 		if (n == -1)
 		{
 			// check error code that means a connect is in progress
@@ -289,37 +216,31 @@ int SctpSocket::Open(const std::string& a,port_t p)
 
 int SctpSocket::AddConnection(const std::string& a,port_t p)
 {
+#ifdef IPPROTO_IPV6
+	if (IsIpv6())
+	{
+		Ipv6Address ad(a, p);
+		return AddConnection(ad);
+	}
+#endif
+	Ipv4Address ad(a, p);
+	return AddConnection(ad);
+}
+
+
+int SctpSocket::AddConnection(SocketAddress& ad)
+{
+	if (!ad.IsValid())
+	{
+		Handler().LogError(this, "SctpSocket", -1, "invalid address", LOG_LEVEL_ERROR);
+		return -1;
+	}
 	if (GetSocket() == INVALID_SOCKET)
 	{
 		Handler().LogError(this, "SctpSocket", -1, "AddConnection called with invalid file descriptor", LOG_LEVEL_ERROR);
 		return -1;
 	}
-#ifdef IPPROTO_IPV6
-	if (IsIpv6())
-	{
-		struct sockaddr_in6 sa;
-		if (CreateSa(sa, a, p) == -1)
-		{
-			return -1;
-		}
-		int n = sctp_connectx(GetSocket(), (sockaddr *)&sa, 1);
-		if (n == -1)
-		{
-			Handler().LogError(this, "SctpSocket", -1, "sctp_connectx() failed", LOG_LEVEL_ERROR);
-		}
-		else
-		{
-			SetConnecting();
-		}
-		return n;
-	}
-#endif
-	struct sockaddr_in sa;
-	if (CreateSa(sa, a, p) == -1)
-	{
-		return -1;
-	}
-	int n = sctp_connectx(GetSocket(), (sockaddr *)&sa, 1);
+	int n = sctp_connectx(GetSocket(), ad, ad);
 	if (n == -1)
 	{
 		Handler().LogError(this, "SctpSocket", -1, "sctp_connectx() failed", LOG_LEVEL_ERROR);
@@ -422,6 +343,39 @@ void SctpSocket::OnRead()
 
 void SctpSocket::OnReceiveMessage(const char *buf,size_t sz,struct sockaddr *sa,socklen_t sa_len,struct sctp_sndrcvinfo *sinfo,int msg_flags)
 {
+}
+
+
+void SctpSocket::OnWrite()
+{
+	if (Connecting())
+	{
+		if (CheckConnect())
+		{
+			SetCallOnConnect();
+			return;
+		}
+		// failed
+		if (Socks4())
+		{
+			OnSocks4ConnectFailed();
+			return;
+		}
+		if (GetConnectionRetry() == -1 ||
+			(GetConnectionRetry() && GetConnectionRetries() < GetConnectionRetry()) )
+		{
+			// even though the connection failed at once, only retry after
+			// the connection timeout.
+			// should we even try to connect again, when CheckConnect returns
+			// false it's because of a connection error - not a timeout...
+			return;
+		}
+		SetConnecting(false);
+		SetCloseAndDelete( true );
+		/// \todo state reason why connect failed
+		OnConnectFailed();
+		return;
+	}
 }
 
 

@@ -38,7 +38,7 @@ namespace SOCKETS_NAMESPACE {
 #endif
 
 
-HttpDebugSocket::HttpDebugSocket(SocketHandler& h) : HTTPSocket(h)
+HttpDebugSocket::HttpDebugSocket(ISocketHandler& h) : HTTPSocket(h)
 ,m_content_length(0)
 ,m_read_ptr(0)
 {

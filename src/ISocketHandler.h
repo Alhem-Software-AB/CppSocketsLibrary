@@ -1,4 +1,4 @@
-/** \file SocketHandler.h
+/** \file ISocketHandler.h
  **	\date  2004-02-13
  **	\author grymse@alhem.net
 **/
@@ -27,8 +27,8 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
-#ifndef _SOCKETHANDLER_H
-#define _SOCKETHANDLER_H
+#ifndef _ISOCKETHANDLER_H
+#define _ISOCKETHANDLER_H
 
 #include <map>
 #include <list>
@@ -36,151 +36,172 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "socket_include.h"
 #include "StdLog.h"
 #include "Mutex.h"
-#include "ISocketHandler.h"
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
 #endif
 
+typedef enum {
+	LIST_CALLONCONNECT = 0,
+	LIST_DETACH,
+	LIST_CONNECTING,
+	LIST_RETRY,
+	LIST_CLOSE,
+} list_t;
 
-class Socket;
 class PoolSocket;
-class ResolvServer;
-class Mutex;
+class SocketAddress;
+
 
 /** Socket container class, event generator. 
 	\ingroup basic */
-class SocketHandler : public ISocketHandler
+class ISocketHandler
 {
-protected:
-	/** Map type for holding file descriptors/socket object pointers. */
-	typedef std::map<SOCKET,Socket *> socket_m;
+	friend class Socket;
 
 public:
-	/** SocketHandler constructor.
+	/** ISocketHandler constructor.
 		\param log Optional log class pointer */
-	SocketHandler(StdLog *log = NULL);
-	/** SocketHandler threadsafe constructor.
+	ISocketHandler(StdLog *log);
+	/** ISocketHandler threadsafe constructor.
 		\param mutex Externally declared mutex variable
 		\param log Optional log class pointer */
-	SocketHandler(Mutex& mutex,StdLog *log = NULL);
-	~SocketHandler();
+	ISocketHandler(Mutex& mutex,StdLog *log);
+	virtual ~ISocketHandler();
 
+	/** Get mutex reference for threadsafe operations. */
+	Mutex& GetMutex() const;
+
+	/** Indicates that the handler runs under SocketThread. */
+	void SetSlave(bool x = true);
+	/** Indicates that the handler runs under SocketThread. */
+	bool IsSlave();
+
+	/** Register StdLog object for error callback. 
+		\param log Pointer to log class */
+	void RegStdLog(StdLog *log);
+	/** Log error to log class for print out / storage. */
+	void LogError(Socket *p,const std::string& user_text,int err,const std::string& sys_err,loglevel_t t = LOG_LEVEL_WARNING);
+
+	// -------------------------------------------------------------------------
+	// Socket stuff
+	// -------------------------------------------------------------------------
 	/** Add socket instance to socket map. Removal is always automatic. */
-	void Add(Socket *);
+	virtual void Add(Socket *) = 0;
 private:
 	/** Remove socket from socket map, used by Socket class. */
-	void Remove(Socket *);
+	virtual void Remove(Socket *) = 0;
 public:
 	/** Get status of read/write/exception file descriptor set for a socket. */
-	void Get(SOCKET s,bool& r,bool& w,bool& e);
+	virtual void Get(SOCKET s,bool& r,bool& w,bool& e) = 0;
 	/** Set read/write/exception file descriptor sets (fd_set). */
-	void Set(SOCKET s,bool bRead,bool bWrite,bool bException = true);
+	virtual void Set(SOCKET s,bool bRead,bool bWrite,bool bException = true) = 0;
 
 	/** Wait for events, generate callbacks. */
-	int Select(long sec,long usec);
+	virtual int Select(long sec,long usec) = 0;
 	/** This method will not return until an event has been detected. */
-	int Select();
+	virtual int Select() = 0;
 	/** Wait for events, generate callbacks. */
-	int Select(struct timeval *tsel);
+	virtual int Select(struct timeval *tsel) = 0;
 
 	/** Check that a socket really is handled by this socket handler. */
-	bool Valid(Socket *);
+	virtual bool Valid(Socket *) = 0;
 	/** Return number of sockets handled by this handler.  */
-	size_t GetCount();
+	virtual size_t GetCount() = 0;
 
 	/** Override and return false to deny all incoming connections. 
 		\param p ListenSocket class pointer (use GetPort to identify which one) */
-	bool OkToAccept(Socket *p);
+	virtual bool OkToAccept(Socket *p) = 0;
 
 	/** Called by Socket when a socket changes state. */
-	void AddList(SOCKET s,list_t which_one,bool add);
+	virtual void AddList(SOCKET s,list_t which_one,bool add) = 0;
 
+	// -------------------------------------------------------------------------
 	// Connection pool
+	// -------------------------------------------------------------------------
 	/** Find available open connection (used by connection pool). */
-	PoolSocket *FindConnection(int type,const std::string& protocol,SocketAddress&);
+	virtual PoolSocket *FindConnection(int type,const std::string& protocol,SocketAddress&) {
+		return NULL;
+	}
 	/** Enable connection pool (by default disabled). */
-	void EnablePool(bool x = true);
+	virtual void EnablePool(bool = true) {}
 	/** Check pool status. 
 		\return true if connection pool is enabled */
-	bool PoolEnabled();
+	virtual bool PoolEnabled() {
+		return false;
+	}
 
+	// -------------------------------------------------------------------------
 	// Socks4
+	// -------------------------------------------------------------------------
 	/** Set socks4 server ip that all new tcp sockets should use. */
-	void SetSocks4Host(ipaddr_t);
+	virtual void SetSocks4Host(ipaddr_t) {}
 	/** Set socks4 server hostname that all new tcp sockets should use. */
-	void SetSocks4Host(const std::string& );
+	virtual void SetSocks4Host(const std::string& ) {}
 	/** Set socks4 server port number that all new tcp sockets should use. */
-	void SetSocks4Port(port_t);
+	virtual void SetSocks4Port(port_t) {};
 	/** Set optional socks4 userid. */
-	void SetSocks4Userid(const std::string& );
+	virtual void SetSocks4Userid(const std::string& ) {}
 	/** If connection to socks4 server fails, immediately try direct connection to final host. */
-	void SetSocks4TryDirect(bool x = true);
+	virtual void SetSocks4TryDirect(bool = true) {}
 	/** Get socks4 server ip. 
 		\return socks4 server ip */
-	ipaddr_t GetSocks4Host();
+	virtual ipaddr_t GetSocks4Host() {
+		return (ipaddr_t)0;
+	}
 	/** Get socks4 port number.
 		\return socks4 port number */
-	port_t GetSocks4Port();
+	port_t GetSocks4Port() {
+		return 0;
+	}
 	/** Get socks4 userid (optional).
 		\return socks4 userid */
-	const std::string& GetSocks4Userid();
+	virtual const std::string& GetSocks4Userid() = 0;
 	/** Check status of socks4 try direct flag.
 		\return true if direct connection should be tried if connection to socks4 server fails */
-	bool Socks4TryDirect();
+	virtual bool Socks4TryDirect() {
+		return false;
+	}
 
+	// -------------------------------------------------------------------------
 	// DNS resolve server
+	// -------------------------------------------------------------------------
 	/** Enable asynchronous DNS. 
 		\param port Listen port of asynchronous dns server */
-	void EnableResolver(port_t port = 16667);
+	virtual void EnableResolver(port_t = 16667) {}
 	/** Check resolver status.
 		\return true if resolver is enabled */
-	bool ResolverEnabled();
+	virtual bool ResolverEnabled() {
+		return false;
+	}
 	/** Queue a dns request.
 		\param host Hostname to be resolved
 		\param port Port number will be echoed in Socket::OnResolved callback */
-	int Resolve(Socket *,const std::string& host,port_t port);
+	int Resolve(Socket *,const std::string& host,port_t port) {
+		return -1;
+	}
 	/** Do a reverse dns lookup. */
-	int Resolve(Socket *,ipaddr_t a);
+	int Resolve(Socket *,ipaddr_t a) {
+		return -1;
+	}
 	/** Do a reverse dns lookup. */
-	int Resolve(Socket *,const std::string&);
+	int Resolve(Socket *,const std::string&) {
+		return -1;
+	}
 	/** Get listen port of asynchronous dns server. */
-	port_t GetResolverPort();
+	port_t GetResolverPort() {
+		return 0;
+	}
 	/** Resolver thread ready for queries. */
-	bool ResolverReady();
-
-	/** Sanity check of those accursed lists. */
-	void CheckSanity();
+	bool ResolverReady() {
+		return false;
+	}
 
 protected:
-	socket_m m_sockets; ///< Active sockets list
-	socket_m m_add; ///< Sockets to be added to sockets list
-	std::list<Socket *> m_delete; ///< Sockets to be deleted (failed when Add)
-
-private:
-	void CheckList(socket_v&,const std::string&); ///< Used by CheckSanity
-	SOCKET m_maxsock; ///< Highest file descriptor + 1 in active sockets list
-	fd_set m_rfds; ///< file descriptor set monitored for read events
-	fd_set m_wfds; ///< file descriptor set monitored for write events
-	fd_set m_efds; ///< file descriptor set monitored for exceptions
-#ifdef _WIN32
-	int m_preverror; ///< debug select() error
-#endif
-	ipaddr_t m_socks4_host; ///< Socks4 server host ip
-	port_t m_socks4_port; ///< Socks4 server port number
-	std::string m_socks4_userid; ///< Socks4 userid
-	bool m_bTryDirect; ///< Try direct connection if socks4 server fails
-	int m_resolv_id; ///< Resolver id counter
-	ResolvServer *m_resolver; ///< Resolver thread pointer
-	port_t m_resolver_port; ///< Resolver listen port
-	bool m_b_enable_pool; ///< Connection pool enabled if true
-	socket_v m_fds; ///< Active file descriptor list
-	socket_v m_fds_erase; ///< File descriptors that are to be erased from m_sockets
-	socket_v m_fds_callonconnect; ///< checklist CallOnConnect
-	socket_v m_fds_detach; ///< checklist Detach
-	socket_v m_fds_connecting; ///< checklist Connecting
-	socket_v m_fds_retry; ///< checklist retry client connect
-	socket_v m_fds_close; ///< checklist close and delete
+	StdLog *m_stdlog; ///< Registered log class, or NULL
+	bool m_slave; ///< Indicates that this is a ISocketHandler run in SocketThread
+	Mutex& m_mutex; ///< Thread safety mutex
+	bool m_b_use_mutex; ///< Mutex correctly initialized
 };
 
 
@@ -188,4 +209,4 @@ private:
 }
 #endif
 
-#endif // _SOCKETHANDLER_H
+#endif // _ISOCKETHANDLER_H

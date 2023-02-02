@@ -37,14 +37,14 @@ namespace SOCKETS_NAMESPACE {
 #endif
 
 
-class SocketHandler;
+class ISocketHandler;
 
-/** Connection pool class for internal use by the SocketHandler. 
+/** Connection pool class for internal use by the ISocketHandler. 
 	\ingroup internal */
 class PoolSocket : public Socket
 {
 public:
-	PoolSocket(SocketHandler& h,Socket *src);
+	PoolSocket(ISocketHandler& h,Socket *src);
 	~PoolSocket();
 
 	void OnRead();

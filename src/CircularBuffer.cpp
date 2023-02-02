@@ -44,7 +44,7 @@ namespace SOCKETS_NAMESPACE {
 
 CircularBuffer::CircularBuffer(Socket& owner,size_t size)
 :m_owner(owner)
-,buf(new char[size])
+,buf(new char[2 * size])
 ,m_max(size)
 ,m_q(0)
 ,m_b(0)
@@ -71,7 +71,9 @@ bool CircularBuffer::Write(const char *s,size_t l)
 	if (m_t + l > m_max) // block crosses circular border
 	{
 		size_t l1 = m_max - m_t; // size left until circular border crossing
-		memcpy(buf + m_t, s, l1);
+		// always copy full block to buffer(buf) + top pointer(m_t)
+		// because we have doubled the buffer size for performance reasons
+		memcpy(buf + m_t, s, l);
 		memcpy(buf, s + l1, l - l1);
 		m_t = l - l1;
 		m_q += l;
@@ -79,6 +81,7 @@ bool CircularBuffer::Write(const char *s,size_t l)
 	else
 	{
 		memcpy(buf + m_t, s, l);
+		memcpy(buf + m_max + m_t, s, l);
 		m_t += l;
 		if (m_t >= m_max)
 			m_t -= m_max;
@@ -155,8 +158,14 @@ size_t CircularBuffer::Space()
 }
 
 
-unsigned long CircularBuffer::ByteCounter()
+unsigned long CircularBuffer::ByteCounter(bool clear)
 {
+	if (clear)
+	{
+		unsigned long x = m_count;
+		m_count = 0;
+		return x;
+	}
 	return m_count;
 }
 

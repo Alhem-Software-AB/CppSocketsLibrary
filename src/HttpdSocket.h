@@ -29,7 +29,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define _HTTPDSOCKET_H
 
 #include "HTTPSocket.h"
-#include "SocketHandler.h"
+#include "ISocketHandler.h"
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
@@ -46,7 +46,7 @@ class IFile;
 class HttpdSocket : public HTTPSocket
 {
 public:
-	HttpdSocket(SocketHandler& );
+	HttpdSocket(ISocketHandler& );
 	~HttpdSocket();
 
 	void OnFirst();

@@ -25,7 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #endif
 #include "HttpClientSocket.h"
 #include "StdLog.h"
-#include "SocketHandler.h"
+#include "ISocketHandler.h"
 
 
 #ifdef SOCKETS_NAMESPACE
@@ -33,7 +33,7 @@ namespace SOCKETS_NAMESPACE {
 #endif
 
 
-HttpClientSocket::HttpClientSocket(SocketHandler& h)
+HttpClientSocket::HttpClientSocket(ISocketHandler& h)
 :HTTPSocket(h)
 ,m_data_ptr(NULL)
 ,m_data_size(0)
@@ -47,7 +47,7 @@ HttpClientSocket::HttpClientSocket(SocketHandler& h)
 }
 
 
-HttpClientSocket::HttpClientSocket(SocketHandler& h,const std::string& url_in)
+HttpClientSocket::HttpClientSocket(ISocketHandler& h,const std::string& url_in)
 :HTTPSocket(h)
 ,m_data_ptr(NULL)
 ,m_data_size(0)
@@ -150,6 +150,21 @@ void HttpClientSocket::OnData(const char *buf,size_t len)
 		{
 			SetCloseAndDelete();
 		}
+	}
+}
+
+
+void HttpClientSocket::OnDelete()
+{
+	if (!m_b_complete)
+	{
+		if (m_fil)
+		{
+			fclose(m_fil);
+			m_fil = NULL;
+		}
+		m_b_complete = true;
+		OnContent();
 	}
 }
 

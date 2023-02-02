@@ -1,4 +1,4 @@
-VERSION =	2.0.9a
+VERSION =	2.1pre
 DIFF_VERSION =	2.0.9
 
 INCLUDE =	-I.
@@ -78,7 +78,9 @@ OBJS =		CircularBuffer.o \
 		Lock.o \
 		EventTime.o Event.o IEventOwner.o EventHandler.o \
 		HttpClientSocket.o \
-		SctpSocket.o
+		SctpSocket.o \
+		ISocketHandler.o \
+		Ipv4Address.o Ipv6Address.o
 
 libSockets.a:	$(OBJS)
 		ar cru $@ $(OBJS)
@@ -141,6 +143,7 @@ docs:		clean
 		rm -f Stdin.*
 		rm -f sockets_test.cpp
 		rm -f ListenSocketBase.*
+		rm -f echoserver.cpp stressclient.cpp
 		./mkdot.sh
 		rm -rf /usr/local/apache/www.alhem.net/htdocs/Sockets/html
 		doxygen doxygen.cfg

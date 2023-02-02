@@ -59,7 +59,7 @@ void Mutex::Lock()
 {
 #ifdef _WIN32
 	DWORD d = WaitForSingleObject(m_mutex, INFINITE);
-	// %! check 'd' for result
+	/// \todo check 'd' for result
 #else
 	pthread_mutex_lock(&m_mutex);
 #endif

@@ -31,7 +31,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #pragma warning(disable:4786)
 #endif
 #include <stdio.h>
-#include "SocketHandler.h"
+#include "ISocketHandler.h"
 #include "PoolSocket.h"
 
 
@@ -40,7 +40,7 @@ namespace SOCKETS_NAMESPACE {
 #endif
 
 
-PoolSocket::PoolSocket(SocketHandler& h,Socket *src)
+PoolSocket::PoolSocket(ISocketHandler& h,Socket *src)
 :Socket(h)
 {
 	CopyConnection( src );

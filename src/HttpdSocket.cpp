@@ -47,7 +47,7 @@ int HttpdSocket::m_request_count = 0;
 std::string HttpdSocket::m_start = "";
 
 
-HttpdSocket::HttpdSocket(SocketHandler& h)
+HttpdSocket::HttpdSocket(ISocketHandler& h)
 :HTTPSocket(h)
 ,m_content_length(0)
 ,m_file(NULL)

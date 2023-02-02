@@ -46,7 +46,7 @@ typedef enum
 } loglevel_t;
 
 
-class SocketHandler;
+class ISocketHandler;
 class Socket;
 
 /** \defgroup logging Log help classes */
@@ -56,7 +56,7 @@ class StdLog
 {
 public:
 	virtual ~StdLog() {}
-	virtual void error(SocketHandler *,Socket *,
+	virtual void error(ISocketHandler *,Socket *,
 		const std::string& user_text,
 		int err,
 		const std::string& sys_err,

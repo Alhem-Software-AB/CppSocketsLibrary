@@ -47,6 +47,8 @@ typedef void * SSL_METHOD;
 namespace SOCKETS_NAMESPACE {
 #endif
 
+class SocketAddress;
+
 
 /** Socket implementation for TCP. 
 	\ingroup basic */
@@ -72,7 +74,7 @@ class TcpSocket : public Socket
 	/** Dynamic output buffer list. */
 	typedef std::list<MES *> ucharp_v;
 public:
-	/** Removes ssl .rnd file */
+	/** SSL Initialization, Removes ssl .rnd file */
 	class SSLInitializer {
 	public:
 		SSLInitializer() {
@@ -85,12 +87,12 @@ public:
 	};
 public:
 	/** Contructor with standard values on input/output buffers. */
-	TcpSocket(SocketHandler& );
+	TcpSocket(ISocketHandler& );
 	/** Constructor with custom values for i/o buffer. 
-		\param h SocketHandler reference
+		\param h ISocketHandler reference
 		\param isize Input buffer size
 		\param osize Output buffer size */
-	TcpSocket(SocketHandler& h,size_t isize,size_t osize);
+	TcpSocket(ISocketHandler& h,size_t isize,size_t osize);
 	~TcpSocket();
 
 	/** Open a connection to a remote server.
@@ -109,6 +111,7 @@ public:
 		\param skip_socks Do not use socks4 even if configured */
 	bool Open(in6_addr ip,port_t port,bool skip_socks = false);
 #endif
+	bool Open(SocketAddress&,bool skip_socks = false);
 	/** Open connection. 
 		\param host Hostname
 		\param port Port number */
@@ -140,14 +143,14 @@ public:
 
 	/** Callback used when socket is in line protocol mode.
 		\sa SetLineProtocol */
-	void ReadLine();
+//	void ReadLine();
 	/** Callback fires when a socket in line protocol has read one full line. 
 		\param line Line read */
 	void OnLine(const std::string& line);
 	/** Get counter of number of bytes received. */
-	unsigned long GetBytesReceived();
+	uint64_t GetBytesReceived(bool clear = false);
 	/** Get counter of number of bytes sent. */
-	unsigned long GetBytesSent();
+	uint64_t GetBytesSent(bool clear = false);
 
 	/** Socks4 specific callback. */
 	void OnSocks4Connect();
@@ -191,6 +194,8 @@ static	void DeleteRandFile();
 
 	void OnOptions(int,int,int,SOCKET);
 
+	void SetLineProtocol(bool = true);
+
 protected:
 	TcpSocket(const TcpSocket& s);
 	void OnRead();
@@ -229,7 +234,7 @@ private:
 	unsigned long m_socks4_dstip; ///< socks4 support
 	int m_resolver_id; ///< Resolver id (if any) for current Open call
 	// SSL
-	SSL_CTX *m_context; ///< ssl context
+	SSL_CTX *m_ssl_ctx; ///< ssl context
 	SSL *m_ssl; ///< ssl 'socket'
 	BIO *m_sbio; ///< ssl bio
 static	BIO *bio_err; ///< ssl bio err
@@ -242,6 +247,8 @@ static	long m_rand_size;
 	bool m_b_is_reconnect; ///< Trying to reconnect
 static	SSLInitializer m_ssl_init;
 	bool m_b_input_buffer_disabled;
+	uint64_t m_bytes_sent;
+	uint64_t m_bytes_received;
 };
 
 

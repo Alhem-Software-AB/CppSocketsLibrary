@@ -69,7 +69,6 @@ void SocketThread::Run()
 	h.SetSlave();
 	h.Add(m_socket);
 	m_socket -> SetSlaveHandler(&h);
-	m_socket -> SetDetached();
 	m_socket -> OnDetached();
 	while (h.GetCount() && IsRunning())
 	{

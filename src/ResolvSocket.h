@@ -41,7 +41,7 @@ namespace SOCKETS_NAMESPACE {
 class ResolvSocket : public TcpSocket
 {
 public:
-	ResolvSocket(SocketHandler&,Socket *parent = NULL);
+	ResolvSocket(ISocketHandler&,Socket *parent = NULL);
 	~ResolvSocket();
 
 	void OnAccept() { m_bServer = true; }

@@ -36,14 +36,16 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "socket_include.h"
 #include <time.h>
+#include "Utility.h"
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
 #endif
 
 
-class SocketHandler;
+class ISocketHandler;
 class SocketThread;
+class SocketAddress;
 
 
 //	typedef std::list<std::string> string_v;
@@ -53,15 +55,15 @@ class SocketThread;
 	\ingroup basic */
 class Socket
 {
-	friend class SocketHandler;
+	friend class ISocketHandler;
 public:
 	/** "Default" constructor */
-	Socket(SocketHandler&);
+	Socket(ISocketHandler&);
 	virtual ~Socket();
 
 	/** Socket class instantiation method. Used when a "non-standard" constructor
 	 * needs to be used for the socket class. Note: the socket class still needs
-	 * the "default" constructor with one SocketHandler& as input parameter.
+	 * the "default" constructor with one ISocketHandler& as input parameter.
 	 */
 	virtual Socket *Create();
 
@@ -99,7 +101,7 @@ public:
 	virtual void OnWrite();
 	/** Called on socket exception. */
 	virtual void OnException();
-	/** Called before a socket class is deleted by the SocketHandler. */
+	/** Called before a socket class is deleted by the ISocketHandler. */
 	virtual void OnDelete();
 	/** Called when a connection has completed. */
 	virtual void OnConnect();
@@ -140,13 +142,13 @@ public:
 	virtual bool CheckConnect();
 	/** Called after OnRead if socket is in line protocol mode.
 		\sa SetLineProtocol */
-	virtual void ReadLine();
+//	virtual void ReadLine();
 	/** new SSL support */
 	virtual bool SSLNegotiate();
 
 	/** Enable the OnLine callback. Do not create your own OnRead
 	 * callback when using this. */
-	void SetLineProtocol(bool = true);
+	virtual void SetLineProtocol(bool = true);
 	/** Check line protocol mode.
 		\return true if socket is in line protocol mode */
 	bool LineProtocol();
@@ -170,9 +172,9 @@ public:
 	time_t GetConnectTime();
 
 	/** Used by ListenSocket. ipv4 and ipv6 */
-	void SetRemoteAddress(struct sockaddr* sa,socklen_t);
+	void SetRemoteAddress(SocketAddress&);
 	/** Returns address of remote end. */
-	void GetRemoteSocketAddress(struct sockaddr& sa,socklen_t& sa_len);
+	SocketAddress *GetRemoteSocketAddress();
 	/** Returns address of remote end: ipv4. */
 	ipaddr_t GetRemoteIP4();
 	/** Returns address of remote end: ipv6. */
@@ -189,12 +191,12 @@ public:
 	/** Returns reference to sockethandler that owns the socket. 
 	If the socket is detached, this is a reference to the slave sockethandler.
 	*/
-	SocketHandler& Handler() const;
+	ISocketHandler& Handler() const;
 	/** Returns reference to sockethandler that owns the socket. 
 	This one always returns the reference to the original sockethandler,
 	even if the socket is detached.
 	*/
-	SocketHandler& MasterHandler() const;
+	ISocketHandler& MasterHandler() const;
 	/** Set socket non-block operation. */
 	bool SetNonblocking(bool);
 	/** Set socket non-block operation. */
@@ -252,20 +254,12 @@ public:
 	void SetSocketProtocol(const std::string& x);
 	/** Protocol type from socket() call. */
 	const std::string& GetSocketProtocol();
-	/** Set address of last connect() call. */
-	void SetClientRemoteAddr(ipaddr_t a);
-#ifdef IPPROTO_IPV6
-	/** IPV6: Set address of last connect() call. */
-	void SetClientRemoteAddr(in6_addr a);
-	/** IPV6: Returns address of last connect() call. */
-	in6_addr& GetClientRemoteAddr6();
-#endif
-	/** Returns address of last connect() call. */
-	ipaddr_t& GetClientRemoteAddr();
-	/** Set port of last connect() call. */
-	void SetClientRemotePort(port_t p);
-	/** Returns port number of last connect() call. */
-	port_t GetClientRemotePort();
+
+	/** Set address/port of last connect() call. */
+	void SetClientRemoteAddress(SocketAddress&);
+	/** Get address/port of last connect() call. */
+	SocketAddress *GetClientRemoteAddress();
+
 	/** Instruct a client socket to stay open in the connection pool after use.
 		If you have connected to a server using tcp, you can call SetRetain
 		to leave the connection open after your socket instance has been deleted.
@@ -416,7 +410,7 @@ public:
 	bool ErasedByHandler();
 
 	/** Store the slave sockethandler pointer. */
-	void SetSlaveHandler(SocketHandler *);
+	void SetSlaveHandler(ISocketHandler *);
 
 	/** Return number of seconds since socket was ordered to close. */
 	time_t TimeSinceClose();
@@ -426,10 +420,14 @@ public:
 	/** Get shutdown status. */
 	int GetShutdown();
 
-protected:
-	Socket(const Socket& ); ///< do not allow use of copy constructor
 	/** Create new thread for this socket to run detached in. */
 	void DetachSocket();
+
+	virtual uint64_t GetBytesSent(bool clear = false);
+	virtual uint64_t GetBytesReceived(bool clear = false);
+
+protected:
+	Socket(const Socket& ); ///< do not allow use of copy constructor
 
 private:
 	/** default constructor not available */
@@ -440,8 +438,7 @@ static	WSAInitializer m_winsock_init; ///< Winsock initialization singleton clas
 	/** assignment operator not available. */
 	Socket& operator=(const Socket& ) { return *this; }
 	//
-	void AddList(socket_v&, bool); ///< Add file descriptor to specified checklist
-	SocketHandler& m_handler; ///< Reference of SocketHandler in control of this socket
+	ISocketHandler& m_handler; ///< Reference of ISocketHandler in control of this socket
 	SOCKET m_socket; ///< File descriptor
 	bool m_bDel; ///< Delete by handler flag
 	bool m_bClose; ///< Close and delete flag
@@ -456,18 +453,14 @@ static	WSAInitializer m_winsock_init; ///< Winsock initialization singleton clas
 	bool m_detached; ///< Socket has been detached
 	SocketThread *m_pThread; ///< Detach socket thread class pointer
 	bool m_ipv6; ///< This is an ipv6 socket if this one is true
-	struct sockaddr m_sa; ///< remote address, from accept() call
-	socklen_t m_sa_len; ///< Length of m_sa remote address
 	Socket *m_parent; ///< Pointer to ListenSocket class, valid for incoming sockets
 	// pooling, ipv4
 	int m_socket_type; ///< Type of socket, from socket() call
 	std::string m_socket_protocol; ///< Protocol, from socket() call
 	bool m_bClient; ///< only client connections are pooled
-	ipaddr_t m_client_remote_addr; ///< Address used by connect()
-	port_t m_client_remote_port; ///< Port number used by connect()
 	bool m_bRetain; ///< keep connection on close
 	bool m_bLost; ///< connection lost
-	bool m_call_on_connect; ///< OnConnect will be called next SocketHandler cycle if true
+	bool m_call_on_connect; ///< OnConnect will be called next ISocketHandler cycle if true
 	bool m_opt_reuse; ///< Socket option reuseaddr
 	bool m_opt_keepalive; ///< Socket option keep-alive
 	bool m_bSocks4; ///< socks4 negotiation mode (TcpSocket)
@@ -479,18 +472,17 @@ static	WSAInitializer m_winsock_init; ///< Winsock initialization singleton clas
 	bool m_b_ssl; ///< ssl negotiation mode (TcpSocket)
 	bool m_b_ssl_server; ///< True if this is an incoming ssl TcpSocket connection
 	bool m_b_disable_read; ///< Disable checking for read events
-	bool m_b_retry_connect; ///< Try another connection attempt next SocketHandler cycle
-#ifdef IPPROTO_IPV6
-	in6_addr m_client_remote_addr6; ///< Address used by connect() ipv6
-#endif
+	bool m_b_retry_connect; ///< Try another connection attempt next ISocketHandler cycle
 	bool m_connected; ///< Socket is connected (tcp/udp)
 	bool m_flush_before_close; ///< Send all data before closing (default true)
 	int m_connection_retry; ///< Maximum connection retries (tcp)
 	int m_retries; ///< Actual number of connection retries (tcp)
 	bool m_b_erased_by_handler; ///< Set by handler before delete
-	SocketHandler *m_slave_handler; ///< Actual sockethandler while detached
+	ISocketHandler *m_slave_handler; ///< Actual sockethandler while detached
 	time_t m_tClose; ///< Time in seconds when ordered to close
 	int m_shutdown; ///< Shutdown status
+	SocketAddress *m_client_remote_address; ///< Address of last connect()
+	SocketAddress *m_remote_address; ///< Remote end address
 };
 
 #ifdef SOCKETS_NAMESPACE

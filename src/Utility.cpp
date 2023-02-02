@@ -546,7 +546,7 @@ std::string Utility::Sa2String(struct sockaddr *sa)
 		struct sockaddr_in6 *sa6 = (struct sockaddr_in6 *)sa;
 		std::string tmp;
 		Utility::l2ip(sa6 -> sin6_addr, tmp);
-		return tmp + ":" + Utility::l2string(sa6 -> sin6_port);
+		return tmp + ":" + Utility::l2string(ntohs(sa6 -> sin6_port));
 	}
 #endif
 	if (sa -> sa_family == AF_INET)
@@ -556,9 +556,26 @@ std::string Utility::Sa2String(struct sockaddr *sa)
 		memcpy(&a, &sa4 -> sin_addr, 4);
 		std::string tmp;
 		Utility::l2ip(a, tmp);
-		return tmp + ":" + Utility::l2string(sa4 -> sin_port);
+		return tmp + ":" + Utility::l2string(ntohs(sa4 -> sin_port));
 	}
 	return "";
+}
+
+
+void Utility::GetTime(struct timeval *p)
+{
+#ifdef _WIN32
+	FILETIME ft; // Contains a 64-bit value representing the number of 100-nanosecond intervals since January 1, 1601 (UTC).
+	GetSystemTimeAsFileTime(&ft);
+	ULARGE_INTEGER ul;
+	memcpy(&ul, &ft, sizeof(ft));
+	__int64 tt = ul.QuadPart;
+	p->tv_sec = tt / 10000000L;
+	p->tv_usec = tt % 10000000L;
+
+#else
+	gettimeofday(p, NULL);
+#endif
 }
 
 

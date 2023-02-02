@@ -110,6 +110,9 @@ public:
 		\param sa Ptr to sockaddr struct */
 	static std::string Sa2String(struct sockaddr *sa);
 
+	/** Get current time in sec/microseconds. */
+	static void GetTime(struct timeval *);
+
 private:
 	static std::string m_host; ///< local hostname
 	static ipaddr_t m_ip; ///< local ip address

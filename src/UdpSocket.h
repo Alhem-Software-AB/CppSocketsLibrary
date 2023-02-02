@@ -8,7 +8,7 @@ Copyright (C) 2004-2006  Anders Hedstrom
 This library is made available under the terms of the GNU GPL.
 
 If you would like to use this library in a closed-source application,
-a separate license agreement is available. For information about 
+a separate license agreement is available. For information about
 the closed-source license agreement for the C++ sockets library,
 please visit http://www.alhem.net/Sockets/license.html and/or
 email license@alhem.net.
@@ -36,16 +36,16 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 namespace SOCKETS_NAMESPACE {
 #endif
 
-/** Socket implementation for UDP. 
+/** Socket implementation for UDP.
 	\ingroup basic */
 class UdpSocket : public Socket
 {
 public:
 	/** Constructor.
-		\param h SocketHandler reference
+		\param h ISocketHandler reference
 		\param ibufsz Maximum size of receive message (extra bytes will be truncated)
 		\param ipv6 'true' if this is an ipv6 socket */
-	UdpSocket(SocketHandler& h,int ibufsz = 16384,bool ipv6 = false);
+	UdpSocket(ISocketHandler& h,int ibufsz = 16384,bool ipv6 = false);
 	~UdpSocket();
 
 	/** Called when incoming data has been received.
@@ -57,44 +57,56 @@ public:
 
 	/** To receive incoming data, call Bind to setup an incoming port.
 		\param port Incoming port number
-		\param range Port range to try if ports already in use 
+		\param range Port range to try if ports already in use
 		\return 0 if bind succeeded */
 	int Bind(port_t& port,int range = 1);
 	/** To receive data on a specific interface:port, use this.
 		\param intf Interface ip/hostname
 		\param port Port number
-		\param range Port range 
+		\param range Port range
 		\return 0 if bind succeeded */
 	int Bind(const std::string& intf,port_t& port,int range = 1);
 	/** To receive data on a specific interface:port, use this.
 		\param a Ip address
 		\param port Port number
-		\param range Port range 
+		\param range Port range
 		\return 0 if bind succeeded */
 	int Bind(ipaddr_t a,port_t& port,int range = 1);
 #ifdef IPPROTO_IPV6
 	/** To receive data on a specific interface:port, use this.
 		\param a Ipv6 address
 		\param port Port number
-		\param range Port range 
+		\param range Port range
 		\return 0 if bind succeeded */
 	int Bind(in6_addr a,port_t& port,int range = 1);
 #endif
+	/** To receive data on a specific interface:port, use this.
+		\param ad Socket address
+		\param range Port range
+		\return 0 if bind succeeded */
+	int Bind(SocketAddress& ad,int range = 1);
 
 	/** Define remote host.
 		\param l Address of remote host
-		\param port Port of remote host */
+		\param port Port of remote host
+		\return true if successful */
 	bool Open(ipaddr_t l,port_t port);
 	/** Define remote host.
 		\param host Hostname
-		\param port Port number */
+		\param port Port number
+		\return true if successful */
 	bool Open(const std::string& host,port_t port);
 #ifdef IPPROTO_IPV6
 	/** Define remote host.
 		\param a Address of remote host, ipv6
-		\param port Port of remote host */
+		\param port Port of remote host
+		\return true if successful */
 	bool Open(struct in6_addr& a,port_t port);
 #endif
+	/** Define remote host.
+		\param ad Socket address
+		\return true if successful */
+	bool Open(SocketAddress& ad);
 
 	/** Send to specified host */
 	void SendToBuf(const std::string& ,port_t,const char *data,int len,int flags = 0);
@@ -104,6 +116,9 @@ public:
 	/** Send to specified ipv6 address */
 	void SendToBuf(in6_addr,port_t,const char *data,int len,int flags = 0);
 #endif
+	/** Send to specified socket address */
+	void SendToBuf(SocketAddress& ad,const char *data,int len,int flags = 0);
+
 	/** Send string to specified host */
 	void SendTo(const std::string&,port_t,const std::string&,int flags = 0);
 	/** Send string to specified address */
@@ -112,6 +127,8 @@ public:
 	/** Send string to specified ipv6 address */
 	void SendTo(in6_addr,port_t,const std::string&,int flags = 0);
 #endif
+	/** Send string to specified socket address */
+	void SendTo(SocketAddress& ad,const std::string&,int flags = 0);
 
 	/** Send to connected address */
 	void SendBuf(const char *data,size_t,int flags = 0);
@@ -144,6 +161,8 @@ public:
 
 	void OnOptions(int,int,int,SOCKET) {}
 
+	int GetLastSizeWritten();
+
 protected:
 	UdpSocket(const UdpSocket& s) : Socket(s) {}
 	void OnRead();
@@ -156,6 +175,7 @@ private:
 	int m_ibufsz; ///< Size of input buffer
 	bool m_bind_ok; ///< Bind completed successfully
 	port_t m_port; ///< Bind port number
+	int m_last_size_written;
 };
 
 

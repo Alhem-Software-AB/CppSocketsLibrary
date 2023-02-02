@@ -37,17 +37,17 @@ namespace SOCKETS_NAMESPACE {
 #endif
 
 
-class SocketHandler;
+class ISocketHandler;
 
 /** Put http page. 
 	\ingroup http */
 class HttpPutSocket : public HttpClientSocket
 {
 public:
-	HttpPutSocket(SocketHandler&);
+	HttpPutSocket(ISocketHandler&);
 	/** client constructor, 
 		\param url_in = 'http://host:port/resource' */
-	HttpPutSocket(SocketHandler&,const std::string& url_in);
+	HttpPutSocket(ISocketHandler&,const std::string& url_in);
 	~HttpPutSocket();
 
 	// these must be specified before connecting / adding to handler

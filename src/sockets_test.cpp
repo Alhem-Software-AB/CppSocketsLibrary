@@ -83,7 +83,7 @@ private:
 class MySocket : public TcpSocket
 {
 public:
-	MySocket(SocketHandler& h) : TcpSocket(h) {
+	MySocket(ISocketHandler& h) : TcpSocket(h) {
 	}
 	void OnAccept() {
 		int port = GetParent() -> GetPort();
@@ -97,7 +97,7 @@ public:
 class hSocket : public HttpGetSocket
 {
 public:
-	hSocket(SocketHandler& h,const std::string& x,const std::string& y) : HttpGetSocket(h,x,y) {}
+	hSocket(ISocketHandler& h,const std::string& x,const std::string& y) : HttpGetSocket(h,x,y) {}
 
 	void OnConnect() {
 		printf("hSocket::OnConnect\n");
@@ -109,7 +109,7 @@ public:
 class OrderSocket : public TcpSocket
 {
 public:
-	OrderSocket(SocketHandler& h) : TcpSocket(h) {
+	OrderSocket(ISocketHandler& h) : TcpSocket(h) {
 		SetLineProtocol();
 	}
 	Socket *Create() {
@@ -230,7 +230,7 @@ public:
 class TestSocket : public TcpSocket
 {
 public:
-	TestSocket(SocketHandler& h) : TcpSocket(h) {
+	TestSocket(ISocketHandler& h) : TcpSocket(h) {
 		SetLineProtocol();
 	}
 	void OnConnect() {
@@ -260,7 +260,7 @@ int main()
 	MyHandler h(&log);
 
 	h.EnableResolver(9999);
-	Utility::ResolveLocal();
+//	Utility::ResolveLocal();
 	printf(" *** My hostname: %s\n", Utility::GetLocalHostname().c_str());
 	printf(" *** My local IP: %s\n", Utility::GetLocalAddress().c_str());
 

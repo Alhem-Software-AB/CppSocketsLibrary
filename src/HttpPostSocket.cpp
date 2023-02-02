@@ -35,7 +35,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <errno.h>
 #include <ctype.h>
 #endif
-#include "SocketHandler.h"
+#include "ISocketHandler.h"
 #include <sys/types.h>
 #include <sys/stat.h>
 #include "Parse.h"
@@ -49,13 +49,13 @@ namespace SOCKETS_NAMESPACE {
 #endif
 
 
-HttpPostSocket::HttpPostSocket(SocketHandler& h) : HttpClientSocket(h)
+HttpPostSocket::HttpPostSocket(ISocketHandler& h) : HttpClientSocket(h)
 ,m_bMultipart(false)
 {
 }
 
 
-HttpPostSocket::HttpPostSocket(SocketHandler& h,const std::string& url_in) : HttpClientSocket(h, url_in)
+HttpPostSocket::HttpPostSocket(ISocketHandler& h,const std::string& url_in) : HttpClientSocket(h, url_in)
 ,m_bMultipart(false)
 {
 	m_boundary = "----";

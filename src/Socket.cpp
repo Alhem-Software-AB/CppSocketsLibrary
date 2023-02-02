@@ -36,12 +36,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <stdio.h>
 #include <ctype.h>
 #include <fcntl.h>
-#include "SocketHandler.h"
+#include "ISocketHandler.h"
 #include "SocketThread.h"
 #include "Utility.h"
 
 #include "Socket.h"
 #include "TcpSocket.h"
+#include "SocketAddress.h"
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
@@ -54,7 +55,7 @@ WSAInitializer Socket::m_winsock_init;
 #endif
 
 
-Socket::Socket(SocketHandler& h)
+Socket::Socket(ISocketHandler& h)
 :m_handler(h)
 ,m_socket( INVALID_SOCKET )
 ,m_bDel(false)
@@ -63,13 +64,10 @@ Socket::Socket(SocketHandler& h)
 ,m_tCreate(time(NULL))
 ,m_line_protocol(false)
 ,m_ssl_connecting(false)
-//, m_tActive(time(NULL))
-//, m_timeout(0)
 ,m_detach(false)
 ,m_detached(false)
 ,m_pThread(NULL)
 ,m_ipv6(false)
-,m_sa_len(0)
 ,m_parent(NULL)
 ,m_socket_type(0)
 ,m_bClient(false)
@@ -96,6 +94,8 @@ Socket::Socket(SocketHandler& h)
 ,m_slave_handler(NULL)
 ,m_tClose(0)
 ,m_shutdown(0)
+,m_client_remote_address(NULL)
+,m_remote_address(NULL)
 {
 }
 
@@ -106,6 +106,14 @@ Socket::~Socket()
 	if (m_socket != INVALID_SOCKET && !m_bRetain)
 	{
 		Close();
+	}
+	if (m_client_remote_address)
+	{
+		delete m_client_remote_address;
+	}
+	if (m_remote_address)
+	{
+		delete m_remote_address;
 	}
 /*
 	// SocketThread will delete itself
@@ -197,7 +205,7 @@ bool Socket::CheckConnect()
 		r = false;
 	}
 	// don't reset connecting flag on error here, we want the OnConnectFailed timeout later on
-	// %! add to read fd_set here
+	/// \todo add to read fd_set here
 	if (r) // ok
 	{
 		Set(!IsDisableRead(), false);
@@ -252,11 +260,11 @@ int Socket::Close()
 		Handler().LogError(this, "close", Errno, StrError(Errno), LOG_LEVEL_ERROR);
 	}
 	Set(false, false, false); // remove from fd_set's
-	AddList(Handler().GetFdsCallOnConnect(), false); //, "Close()/CallOnConnect");
-	AddList(Handler().GetFdsDetach(), false); //, "Close()/Detach");
-	AddList(Handler().GetFdsConnecting(), false); //, "Close()/Connecting");
-	AddList(Handler().GetFdsRetry(), false); //, "Close()/Retry");
-	AddList(Handler().GetFdsClose(), false); //, "Close()/Close");
+	Handler().AddList(m_socket, LIST_CALLONCONNECT, false);
+	Handler().AddList(m_socket, LIST_DETACH, false);
+	Handler().AddList(m_socket, LIST_CONNECTING, false);
+	Handler().AddList(m_socket, LIST_RETRY, false);
+	Handler().AddList(m_socket, LIST_CLOSE, false);
 	m_socket = INVALID_SOCKET;
 	return n;
 }
@@ -354,7 +362,7 @@ void Socket::SetCloseAndDelete(bool x)
 {
 	if (x != m_bClose)
 	{
-		AddList(Handler().GetFdsClose(), x); //, "SetCloseAndDelete()");
+		Handler().AddList(m_socket, LIST_CLOSE, x);
 		m_bClose = x;
 		if (x)
 		{
@@ -374,7 +382,7 @@ void Socket::SetConnecting(bool x)
 {
 	if (x != m_bConnecting)
 	{
-		AddList(Handler().GetFdsConnecting(), x); //, "SetConnecting()");
+		Handler().AddList(m_socket, LIST_CONNECTING, x);
 		m_bConnecting = x;
 		if (x)
 		{
@@ -390,21 +398,23 @@ bool Socket::Connecting()
 }
 
 
-void Socket::SetRemoteAddress(struct sockaddr* sa, socklen_t l)
+void Socket::SetRemoteAddress(SocketAddress& ad) //struct sockaddr* sa, socklen_t l)
 {
-	memcpy(&m_sa, sa, l);
-	m_sa_len = l;
+	if (m_remote_address)
+	{
+		delete m_remote_address;
+	}
+	m_remote_address = ad.GetCopy();
 }
 
 
-void Socket::GetRemoteSocketAddress(struct sockaddr& sa,socklen_t& sa_len)
+SocketAddress *Socket::GetRemoteSocketAddress()
 {
-	memcpy(&sa, &m_sa, m_sa_len);
-	sa_len = m_sa_len;
+	return m_remote_address;
 }
 
 
-SocketHandler& Socket::Handler() const
+ISocketHandler& Socket::Handler() const
 {
 	if (IsDetached())
 		return *m_slave_handler;
@@ -412,7 +422,7 @@ SocketHandler& Socket::Handler() const
 }
 
 
-SocketHandler& Socket::MasterHandler() const
+ISocketHandler& Socket::MasterHandler() const
 {
 	return m_handler;
 }
@@ -421,12 +431,16 @@ SocketHandler& Socket::MasterHandler() const
 ipaddr_t Socket::GetRemoteIP4()
 {
 	ipaddr_t l = 0;
-	struct sockaddr_in* saptr = (struct sockaddr_in*)&m_sa;
 	if (m_ipv6)
 	{
 		Handler().LogError(this, "GetRemoteIP4", 0, "get ipv4 address for ipv6 socket", LOG_LEVEL_WARNING);
 	}
-	memcpy(&l, &saptr -> sin_addr, 4);
+	if (m_remote_address)
+	{
+		struct sockaddr *p = *m_remote_address;
+		struct sockaddr_in *sa = (struct sockaddr_in *)p;
+		memcpy(&l, &sa -> sin_addr, sizeof(struct in_addr));
+	}
 	return l;
 }
 
@@ -434,63 +448,52 @@ ipaddr_t Socket::GetRemoteIP4()
 #ifdef IPPROTO_IPV6
 struct in6_addr Socket::GetRemoteIP6()
 {
-	struct sockaddr_in6 *p = (struct sockaddr_in6 *)&m_sa;
 	if (!m_ipv6)
 	{
 		Handler().LogError(this, "GetRemoteIP6", 0, "get ipv6 address for ipv4 socket", LOG_LEVEL_WARNING);
 	}
-	return p -> sin6_addr;
+	struct sockaddr_in6 fail;
+	if (m_remote_address)
+	{
+		struct sockaddr *p = *m_remote_address;
+		memcpy(&fail, p, sizeof(struct sockaddr_in6));
+	}
+	else
+	{
+		memset(&fail, 0, sizeof(struct sockaddr_in6));
+	}
+	return fail.sin6_addr;
 }
 #endif
 
 
 port_t Socket::GetRemotePort()
 {
-#ifdef IPPROTO_IPV6
-	if (m_ipv6)
+	if (!m_remote_address)
 	{
-		struct sockaddr_in6 *p = (struct sockaddr_in6 *)&m_sa;
-		return ntohs(p -> sin6_port);
+		return 0;
 	}
-#endif
-	struct sockaddr_in* saptr = (struct sockaddr_in*)&m_sa;
-	return ntohs(saptr -> sin_port);
+	return m_remote_address -> GetPort();
 }
 
 
 std::string Socket::GetRemoteAddress()
 {
-	std::string str;
-#ifdef IPPROTO_IPV6
-	if (m_ipv6)
+	if (!m_remote_address)
 	{
-		Utility::l2ip(GetRemoteIP6(), str);
-		return str;
+		return "";
 	}
-#endif
-	Utility::l2ip(GetRemoteIP4(), str);
-	return str;
+	return m_remote_address -> Convert(false);
 }
 
 
 std::string Socket::GetRemoteHostname()
 {
-	std::string str;
-#ifdef IPPROTO_IPV6
-	if (m_ipv6)
+	if (!m_remote_address)
 	{
-		Handler().LogError(this, "GetRemoteHostname", 0, "not implemented for ipv6", LOG_LEVEL_WARNING);
-		return GetRemoteAddress();
+		return "";
 	}
-#endif
-	long l = GetRemoteIP4();
-	struct hostent *he = gethostbyaddr( (char *)&l, sizeof(long), AF_INET);
-	if (!he)
-	{
-		return GetRemoteAddress();
-	}
-	str = he -> h_name;
-	return str;
+	return m_remote_address -> Reverse();
 }
 
 
@@ -595,6 +598,7 @@ bool Socket::Detach()
 
 void Socket::DetachSocket()
 {
+	SetDetached();
 	m_pThread = new SocketThread(this);
 	m_pThread -> SetRelease(true);
 }
@@ -617,9 +621,11 @@ bool Socket::LineProtocol()
 }
 
 
+/*
 void Socket::ReadLine()
 {
 }
+*/
 
 
 void Socket::OnConnectFailed()
@@ -657,20 +663,18 @@ void Socket::CopyConnection(Socket *sock)
 	SetIpv6( sock -> IsIpv6() );
 	SetSocketType( sock -> GetSocketType() );
 	SetSocketProtocol( sock -> GetSocketProtocol() );
-#ifdef IPPROTO_IPV6
-	if (IsIpv6())
-	{
-		SetClientRemoteAddr( sock -> GetClientRemoteAddr6() );
-	}
-	else
-#endif
-	SetClientRemoteAddr( sock -> GetClientRemoteAddr() );
-	SetClientRemotePort( sock -> GetClientRemotePort() );
 
-	struct sockaddr sa;
-	socklen_t sa_len;
-	sock -> GetRemoteSocketAddress(sa, sa_len);
-	SetRemoteAddress(&sa, sa_len);
+	SocketAddress *client = sock -> GetClientRemoteAddress();
+	if (client)
+	{
+		SetClientRemoteAddress( *client );
+	}
+
+	SocketAddress *remote = GetRemoteSocketAddress();
+	if (remote)
+	{
+		SetRemoteAddress(*remote);
+	}
 }
 
 
@@ -785,7 +789,7 @@ void Socket::OnDetached()
 
 void Socket::SetDetach(bool x)
 {
-	AddList(Handler().GetFdsDetach(), x); //, "SetDetach()");
+	Handler().AddList(m_socket, LIST_DETACH, x);
 	m_detach = x;
 }
 
@@ -850,44 +854,6 @@ const std::string& Socket::GetSocketProtocol()
 }
 
 
-void Socket::SetClientRemoteAddr(ipaddr_t a)
-{
-	m_client_remote_addr = a;
-}
-
-
-#ifdef IPPROTO_IPV6
-void Socket::SetClientRemoteAddr(in6_addr a)
-{
-	m_client_remote_addr6 = a;
-}
-
-
-in6_addr& Socket::GetClientRemoteAddr6()
-{
-	return m_client_remote_addr6;
-}
-
-
-#endif
-ipaddr_t& Socket::GetClientRemoteAddr()
-{
-	return m_client_remote_addr;
-}
-
-
-void Socket::SetClientRemotePort(port_t p)
-{
-	m_client_remote_port = p;
-}
-
-
-port_t Socket::GetClientRemotePort()
-{
-	return m_client_remote_port;
-}
-
-
 void Socket::SetRetain()
 {
 	if (m_bClient) m_bRetain = true;
@@ -914,7 +880,7 @@ bool Socket::Lost()
 
 void Socket::SetCallOnConnect(bool x)
 {
-	AddList(Handler().GetFdsCallOnConnect(), x); //, "SetCallOnConnect()");
+	Handler().AddList(m_socket, LIST_CALLONCONNECT, x);
 	m_call_on_connect = x;
 }
 
@@ -1047,7 +1013,7 @@ bool Socket::IsDisableRead()
 
 void Socket::SetRetryClientConnect(bool x)
 {
-	AddList(Handler().GetFdsRetry(), x); //, "SetRetryClientConnect()");
+	Handler().AddList(m_socket, LIST_RETRY, x);
 	m_b_retry_connect = x;
 }
 
@@ -1149,32 +1115,7 @@ bool Socket::ErasedByHandler()
 }
 
 
-void Socket::AddList(socket_v& ref, bool add) //, const std::string& src)
-{
-	if (m_socket == INVALID_SOCKET)
-	{
-		return;
-	}
-	if (add)
-	{
-		AddList(ref, false); //, "remove before add");
-		ref.push_back(m_socket);
-	}
-	else // remove
-	{
-		for (socket_v::iterator it = ref.begin(); it != ref.end(); it++)
-		{
-			if (*it == m_socket)
-			{
-				ref.erase(it);
-				break;
-			}
-		}
-	}
-}
-
-
-void Socket::SetSlaveHandler(SocketHandler *p)
+void Socket::SetSlaveHandler(ISocketHandler *p)
 {
 	m_slave_handler = p;
 }
@@ -1195,6 +1136,42 @@ void Socket::SetShutdown(int x)
 int Socket::GetShutdown()
 {
 	return m_shutdown;
+}
+
+
+void Socket::SetClientRemoteAddress(SocketAddress& ad)
+{
+	if (!ad.IsValid())
+	{
+		Handler().LogError(this, "SetClientRemoteAddress", 0, "remote address not valid", LOG_LEVEL_ERROR);
+	}
+	if (m_client_remote_address)
+	{
+		delete m_client_remote_address;
+	}
+	m_client_remote_address = ad.GetCopy();
+}
+
+
+SocketAddress *Socket::GetClientRemoteAddress()
+{
+	if (!m_client_remote_address)
+	{
+		Handler().LogError(this, "GetClientRemoteAddress", 0, "remote address not yet set", LOG_LEVEL_ERROR);
+	}
+	return m_client_remote_address;
+}
+
+
+uint64_t Socket::GetBytesSent(bool)
+{
+	return 0;
+}
+
+
+uint64_t Socket::GetBytesReceived(bool)
+{
+	return 0;
 }
 
 

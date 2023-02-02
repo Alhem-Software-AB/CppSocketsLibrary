@@ -36,10 +36,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <errno.h>
 #endif
 
-#include "SocketHandler.h"
+#include "ISocketHandler.h"
 #include "Socket.h"
 #include "Utility.h"
 #include "SctpSocket.h"
+#include "Ipv4Address.h"
+#include "Ipv6Address.h"
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
@@ -53,9 +55,9 @@ class ListenSocket : public Socket
 {
 public:
 	/** Constructor.
-		\param h SocketHandler reference
+		\param h ISocketHandler reference
 		\param use_creator Optional use of creator (default true) */
-	ListenSocket(SocketHandler& h,bool use_creator = true) : Socket(h), m_port(0), m_depth(0), m_creator(NULL)
+	ListenSocket(ISocketHandler& h,bool use_creator = true) : Socket(h), m_port(0), m_depth(0), m_creator(NULL)
 	,m_bHasCreate(false)
 	{
 		if (use_creator)
@@ -95,16 +97,25 @@ public:
 #ifdef IPPROTO_IPV6
 		if (IsIpv6())
 		{
-			in6_addr a;
-			memset(&a, 0, sizeof(in6_addr));
-			return Bind(a, port, depth);
+			Ipv6Address ad(port);
+			return Bind(ad, depth);
 		}
 		else
 #endif
 		{
-			ipaddr_t a = 0;
-			return Bind(a, port, depth);
+			Ipv4Address ad(port);
+			return Bind(ad, depth);
 		}
+	}
+
+	int Bind(SocketAddress& ad,int depth) {
+#ifdef USE_SCTP
+		if (dynamic_cast<SctpSocket *>(m_creator))
+		{
+			return Bind(ad, "sctp", depth);
+		}
+#endif
+		return Bind(ad, "tcp", depth);
 	}
 
 	/** Bind and listen to any interface, with optional protocol.
@@ -115,15 +126,14 @@ public:
 #ifdef IPPROTO_IPV6
 		if (IsIpv6())
 		{
-			in6_addr a;
-			memset(&a, 0, sizeof(in6_addr));
-			return Bind(a, port, protocol, depth);
+			Ipv6Address ad(port);
+			return Bind(ad, protocol, depth);
 		}
 		else
 #endif
 		{
-			ipaddr_t a = 0;
-			return Bind(a, port, protocol, depth);
+			Ipv4Address ad(port);
+			return Bind(ad, protocol, depth);
 		}
 	}
 
@@ -135,10 +145,10 @@ public:
 #ifdef IPPROTO_IPV6
 		if (IsIpv6())
 		{
-			in6_addr a;
-			if (Utility::u2ip(intf, a))
+			Ipv6Address ad(intf, port);
+			if (ad.IsValid())
 			{
-				return Bind(a, port, depth);
+				return Bind(ad, depth);
 			}
 			Handler().LogError(this, "Bind", 0, "name resolution of interface name failed", LOG_LEVEL_FATAL);
 			return -1;
@@ -146,10 +156,10 @@ public:
 		else
 #endif
 		{
-			ipaddr_t a;
-			if (Utility::u2ip(intf, a))
+			Ipv4Address ad(intf, port);
+			if (ad.IsValid())
 			{
-				return Bind(a, port, depth);
+				return Bind(ad, depth);
 			}
 			Handler().LogError(this, "Bind", 0, "name resolution of interface name failed", LOG_LEVEL_FATAL);
 			return -1;
@@ -165,10 +175,10 @@ public:
 #ifdef IPPROTO_IPV6
 		if (IsIpv6())
 		{
-			in6_addr a;
-			if (Utility::u2ip(intf, a))
+			Ipv6Address ad(intf, port);
+			if (ad.IsValid())
 			{
-				return Bind(a, port, protocol, depth);
+				return Bind(ad, protocol, depth);
 			}
 			Handler().LogError(this, "Bind", 0, "name resolution of interface name failed", LOG_LEVEL_FATAL);
 			return -1;
@@ -176,10 +186,10 @@ public:
 		else
 #endif
 		{
-			ipaddr_t a;
-			if (Utility::u2ip(intf, a))
+			Ipv4Address ad(intf, port);
+			if (ad.IsValid())
 			{
-				return Bind(a, port, protocol, depth);
+				return Bind(ad, protocol, depth);
 			}
 			Handler().LogError(this, "Bind", 0, "name resolution of interface name failed", LOG_LEVEL_FATAL);
 			return -1;
@@ -191,13 +201,14 @@ public:
 		\param port Port (0 is random)
 		\param depth Listen queue depth */
 	int Bind(ipaddr_t a,port_t port,int depth = 20) {
+		Ipv4Address ad(a, port);
 #ifdef USE_SCTP
 		if (dynamic_cast<SctpSocket *>(m_creator))
 		{
-			return Bind(a, port, "sctp", depth);
+			return Bind(ad, "sctp", depth);
 		}
 #endif
-		return Bind(a, port, "tcp", depth);
+		return Bind(ad, "tcp", depth);
 	}
 	/** Bind and listen to ipv4 interface.
 		\param a Ipv4 interface address
@@ -205,34 +216,8 @@ public:
 		\param protocol Network protocol
 		\param depth Listen queue depth */
 	int Bind(ipaddr_t a,port_t port,const std::string& protocol,int depth) {
-		struct sockaddr_in sa;
-		SOCKET s;
-		if ( (s = CreateSocket(AF_INET, SOCK_STREAM, protocol)) == INVALID_SOCKET)
-		{
-			return -1;
-		}
-		memset(&sa, 0, sizeof(sa));
-		sa.sin_family = AF_INET;
-		sa.sin_port = htons( port );
-		memcpy(&sa.sin_addr, &a, 4);
-		if (bind(s, (struct sockaddr *)&sa, sizeof(sa)) == -1)
-		{
-			Handler().LogError(this, "bind", Errno, StrError(Errno), LOG_LEVEL_FATAL);
-			closesocket(s);
-			return -1;
-		}
-		if (listen(s, depth) == -1)
-		{
-			Handler().LogError(this, "listen", Errno, StrError(Errno), LOG_LEVEL_FATAL);
-			closesocket(s);
-			return -1;
-		}
-		int sockaddr_length = sizeof(sockaddr);
-		getsockname(s, (struct sockaddr *)&sa, (socklen_t*)&sockaddr_length);
-		m_port = ntohs(sa.sin_port);
-		m_depth = depth;
-		Attach(s);
-		return 0;
+		Ipv4Address ad(a, port);
+		return Bind(ad, protocol, depth);
 	}
 
 #ifdef IPPROTO_IPV6
@@ -241,13 +226,14 @@ public:
 		\param port Port (0 is random)
 		\param depth Listen queue depth */
 	int Bind(in6_addr a,port_t port,int depth = 20) {
+		Ipv6Address ad(a, port);
 #ifdef USE_SCTP
 		if (dynamic_cast<SctpSocket *>(m_creator))
 		{
-			return Bind(a, port, "sctp", depth);
+			return Bind(ad, "sctp", depth);
 		}
 #endif
-		return Bind(a, port, "tcp", depth);
+		return Bind(ad, "tcp", depth);
 	}
 	/** Bind and listen to ipv6 interface.
 		\param a Ipv6 interface address
@@ -255,20 +241,22 @@ public:
 		\param protocol Network protocol
 		\param depth Listen queue depth */
 	int Bind(in6_addr a,port_t port,const std::string& protocol,int depth) {
-		struct sockaddr_in6 sa;
-		SOCKET s;
+		Ipv6Address ad(a, port);
+		return Bind(ad, protocol, depth);
+	}
+#endif
 
-		if ( (s = CreateSocket(AF_INET6, SOCK_STREAM, protocol)) == INVALID_SOCKET)
+	/** Bind and listen to network interface.
+		\param ad Interface address
+		\param protocol Network protocol
+		\param depth Listen queue depth */
+	int Bind(SocketAddress& ad,const std::string& protocol,int depth) {
+		SOCKET s;
+		if ( (s = CreateSocket(ad.GetFamily(), SOCK_STREAM, protocol)) == INVALID_SOCKET)
 		{
 			return -1;
 		}
-		memset(&sa, 0, sizeof(sa));
-		sa.sin6_family = AF_INET6;
-		sa.sin6_port = htons( port );
-		sa.sin6_flowinfo = 0;
-		sa.sin6_scope_id = 0;
-		sa.sin6_addr = a;
-		if (bind(s, (struct sockaddr *)&sa, sizeof(sa)) == -1)
+		if (bind(s, ad, ad) == -1)
 		{
 			Handler().LogError(this, "bind", Errno, StrError(Errno), LOG_LEVEL_FATAL);
 			closesocket(s);
@@ -280,14 +268,27 @@ public:
 			closesocket(s);
 			return -1;
 		}
-		int sockaddr_length = sizeof(sockaddr);
-		getsockname(s, (struct sockaddr *)&sa, (socklen_t*)&sockaddr_length);
-		m_port = ntohs(sa.sin6_port);
+		// retrieve bound port
+#ifdef IPPROTO_IPV6
+		if (IsIpv6())
+		{
+			struct sockaddr_in6 sa;
+			socklen_t sockaddr_length = sizeof(struct sockaddr_in6);
+			getsockname(s, (struct sockaddr *)&sa, (socklen_t*)&sockaddr_length);
+			m_port = ntohs(sa.sin6_port);
+		}
+		else
+#endif
+		{
+			struct sockaddr_in sa;
+			socklen_t sockaddr_length = sizeof(struct sockaddr_in);
+			getsockname(s, (struct sockaddr *)&sa, (socklen_t*)&sockaddr_length);
+			m_port = ntohs(sa.sin_port);
+		}
 		m_depth = depth;
 		Attach(s);
 		return 0;
 	}
-#endif
 
 	/** Return assigned port number. */
 	port_t GetPort()
@@ -305,7 +306,7 @@ public:
 	void OnRead()
 	{
 		struct sockaddr sa;
-		socklen_t sa_len = sizeof(sa);
+		socklen_t sa_len = sizeof(struct sockaddr);
 		SOCKET a_s = accept(GetSocket(), &sa, &sa_len);
 
 		if (a_s == INVALID_SOCKET)
@@ -321,7 +322,7 @@ public:
 		}
 		if (Handler().GetCount() >= FD_SETSIZE)
 		{
-			Handler().LogError(this, "accept", (int)Handler().GetCount(), "SocketHandler fd_set limit reached", LOG_LEVEL_FATAL);
+			Handler().LogError(this, "accept", (int)Handler().GetCount(), "ISocketHandler fd_set limit reached", LOG_LEVEL_FATAL);
 			closesocket(a_s);
 			return;
 		}
@@ -330,7 +331,30 @@ public:
 		tmp -> SetParent(this);
 		tmp -> Attach(a_s);
 		tmp -> SetNonblocking(true);
-		tmp -> SetRemoteAddress( &sa, sa_len);
+		{
+#ifdef IPPROTO_IPV6
+			if (sa_len == sizeof(struct sockaddr_in6))
+			{
+				struct sockaddr_in6 *p = (struct sockaddr_in6 *)&sa;
+				if (p -> sin6_family == AF_INET6)
+				{
+					Ipv6Address ad(p -> sin6_addr,ntohs(p -> sin6_port));
+					ad.SetFlowinfo(p -> sin6_flowinfo);
+					ad.SetScopeId(p -> sin6_scope_id);
+					tmp -> SetRemoteAddress(ad);
+				}
+			}
+#endif
+			if (sa_len == sizeof(struct sockaddr_in))
+			{
+				struct sockaddr_in *p = (struct sockaddr_in *)&sa;
+				if (p -> sin_family == AF_INET)
+				{
+					Ipv4Address ad(p -> sin_addr,ntohs(p -> sin_port));
+					tmp -> SetRemoteAddress(ad);
+				}
+			}
+		}
 		tmp -> SetConnected(true);
 		tmp -> Init();
 		Handler().Add(tmp);
@@ -341,8 +365,8 @@ public:
 			tmp -> OnAccept();
 	}
 
-	/** This method is not supposed to be used, because accept() is
-	    handled automatically in the OnRead() method. */
+	/** Please don't use this method.
+		"accept()" is handled automatically in the OnRead() method. */
         virtual SOCKET Accept(SOCKET socket, struct sockaddr *saptr, socklen_t *lenptr)
         {
                 return accept(socket, saptr, lenptr);

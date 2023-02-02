@@ -34,8 +34,8 @@ namespace SOCKETS_NAMESPACE {
 class HttpClientSocket : public HTTPSocket
 {
 public:
-	HttpClientSocket(SocketHandler&);
-	HttpClientSocket(SocketHandler&,const std::string& url_in);
+	HttpClientSocket(ISocketHandler&);
+	HttpClientSocket(ISocketHandler&,const std::string& url_in);
 	~HttpClientSocket();
 
 	/** Parse url to protocol,host,port,url and file. */
@@ -45,6 +45,7 @@ public:
 	void OnHeader(const std::string&,const std::string&);
 	void OnHeaderComplete();
 	void OnData(const char *,size_t);
+	void OnDelete();
 
 	/** New callback method fires when all data is received. */
 	virtual void OnContent();

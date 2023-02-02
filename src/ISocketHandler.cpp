@@ -1,4 +1,4 @@
-/** \file CTcpSocket.cpp
+/** \file ISocketHandler.h
  **	\date  2004-02-13
  **	\author grymse@alhem.net
 **/
@@ -27,48 +27,77 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
-#include "CTcpSocket.h"
+#include "ISocketHandler.h"
+
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
 #endif
 
 
+#ifdef _DEBUG
+#define DEB(x) x
+#else
+#define DEB(x) 
+#endif
 
 
-CTcpSocket::CTcpSocket(ISocketHandler& h)
-:TcpSocket(h)
-,m_crypt(NULL)
+ISocketHandler::ISocketHandler(StdLog *log)
+: m_stdlog(log)
+, m_slave(false)
+, m_mutex(m_mutex)
+, m_b_use_mutex(false)
 {
 }
 
 
-CTcpSocket::~CTcpSocket()
+ISocketHandler::ISocketHandler(Mutex& mutex,StdLog *log)
+: m_stdlog(log)
+, m_slave(false)
+, m_mutex(mutex)
+, m_b_use_mutex(true)
 {
-	if (m_crypt)
-		delete m_crypt;
 }
 
 
-void CTcpSocket::Init()
+ISocketHandler::~ISocketHandler()
 {
-	m_crypt = AllocateCrypt();
 }
 
 
-std::string CTcpSocket::encrypt(unsigned char *ik,const std::string& msg)
+Mutex& ISocketHandler::GetMutex() const
 {
-	return m_crypt ? m_crypt -> encrypt(ik, msg) : "";
+	return m_mutex; 
 }
 
 
-bool CTcpSocket::decrypt(unsigned char *ik,const std::string& msg,std::string& output)
+void ISocketHandler::SetSlave(bool x)
 {
-	return m_crypt ? m_crypt -> decrypt(ik, msg, output) : false;
+	m_slave = x;
+}
+
+
+bool ISocketHandler::IsSlave()
+{
+	return m_slave;
+}
+
+
+void ISocketHandler::RegStdLog(StdLog *log)
+{
+	m_stdlog = log;
+}
+
+
+void ISocketHandler::LogError(Socket *p,const std::string& user_text,int err,const std::string& sys_err,loglevel_t t)
+{
+	if (m_stdlog)
+	{
+		m_stdlog -> error(this, p, user_text, err, sys_err, t);
+	}
 }
 
 
 #ifdef SOCKETS_NAMESPACE
-}
+} // namespace SOCKETS_NAMESPACE {
 #endif
-

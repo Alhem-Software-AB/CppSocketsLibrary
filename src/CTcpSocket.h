@@ -43,7 +43,7 @@ namespace SOCKETS_NAMESPACE {
 class CTcpSocket : public TcpSocket
 {
 public:
-	CTcpSocket(SocketHandler& );
+	CTcpSocket(ISocketHandler& );
 	~CTcpSocket();
 
 	void Init();

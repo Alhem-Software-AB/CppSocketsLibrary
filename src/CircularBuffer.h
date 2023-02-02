@@ -66,7 +66,7 @@ public:
 	size_t Space();
 
 	/** return total number of bytes written to this buffer, ever */
-	unsigned long ByteCounter();
+	unsigned long ByteCounter(bool clear = false);
 
 private:
 	Socket& GetOwner() const;

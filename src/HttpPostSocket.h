@@ -37,17 +37,17 @@ namespace SOCKETS_NAMESPACE {
 #endif
 
 
-class SocketHandler;
+class ISocketHandler;
 
 /** Generate a http post request, get response. 
 	\ingroup http */
 class HttpPostSocket : public HttpClientSocket
 {
 public:
-	HttpPostSocket(SocketHandler&);
+	HttpPostSocket(ISocketHandler&);
 	/* client constructor, 
 		\param url_in = 'http://host:port/resource' */
-	HttpPostSocket(SocketHandler&,const std::string& url_in);
+	HttpPostSocket(ISocketHandler&,const std::string& url_in);
 	~HttpPostSocket();
 
 	// these must be specified before connecting / adding to handler
