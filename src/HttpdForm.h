@@ -5,7 +5,7 @@
  **/
 
 /*
-Copyright (C) 1999  Anders Hedstrom
+Copyright (C) 1999-2005  Anders Hedstrom
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License

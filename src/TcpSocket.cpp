@@ -4,7 +4,7 @@
  **	Author ....... grymse@alhem.net
 **/
 /*
-Copyright (C) 2004  Anders Hedstrom
+Copyright (C) 2004,2005  Anders Hedstrom
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -580,10 +580,11 @@ void TcpSocket::ReadLine()
 	{
 		size_t x = 0;
 		size_t n = ibuf.GetLength();
-		char tmp[TCP_BUFSIZE_READ];
+		char tmp[TCP_BUFSIZE_READ + 1];
 
 		n = (n >= TCP_BUFSIZE_READ) ? TCP_BUFSIZE_READ : n;
 		ibuf.Read(tmp,n);
+		tmp[n] = 0;
 
 		for (size_t i = 0; i < n; i++)
 		{

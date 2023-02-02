@@ -3,7 +3,7 @@
  **	Published ....  2004-10-08
 **/
 /*
-Copyright (C) 2004  Anders Hedström (grymse@alhem.net)
+Copyright (C) 2004,2005  Anders Hedström (grymse@alhem.net)
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License

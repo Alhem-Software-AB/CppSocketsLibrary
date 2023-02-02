@@ -4,7 +4,7 @@
  **	Author ....... grymse@alhem.net
 **/
 /*
-Copyright (C) 2004  Anders Hedstrom
+Copyright (C) 2004,2005  Anders Hedstrom
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -36,7 +36,7 @@ Thread::Thread(bool release)
 ,m_release(false)
 {
 #ifdef _WIN32
-	m_thread = ::CreateThread(NULL, 0, StartThread, NULL, 0, &m_dwThreadId);
+	m_thread = ::CreateThread(NULL, 0, StartThread, this, 0, &m_dwThreadId);
 #else
 	pthread_attr_t attr;
 
