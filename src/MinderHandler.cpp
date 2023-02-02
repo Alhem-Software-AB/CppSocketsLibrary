@@ -25,14 +25,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #endif
 #include <stdlib.h>
 #include <time.h>
-#include <socket_include.h>
+#include "socket_include.h"
 #ifdef _WIN32
 #define random rand
 #define srandom srand
 #define strcasecmp stricmp
 #endif
-#include <Parse.h>
-#include <Uid.h>
+#include "Parse.h"
+#include "Uid.h"
 #include "MinderSocket.h"
 #include "MinderHandler.h"
 
@@ -152,7 +152,7 @@ void MinderHandler::SendMessage(const std::string& hid,const std::string& mid,sh
 				}
 				for (ulong_v::iterator i2 = hosts.begin(); i2 != hosts.end() && ok; i2++)
 				{
-					if (*i2 == p -> GetRemoteHostId())
+					if (*i2 == static_cast<unsigned long>(p -> GetRemoteHostId()))
 					{
 						ok = false;
 					}

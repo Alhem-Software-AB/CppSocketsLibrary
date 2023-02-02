@@ -52,7 +52,7 @@ public:
 	bool IsRequest() { return m_request; }
 	bool IsResponse() { return m_response; }
 
-	void SetMethod(const std::string& x) { m_method = x; }
+	void SetHttpVersion(const std::string& x) { m_http_version = x; }
 	void SetStatus(const std::string& x) { m_status = x; }
 	void SetStatusText(const std::string& x) { m_status_text = x; }
 	void AddResponseHeader(const std::string& x,const std::string& y) { m_response_header[x] = y; }

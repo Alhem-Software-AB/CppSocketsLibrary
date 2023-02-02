@@ -24,7 +24,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define _UTILITY_H
 
 #include <string>
+#ifdef _WIN32
+typedef unsigned __int64 uint64_t;
+#else
 #include <stdint.h>
+#endif
 #include "Base64.h"
 
 

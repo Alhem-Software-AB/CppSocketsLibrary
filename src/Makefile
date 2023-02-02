@@ -1,4 +1,4 @@
-VERSION =	1.2.1
+VERSION =	1.2.2
 
 INCLUDE =	-I/usr/devel/include -I.
 CFLAGS =	-Wall -g -O2 $(INCLUDE) -MD -D_VERSION='"$(VERSION)"'

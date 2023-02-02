@@ -25,9 +25,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include <string>
 #include <time.h>
-#include <SocketHandler.h>
+#include "SocketHandler.h"
 #include "MinionSocket.h" // for SendMessage ( to other minions )
-#include <Utility.h>
+#include "Utility.h"
 
 
 

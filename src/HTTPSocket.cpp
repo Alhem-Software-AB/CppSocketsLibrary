@@ -20,8 +20,6 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
-//#include <stdio.h>
-
 #include "Parse.h"
 #include "HTTPSocket.h"
 
@@ -140,7 +138,7 @@ void HTTPSocket::OnLine(const std::string& line)
 void HTTPSocket::SendResponse()
 {
 	std::string msg;
-	msg = m_method + " " + m_status + " " + m_status_text + "\n";
+	msg = m_http_version + " " + m_status + " " + m_status_text + "\n";
 	for (string_m::iterator it = m_response_header.begin(); it != m_response_header.end(); it++)
 	{
 		std::string key = (*it).first;
