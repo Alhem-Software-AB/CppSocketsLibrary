@@ -989,7 +989,7 @@ void TcpSocket::OnSocks4Connect()
 			/// \todo warn
 		}
 	}
-#ifdef _WIN32
+#if defined( _WIN32) && !defined(__CYGWIN__)
 	strcpy_s(request + 8, sizeof(request) - 8, GetSocks4Userid().c_str());
 #else
 	strcpy(request + 8, GetSocks4Userid().c_str());
@@ -1081,11 +1081,7 @@ void TcpSocket::Sendf(const char *format, ...)
 	va_list ap;
 	va_start(ap, format);
 	char slask[5000]; // vsprintf / vsnprintf temporary
-#ifdef _WIN32
-	vsprintf_s(slask, sizeof(slask), format, ap);
-#else
 	vsnprintf(slask, sizeof(slask), format, ap);
-#endif
 	va_end(ap);
 	Send( slask );
 }
@@ -1376,7 +1372,7 @@ int TcpSocket::SSL_password_cb(char *buf,int num,int rwflag,void *userdata)
 	{
 		return 0;
 	}
-#ifdef _WIN32
+#if defined( _WIN32) && !defined(__CYGWIN__)
 	strcpy_s(buf, num, pw.c_str());
 #else
 	strcpy(buf,pw.c_str());

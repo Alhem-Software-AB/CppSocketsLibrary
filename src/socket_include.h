@@ -183,7 +183,10 @@ namespace SOCKETS_NAMESPACE {
 #pragma comment(lib, "wsock32.lib")
 #endif
 #define strcasecmp _stricmp
+#ifndef __CYGWIN__
 #define snprintf sprintf_s
+#define vsnprintf vsprintf_s
+#endif
 
 typedef unsigned long ipaddr_t;
 typedef unsigned short port_t;

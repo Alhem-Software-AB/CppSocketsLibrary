@@ -59,7 +59,7 @@ void Ajp13Socket::OnHeader( short id, short len )
 {
 	if (id != 0x1234)
 	{
-		fprintf(stderr, "ABORT: bad packet id: %x\n", id);
+DEB(		fprintf(stderr, "ABORT: bad packet id: %x\n", id);)
 		SetCloseAndDelete();
 	}
 	else
@@ -74,7 +74,7 @@ void Ajp13Socket::ReceiveBody(const char *buf, size_t sz)
 {
 	if (sz - 2 > m_body_size_left)
 	{
-		fprintf(stderr, "More body data received than expected\n");
+DEB(		fprintf(stderr, "More body data received than expected\n");)
 		SetCloseAndDelete();
 		return;
 	}
@@ -164,7 +164,7 @@ void Ajp13Socket::ReceiveForwardRequest( const char *buf, size_t sz )
 				}
 				else
 				{
-					fprintf(stderr, "Unknown header key value: %x\n", x);
+DEB(					fprintf(stderr, "Unknown header key value: %x\n", x);)
 					SetCloseAndDelete();
 				}
 			}
@@ -201,7 +201,7 @@ void Ajp13Socket::ReceiveForwardRequest( const char *buf, size_t sz )
 				}
 				else
 				{
-					fprintf(stderr, "Unknown attribute key: 0x%02x\n", buf[ptr]);
+DEB(					fprintf(stderr, "Unknown attribute key: 0x%02x\n", buf[ptr]);)
 					SetCloseAndDelete();
 				}
 			}
@@ -400,7 +400,7 @@ void Ajp13Socket::OnPacket( const char *buf, size_t sz )
 		ReceiveCPing(buf, sz);
 		break;
 	default:
-		fprintf(stderr, "Unknown packet type: 0x%02x\n", *buf);
+DEB(		fprintf(stderr, "Unknown packet type: 0x%02x\n", *buf);)
 		SetCloseAndDelete();
 	}
 

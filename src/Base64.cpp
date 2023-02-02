@@ -30,6 +30,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #include "Base64.h"
+#include "IFile.h"
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
@@ -55,6 +56,45 @@ const char Base64::rstr[] = {
 
 Base64::Base64()
 {
+}
+
+
+void Base64::encode(IFile *fil, std::string& output, bool add_crlf)
+{
+	size_t remain;
+	size_t i = 0;
+	size_t o = 0;
+	char input[4];
+
+	output = "";
+	remain = fil -> fread(input,1,3);
+	while (remain > 0)
+	{
+		if (add_crlf && o && o % 76 == 0)
+			output += "\n";
+		switch (remain)
+		{
+		case 1:
+			output += bstr[ ((input[i] >> 2) & 0x3f) ];
+			output += bstr[ ((input[i] << 4) & 0x30) ];
+			output += "==";
+			break;
+		case 2:
+			output += bstr[ ((input[i] >> 2) & 0x3f) ];
+			output += bstr[ ((input[i] << 4) & 0x30) + ((input[i + 1] >> 4) & 0x0f) ];
+			output += bstr[ ((input[i + 1] << 2) & 0x3c) ];
+			output += "=";
+			break;
+		default:
+			output += bstr[ ((input[i] >> 2) & 0x3f) ];
+			output += bstr[ ((input[i] << 4) & 0x30) + ((input[i + 1] >> 4) & 0x0f) ];
+			output += bstr[ ((input[i + 1] << 2) & 0x3c) + ((input[i + 2] >> 6) & 0x03) ];
+			output += bstr[ (input[i + 2] & 0x3f) ];
+		}
+		o += 4;
+		//
+		remain = fil -> fread(input,1,3);
+	}
 }
 
 

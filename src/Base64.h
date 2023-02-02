@@ -44,6 +44,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 namespace SOCKETS_NAMESPACE {
 #endif
 
+class IFile;
+
 /** \defgroup util Utilities */
 
 /** Base64 encode/decode. 
@@ -54,6 +56,7 @@ public:
 	Base64();
 
 	void encode(FILE *, std::string& , bool add_crlf = true);
+	void encode(IFile *, std::string& , bool add_crlf = true);
 	void encode(const std::string&, std::string& , bool add_crlf = true);
 	void encode(const char *, size_t, std::string& , bool add_crlf = true);
 	void encode(const unsigned char *, size_t, std::string& , bool add_crlf = true);

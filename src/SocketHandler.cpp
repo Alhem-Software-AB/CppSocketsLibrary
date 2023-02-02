@@ -46,6 +46,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "Utility.h"
 #include "SocketAddress.h"
 #include "Exception.h"
+#include "SocketHandlerThread.h"
+#include "Lock.h"
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
@@ -62,6 +64,9 @@ SocketHandler::SocketHandler(StdLog *p)
 :m_stdlog(p)
 ,m_mutex(m_mutex)
 ,m_b_use_mutex(false)
+,m_parent(m_parent)
+,m_b_parent_is_valid(false)
+,m_release(NULL)
 ,m_maxsock(0)
 ,m_tlast(0)
 ,m_b_check_callonconnect(false)
@@ -95,6 +100,46 @@ SocketHandler::SocketHandler(IMutex& mutex,StdLog *p)
 :m_stdlog(p)
 ,m_mutex(mutex)
 ,m_b_use_mutex(true)
+,m_parent(m_parent)
+,m_b_parent_is_valid(false)
+,m_release(NULL)
+,m_maxsock(0)
+,m_tlast(0)
+,m_b_check_callonconnect(false)
+,m_b_check_detach(false)
+,m_b_check_timeout(false)
+,m_b_check_retry(false)
+,m_b_check_close(false)
+#ifdef ENABLE_SOCKS4
+,m_socks4_host(0)
+,m_socks4_port(0)
+,m_bTryDirect(false)
+#endif
+#ifdef ENABLE_RESOLVER
+,m_resolv_id(0)
+,m_resolver(NULL)
+#endif
+#ifdef ENABLE_POOL
+,m_b_enable_pool(false)
+#endif
+#ifdef ENABLE_DETACH
+,m_slave(false)
+#endif
+{
+	m_mutex.Lock();
+	FD_ZERO(&m_rfds);
+	FD_ZERO(&m_wfds);
+	FD_ZERO(&m_efds);
+}
+
+
+SocketHandler::SocketHandler(IMutex& mutex, ISocketHandler& parent, StdLog *p)
+:m_stdlog(p)
+,m_mutex(mutex)
+,m_b_use_mutex(true)
+,m_parent(parent)
+,m_b_parent_is_valid(true)
+,m_release(NULL)
 ,m_maxsock(0)
 ,m_tlast(0)
 ,m_b_check_callonconnect(false)
@@ -127,6 +172,11 @@ SocketHandler::SocketHandler(IMutex& mutex,StdLog *p)
 
 SocketHandler::~SocketHandler()
 {
+	for (std::list<SocketHandlerThread *>::iterator it = m_threads.begin(); it != m_threads.end(); it++)
+	{
+		SocketHandlerThread *p = *it;
+		p -> Stop();
+	}
 #ifdef ENABLE_RESOLVER
 	if (m_resolver)
 	{
@@ -180,6 +230,110 @@ DEB(		fprintf(stderr, "/Emptying sockets list in SocketHandler destructor, %d in
 	{
 		m_mutex.Unlock();
 	}
+}
+
+
+ISocketHandler *SocketHandler::Create(StdLog *log)
+{
+	return new SocketHandler(log);
+}
+
+
+ISocketHandler *SocketHandler::Create(IMutex& mutex, ISocketHandler& parent, StdLog *log)
+{
+	return new SocketHandler(mutex, parent, log);
+}
+
+
+bool SocketHandler::ParentHandlerIsValid()
+{
+	return m_b_parent_is_valid;
+}
+
+
+ISocketHandler& SocketHandler::ParentHandler()
+{
+	if (!m_b_parent_is_valid)
+		throw Exception("No parent sockethandler available");
+	return m_parent;
+}
+
+
+ISocketHandler& SocketHandler::GetRandomHandler()
+{
+	if (m_threads.empty())
+		throw Exception("SocketHandler is not multithreaded");
+	size_t min_count = 99999;
+	SocketHandlerThread *match = NULL;
+	for (std::list<SocketHandlerThread *>::iterator it = m_threads.begin(); it != m_threads.end(); it++)
+	{
+		SocketHandlerThread *thr = *it;
+		ISocketHandler& h = thr -> Handler();
+		{
+			Lock lock(h.GetMutex());
+			size_t sz = h.GetCount();
+			if (sz < min_count)
+			{
+				min_count = sz;
+				match = thr;
+			}
+		}
+	}
+	if (match)
+		return match -> Handler();
+	throw Exception("Can't locate free threaded sockethandler");
+}
+
+
+ISocketHandler& SocketHandler::GetEffectiveHandler()
+{
+	return m_b_parent_is_valid ? m_parent : *this;
+}
+
+
+void SocketHandler::SetNumberOfThreads(size_t n)
+{
+	if (!m_threads.empty())
+	{
+		return; // already set
+	}
+	if (n > 1 && n < 256)
+	{
+		for (int i = 1; i <= (int)n; i++)
+		{
+			SocketHandlerThread *p = new SocketHandlerThread(*this);
+			m_threads.push_back(p);
+			p -> SetDeleteOnExit();
+			p -> Start();
+			p -> Wait();
+		}
+	}
+}
+
+
+bool SocketHandler::IsThreaded()
+{
+	return !m_threads.empty();
+}
+
+
+void SocketHandler::EnableRelease()
+{
+	if (m_release)
+		return;
+	m_release = new UdpSocket(*this);
+	m_release -> SetDeleteByHandler();
+	port_t port = 0;
+	m_release -> Bind("127.0.0.1", port);
+	Add(m_release);
+}
+
+
+void SocketHandler::Release()
+{
+	if (!m_release)
+		return;
+	m_release -> SendTo("127.0.0.1", m_release -> GetPort(), "\n");
 }
 
 
@@ -716,7 +870,14 @@ DEB(		fprintf(stderr, "Trying to add fd %d,  m_add.size() %d\n", (int)s, (int)m_
 				continue;
 			}
 		}
-		if (!p -> CloseAndDelete())
+		if (p -> CloseAndDelete())
+		{
+			LogError(p, "Add", (int)p -> GetSocket(), "Added socket with SetCloseAndDelete() true", LOG_LEVEL_WARNING);
+			m_sockets[s] = p;
+			DeleteSocket(p);
+			p -> Close();
+		}
+		else
 		{
 			StreamSocket *scp = dynamic_cast<StreamSocket *>(p);
 			if (scp && scp -> Connecting()) // 'Open' called before adding socket
@@ -737,12 +898,8 @@ DEB(		fprintf(stderr, "Trying to add fd %d,  m_add.size() %d\n", (int)s, (int)m_
 				}
 			}
 			m_maxsock = (s > m_maxsock) ? s : m_maxsock;
+			m_sockets[s] = p;
 		}
-		else
-		{
-			LogError(p, "Add", (int)p -> GetSocket(), "Added socket with SetCloseAndDelete() true", LOG_LEVEL_WARNING);
-		}
-		m_sockets[s] = p;
 		//
 		m_add.erase(it);
 	}
@@ -1060,31 +1217,50 @@ printf("]\n");
 	}
 	if (n == -1) // error on select
 	{
+		int err = Errno;
 		/*
 			EBADF  An invalid file descriptor was given in one of the sets.
 			EINTR  A non blocked signal was caught.
 			EINVAL n is negative. Or struct timeval contains bad time values (<0).
 			ENOMEM select was unable to allocate memory for internal tables.
 		*/
-		if (Errno == EBADF)
+#ifdef _WIN32
+		switch (err)
 		{
+		case WSAENOTSOCK:
 			RebuildFdset();
-		}
-		else
-		if (Errno == EINTR)
-		{
-		}
-		else
-		if (Errno == EINVAL)
-		{
-			LogError(NULL, "SocketHandler::Select", Errno, StrError(Errno), LOG_LEVEL_FATAL);
+			break;
+		case WSAEINTR:
+		case WSAEINPROGRESS:
+			break;
+		case WSAEINVAL:
+			LogError(NULL, "SocketHandler::Select", err, StrError(err), LOG_LEVEL_FATAL);
 			throw Exception("select(n): n is negative. Or struct timeval contains bad time values (<0).");
+		case WSAEFAULT:
+			LogError(NULL, "SocketHandler::Select", err, StrError(err), LOG_LEVEL_ERROR);
+			break;
+		case WSANOTINITIALISED:
+			throw Exception("WSAStartup not successfully called");
+		case WSAENETDOWN:
+			throw Exception("Network subsystem failure");
 		}
-		else
-		if (Errno == ENOMEM)
+#else
+		switch (err)
 		{
-			LogError(NULL, "SocketHandler::Select", Errno, StrError(Errno), LOG_LEVEL_ERROR);
+		case EBADF:
+			RebuildFdset();
+			break;
+		case EINTR:
+			break;
+		case EINVAL:
+			LogError(NULL, "SocketHandler::Select", err, StrError(err), LOG_LEVEL_FATAL);
+			throw Exception("select(n): n is negative. Or struct timeval contains bad time values (<0).");
+		case ENOMEM:
+			LogError(NULL, "SocketHandler::Select", err, StrError(err), LOG_LEVEL_ERROR);
+			break;
 		}
+#endif
+		printf("error on select(): %d %s\n", Errno, StrError(err));
 	}
 	else
 	if (!n) // timeout

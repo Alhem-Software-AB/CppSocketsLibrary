@@ -1,7 +1,7 @@
 MAJOR =		2
-MINOR =		3.9.2
+MINOR =		3.9.3
 VERSION =	$(MAJOR).$(MINOR)
-DIFF_VERSION =	2.3.9.1
+DIFF_VERSION =	2.3.9.2
 
 # Sockets
 OBJS =		\
@@ -43,7 +43,9 @@ OBJS =		\
 		Socket.o \
 		SocketHandler.o \
 		SocketHandlerEp.o \
+		SocketHandlerThread.o \
 		SocketStream.o \
+		SocketThread.o \
 		StdoutLog.o \
 		StreamSocket.o \
 		StreamWriter.o \
@@ -51,7 +53,6 @@ OBJS =		\
 		Thread.o \
 		UdpSocket.o \
 		Utility.o \
-		socket_include.o \
 		XmlDocument.o \
 		XmlNode.o \
 		XmlException.o

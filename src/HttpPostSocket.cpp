@@ -42,6 +42,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <sys/types.h>
 #include <sys/stat.h>
 #include "Lock.h"
+#include "File.h"
 
 #include "HttpPostSocket.h"
 
@@ -260,22 +261,16 @@ void HttpPostSocket::DoMultipartPost()
 				"\r\n";
 			Send( tmp );
 			{
-#ifdef _WIN32
-				FILE *fil;
-				if (fopen_s(&fil, filename.c_str(), "rb"))
-					fil = NULL;
-#else
-				FILE *fil = fopen(filename.c_str(),"rb");
-#endif
-				if (fil)
+				std::auto_ptr<IFile> fil = std::auto_ptr<IFile>(new File);
+				if (fil -> fopen(filename, "rb"))
 				{
 					char slask[2000]; // for fread
 					size_t n;
-					while ((n = fread(slask, 1, 2000, fil)) > 0)
+					while ((n = fil -> fread(slask, 1, 2000)) > 0)
 					{
 						SendBuf(slask, n);
 					}
-					fclose(fil);
+					fil -> fclose();
 				}
 			}
 			Send("\r\n");

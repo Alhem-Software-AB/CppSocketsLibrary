@@ -431,7 +431,7 @@ void Utility::l2ip(const struct in6_addr& ip, std::string& str,bool mixed)
 			x = ntohs(addr16[i]);
 			if (*slask && (x || !ok_to_skip || prev))
 			{
-#ifdef _WIN32
+#if defined( _WIN32) && !defined(__CYGWIN__)
 				strcat_s(slask,sizeof(slask),":");
 #else
 				strcat(slask,":");
@@ -567,7 +567,7 @@ const std::string& Utility::GetLocalAddress6()
 
 const std::string Utility::GetEnv(const std::string& name)
 {
-#ifdef _WIN32
+#if defined( _WIN32) && !defined(__CYGWIN__)
 	size_t sz = 0;
 	char tmp[2048];
 	if (getenv_s(&sz, tmp, sizeof(tmp), name.c_str()))
@@ -949,7 +949,7 @@ bool Utility::reverse(struct sockaddr *sa, socklen_t sa_len, std::string& hostna
 					unsigned short x = ntohs(addr16[i]);
 					if (*slask && (x || !ok_to_skip || prev))
 					{
-#ifdef _WIN32
+#if defined( _WIN32) && !defined(__CYGWIN__)
 						strcat_s(slask, sizeof(slask),":");
 #else
 						strcat(slask,":");
@@ -970,7 +970,7 @@ bool Utility::reverse(struct sockaddr *sa, socklen_t sa_len, std::string& hostna
 			}
 			if (!*slask)
 			{
-#ifdef _WIN32
+#if defined( _WIN32) && !defined(__CYGWIN__)
 				strcpy_s(slask, sizeof(slask), "::");
 #else
 				strcpy(slask, "::");
@@ -1389,6 +1389,19 @@ bool Utility::ChangeDirectory(const Utility::Path& to_dir)
 		return false;
 	}
 	return true;
+#endif
+}
+
+
+void Utility::Sleep(int ms)
+{
+#ifdef _WIN32
+	::Sleep(ms);
+#else
+	struct timeval tv;
+	tv.tv_sec = ms / 1000;
+	tv.tv_usec = (ms % 1000) * 1000;
+	select(0, NULL, NULL, NULL, &tv);
 #endif
 }
 

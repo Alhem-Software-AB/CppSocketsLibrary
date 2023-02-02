@@ -285,11 +285,7 @@ void MemFile::fprintf(const char *format, ...)
 	va_list ap;
 	char tmp[BLOCKSIZE];
 	va_start(ap, format);
-#ifdef _WIN32
-	vsprintf_s(tmp, sizeof(tmp), format, ap);
-#else
 	vsnprintf(tmp, sizeof(tmp), format, ap);
-#endif
 	va_end(ap);
 	fwrite(tmp, 1, strlen(tmp));
 }

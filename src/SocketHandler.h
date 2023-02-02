@@ -49,6 +49,8 @@ class Socket;
 class ResolvServer;
 #endif
 class IMutex;
+class SocketHandlerThread;
+class UdpSocket;
 
 /** Socket container class, event generator. 
 	\ingroup basic */
@@ -68,7 +70,26 @@ public:
 		\param log Optional log class pointer */
 	SocketHandler(IMutex& mutex,StdLog *log = NULL);
 
+	SocketHandler(IMutex&, ISocketHandler& parent, StdLog * = NULL);
+
 	~SocketHandler();
+
+	virtual ISocketHandler *Create(StdLog * = NULL);
+	virtual ISocketHandler *Create(IMutex&, ISocketHandler&, StdLog * = NULL);
+
+	virtual bool ParentHandlerIsValid();
+
+	virtual ISocketHandler& ParentHandler();
+
+	virtual ISocketHandler& GetRandomHandler();
+
+	virtual ISocketHandler& GetEffectiveHandler();
+
+	virtual void SetNumberOfThreads(size_t n);
+	virtual bool IsThreaded();
+
+	virtual void EnableRelease();
+	virtual void Release();
 
 	/** Get mutex reference for threadsafe operations. */
 	IMutex& GetMutex() const;
@@ -120,6 +141,11 @@ public:
 	void SetRetry(bool = true);
 	void SetClose(bool = true);
 
+private:
+	static FILE *m_event_file;
+	static unsigned long m_event_counter;
+
+public:
 	// Connection pool
 #ifdef ENABLE_POOL
 	/** Find available open connection (used by connection pool). */
@@ -215,10 +241,15 @@ protected:
 	StdLog *m_stdlog; ///< Registered log class, or NULL
 	IMutex& m_mutex; ///< Thread safety mutex
 	bool m_b_use_mutex; ///< Mutex correctly initialized
+	ISocketHandler& m_parent;
+	bool m_b_parent_is_valid;
 
 private:
 	void RebuildFdset();
 	void Set(Socket *,bool,bool);
+	//
+	std::list<SocketHandlerThread *> m_threads;
+	UdpSocket *m_release;
 	//
 	SOCKET m_maxsock; ///< Highest file descriptor + 1 in active sockets list
 	fd_set m_rfds; ///< file descriptor set monitored for read events

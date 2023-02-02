@@ -73,8 +73,6 @@ private:
 	EventHandler& operator=(const EventHandler& ) { return *this; } // assignment operator
 	std::list<Event *> m_events;
 	bool m_quit;
-	TcpSocket *m_socket;
-	port_t m_port;
 };
 
 

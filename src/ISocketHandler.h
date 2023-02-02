@@ -78,6 +78,36 @@ public:
 public:
 	virtual ~ISocketHandler() {}
 
+	/** Return another instance */
+	virtual ISocketHandler *Create(StdLog * = NULL) = 0;
+
+	/** Return another instance */
+	virtual ISocketHandler *Create(IMutex&, ISocketHandler&, StdLog * = NULL) = 0;
+
+	/** Handler created with parent */
+	virtual bool ParentHandlerIsValid() = 0;
+
+	/** Get parent sockethandler */
+	virtual ISocketHandler& ParentHandler() = 0;
+
+	/** Get thread handler with least connections */
+	virtual ISocketHandler& GetRandomHandler() = 0;
+
+	/** Return parent handler if valid, otherwise return normal handler */
+	virtual ISocketHandler& GetEffectiveHandler() = 0;
+
+	/** Enable threading */
+	virtual void SetNumberOfThreads(size_t n) = 0;
+
+	/** Threading is enabled */
+	virtual bool IsThreaded() = 0;
+
+	/** Enable select release */
+	virtual void EnableRelease() = 0;
+
+	/** Make select release */
+	virtual void Release() = 0;
+
 	/** Get mutex reference for threadsafe operations. */
 	virtual IMutex& GetMutex() const = 0;
 
@@ -140,6 +170,7 @@ public:
 	virtual void SetTimeout(bool = true) = 0;
 	virtual void SetRetry(bool = true) = 0;
 	virtual void SetClose(bool = true) = 0;
+
 
 	// -------------------------------------------------------------------------
 	// Connection pool

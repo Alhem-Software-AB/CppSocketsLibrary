@@ -166,7 +166,7 @@ std::string Ipv6Address::Convert(struct in6_addr& a,bool mixed)
 			x = ntohs(addr16[i]);
 			if (*slask && (x || !ok_to_skip || prev))
 			{
-#ifdef _WIN32
+#if defined( _WIN32) && !defined(__CYGWIN__)
 				strcat_s(slask,sizeof(slask),":");
 #else
 				strcat(slask,":");

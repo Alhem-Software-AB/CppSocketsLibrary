@@ -70,6 +70,20 @@ SocketHandlerEp::SocketHandlerEp(IMutex& mutex, StdLog *p)
 }
 
 
+SocketHandlerEp::SocketHandlerEp(IMutex& mutex, ISocketHandler& parent, StdLog *p)
+:SocketHandler(mutex, parent, p)
+,m_epoll(-1)
+{
+#ifdef LINUX
+	m_epoll = epoll_create(FD_SETSIZE);
+	if (m_epoll == -1)
+	{
+		throw Exception(StrError(Errno));
+	}
+#endif
+}
+
+
 SocketHandlerEp::~SocketHandlerEp()
 {
 #ifdef LINUX
@@ -78,6 +92,18 @@ SocketHandlerEp::~SocketHandlerEp()
 		close(m_epoll);
 	}
 #endif
+}
+
+
+ISocketHandler *SocketHandlerEp::Create(StdLog *log)
+{
+	return new SocketHandlerEp(log);
+}
+
+
+ISocketHandler *SocketHandlerEp::Create(IMutex& mutex, ISocketHandler& parent, StdLog *log)
+{
+	return new SocketHandlerEp(mutex, parent, log);
 }
 
 

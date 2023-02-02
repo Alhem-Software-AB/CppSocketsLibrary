@@ -54,6 +54,7 @@ namespace SOCKETS_NAMESPACE {
 class ISocketHandler;
 class SocketAddress;
 class IFile;
+class SocketThread;
 
 
 /** \defgroup basic Basic sockets */
@@ -61,26 +62,6 @@ class IFile;
 	\ingroup basic */
 class Socket
 {
-//	friend class ISocketHandler;
-#ifdef ENABLE_DETACH
-	/** Detached socket run thread. 
-		\ingroup internal */
-	class SocketThread : public Thread
-	{
-	public:
-		SocketThread(Socket *p);
-		~SocketThread();
-
-		void Run();
-
-	private:
-		Socket *GetSocket() const { return m_socket; }
-		SocketThread(const SocketThread& s) : m_socket(s.GetSocket()) {}
-		SocketThread& operator=(const SocketThread& ) { return *this; }
-		Socket *m_socket;
-	};
-#endif // ENABLE_DETACH
-
 	/** Socket mode flags. */
 /*
 	enum {

@@ -255,18 +255,27 @@ std::string HttpdSocket::datetime2httpdate(const std::string& dt)
 std::string HttpdSocket::GetDate()
 {
 	time_t t = time(NULL);
+	char slask[40]; // yyyy-mm-dd hh:mm:ss
+#ifdef __CYGWIN__
+	struct tm *tp = localtime(&t);
+	snprintf(slask,sizeof(slask),"%d-%02d-%02d %02d:%02d:%02d",
+		tp -> tm_year + 1900,
+		tp -> tm_mon + 1,
+		tp -> tm_mday,
+		tp -> tm_hour,tp -> tm_min,tp -> tm_sec);
+#else
 	struct tm tp;
-#ifdef _WIN32
+#if defined( _WIN32) && !defined(__CYGWIN__)
 	localtime_s(&tp, &t);
 #else
 	localtime_r(&t, &tp);
 #endif
-	char slask[40]; // yyyy-mm-dd hh:mm:ss
 	snprintf(slask,sizeof(slask),"%d-%02d-%02d %02d:%02d:%02d",
 		tp.tm_year + 1900,
 		tp.tm_mon + 1,
 		tp.tm_mday,
 		tp.tm_hour,tp.tm_min,tp.tm_sec);
+#endif
 	return slask;
 }
 

@@ -40,6 +40,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 namespace SOCKETS_NAMESPACE {
 #endif
 
+class IFile;
+
 /** Get http response to file or memory. 
 	\ingroup http */
 class HttpClientSocket : public HTTPSocket
@@ -111,7 +113,7 @@ private:
 	size_t m_content_length; ///< Content-length header received from remote
 	std::string m_content; ///< Received http headers
 	bool m_data_ptr_set; ///< Buffer set from outside, do not delete
-	FILE *m_fil; ///< Output file
+	IFile *m_fil; ///< Output file
 	size_t m_content_ptr; ///< Number of bytes received from body
 	bool m_b_complete; ///< The entire content-length number of bytes has been received
 	bool m_b_close_when_complete; ///< Close when the full response has been received

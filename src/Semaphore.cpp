@@ -38,13 +38,48 @@ namespace SOCKETS_NAMESPACE {
 #endif
 
 
-Semaphore::Semaphore()
+// ---------------------------------------------------------------
+#ifdef _WIN32
+
+Semaphore::Semaphore(value_t start_val)
 {
-	sem_init(&m_sem, 0, 0);
+	m_handle = ::CreateSemaphore((LPSECURITY_ATTRIBUTES)NULL, start_val, 1, (LPCTSTR)NULL);
 }
 
 
-Semaphore::Semaphore(unsigned int start_val)
+Semaphore::~Semaphore()
+{
+	::CloseHandle(m_handle);
+}
+
+
+int Semaphore::Post()
+{
+	return (::ReleaseSemaphore(m_handle, 1, (LPLONG)NULL) != 0) ? 0 : -1;
+}
+
+
+int Semaphore::Wait()
+{
+	return (WaitForSingleObject(m_handle, INFINITE) == WAIT_OBJECT_0) ? 0 : -1;
+}
+
+
+int Semaphore::TryWait()
+{
+	return -1; // %! not implemented
+}
+
+
+int Semaphore::GetValue(int& i)
+{
+	return 0; // %! not implemented
+}
+
+// ---------------------------------------------------------------
+#else
+
+Semaphore::Semaphore(value_t start_val)
 {
 	sem_init(&m_sem, 0, start_val);
 }
@@ -78,6 +113,8 @@ int Semaphore::GetValue(int& i)
 {
 	return sem_getvalue(&m_sem, &i);
 }
+
+#endif
 
 
 #ifdef SOCKETS_NAMESPACE

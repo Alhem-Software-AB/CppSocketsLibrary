@@ -55,7 +55,12 @@ public:
 		\param log Optional log class pointer */
 	SocketHandlerEp(IMutex& mutex,StdLog *log = NULL);
 
+	SocketHandlerEp(IMutex&, ISocketHandler& parent, StdLog * = NULL);
+
 	~SocketHandlerEp();
+
+	ISocketHandler *Create(StdLog * = NULL);
+	ISocketHandler *Create(IMutex&, ISocketHandler&, StdLog * = NULL);
 
 #ifdef LINUX
 

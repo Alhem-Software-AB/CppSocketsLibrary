@@ -1,5 +1,21 @@
 diff for next release always available @ http://www.alhem.net/Sockets/latest_diff.html
 
+2.3.9.3
+--------
+Added multithread support in sockethandler. New method SetNumberOfThreads()
+enables this.
+New method in sockethandler: Release(). Make select() release before
+specified timeout. Enable function with method EnableRelease().
+EventHandler using new release functionality.
+Thread startup controlled with semaphore instead of flag/sleep combo.
+Default thread startup behaviour is run at once, optional is wait until
+released by posting to semaphore (via method SetRelease(true)).
+Adding a socket with closeanddelete flag set now works as expected.
+Added platform independent method Utility::Sleep( milliseconds ).
+Added missing win32 implementation in new sockethandler.
+Added win32 implementation of Semaphore.
+Repaired build for cygwin/mingw/devcpp.
+
 2.3.9.2
 --------
 More internal restructuring of SocketHandler.

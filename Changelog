@@ -781,3 +781,12 @@ Version 2.3.9.2
 > SocketHandlerEp.cpp
 > SocketHandlerEp.h
 
+Version 2.3.9.3
+--------------------------
+100a101,102
+> SocketHandlerThread.cpp
+> SocketHandlerThread.h
+106a109,110
+> SocketThread.cpp
+> SocketThread.h
+

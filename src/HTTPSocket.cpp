@@ -298,11 +298,7 @@ void HTTPSocket::AddResponseHeader(const std::string& header, const char *format
 	va_list ap;
 
 	va_start(ap, format);
-#ifdef _WIN32
-	vsprintf_s(slask, sizeof(slask), format, ap);
-#else
 	vsnprintf(slask, sizeof(slask), format, ap);
-#endif
 	va_end(ap);
 
 	m_response_header[header] = slask;

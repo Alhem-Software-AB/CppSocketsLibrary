@@ -44,13 +44,15 @@ namespace SOCKETS_NAMESPACE {
 #endif
 
 
-EventHandler::EventHandler(StdLog *p) : SocketHandler(p), m_quit(false), m_socket(NULL)
+EventHandler::EventHandler(StdLog *p) : SocketHandler(p), m_quit(false)
 {
+	EnableRelease();
 }
 
 
-EventHandler::EventHandler(IMutex& m,StdLog *p) : SocketHandler(m, p), m_quit(false), m_socket(NULL)
+EventHandler::EventHandler(IMutex& m,StdLog *p) : SocketHandler(m, p), m_quit(false)
 {
+	EnableRelease();
 }
 
 
@@ -128,10 +130,7 @@ long EventHandler::AddEvent(IEventOwner *from,long sec,long usec)
 		++it;
 	}
 	m_events.insert(it, e);
-	if (m_socket)
-	{
-		m_socket -> Send("\n");
-	}
+	Release();
 	return e -> GetID();
 }
 
@@ -198,23 +197,6 @@ void EventHandler::RemoveEvent(IEventOwner *from, long eid)
 
 void EventHandler::Add(Socket *p)
 {
-	if (!m_socket)
-	{
-		ListenSocket<TcpSocket> *l = new ListenSocket<TcpSocket>(*this);
-		l -> SetDeleteByHandler();
-		l -> Bind("127.0.0.1", 0);
-		m_port = l -> GetPort();
-		SocketHandler::Add(l);
-		m_socket = new TcpSocket( *this );
-		m_socket -> SetDeleteByHandler();
-		m_socket -> SetConnectTimeout(5);
-		m_socket -> SetConnectionRetry(-1);
-#ifdef ENABLE_RECONNECT
-		m_socket -> SetReconnect(true);
-#endif
-		m_socket -> Open("127.0.0.1", m_port);
-		SocketHandler::Add(m_socket);
-	}
 	SocketHandler::Add( p );
 }
 

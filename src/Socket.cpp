@@ -53,6 +53,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifdef ENABLE_IPV6
 #include "Ipv6Address.h"
 #endif
+#include "SocketThread.h"
 
 #ifdef _DEBUG
 #define DEB(x) x; fflush(stderr);
@@ -910,45 +911,6 @@ void Socket::SetSlaveHandler(ISocketHandler *p)
 }
 
 
-Socket::SocketThread::SocketThread(Socket *p)
-:Thread(false)
-,m_socket(p)
-{
-	// Creator will release
-}
-
-
-Socket::SocketThread::~SocketThread()
-{
-	if (IsRunning())
-	{
-		SetRelease(true);
-		SetRunning(false);
-#ifdef _WIN32
-		Sleep(1000);
-#else
-		sleep(1);
-#endif
-	}
-}
-
-
-void Socket::SocketThread::Run()
-{
-	SocketHandler h;
-	h.SetSlave();
-	h.Add(m_socket);
-	m_socket -> SetSlaveHandler(&h);
-	m_socket -> OnDetached();
-	while (h.GetCount() && IsRunning())
-	{
-		h.Select(0, 500000);
-	}
-	// m_socket now deleted oops
-	// yeah oops m_socket delete its socket thread, that means this
-	// so Socket will no longer delete its socket thread, instead we do this:
-	SetDeleteOnExit();
-}
 #endif // ENABLE_DETACH
 
 

@@ -39,6 +39,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "HttpdForm.h"
 #include "IFileUpload.h"
 #include "IStream.h"
+#include "File.h"
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
@@ -210,7 +211,7 @@ HttpdForm::HttpdForm(IFile *infil, const std::string& content_type, size_t conte
 					else // current_filename.size() > 0
 					{
 						// read until m_strBoundary...
-						FILE *fil = NULL;
+						IFile *fil = NULL;
 						int out = 0;
 						char c;
 						char fn[2000]; // where post'd file will be saved
@@ -220,7 +221,11 @@ HttpdForm::HttpdForm(IFile *infil, const std::string& content_type, size_t conte
 							::GetTempPathA(2000, tmp_path);
 							if (tmp_path[strlen(tmp_path) - 1] != '\\')
 							{
+#ifdef __CYGWIN__
+								strcat(tmp_path, "\\");
+#else
 								strcat_s(tmp_path, sizeof(tmp_path), "\\");
+#endif
 							}
 							snprintf(fn,sizeof(fn),"%s%s",tmp_path,current_filename.c_str());
 						}
@@ -231,12 +236,12 @@ HttpdForm::HttpdForm(IFile *infil, const std::string& content_type, size_t conte
 							m_upload_stream = &m_file_upload -> IFileUploadBegin(current_name, current_filename, content_type);
 						else
 						{
-#ifdef _WIN32
-							if (fopen_s(&fil, fn, "wb"))
+							fil = new File;
+							if (!fil -> fopen(fn, "wb"))
+							{
+								delete fil;
 								fil = NULL;
-#else
-							fil = fopen(fn, "wb");
-#endif
+							}
 						}
 						if (fil || m_upload_stream)
 						{
@@ -249,7 +254,7 @@ HttpdForm::HttpdForm(IFile *infil, const std::string& content_type, size_t conte
 									if (m_upload_stream)
 										m_upload_stream -> IStreamWrite(&tempcmp[tc], 1);
 									else
-										fwrite(&tempcmp[tc],1,1,fil);
+										fil -> fwrite(&tempcmp[tc],1,1);
 								}
 								tempcmp[tc] = c;
 								tc++;
@@ -284,13 +289,14 @@ HttpdForm::HttpdForm(IFile *infil, const std::string& content_type, size_t conte
 							else
 							if (fil)
 							{
-								fclose(fil);
+								fil -> fclose();
+								delete fil;
 							}
 
 							cgi = new CGI(current_name,fn,fn);
 							m_cgi.push_back(cgi);
 						
-#ifdef _WIN32
+#if defined( _WIN32) && !defined(__CYGWIN__)
 							strcpy_s(slask, TMPSIZE, m_strBoundary.c_str());
 #else
 							strcpy(slask, m_strBoundary.c_str());

@@ -37,6 +37,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #else
 #include <pthread.h>
 #endif
+#include "Semaphore.h"
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
@@ -89,6 +90,17 @@ public:
 	void SetDeleteOnExit(bool x = true);
 	bool IsDestructor();
 
+	void Start() {
+		SetRelease(true);
+	}
+
+	void Stop() {
+		Start();
+		SetRunning(false);
+	}
+
+	void Wait();
+
 protected:
 #ifdef _WIN32
 	HANDLE m_thread;
@@ -100,6 +112,7 @@ protected:
 private:
 	Thread(const Thread& ) {}
 	Thread& operator=(const Thread& ) { return *this; }
+	Semaphore m_sem;
 	bool m_running;
 	bool m_release;
 	bool m_b_delete_on_exit;

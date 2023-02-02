@@ -38,6 +38,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #endif
 
 #include "Thread.h"
+#include "Utility.h"
 
 
 #ifdef SOCKETS_NAMESPACE
@@ -68,6 +69,8 @@ Thread::Thread(bool release)
 //	pthread_attr_destroy(&attr);
 #endif
 	m_release = release;
+	if (release)
+		m_sem.Post();
 }
 
 
@@ -78,11 +81,11 @@ Thread::~Thread()
 	{
 		SetRelease(true);
 		SetRunning(false);
-#ifdef _WIN32
-		Sleep(1000);
-#else
-		sleep(1);
-#endif
+		/*
+			Sleep one second to give thread class Run method enough time to
+			release from run loop
+		*/
+		Utility::Sleep(1000);
 	}
 #ifdef _WIN32
 	if (m_thread)
@@ -93,16 +96,15 @@ Thread::~Thread()
 
 threadfunc_t STDPREFIX Thread::StartThread(threadparam_t zz)
 {
+	/*
+		Sleep here to wait for derived thread class constructor to setup
+		vtable... hurts just looking at it
+	*/
+	Utility::Sleep(5);
+
 	Thread *p = (Thread *)zz;
 
-	while (p -> m_running && !p -> m_release)
-	{
-#ifdef _WIN32
-		Sleep(1000);
-#else
-		sleep(1);
-#endif
-	}
+	p -> Wait();
 	if (p -> m_running)
 	{
 		p -> Run();
@@ -140,6 +142,8 @@ bool Thread::IsReleased()
 void Thread::SetRelease(bool x)
 {
  	m_release = x;
+ 	if (x)
+ 		m_sem.Post();
 }
 
 
@@ -158,6 +162,12 @@ void Thread::SetDeleteOnExit(bool x)
 bool Thread::IsDestructor()
 {
 	return m_b_destructor;
+}
+
+
+void Thread::Wait()
+{
+	m_sem.Wait();
 }
 
 

@@ -36,6 +36,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "HttpClientSocket.h"
 #include "StdLog.h"
 #include "ISocketHandler.h"
+#include "File.h"
 
 
 #ifdef SOCKETS_NAMESPACE
@@ -100,7 +101,7 @@ HttpClientSocket::~HttpClientSocket()
 	}
 	if (m_fil)
 	{
-		fclose(m_fil);
+		m_fil -> fclose();
 	}
 }
 
@@ -135,12 +136,12 @@ void HttpClientSocket::OnHeaderComplete()
 {
 	if (m_filename.size())
 	{
-#ifdef _WIN32
-		if (fopen_s(&m_fil, m_filename.c_str(), "wb"))
+		m_fil = new File;
+		if (!m_fil -> fopen(m_filename, "wb"))
+		{
+			delete m_fil;
 			m_fil = NULL;
-#else
-		m_fil = fopen(m_filename.c_str(), "wb");
-#endif
+		}
 	}
 	else
 	if (!m_data_ptr && m_content_length)
@@ -155,7 +156,7 @@ void HttpClientSocket::OnData(const char *buf,size_t len)
 {
 	if (m_fil)
 	{
-		fwrite(buf, 1, len, m_fil);
+		m_fil -> fwrite(buf, 1, len);
 	}
 	else
 	if (m_data_ptr)
@@ -174,7 +175,8 @@ void HttpClientSocket::OnData(const char *buf,size_t len)
 	{
 		if (m_fil)
 		{
-			fclose(m_fil);
+			m_fil -> fclose();
+			delete m_fil;
 			m_fil = NULL;
 		}
 		m_b_complete = true;
@@ -193,7 +195,8 @@ void HttpClientSocket::OnDelete()
 	{
 		if (m_fil)
 		{
-			fclose(m_fil);
+			m_fil -> fclose();
+			delete m_fil;
 			m_fil = NULL;
 		}
 		m_b_complete = true;

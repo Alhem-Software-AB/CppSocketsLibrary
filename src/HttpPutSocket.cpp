@@ -39,6 +39,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "ISocketHandler.h"
 #include <sys/types.h>
 #include <sys/stat.h>
+#include "File.h"
 
 #include "HttpPutSocket.h"
 
@@ -103,22 +104,16 @@ void HttpPutSocket::OnConnect()
 	AddResponseHeader( "User-agent", MyUseragent() );
 	SendRequest();
 
-#ifdef _WIN32
-	FILE *fil;
-	if (fopen_s(&fil, m_filename.c_str(), "rb"))
-		fil = NULL;
-#else
-	FILE *fil = fopen(m_filename.c_str(), "rb");
-#endif
-	if (fil)
+	std::auto_ptr<IFile> fil = std::auto_ptr<IFile>(new File);
+	if (fil -> fopen(m_filename, "rb"))
 	{
 		size_t n;
 		char buf[32768];
-		while ((n = fread(buf, 1, 32768, fil)) > 0)
+		while ((n = fil -> fread(buf, 1, 32768)) > 0)
 		{
 			SendBuf(buf, n);
 		}
-		fclose(fil);
+		fil -> fclose();
 	}
 }
 

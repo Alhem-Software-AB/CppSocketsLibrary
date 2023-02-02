@@ -219,6 +219,9 @@ public:
 	static const Path CurrentDirectory();
 	static bool ChangeDirectory(const Path& to_dir);
 
+	/** wait a specified number of ms */
+	static void Sleep(int ms);
+
 private:
 	static std::string m_host; ///< local hostname
 	static ipaddr_t m_ip; ///< local ip address

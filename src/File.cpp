@@ -67,7 +67,7 @@ bool File::fopen(const std::string& path, const std::string& mode)
 {
 	m_path = path;
 	m_mode = mode;
-#ifdef _WIN32
+#if defined( _WIN32) && !defined(__CYGWIN__)
 	if (fopen_s(&m_fil, path.c_str(), mode.c_str()))
 		m_fil = NULL;
 #else

@@ -195,11 +195,7 @@ void HttpResponse::Writef( const char *format, ... )
 	va_list ap;
 	va_start(ap, format);
 	char tmp[10000];
-#ifdef _WIN32
-	vsprintf_s(tmp, sizeof(tmp), format, ap);
-#else
 	vsnprintf(tmp, sizeof(tmp), format, ap);
-#endif
 	va_end(ap);
 	m_file -> fwrite( tmp, 1, strlen(tmp) );
 }
