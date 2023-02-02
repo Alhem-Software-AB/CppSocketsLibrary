@@ -153,24 +153,13 @@ void SocketHandler::Add(Socket *p)
 		}
 		return;
 	}
-	for (socket_m::iterator it = m_sockets.begin(); it != m_sockets.end(); it++)
+	for (socket_m::iterator it = m_add.begin(); it != m_add.end(); it++)
 	{
 		if ((*it).first == p -> GetSocket())
 		{
-			LogError(p, "Add", -2, "Attempt to add socket already in controlled queue", LOG_LEVEL_FATAL);
+			LogError(p, "Add", -2, "Attempt to add socket already in add queue", LOG_LEVEL_FATAL);
 			m_delete.push_back(p);
 			return;
-		}
-	}
-	{
-		for (socket_m::iterator it = m_add.begin(); it != m_add.end(); it++)
-		{
-			if ((*it).first == p -> GetSocket())
-			{
-				LogError(p, "Add", -2, "Attempt to add socket already in add queue", LOG_LEVEL_FATAL);
-				m_delete.push_back(p);
-				return;
-			}
 		}
 	}
 	m_add[p -> GetSocket()] = p;
@@ -265,6 +254,19 @@ int SocketHandler::Select(struct timeval *tsel)
 		socket_m::iterator it = m_add.begin();
 		SOCKET s = (*it).first;
 		Socket *p = (*it).second;
+		//
+		{
+			for (socket_m::iterator it = m_sockets.begin(); it != m_sockets.end(); it++)
+			{
+				if ((*it).first == p -> GetSocket())
+				{
+					LogError(p, "Add", -2, "Attempt to add socket already in controlled queue", LOG_LEVEL_FATAL);
+					m_delete.push_back(p);
+					m_add.erase(it);
+					continue;
+				}
+			}
+		}
 		// call Open before Add'ing a socket...
 		if (p -> Connecting())
 		{
