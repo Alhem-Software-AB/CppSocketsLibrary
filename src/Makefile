@@ -1,5 +1,5 @@
-VERSION =	2.0.2a
-DIFF_VERSION =	2.0.2
+VERSION =	2.0.2b
+DIFF_VERSION =	2.0.2a
 
 INCLUDE =	-I.
 PREFIX =	/usr/local
@@ -97,7 +97,7 @@ diff:
 			/usr/local/bin/d2html > \
 			$(HTDOCS)/Sockets/latest_diff.html
 
-install:	all
+install:	all libs
 		@mkdir -p $(PREFIX)/lib
 		cp libSockets.a $(PREFIX)/lib
 		cp libSocketsEx.a $(PREFIX)/lib

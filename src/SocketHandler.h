@@ -161,6 +161,9 @@ public:
 	/** Get mutex reference for threadsafe operations. */
 	Mutex& GetMutex() const;
 
+	/** Get socket from active list. */
+	Socket *GetSocket(SOCKET );
+
 protected:
 	socket_m m_sockets; ///< Active sockets list
 	socket_m m_add; ///< Sockets to be added to sockets list

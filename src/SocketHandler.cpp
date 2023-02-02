@@ -157,7 +157,7 @@ void SocketHandler::Add(Socket *p)
 	{
 		if ((*it).first == p -> GetSocket())
 		{
-			LogError(p, "Add", -2, "Attempt to add socket already in add queue", LOG_LEVEL_FATAL);
+			LogError(p, "Add", p -> GetSocket(), "Attempt to add socket already in add queue", LOG_LEVEL_FATAL);
 			m_delete.push_back(p);
 			return;
 		}
@@ -256,15 +256,21 @@ int SocketHandler::Select(struct timeval *tsel)
 		Socket *p = (*it).second;
 		//
 		{
+			bool dup = false;
 			for (socket_m::iterator it = m_sockets.begin(); it != m_sockets.end(); it++)
 			{
 				if ((*it).first == p -> GetSocket())
 				{
-					LogError(p, "Add", -2, "Attempt to add socket already in controlled queue", LOG_LEVEL_FATAL);
+					LogError(p, "Add", p -> GetSocket(), "Attempt to add socket already in controlled queue", LOG_LEVEL_FATAL);
 					m_delete.push_back(p);
 					m_add.erase(it);
-					continue;
+					dup = true;
+					break;
 				}
+			}
+			if (dup)
+			{
+				continue;
 			}
 		}
 		// call Open before Add'ing a socket...
@@ -346,7 +352,7 @@ DEB(
 			SOCKET i = *it2;
 			if (FD_ISSET(i, &rfds))
 			{
-				Socket *p = m_sockets[i];
+				Socket *p = GetSocket(i); //m_sockets[i];
 				if (!p)
 				{
 					n--;
@@ -386,7 +392,7 @@ DEB(
 			}
 			if (FD_ISSET(i, &wfds))
 			{
-				Socket *p = m_sockets[i];
+				Socket *p = GetSocket(i); //m_sockets[i];
 				if (!p)
 				{
 					n--;
@@ -442,7 +448,7 @@ DEB(
 			}
 			if (FD_ISSET(i, &efds))
 			{
-				Socket *p = m_sockets[i];
+				Socket *p = GetSocket(i); //m_sockets[i];
 				if (!p)
 				{
 					n--;
@@ -460,7 +466,7 @@ DEB(
 		socket_v tmp = m_fds_callonconnect;
 		for (socket_v::iterator it = tmp.begin(); it != tmp.end(); it++)
 		{
-			Socket *p = m_sockets[*it];
+			Socket *p = GetSocket(*it); //m_sockets[*it];
 			if (p)
 			{
 				if (p -> CallOnConnect() && p -> Ready() )
@@ -499,7 +505,7 @@ DEB(
 	{
 		for (socket_v::iterator it = m_fds_detach.begin(); it != m_fds_detach.end(); it++)
 		{
-			Socket *p = m_sockets[*it];
+			Socket *p = GetSocket(*it); //m_sockets[*it];
 			if (p)
 			{
 				if (p -> IsDetach())
@@ -521,7 +527,7 @@ DEB(
 		socket_v tmp = m_fds_connecting;
 		for (socket_v::iterator it = tmp.begin(); it != tmp.end(); it++)
 		{
-			Socket *p = m_sockets[*it];
+			Socket *p = GetSocket(*it); //m_sockets[*it];
 			if (p)
 			{
 				if (p -> Connecting() && p -> GetConnectTime() >= p -> GetConnectTimeout() )
@@ -566,7 +572,7 @@ DEB(
 		socket_v tmp = m_fds_retry;
 		for (socket_v::iterator it = tmp.begin(); it != tmp.end(); it++)
 		{
-			Socket *p = m_sockets[*it];
+			Socket *p = GetSocket(*it); //m_sockets[*it];
 			if (p)
 			{
 				if (p -> RetryClientConnect())
@@ -597,7 +603,7 @@ DEB(
 		socket_v tmp = m_fds_close;
 		for (socket_v::iterator it = tmp.begin(); it != tmp.end(); it++)
 		{
-			Socket *p = m_sockets[*it];
+			Socket *p = GetSocket(*it); //m_sockets[*it];
 			if (p)
 			{
 				if (p -> CloseAndDelete() )
@@ -1029,6 +1035,21 @@ Mutex& SocketHandler::GetMutex() const
 //	if (!m_b_use_mutex)
 //		LogError(NULL, "GetMutex", 0, "SocketHandler not created with an external mutex reference", LOG_LEVEL_WARNING);
 	return m_mutex;
+}
+
+
+Socket *SocketHandler::GetSocket(SOCKET n)
+{
+	for (socket_m::iterator it = m_sockets.begin(); it != m_sockets.end(); it++)
+	{
+		if ((*it).first == n)
+		{
+			return (*it).second;
+		}
+	}
+	// TODO: why do we sometimes get here?
+DEB(printf("## not found in m_sockets: %d\n", n);)
+	return NULL;
 }
 
 
