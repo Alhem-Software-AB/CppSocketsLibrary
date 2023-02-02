@@ -71,7 +71,20 @@ class TcpSocket : public Socket
 	};
 	/** Dynamic output buffer list. */
 	typedef std::list<MES *> ucharp_v;
-
+public:
+	/** Removes ssl .rnd file */
+	class SSLInitializer {
+	public:
+		SSLInitializer() {
+			printf("SSLInitializer()\n");
+		}
+		~SSLInitializer() {
+			printf("~SSLInitializer()\n");
+#ifdef HAVE_OPENSSL
+			TcpSocket::DeleteRandFile();
+#endif
+		}
+	};
 public:
 	/** Contructor with standard values on input/output buffers. */
 	TcpSocket(SocketHandler& );
@@ -171,6 +184,10 @@ public:
 
 	/** SSL; Get ssl password. */
 	const std::string& GetPassword();
+	/** SSL; Set random filename + size to be used. */
+	void SetRandFile(const std::string& file,size_t size);
+	/** SSL; delete random file when shutting down. */
+static	void DeleteRandFile();
 
 protected:
 	TcpSocket(const TcpSocket& s);
@@ -212,9 +229,13 @@ private:
 	BIO *m_sbio; ///< ssl bio
 static	BIO *bio_err; ///< ssl bio err
 	std::string m_password; ///< ssl password
+static	bool m_b_rand_file_generated; ///< rand_file is generated once
+static	std::string m_rand_file;
+static	size_t m_rand_size;
 	// state flags
 	bool m_b_reconnect; ///< Reconnect on lost connection flag
 	bool m_b_is_reconnect; ///< Trying to reconnect
+static	SSLInitializer m_ssl_init;
 };
 
 

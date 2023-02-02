@@ -50,6 +50,15 @@ HttpDebugSocket::~HttpDebugSocket()
 }
 
 
+void HttpDebugSocket::Init()
+{
+	if (GetParent() -> GetPort() == 443)
+	{
+		EnableSSL();
+	}
+}
+
+
 void HttpDebugSocket::OnFirst()
 {
 	Send(

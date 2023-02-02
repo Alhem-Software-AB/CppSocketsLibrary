@@ -66,6 +66,10 @@ namespace SOCKETS_NAMESPACE {
 
 // statics
 BIO *TcpSocket::bio_err = NULL;
+bool TcpSocket::m_b_rand_file_generated = false;
+std::string TcpSocket::m_rand_file;
+size_t TcpSocket::m_rand_size = 1024;
+TcpSocket::SSLInitializer TcpSocket::m_ssl_init;
 
 
 // thanks, q
@@ -84,6 +88,35 @@ TcpSocket::TcpSocket(SocketHandler& h) : Socket(h)
 ,m_b_reconnect(false)
 ,m_b_is_reconnect(false)
 {
+#ifdef HAVE_OPENSSL
+	if (!m_b_rand_file_generated)
+	{
+		m_b_rand_file_generated = true;
+		char *randfile = getenv("RANDFILE");
+		char *home = getenv("HOME");
+		if (!randfile && !home)
+		{
+			char *homepath = getenv("HOMEPATH");
+			if (homepath)
+			{
+				Utility::SetEnv("HOME", homepath);
+			}
+		}
+		char path[512];
+		*path = 0;
+		RAND_file_name(path, 512);
+		if (*path)
+		{
+			m_rand_file = path;
+			m_rand_size = 1024;
+			RAND_write_file(path);
+		}
+		else
+		{
+			Handler().LogError(this, "TcpSocket constructor", 0, "No random file generated", LOG_LEVEL_ERROR);
+		}
+	}
+#endif // HAVE_OPENSSL
 }
 #ifdef _WIN32
 #pragma warning(default:4355)
@@ -105,6 +138,34 @@ TcpSocket::TcpSocket(SocketHandler& h,size_t isize,size_t osize) : Socket(h)
 ,m_b_reconnect(false)
 ,m_b_is_reconnect(false)
 {
+#ifdef HAVE_OPENSSL
+	if (!m_b_rand_file_generated)
+	{
+		m_b_rand_file_generated = true;
+		char *randfile = getenv("RANDFILE");
+		char *home = getenv("HOME");
+		if (!randfile && !home)
+		{
+			char *homepath = getenv("HOMEPATH");
+			if (homepath)
+			{
+				Utility::SetEnv("HOME", homepath);
+			}
+		}
+		char path[512];
+		*path = 0;
+		RAND_file_name(path, 512);
+		if (*path)
+		{
+			m_rand_file = path;
+			RAND_write_file(path);
+		}
+		else
+		{
+			Handler().LogError(this, "TcpSocket constructor", 0, "No random file generated", LOG_LEVEL_ERROR);
+		}
+	}
+#endif // HAVE_OPENSSL
 }
 #ifdef _WIN32
 #pragma warning(default:4355)
@@ -113,7 +174,6 @@ TcpSocket::TcpSocket(SocketHandler& h,size_t isize,size_t osize) : Socket(h)
 
 TcpSocket::~TcpSocket()
 {
-DEB(printf("~TcpSocket()\n");)
 	while (m_mes.size())
 	{
 		ucharp_v::iterator it = m_mes.begin();
@@ -124,12 +184,10 @@ DEB(printf("~TcpSocket()\n");)
 #ifdef HAVE_OPENSSL
 	if (m_ssl)
 	{
-DEB(		printf("SSL_free()\n");)
 		SSL_free(m_ssl);
 	}
 	if (m_context)
 	{
-DEB(		printf("SSL_CTX_free()\n");)
 		SSL_CTX_free(m_context);
 	}
 #endif
@@ -158,7 +216,6 @@ bool TcpSocket::Open(ipaddr_t ip,port_t port,bool skip_socks)
 			SetIsClient();
 			SetCallOnConnect(); // SocketHandler must call OnConnect
 			Handler().LogError(this, "SetCallOnConnect", 0, "Found pooled connection", LOG_LEVEL_INFO);
-DEB(printf("Reusing connection\n");)
 			return true;
 		}
 	}
@@ -279,7 +336,6 @@ bool TcpSocket::Open(in6_addr ip,port_t port,bool skip_socks)
 			SetIsClient();
 			SetCallOnConnect(); // SocketHandler must call OnConnect
 			Handler().LogError(this, "SetCallOnConnect", 0, "Found pooled connection", LOG_LEVEL_INFO);
-DEB(printf("Reusing connection\n");)
 			return true;
 		}
 	}
@@ -427,7 +483,6 @@ void TcpSocket::OnRead()
 	if (IsSSL())
 	{
 #ifdef HAVE_OPENSSL
-DEB(		printf("TcpSocket(SSL)::OnRead()\n");)
 		if (!Ready())
 			return;
 		char buf[TCP_BUFSIZE_READ];
@@ -459,7 +514,6 @@ DEB(				printf("SSL read problem, errcode = %d\n",n);)
 		}
 		else
 		{
-DEB(			printf("TcpSocket(SSL) OnRead read %d bytes\n",n);)
 			if (!ibuf.Write(buf,n))
 			{
 				// overflow
@@ -469,7 +523,6 @@ DEB(			printf("TcpSocket(SSL) OnRead read %d bytes\n",n);)
 		return;
 #endif // HAVE_OPENSSL
 	}
-//DEB(printf("TcpSocket::OnRead()\n");)
 	int n = (int)ibuf.Space();
 	char buf[TCP_BUFSIZE_READ];
 	n = TCP_BUFSIZE_READ; // %! patch away
@@ -512,27 +565,24 @@ void TcpSocket::OnWrite()
 		if (!Ready())
 			return;
 	*/
-DEB(		printf("TcpSocket(SSL)::OnWrite()\n");)
 		// TODO: check MES buffer
 		int n = SSL_write(m_ssl,obuf.GetStart(),(int)obuf.GetL());
-DEB(		printf("OnWrite: %d bytes sent\n",n);)
 		if (n == -1)
 		{
 		// check code
 			SetCloseAndDelete(true);
 			SetFlushBeforeClose(false);
-DEB(			perror("write() error");)
+DEB(			perror("SSL_write() error");)
 		}
 		else
 		if (!n)
 		{
 			SetCloseAndDelete(true);
 			SetFlushBeforeClose(false);
-DEB(			printf("write() returns 0\n");)
+DEB(			printf("SSL_write() returns 0\n");)
 		}
 		else
 		{
-DEB(			printf(" %d bytes written\n",n);)
 			obuf.Remove(n);
 		}
 		//
@@ -665,7 +715,6 @@ void TcpSocket::SendBuf(const char *buf,size_t len,int)
 			Handler().LogError(this, "SendBuf", 0, " * CloseAndDelete()", LOG_LEVEL_INFO);
 		return;
 	}
-//DEB(	printf("trying to send %d bytes;  buf before = %d bytes\n",len,n);)
 	if (m_mes.size() || len > obuf.Space())
 	{
 		MES *p = new MES(buf,len);
@@ -875,7 +924,6 @@ void TcpSocket::Sendf(char *format, ...)
 void TcpSocket::OnSSLConnect()
 {
 #ifdef HAVE_OPENSSL
-DEB(	printf("TcpSocket(SSL)::OnConnect()\n");)
 	SetNonblocking(true);
 	{
 		if (m_context)
@@ -884,7 +932,6 @@ DEB(			printf("SSL Context already initialized - closing socket\n");)
 			SetCloseAndDelete(true);
 			return;
 		}
-DEB(		printf("InitSSLClient()\n");)
 		InitSSLClient();
 	}
 	if (m_context)
@@ -915,7 +962,6 @@ DEB(			printf(" m_sbio is NULL\n");)
 void TcpSocket::OnSSLAccept()
 {
 #ifdef HAVE_OPENSSL
-DEB(	printf("TcpSocket(SSL)::OnAccept()\n");)
 	SetNonblocking(true);
 	{
 		if (m_context)
@@ -952,16 +998,13 @@ bool TcpSocket::SSLNegotiate()
 #ifdef HAVE_OPENSSL
 	if (!IsSSLServer()) // client
 	{
-DEB(		printf("TcpSocket::SSLNegotiate() is_client\n");)
 		int r = SSL_connect(m_ssl);
-DEB(		printf(" SSLNegotiate is_client, SSL_connect returns %d\n",r);)
 		if (r > 0)
 		{
 			SetSSLNegotiate(false);
 			// TODO: resurrect certificate check... client
 //			CheckCertificateChain( "");//ServerHOST);
 			SetNonblocking(false);
-DEB(			printf("TcpSocket::SSLNegotiate() init OK\n");)
 			//
 			{
 				SetConnected();
@@ -991,10 +1034,6 @@ DEB(			printf("TcpSocket::SSLNegotiate() init OK\n");)
 		else
 		{
 			r = SSL_get_error(m_ssl, r);
-DEB(			if (r == SSL_ERROR_WANT_READ)
-				printf("SSL_ERROR_WANT_READ\n");
-			if (r == SSL_ERROR_WANT_WRITE)
-				printf("SSL_ERROR_WANT_WRITE\n");)
 			if (r != SSL_ERROR_WANT_READ && r != SSL_ERROR_WANT_WRITE)
 			{
 DEB(				printf("SSL_connect() failed - closing socket, return code: %d\n",r);)
@@ -1006,16 +1045,13 @@ DEB(				printf("SSL_connect() failed - closing socket, return code: %d\n",r);)
 	}
 	else // server
 	{
-DEB(		printf("TcpSocket::SSLNegotiate() is_server\n");)
 		int r = SSL_accept(m_ssl);
-DEB(		printf(" SSLNegotiate is_server, SSL_accept returns %d\n",r);)
 		if (r > 0)
 		{
 			SetSSLNegotiate(false);
 			// TODO: resurrect certificate check... server
 //			CheckCertificateChain( "");//ClientHOST);
 			SetNonblocking(false);
-DEB(			printf("TcpSocket::SSLNegotiate() init OK\n");)
 			//
 			{
 				SetConnected();
@@ -1037,10 +1073,6 @@ DEB(			printf("TcpSocket::SSLNegotiate() init OK\n");)
 		else
 		{
 			r = SSL_get_error(m_ssl, r);
-DEB(			if (r == SSL_ERROR_WANT_READ)
-				printf("SSL_ERROR_WANT_READ\n");
-			if (r == SSL_ERROR_WANT_WRITE)
-				printf("SSL_ERROR_WANT_WRITE\n");)
 			if (r != SSL_ERROR_WANT_READ && r != SSL_ERROR_WANT_WRITE)
 			{
 DEB(				printf("SSL_accept() failed - closing socket, return code: %d\n",r);)
@@ -1102,9 +1134,10 @@ DEB(		printf("Couldn't read CA list\n");)
 */
 
 	/* Load randomness */
-	if (!(RAND_load_file(RANDOM, 1024*1024)))
+//	if (!(RAND_load_file(RANDOM, 1024*1024)))
+	if (!m_rand_file.size() || !RAND_load_file(m_rand_file.c_str(), m_rand_size))
 	{
-DEB(		printf("Couldn't load randomness\n");)
+		Handler().LogError(this, "TcpSocket InitializeContext", 0, "Couldn't load randomness", LOG_LEVEL_ERROR);
 	}
 		
 }
@@ -1154,9 +1187,9 @@ DEB(		printf("Couldn't read CA list\n");)
 */
 
 	/* Load randomness */
-	if (!(RAND_load_file(RANDOM, 1024*1024)))
+	if (!m_rand_file.size() || !RAND_load_file(m_rand_file.c_str(), m_rand_size))
 	{
-DEB(		printf("Couldn't load randomness\n");)
+		Handler().LogError(this, "TcpSocket InitializeContext", 0, "Couldn't load randomness", LOG_LEVEL_ERROR);
 	}
 		
 }
@@ -1184,19 +1217,16 @@ int TcpSocket::password_cb(char *,int ,int ,void *) { return 0; }
 
 int TcpSocket::Close()
 {
-DEB(	printf("TcpSocket::Close()\n");)
 #ifdef HAVE_OPENSSL
 	if (IsSSL() && m_ssl)
 		SSL_shutdown(m_ssl);
 	if (m_ssl)
 	{
-DEB(		printf("SSL_free()\n");)
 		SSL_free(m_ssl);
 		m_ssl = NULL;
 	}
 	if (m_context)
 	{
-DEB(		printf("SSL_CTX_free()\n");)
 		SSL_CTX_free(m_context);
 		m_context = NULL;
 	}
@@ -1276,6 +1306,40 @@ bool TcpSocket::IsReconnect()
 const std::string& TcpSocket::GetPassword()
 {
 	return m_password;
+}
+
+
+void TcpSocket::SetRandFile(const std::string& file,size_t size)
+{
+	m_rand_file = file;
+	m_rand_size = size;
+	FILE *fil = fopen(file.c_str(), "wb");
+	if (fil)
+	{
+		for (size_t i = 0; i < size; i++)
+		{
+#ifdef _WIN32
+			long rnd = rand();
+#else
+			long rnd = random();
+#endif
+			fwrite(&rnd, 1, 1, fil);
+		}
+		fclose(fil);
+	}
+	else
+	{
+		Handler().LogError(this, "TcpSocket SetRandFile", 0, "Couldn't write to random file", LOG_LEVEL_ERROR);
+	}
+}
+
+
+void TcpSocket::DeleteRandFile()
+{
+	if (m_rand_file.size())
+	{
+		unlink(m_rand_file.c_str());
+	}
 }
 
 

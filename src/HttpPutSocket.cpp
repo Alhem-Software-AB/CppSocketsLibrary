@@ -47,32 +47,13 @@ namespace SOCKETS_NAMESPACE {
 #endif
 
 
-#ifdef _DEBUG
-#define DEB(x) x
-#else
-#define DEB(x)
-#endif
-
-
-HttpPutSocket::HttpPutSocket(SocketHandler& h,const std::string& url)
+HttpPutSocket::HttpPutSocket(SocketHandler& h,const std::string& url_in)
 :HTTPSocket(h)
 {
-	std::string host;
-	{
-		Parse pa(url,"/");
-		pa.getword(); // 'http:'
-		host = pa.getword();
-		SetUrl( "/" + pa.getrest() );
-	}
-	{
-		Parse pa(host,":");
-		m_host = pa.getword();
-		m_port = (port_t)pa.getvalue();
-		if (!m_port)
-		{
-			m_port = 80;
-		}
-	}
+	std::string url;
+	std::string file;
+	url_this(url_in, m_protocol, m_host, m_port, url, file);
+	SetUrl(url);
 }
 
 
@@ -124,8 +105,8 @@ void HttpPutSocket::OnConnect()
 	if (fil)
 	{
 		size_t n;
-		char buf[2000];
-		while ((n = fread(buf, 1, 2000, fil)) > 0)
+		char buf[32768];
+		while ((n = fread(buf, 1, 32768, fil)) > 0)
 		{
 			SendBuf(buf, n);
 		}
@@ -137,8 +118,6 @@ void HttpPutSocket::OnConnect()
 
 void HttpPutSocket::OnFirst()
 {
-DEB(	int status = atoi(GetStatus().c_str());
-	printf("Response status %d: %s\n", status, GetStatusText().c_str());)
 }
 
 

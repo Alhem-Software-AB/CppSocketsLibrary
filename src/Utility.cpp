@@ -507,6 +507,24 @@ const std::string& Utility::GetLocalAddress6()
 #endif
 
 
+void Utility::SetEnv(const std::string& var,const std::string& value)
+{
+#if (defined(SOLARIS8) || defined(SOLARIS))
+	{
+		std::string slask = var + "=" + value;
+		putenv( (char *)slask.c_str());
+	}
+#elif defined _WIN32
+	{
+		std::string slask = var + "=" + value;
+		_putenv( (char *)slask.c_str());
+	}
+#else
+	setenv(var.c_str(), value.c_str(), 1);
+#endif
+}
+
+
 #ifdef SOCKETS_NAMESPACE
 }
 #endif

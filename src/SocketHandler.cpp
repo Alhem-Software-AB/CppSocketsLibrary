@@ -340,7 +340,7 @@ DEB(
 					printf("%4d: Exception\n",i);
 			}
 		}
-		exit(-1); // %! remove....
+//		exit(-1); // %! remove....
 ) // DEB
 #endif
 	}
@@ -674,8 +674,6 @@ DEB(
 						if (p -> DeleteByHandler())
 						{
 							p -> SetErasedByHandler();
-DEB(printf("Delete socket with fd %d\n", nn);)
-//							delete p;
 						}
 						m_fds_erase.push_back(nn);
 					}
@@ -690,14 +688,12 @@ DEB(printf("Delete socket with fd %d\n", nn);)
 	{
 		socket_v::iterator it = m_fds_erase.begin();
 		SOCKET nn = *it;
-DEB(printf("Remove socket with fd %d\n", nn);)
 		{
 			for (socket_v::iterator it = m_fds_detach.begin(); it != m_fds_detach.end(); it++)
 			{
 				if (*it == nn)
 				{
 					m_fds_detach.erase(it);
-DEB(printf("Remove socket from m_fds_detach with fd %d\n", nn);)
 					break;
 				}
 			}
@@ -708,7 +704,6 @@ DEB(printf("Remove socket from m_fds_detach with fd %d\n", nn);)
 				if (*it == nn)
 				{
 					m_fds.erase(it);
-DEB(printf("Remove socket from m_fds with fd %d\n", nn);)
 					break;
 				}
 			}
@@ -724,7 +719,6 @@ DEB(printf("Remove socket from m_fds with fd %d\n", nn);)
 						delete p;
 					}
 					m_sockets.erase(it);
-DEB(printf("Remove socket from m_sockets with fd %d\n", nn);)
 					break;
 				}
 			}
@@ -751,7 +745,6 @@ DEB(printf("Remove socket from m_sockets with fd %d\n", nn);)
 		if (p -> DeleteByHandler())
 		{
 			p -> SetErasedByHandler();
-DEB(printf("Delete socket with fd %d (add failed)\n", p -> GetSocket());)
 			delete p;
 		}
 	}
@@ -967,7 +960,6 @@ void SocketHandler::Remove(Socket *p)
 {
 	if (p -> ErasedByHandler())
 	{
-DEB(printf("Not removing socket from sockethandler, fd %d\n", p -> GetSocket());)
 		return;
 	}
 	for (socket_m::iterator it = m_sockets.begin(); it != m_sockets.end(); it++)
@@ -1048,7 +1040,6 @@ Socket *SocketHandler::GetSocket(SOCKET n)
 		}
 	}
 	// TODO: why do we sometimes get here?
-DEB(printf("## not found in m_sockets: %d\n", n);)
 	return NULL;
 }
 

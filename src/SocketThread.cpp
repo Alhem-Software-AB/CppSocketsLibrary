@@ -34,8 +34,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "SocketHandler.h"
 #include "SocketThread.h"
 
-//#define DEB(x) x; fflush(stdout);
-#define DEB(x)
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
@@ -47,13 +45,11 @@ SocketThread::SocketThread(Socket *p)
 ,m_socket(p)
 {
 	// Creator will release
-DEB(	printf("SocketThread()\n");)
 }
 
 
 SocketThread::~SocketThread()
 {
-DEB(	printf("~SocketThread()\n");)
 	if (IsRunning())
 	{
 		SetRelease(true);
@@ -72,7 +68,6 @@ void SocketThread::Run()
 	SocketHandler h;
 	h.SetSlave();
 	h.Add(m_socket);
-DEB(	printf("slave: OnDetached()\n");)
 	m_socket -> SetSlaveHandler(&h);
 	m_socket -> SetDetached();
 	m_socket -> OnDetached();

@@ -336,6 +336,39 @@ void HTTPSocket::SetUri(const std::string& x)
 }
 
 
+void HTTPSocket::url_this(const std::string& url_in,std::string& protocol,std::string& host,port_t& port,std::string& url,std::string& file)
+{
+	Parse pa(url_in,"/");
+	protocol = pa.getword(); // http
+	if (!strcasecmp(protocol.c_str(), "https:"))
+	{
+		EnableSSL();
+		port = 443;
+	}
+	else
+	{
+		port = 80;
+	}
+	host = pa.getword();
+	if (strstr(host.c_str(),":"))
+	{
+		Parse pa(host,":");
+		pa.getword(host);
+		port = static_cast<port_t>(pa.getvalue());
+	}
+	url = "/" + pa.getrest();
+	{
+		Parse pa(url,"/");
+		std::string tmp = pa.getword();
+		while (tmp.size())
+		{
+			file = tmp;
+			tmp = pa.getword();
+		}
+	}
+} // url_this
+
+
 #ifdef SOCKETS_NAMESPACE
 }
 #endif

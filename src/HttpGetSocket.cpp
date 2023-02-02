@@ -43,13 +43,6 @@ namespace SOCKETS_NAMESPACE {
 #endif
 
 
-#ifdef _DEBUG
-#define DEB(x) x
-#else
-#define DEB(x)
-#endif
-
-
 HttpGetSocket::HttpGetSocket(SocketHandler& h) : HTTPSocket(h)
 ,m_fil(NULL)
 ,m_bComplete(false)
@@ -72,12 +65,11 @@ HttpGetSocket::HttpGetSocket(SocketHandler& h,const std::string& url_in,const st
 ,m_data_set(false)
 ,m_data_max(0)
 {
-	url_this(url_in,m_host,m_port,m_url,m_to_file);
+	url_this(url_in,m_protocol,m_host,m_port,m_url,m_to_file);
 	if (filename.size())
 	{
 		m_to_file = filename;
 	}
-DEB(printf("HttpGetSocket using port: %d\n", m_port);)
 	if (!Open(m_host,m_port))
 	{
 		if (!Connecting())
@@ -188,7 +180,6 @@ void HttpGetSocket::OnFirst()
 	}
 	if (GetStatus() != "200")
 	{
-DEB(		printf("Failed (status %s): %s\n",GetStatus().c_str(),GetStatusText().c_str());)
 		SetCloseAndDelete();
 	}
 }
@@ -254,39 +245,6 @@ void HttpGetSocket::OnData(const char *buf,size_t len)
 }
 
 
-void HttpGetSocket::url_this(const std::string& url_in,std::string& host,port_t& port,std::string& url,std::string& file)
-{
-	Parse pa(url_in,"/");
-	std::string protocol = pa.getword(); // http
-	if (!strcasecmp(protocol.c_str(), "https:"))
-	{
-		EnableSSL();
-		port = 443;
-	}
-	else
-	{
-		port = 80;
-	}
-	host = pa.getword();
-	if (strstr(host.c_str(),":"))
-	{
-		Parse pa(host,":");
-		pa.getword(host);
-		port = static_cast<port_t>(pa.getvalue());
-	}
-	url = "/" + pa.getrest();
-	{
-		Parse pa(url,"/");
-		std::string tmp = pa.getword();
-		while (tmp.size())
-		{
-			file = tmp;
-			tmp = pa.getword();
-		}
-	}
-} // url_this
-
-
 void HttpGetSocket::SetFilename(const std::string& filename)
 {
 	m_to_file = filename;
@@ -295,7 +253,7 @@ void HttpGetSocket::SetFilename(const std::string& filename)
 
 void HttpGetSocket::Url(const std::string& url,std::string& host,port_t& port)
 {
-	url_this(url,m_host,m_port,m_url,m_to_file);
+	url_this(url,m_protocol,m_host,m_port,m_url,m_to_file);
 	host = m_host;
 	port = m_port;
 }

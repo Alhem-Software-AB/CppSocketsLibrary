@@ -35,11 +35,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "MemFile.h"
 
-#ifdef _DEBUG
-#define DEB(x) x
-#else
-#define DEB(x)
-#endif
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
@@ -137,7 +132,6 @@ size_t MemFile::fread(char *ptr, size_t size, size_t nmemb)
 		}
 		else
 		{
-DEB(printf("Read beyond available data\n");)
 			return sz1;
 		}
 	}

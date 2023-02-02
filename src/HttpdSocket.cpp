@@ -34,15 +34,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "MemFile.h"
 #include "HttpdSocket.h"
 
-#define DEB(x)
-/*
-#define DEB(x) { \
-	FILE *fil = fopen("httpdlog","at"); \
-	if (!fil) \
-		fil = fopen("httpdlog","wt"); \
-	if (fil) { x; fclose(fil); } \
-}
-*/
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
@@ -86,7 +77,6 @@ HttpdSocket::~HttpdSocket()
 
 void HttpdSocket::OnFirst()
 {
-//	printf("Request: %s %s %s\n",GetMethod().c_str(),GetUrl().c_str(),GetHttpVersion().c_str());
 }
 
 
@@ -119,6 +109,15 @@ void HttpdSocket::OnHeaderComplete()
 {
 	m_cookies = new HttpdCookies(m_http_cookie);
 
+	if (GetMethod() == "GET")
+	{
+		Utility::SetEnv("QUERY_STRING", GetQueryString());
+	}
+	Utility::SetEnv("REQUEST_METHOD", GetMethod());
+	Utility::SetEnv("HTTP_COOKIE", m_http_cookie);
+	Utility::SetEnv("CONTENT_TYPE", m_content_type);
+	Utility::SetEnv("CONTENT_LENGTH", m_content_length_str);
+/*
 #if (defined(SOLARIS8) || defined(SOLARIS))
 	{
 		char slask[TMPSIZE];
@@ -163,7 +162,7 @@ void HttpdSocket::OnHeaderComplete()
 	setenv("CONTENT_TYPE", m_content_type.c_str(), 1);
 	setenv("CONTENT_LENGTH", m_content_length_str.c_str(), 1);
 #endif
-
+*/
 	if (GetMethod() == "POST")
 	{
 		m_file = new MemFile;

@@ -43,13 +43,6 @@ namespace SOCKETS_NAMESPACE {
 #endif
 
 
-#ifdef _DEBUG
-#define DEB(x) x
-#else
-#define DEB(x)
-#endif
-
-
 Thread::Thread(bool release)
 :m_thread(0)
 ,m_running(true)
@@ -78,7 +71,6 @@ Thread::Thread(bool release)
 
 Thread::~Thread()
 {
-DEB(printf("~Thread\n");)
 	m_b_destructor = true;
 	if (m_running)
 	{
@@ -113,7 +105,6 @@ threadfunc_t STDPREFIX Thread::StartThread(threadparam_t zz)
 	{
 		p -> Run();
 	}
-DEB(printf("Thread: SetRunning(false) after return from Run()\n");)
 	p -> SetRunning(false); // if return
 	if (p -> DeleteOnExit() && !p -> IsDestructor())
 	{

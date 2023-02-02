@@ -102,6 +102,7 @@ public:
 		\sa ResolveLocal */
 	static const std::string& GetLocalAddress6();
 #endif
+	static void SetEnv(const std::string& var,const std::string& value);
 
 private:
 	static std::string m_host; ///< local hostname

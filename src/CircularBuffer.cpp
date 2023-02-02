@@ -42,13 +42,6 @@ namespace SOCKETS_NAMESPACE {
 #endif
 
 
-#ifdef _DEBUG
-#define DEB(x) x
-#else
-#define DEB(x)
-#endif
-
-
 CircularBuffer::CircularBuffer(Socket& owner,size_t size)
 :m_owner(owner)
 ,buf(new char[size])

@@ -44,14 +44,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 namespace SOCKETS_NAMESPACE {
 #endif
 
-/*
-#ifdef _DEBUG
-#define DEB(x) x
-#else
-#define DEB(x) 
-#endif
-*/
-
 
 /** Binds incoming port number to new Socket class X. 
 	\ingroup basic */
@@ -234,7 +226,6 @@ public:
 	/** OnRead on a ListenSocket receives an incoming connection. */
 	void OnRead()
 	{
-//DEB(printf("ListenSocket<%d>::OnRead()\n", GetPort());)
 		struct sockaddr sa;
 		socklen_t sa_len = sizeof(sa);
 		SOCKET a_s = accept(GetSocket(), &sa, &sa_len);
@@ -256,7 +247,6 @@ public:
 			closesocket(a_s);
 			return;
 		}
-//DEB(printf("  ListenSocket<%d> new file descriptor = %d\n", GetPort(), a_s);)
 		Socket *tmp = m_bHasCreate ? m_creator -> Create() : new X(Handler());
 		tmp -> SetIpv6( IsIpv6() );
 		tmp -> SetParent(this);

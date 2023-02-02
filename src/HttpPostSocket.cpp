@@ -49,34 +49,15 @@ namespace SOCKETS_NAMESPACE {
 #endif
 
 
-#ifdef _DEBUG
-#define DEB(x) x
-#else
-#define DEB(x)
-#endif
-
-
-HttpPostSocket::HttpPostSocket(SocketHandler& h,const std::string& url)
+HttpPostSocket::HttpPostSocket(SocketHandler& h,const std::string& url_in)
 :HTTPSocket(h)
 ,m_port(80)
 ,m_bMultipart(false)
 {
-	std::string host;
-	{
-		Parse pa(url,"/");
-		pa.getword(); // 'http:'
-		host = pa.getword();
-		SetUrl( "/" + pa.getrest() );
-	}
-	{
-		Parse pa(host,":");
-		m_host = pa.getword();
-		m_port = (port_t)pa.getvalue();
-		if (!m_port)
-		{
-			m_port = 80;
-		}
-	}
+	std::string url;
+	std::string file;
+	url_this(url_in, m_protocol, m_host, m_port, url, file);
+	SetUrl(url);
 	std::string m_boundary = "----";
 	for (int i = 0; i < 12; i++)
 	{
@@ -295,8 +276,6 @@ void HttpPostSocket::DoMultipartPost()
 
 void HttpPostSocket::OnFirst()
 {
-DEB(	int status = atoi(GetStatus().c_str());
-	printf("Response status %d: %s\n", status, GetStatusText().c_str());)
 }
 
 

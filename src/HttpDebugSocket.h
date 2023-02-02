@@ -46,6 +46,8 @@ public:
 	HttpDebugSocket(SocketHandler&);
 	~HttpDebugSocket();
 
+	void Init();
+
 	void OnFirst();
 	void OnHeader(const std::string& key,const std::string& value);
 	void OnHeaderComplete();

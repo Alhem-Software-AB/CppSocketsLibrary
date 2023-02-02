@@ -48,13 +48,6 @@ namespace SOCKETS_NAMESPACE {
 #endif
 
 
-#ifdef _DEBUG
-#define DEB(x) x
-#else
-#define DEB(x)
-#endif
-
-
 // statics
 #ifdef _WIN32
 WSAInitializer Socket::m_winsock_init;
@@ -109,7 +102,6 @@ Socket::Socket(SocketHandler& h)
 
 Socket::~Socket()
 {
-DEB(printf("~Socket()\n");)
 	Handler().Remove(this);
 	if (m_socket != INVALID_SOCKET && !m_bRetain)
 	{
@@ -1148,10 +1140,8 @@ bool Socket::ErasedByHandler()
 
 void Socket::AddList(socket_v& ref, bool add, const std::string& src)
 {
-DEB(printf("AddList, %s: %d, %s\n", src.c_str(), m_socket, add ? "add" : "remove");)
 	if (m_socket == INVALID_SOCKET)
 	{
-DEB(printf(" AddList called with INVALID_SOCKET\n");)
 		return;
 	}
 	if (add)

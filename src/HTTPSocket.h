@@ -49,6 +49,7 @@ public:
 	~HTTPSocket();
 
 	void OnRead();
+	/** Reimplementation of ReadLine(), to properly detect end of header start of body. */
 	void ReadLine();
 	void OnLine(const std::string& line);
 
@@ -64,29 +65,52 @@ public:
 	/** Chunk of http body data recevied. */
 	virtual void OnData(const char *,size_t) = 0;
 
+	/** Get http method from incoming request, ie GET/POST/PUT etc */
 	const std::string& GetMethod();
+	/** Set http method to be used in request. */
 	void SetMethod(const std::string& x);
+	/** Get url from request. */
 	const std::string& GetUrl();
+	/** Set url to be used in outgoing request. */
 	void SetUrl(const std::string& x);
+	/** Get part of url before '?' character. */
 	const std::string& GetUri();
+	/** Now why would I need this when there is a SetUrl method? */
 	void SetUri(const std::string& x);
+	/** Get part of url after '?' character. */
 	const std::string& GetQueryString();
+	/** Get http version from incoming request/response. */
 	const std::string& GetHttpVersion();
+	/** Get http status from incoming response. */
 	const std::string& GetStatus();
+	/** Get http statustext from incoming response. */
 	const std::string& GetStatusText();
+	/** Incoming header has been identified as a request (method url http_version\r\n). */
 	bool IsRequest();
+	/** Incoming header has been identified as a response (http_version status status_text\r\n). */
 	bool IsResponse();
-
+	/** Set http version to be used in outgoing request/response. */
 	void SetHttpVersion(const std::string& x);
+	/** Set http status for outgoing response. */
 	void SetStatus(const std::string& x);
+	/** Set http statustext for outgoing response. */
 	void SetStatusText(const std::string& x);
+	/** Add html header. */
 	void AddResponseHeader(const std::string& x,const std::string& y);
+	/** Add html header. */
 	void AddResponseHeader(const std::string& x,char *format, ...);
+	/** Send response prepared with calls to methods SetHttpVersion, SetStatus, SetStatusText,
+		and AddResponseHeader. */
 	void SendResponse();
+	/** Send request prepared with calls to methods SetMethod, SetUrl, SetHttpVersion,
+		and AddResponseHeader. */
 	void SendRequest();
 
 	/** Implement this to return your own User-agent string. */
 	virtual std::string MyUseragent();
+
+	/** Parse url. If protocol is https, EnableSSL() will be called. */
+	void url_this(const std::string& url_in,std::string& protocol,std::string& host,port_t& port,std::string& url,std::string& file);
 
 protected:
 	HTTPSocket(const HTTPSocket& s) : TcpSocket(s) {}

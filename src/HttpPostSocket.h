@@ -45,7 +45,7 @@ class HttpPostSocket : public HTTPSocket
 {
 public:
 	// client constructor, url = 'http://host:port/resource'
-	HttpPostSocket(SocketHandler&,const std::string& url);
+	HttpPostSocket(SocketHandler&,const std::string& url_in);
 	~HttpPostSocket();
 
 	// these must be specified before connecting / adding to handler
@@ -74,6 +74,7 @@ private:
 	HttpPostSocket& operator=(const HttpPostSocket& ) { return *this; } // assignment operator
 	void DoMultipartPost();
 	//
+	std::string m_protocol;
 	std::string m_host;
 	port_t m_port;
 	std::map<std::string,std::list<std::string> > m_fields;

@@ -45,7 +45,7 @@ class HttpPutSocket : public HTTPSocket
 {
 public:
 	// client constructor, url = 'http://host:port/resource'
-	HttpPutSocket(SocketHandler&,const std::string& url);
+	HttpPutSocket(SocketHandler&,const std::string& url_in);
 	~HttpPutSocket();
 
 	// these must be specified before connecting / adding to handler
@@ -70,6 +70,7 @@ private:
 	std::string m_filename;
 	std::string m_content_type;
 	long m_content_length;
+	std::string m_protocol;
 	std::string m_host;
 	port_t m_port;
 };

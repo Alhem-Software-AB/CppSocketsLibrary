@@ -62,7 +62,6 @@ public:
 	size_t GetContentLength() { return m_content_length; }
 	size_t GetPos() { return m_content_ptr; }
 
-	void url_this(const std::string& url_in,std::string& host,port_t& port,std::string& url,std::string& file);
 	/** Returns received http headers. */
 	const std::string& GetContent() { return m_content; }
 
@@ -71,13 +70,17 @@ public:
 
 	/** Set external data buffer. */
 	void SetDataPtr(unsigned char *p,size_t l);
-	/** Get ptr to content buffer. Use together with GetContentLength to get entire document. */
+	/** Get ptr to content buffer. 
+		Use together with GetContentPtr to get entire document. */
 	const unsigned char *GetDataPtr();
+	/** Current number of bytes read from http request body. */
+	size_t GetContentPtr() { return m_content_ptr; }
 
 protected:
 	HttpGetSocket(const HttpGetSocket& s) : HTTPSocket(s) {}
 private:
 	HttpGetSocket& operator=(const HttpGetSocket& ) { return *this; }
+	std::string m_protocol;
 	std::string m_host;
 	port_t m_port;
 	std::string m_url;

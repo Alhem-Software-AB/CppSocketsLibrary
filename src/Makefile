@@ -1,5 +1,5 @@
-VERSION =	2.0.2b
-DIFF_VERSION =	2.0.2a
+VERSION =	2.0.3
+DIFF_VERSION =	2.0.2b
 
 INCLUDE =	-I.
 PREFIX =	/usr/local
@@ -43,9 +43,7 @@ HTDOCS =	/usr/local/apache/www.alhem.net/htdocs
 
 PROGS =		Sockets-config
 
-all:		libSockets.a $(PROGS)
-
-libs:		all libSocketsEx.a
+all:		libSockets.a libSocketsEx.a $(PROGS)
 
 Sockets-config:	Sockets-config.o
 		$(CXX) -o $@ $^
@@ -97,7 +95,7 @@ diff:
 			/usr/local/bin/d2html > \
 			$(HTDOCS)/Sockets/latest_diff.html
 
-install:	all libs
+install:	all 
 		@mkdir -p $(PREFIX)/lib
 		cp libSockets.a $(PREFIX)/lib
 		cp libSocketsEx.a $(PREFIX)/lib
@@ -140,4 +138,6 @@ docs:		clean
 		rm -f sockets_test.cpp
 		rm -f ListenSocketBase.*
 		./mkdot.sh
+		rm -rf /usr/local/apache/www.alhem.net/htdocs/Sockets/html
 		doxygen doxygen.cfg
+		./packdocs.sh Sockets-$(VERSION)-doxygendocs

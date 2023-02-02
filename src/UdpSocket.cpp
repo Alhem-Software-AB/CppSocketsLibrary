@@ -41,11 +41,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // include this to see strange sights
 //#include <linux/in6.h>
 
-#ifdef _DEBUG
-#define DEB(x) x
-#else
-#define DEB(x)
-#endif
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
@@ -67,7 +62,6 @@ UdpSocket::UdpSocket(SocketHandler& h,int ibufsz,bool ipv6) : Socket(h)
 
 UdpSocket::~UdpSocket()
 {
-DEB(printf("~Socket()\n");)
 	Close();
 	delete[] m_ibuf;
 }
