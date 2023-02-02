@@ -137,7 +137,7 @@ DEB(printf(" *** keepalive: true\n");)
 	}
 
 	// prepare page
-	OnExec( m_req );
+	IHttpServer_OnExec( m_req );
 
 	m_req.Reset();
 	Reset();
@@ -145,7 +145,7 @@ DEB(printf(" *** keepalive: true\n");)
 
 
 // --------------------------------------------------------------------------------------
-void HttpBaseSocket::Respond(const HttpResponse& res)
+void HttpBaseSocket::IHttpServer_Respond(const HttpResponse& res)
 {
 	m_res = res;
 
@@ -191,7 +191,7 @@ void HttpBaseSocket::OnTransferLimit()
 	{
 		SetTransferLimit(0);
 		m_res.GetFile().fclose();
-		OnResponseComplete();
+		IHttpServer_OnResponseComplete();
 		if (!m_b_keepalive)
 		{
 			SetCloseAndDelete();

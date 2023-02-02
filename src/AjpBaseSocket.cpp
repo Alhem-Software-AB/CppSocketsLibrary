@@ -261,6 +261,14 @@ void AjpBaseSocket::put_string(char *buf, int& ptr, const std::string& zz)
 }
 
 
+// ---------------------------------------------------------------------------
+void AjpBaseSocket::reset()
+{
+	m_state = m_ptr = 0;
+	m_length = 4;
+}
+
+
 #ifdef SOCKETS_NAMESPACE
 } // namespace SOCKETS_NAMESPACE {
 #endif

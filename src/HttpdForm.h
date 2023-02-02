@@ -90,6 +90,12 @@ public:
 	HttpdForm(const std::string& query_string,size_t length);
 	~HttpdForm();
 
+	/**
+	 * Parses the following content-types
+		"multipart/form-data"
+		"x-www-form-urlencoded"
+	 * Any other content-type is left alone and nothing is read from input stream
+	*/
 	void ParseFormData(IFile *, const std::string&, size_t);
 	void ParseQueryString(const std::string& query_string, size_t length);
 

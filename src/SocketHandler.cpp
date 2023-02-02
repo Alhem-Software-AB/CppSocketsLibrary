@@ -36,6 +36,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #endif
 #include <stdlib.h>
 #include <errno.h>
+#include <stdio.h>
 
 #include "SocketHandler.h"
 #include "UdpSocket.h"
@@ -795,7 +796,10 @@ void SocketHandler::RebuildFdset()
 			{
 				// %! bad fd, remove
 				LogError(p, "Select", (int)s, "Bad fd in fd_set (2)", LOG_LEVEL_ERROR);
-				DeleteSocket(p);
+				if (Valid(p) && Valid(p -> UniqueIdentifier()))
+				{
+					DeleteSocket(p);
+				}
 			}
 			else
 			{

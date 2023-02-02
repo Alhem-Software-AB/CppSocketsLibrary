@@ -54,7 +54,12 @@ typedef unsigned long socketuid_t;
 
 // int64
 #ifdef _WIN32
+#ifndef uint64_t
 typedef unsigned __int64 uint64_t;
+#endif
+#ifndef int64_t
+typedef __int64 int64_t;
+#endif
 #else
 #include <stdlib.h>
 #ifdef SOLARIS

@@ -77,6 +77,9 @@ protected:
 	void put_integer(char *buf, int& ptr, short zz);
 	void put_string(char *buf, int& ptr, const std::string& zz);
 
+	/** Reset to original state */
+	void reset();
+
 	static Initializer Init;
 
 private:

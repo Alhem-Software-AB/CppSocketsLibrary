@@ -57,7 +57,7 @@ public:
 	void OnData(const char *,size_t);
 
 	// implements IHttpServer::Respond
-	void Respond(const HttpResponse& res);
+	void IHttpServer_Respond(const HttpResponse& res);
 
 	void OnTransferLimit();
 
