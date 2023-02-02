@@ -147,6 +147,7 @@ public:
 	}
 
 	/** ipv6 bind to port with optional listen queue length (depth) */
+#ifdef IPPROTO_IPV6
 	int Bind6(port_t port, int depth = 3)
 	{
 		struct sockaddr_in6 sa;
@@ -182,8 +183,10 @@ public:
 		}
 		return -1;
 	}
+#endif
 
 	/** ipv6 bind to port on a specified address */
+#ifdef IPPROTO_IPV6
 	int Bind6(const std::string& address, port_t port, int depth = 3)
 	{
 		struct sockaddr_in6 sa;
@@ -224,6 +227,7 @@ public:
 		}
 		return -1;
 	}
+#endif
 
 	port_t GetPort()
 	{
@@ -242,6 +246,7 @@ public:
 		socklen_t *lenptr = &len;
 		SOCKET a_s;
 
+#ifdef IPPROTO_IPV6
 		if (IsIpv6())
 		{
 			struct sockaddr_in6 sa;
@@ -272,6 +277,7 @@ public:
 			}
 			return;
 		}
+#endif
 		struct sockaddr_in sa;
 
 		saptr = (struct sockaddr *)&sa;

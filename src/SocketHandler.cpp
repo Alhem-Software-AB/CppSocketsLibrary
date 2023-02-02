@@ -49,7 +49,6 @@ SocketHandler::SocketHandler()
 ,m_preverror(-1)
 ,m_slave(false)
 {
-//	struct hostent *he;
 	char h[256];
 
 	FD_ZERO(&m_rfds);
@@ -59,29 +58,6 @@ SocketHandler::SocketHandler()
 	// get local hostname and translate into ip-address
 	*h = 0;
 	gethostname(h,255);
-/*
-	he = gethostbyname2(h, AF_INET);
-	if (he)
-	{
-		char ipad[100];
-		union {
-			ipaddr_t ip;
-			struct {
-				unsigned char b1;
-				unsigned char b2;
-				unsigned char b3;
-				unsigned char b4;
-			} a;
-		} u;
-		memmove(&u.ip,he -> h_addr,4);
-		sprintf(ipad,"%u.%u.%u.%u",u.a.b1,u.a.b2,u.a.b3,u.a.b4);
-		m_ip = u.ip;
-		m_addr = ipad;
-	}
-	he = gethostbyname2(h, AF_INET6);
-	if (he)
-*/
-	memset(&m_local_ip6, 0, sizeof(m_local_ip6));
 	{
 		Socket zl(*this);
 		if (zl.u2ip(h, m_ip))
@@ -89,6 +65,8 @@ SocketHandler::SocketHandler()
 			zl.l2ip(m_ip, m_addr);
 		}
 	}
+#ifdef IPPROTO_IPV6
+	memset(&m_local_ip6, 0, sizeof(m_local_ip6));
 	{
 		Socket zl(*this);
 		zl.SetIpv6();
@@ -97,6 +75,7 @@ SocketHandler::SocketHandler()
 			zl.l2ip(m_local_ip6, m_local_addr6);
 		}
 	}
+#endif
 	m_host = h;
 }
 
@@ -411,10 +390,12 @@ void SocketHandler::LogError(Socket *p,const std::string& user_text,int err,cons
 }
 
 
+#ifdef IPPROTO_IPV6
 const struct in6_addr& SocketHandler::GetLocalIP6()
 {
 	return m_local_ip6;
 }
+#endif
 
 
 const std::string& SocketHandler::GetLocalAddress6()

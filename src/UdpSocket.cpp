@@ -94,6 +94,7 @@ SOCKET UdpSocket::Bind4(port_t &port,int range)
 }
 
 
+#ifdef IPPROTO_IPV6
 SOCKET UdpSocket::Bind6(port_t &port,int range)
 {
 	SOCKET s = GetSocket();
@@ -132,6 +133,7 @@ SOCKET UdpSocket::Bind6(port_t &port,int range)
 	}
 	return s;
 }
+#endif
 
 
 /** if you wish to use Send, first Open a connection */
@@ -185,6 +187,7 @@ bool UdpSocket::Open4(const std::string& host,port_t port)
 }
 
 
+#ifdef IPPROTO_IPV6
 bool UdpSocket::Open6(struct in6_addr& a,port_t port)
 {
 	if (GetSocket() == INVALID_SOCKET)
@@ -235,7 +238,7 @@ bool UdpSocket::Open6(const std::string& host,port_t port)
 	}
 	return false;
 }
-
+#endif
 
 
 /** send to specified address */
@@ -269,6 +272,7 @@ void UdpSocket::SendToBuf4(const std::string& h,port_t p,const char *data,size_t
 }
 
 
+#ifdef IPPROTO_IPV6
 void UdpSocket::SendToBuf6(const std::string& h,port_t p,const char *data,size_t len,int flags)
 {
 	if (GetSocket() == INVALID_SOCKET)
@@ -299,6 +303,7 @@ void UdpSocket::SendToBuf6(const std::string& h,port_t p,const char *data,size_t
 		}
 	}
 }
+#endif
 
 
 void UdpSocket::SendTo4(const std::string& a,port_t p,const std::string& str,int flags)
@@ -307,11 +312,12 @@ void UdpSocket::SendTo4(const std::string& a,port_t p,const std::string& str,int
 }
 
 
+#ifdef IPPROTO_IPV6
 void UdpSocket::SendTo6(const std::string& a,port_t p,const std::string& str,int flags)
 {
 	SendToBuf6(a,p,str.c_str(),str.size(),flags);
 }
-
+#endif
 
 
 /** send to connected address */
@@ -337,6 +343,7 @@ void UdpSocket::Send(const std::string& str,int flags)
 
 void UdpSocket::OnRead()
 {
+#ifdef IPPROTO_IPV6
 	if (IsIpv6())
 	{
 		struct sockaddr_in6 sa;
@@ -354,6 +361,7 @@ void UdpSocket::OnRead()
 		this -> OnRawData(m_ibuf, n, (struct sockaddr *)&sa, sa_len);
 		return;
 	}
+#endif
 	struct sockaddr_in sa;
 	socklen_t sa_len = sizeof(sa);
 	int n = recvfrom(GetSocket(), m_ibuf, m_ibufsz, 0, (struct sockaddr *)&sa, &sa_len);

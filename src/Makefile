@@ -1,4 +1,4 @@
-VERSION =	1.5.1
+VERSION =	1.5.2
 
 INCLUDE =	-I/usr/devel/include -I.
 CFLAGS =	-Wall -g -O2 $(INCLUDE) -MD -D_VERSION='"$(VERSION)"' 
@@ -30,7 +30,7 @@ OBJS =		CircularBuffer.o \
 		HTTPSocket.o \
 		HttpsSocket.o \
 		Thread.o SocketThread.o \
-		StdoutLog.o
+		StdoutLog.o 
 
 libSockets.a:	$(OBJS)
 		ar cru $@ $(OBJS)

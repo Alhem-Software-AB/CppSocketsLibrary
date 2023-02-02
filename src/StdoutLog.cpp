@@ -50,7 +50,7 @@ void StdoutLog::error(SocketHandler *,Socket *,const std::string& call,int err,c
 		break;
 	}
 
-	printf("%d-%02d-%2d %02d:%02d:%02d :: %s: %s (%s)\n",
+	printf("%d-%02d-%02d %02d:%02d:%02d :: %s: %s (%s)\n",
 		tp -> tm_year + 1900,
 		tp -> tm_mon + 1,
 		tp -> tm_mday,

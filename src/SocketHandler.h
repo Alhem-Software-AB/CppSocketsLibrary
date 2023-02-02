@@ -77,7 +77,9 @@ private:
 	fd_set m_efds;
 	int m_preverror;
 	bool m_slave;
+#ifdef IPPROTO_IPV6
 	struct in6_addr m_local_ip6;
+#endif
 	std::string m_local_addr6;
 };
 

@@ -155,6 +155,7 @@ bool TcpSocket::Open4(const std::string &host,port_t port)
 }
 
 
+#ifdef IPPROTO_IPV6
 bool TcpSocket::Open6(const std::string &host,port_t port)
 {
 	SOCKET s = CreateSocket6(SOCK_STREAM, "tcp");
@@ -206,6 +207,7 @@ bool TcpSocket::Open6(const std::string &host,port_t port)
 	}
 	return false;
 }
+#endif
 
 
 #define BUFSIZE_READ 16400

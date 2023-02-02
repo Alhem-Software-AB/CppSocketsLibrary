@@ -83,18 +83,24 @@ public:
 	/** ipv4 */
 	bool u2ip(const std::string&, ipaddr_t&);
 	/** ipv6 */
+#ifdef IPPROTO_IPV6
 	bool u2ip(const std::string&, struct in6_addr&);
+#endif
 	/** ipv4 */
 	void l2ip(const ipaddr_t,std::string& );
 	/** ipv6 */
+#ifdef IPPROTO_IPV6
 	void l2ip(const struct in6_addr&,std::string& ,bool mixed = false);
+#endif
 
 	/** ipv4 and ipv6 */
 	void SetRemoteAddress(struct sockaddr* sa,socklen_t);
 	/** ipv4 */
 	ipaddr_t GetRemoteIP4();
 	/** ipv6 */
+#ifdef IPPROTO_IPV6
 	struct in6_addr GetRemoteIP6();
+#endif
 	/** ipv4 and ipv6 */
 	port_t GetRemotePort();
 	/** ipv4 and ipv6 */

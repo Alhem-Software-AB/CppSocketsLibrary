@@ -203,6 +203,7 @@ SOCKET Socket::CreateSocket4(int type, const std::string& protocol)
 }
 
 
+#ifdef IPPROTO_IPV6
 SOCKET Socket::CreateSocket6(int type, const std::string& protocol)
 {
 	struct protoent *p = NULL;
@@ -245,34 +246,9 @@ SOCKET Socket::CreateSocket6(int type, const std::string& protocol)
 	m_ipv6 = true;
 	return s;
 }
+#endif
 
 
-/*
-Reference: http://compnetworking.about.com/library/weekly/aa042400a.htm
-
-IPv6 addresses are generally written in the following form:
-
-	hhhh:hhhh:hhhh:hhhh:hhhh:hhhh:hhhh:hhhh
-
-In this notation, pairs of IPv6 bytes are separated by a colon and each byte
-in turns is represented as an equivalent pair of hexadecimal numbers, like in
-the following example:
-
-	E3D7:0000:0000:0000:51F4:9BC8:C0A8:6420
-
-IPv6 addresses often contain many bytes with a zero value. Shorthand notation
-in IPv6 removes these values from the text representation (though the bytes
-are still present in the actual network address) as follows:
-
-	E3D7::51F4:9BC8:C0A8:6420
-
-Finally, many IPv6 addresses are extensions of IPv4 addresses. In these cases,
-the rightmost four bytes of an IPv6 address (the rightmost two byte pairs) may
-be rewritten in the IPv4 notation. Converting the above example to mixed
-notation yields
-
-	E3D7::51F4:9BC8:192.168.100.32
-*/
 bool Socket::isip(const std::string& str)
 {
 	if (m_ipv6)
@@ -361,6 +337,7 @@ bool Socket::u2ip(const std::string& str, ipaddr_t& l)
 }
 
 
+#ifdef IPPROTO_IPV6
 bool Socket::u2ip(const std::string& str, struct in6_addr& l)
 {
 	if (!m_ipv6)
@@ -434,6 +411,7 @@ bool Socket::u2ip(const std::string& str, struct in6_addr& l)
 	}
 	return false;
 }
+#endif
 
 
 void Socket::l2ip(const ipaddr_t ip, std::string& str)
@@ -460,6 +438,7 @@ void Socket::l2ip(const ipaddr_t ip, std::string& str)
 }
 
 
+#ifdef IPPROTO_IPV6
 void Socket::l2ip(const struct in6_addr& ip, std::string& str,bool mixed)
 {
 	if (!m_ipv6)
@@ -506,6 +485,7 @@ void Socket::l2ip(const struct in6_addr& ip, std::string& str,bool mixed)
 	}
 	str = slask;
 }
+#endif
 
 
 void Socket::Attach(SOCKET s)
@@ -583,6 +563,7 @@ ipaddr_t Socket::GetRemoteIP4()
 }
 
 
+#ifdef IPPROTO_IPV6
 struct in6_addr Socket::GetRemoteIP6()
 {
 	struct sockaddr_in6 *p = (struct sockaddr_in6 *)&m_sa;
@@ -592,15 +573,18 @@ struct in6_addr Socket::GetRemoteIP6()
 	}
 	return p -> sin6_addr;
 }
+#endif
 
 
 port_t Socket::GetRemotePort()
 {
+#ifdef IPPROTO_IPV6
 	if (m_ipv6)
 	{
 		struct sockaddr_in6 *p = (struct sockaddr_in6 *)&m_sa;
 		return ntohs(p -> sin6_port);
 	}
+#endif
 	struct sockaddr_in* saptr = (struct sockaddr_in*)&m_sa;
 	return ntohs(saptr -> sin_port);
 }
@@ -609,14 +593,14 @@ port_t Socket::GetRemotePort()
 std::string Socket::GetRemoteAddress()
 {
 	std::string str;
+#ifdef IPPROTO_IPV6
 	if (m_ipv6)
 	{
 		l2ip(GetRemoteIP6(), str);
+		return str;
 	}
-	else
-	{
-		l2ip(GetRemoteIP4(), str);
-	}
+#endif
+	l2ip(GetRemoteIP4(), str);
 	return str;
 }
 
@@ -624,11 +608,13 @@ std::string Socket::GetRemoteAddress()
 std::string Socket::GetRemoteHostname()
 {
 	std::string str;
+#ifdef IPPROTO_IPV6
 	if (m_ipv6)
 	{
 		Handler().LogError(this, "GetRemoteHostname", 0, "not implemented for ipv6", LOG_LEVEL_WARNING);
 		return GetRemoteAddress();
 	}
+#endif
 	long l = GetRemoteIP4();
 //#ifdef LINUX
 //	struct hostent *he = gethostbyaddr(&l, sizeof(long), AF_INET);
