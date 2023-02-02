@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #ifndef _MINIONSOCKET_H
 #define _MINIONSOCKET_H
+#ifdef HAVE_OPENSSL
 
 //#include <string>
 //#include <vector>
@@ -89,5 +90,5 @@ private:
 };
 
 
-
+#endif // HAVE_OPENSSL
 #endif // _MINIONSOCKET_H

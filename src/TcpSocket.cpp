@@ -42,8 +42,16 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 
 TcpSocket::TcpSocket(SocketHandler& h) : Socket(h)
-,ibuf(10240)
-,obuf(32768)
+,ibuf(*this, 10240)
+,obuf(*this, 32768)
+,m_line("")
+{
+}
+
+
+TcpSocket::TcpSocket(SocketHandler& h,size_t isize,size_t osize) : Socket(h)
+,ibuf(*this, isize)
+,obuf(*this, osize)
 ,m_line("")
 {
 }
@@ -227,19 +235,18 @@ void TcpSocket::OnRead()
 	else
 	if (!n)
 	{
+		Handler().LogError(this, "read", 0, "read returns 0", LOG_LEVEL_FATAL);
 		SetCloseAndDelete(true);
-DEB(		printf(" * read() returns 0\n");)
 	}
 	else
 	{
-DEB(		printf("read %d bytes\n",n);)
 		OnRawData(buf,n);
 		if (!ibuf.Write(buf,n))
 		{
 			// overflow
+			Handler().LogError(this, "read", 0, "ibuf overflow", LOG_LEVEL_WARNING);
 		}
 	}
-DEB(printf("TcpSocket::OnRead() ok\n");)
 }
 
 
@@ -271,12 +278,10 @@ When writing onto a connection-oriented socket that has been shut down (by the  
 or the remote end) SIGPIPE is sent to the writing process and EPIPE is returned.  The
 signal is not sent when the write call specified the MSG_NOSIGNAL flag.
 */
-DEB(	printf("OnWrite: %d bytes sent\n",n);)
 	if (n == -1)
 	{
 #ifdef _WIN32
 		int x = WSAGetLastError();
-DEB(	printf("write() error, errcode = %d\n",x);)
 #endif
 		Handler().LogError(this, "write", errno, strerror(errno), LOG_LEVEL_FATAL);
 		SetCloseAndDelete(true); // %!
@@ -285,17 +290,16 @@ DEB(	printf("write() error, errcode = %d\n",x);)
 	if (!n)
 	{
 //		SetCloseAndDelete(true);
-DEB(		printf("write() returns 0\n");)
 	}
 	else
 	{
-DEB(		printf(" %d bytes written\n",n);)
 		obuf.Remove(n);
 	}
 	// check m_mes
 	while (obuf.Space() && m_mes.size())
 	{
-		MES *p = m_mes[0];
+		ucharp_v::iterator it = m_mes.begin();
+		MES *p = *it; //m_mes[0];
 		if (obuf.Space() > p -> left())
 		{
 			obuf.Write(p -> curbuf(),p -> left());
@@ -331,7 +335,7 @@ void TcpSocket::SendBuf(const char *buf,size_t len)
 		Handler().LogError(this, "SendBuf", -1, "Attempt to write to a non-ready socket" );
 		return;
 	}
-DEB(	printf("trying to send %d bytes;  buf before = %d bytes\n",len,n);)
+//DEB(	printf("trying to send %d bytes;  buf before = %d bytes\n",len,n);)
 	if (m_mes.size() || len > obuf.Space())
 	{
 		MES *p = new MES(buf,len);
@@ -341,7 +345,8 @@ DEB(	printf("trying to send %d bytes;  buf before = %d bytes\n",len,n);)
 	{
 		while (obuf.Space() && m_mes.size())
 		{
-			MES *p = m_mes[0];
+			ucharp_v::iterator it = m_mes.begin();
+			MES *p = *it; //m_mes[0];
 			if (obuf.Space() > p -> left())
 			{
 				obuf.Write(p -> curbuf(),p -> left());

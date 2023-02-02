@@ -24,26 +24,35 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define _CIRCULARBUFFER_H
 
 
-
+class Socket;
 
 class CircularBuffer
 {
 public:
-	CircularBuffer(size_t size);
+	CircularBuffer(Socket& owner,size_t size);
 	~CircularBuffer();
 
-	bool Write(const char *,size_t l);
+	/** append l bytes from p to buffer */
+	bool Write(const char *p,size_t l);
+	/** copy l bytes from buffer to dest */
 	bool Read(char *dest,size_t l);
+	/** skip l bytes from buffer */
 	bool Remove(size_t l);
 
+	/** total buffer length */
 	size_t GetLength() { return m_q; }
+	/** pointer to circular buffer beginning */
 	char *GetStart() { return buf + m_b; }
+	/** return number of bytes from circular buffer beginning to buffer physical end */
 	size_t GetL() { return (m_b + m_q > m_max) ? m_max - m_b : m_q; }
+	/** return free space in buffer, number of bytes until buffer overrun */
 	size_t Space() { return m_max - m_q; }
 
-	unsigned long GetCount() { return m_count; }
+	/** return total number of bytes written to this buffer, ever */
+	unsigned long ByteCounter() { return m_count; }
 
 private:
+	Socket& m_owner;
 	char *buf;
 	size_t m_max;
 	size_t m_q;

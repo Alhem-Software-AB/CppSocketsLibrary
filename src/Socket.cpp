@@ -69,6 +69,10 @@ Socket::~Socket()
 	{
 		Close();
 	}
+	if (m_pThread)
+	{
+		delete m_pThread;
+	}
 }
 
 
@@ -315,10 +319,10 @@ bool Socket::u2ip(const std::string& str, ipaddr_t& l)
 			} a;
 			ipaddr_t l;
 		} u;
-		u.a.b1 = pa.getvalue();
-		u.a.b2 = pa.getvalue();
-		u.a.b3 = pa.getvalue();
-		u.a.b4 = pa.getvalue();
+		u.a.b1 = static_cast<unsigned char>(pa.getvalue());
+		u.a.b2 = static_cast<unsigned char>(pa.getvalue());
+		u.a.b3 = static_cast<unsigned char>(pa.getvalue());
+		u.a.b4 = static_cast<unsigned char>(pa.getvalue());
 		l = u.l;
 		return true;
 	}
@@ -347,7 +351,7 @@ bool Socket::u2ip(const std::string& str, struct in6_addr& l)
 	}
 	if (isip(str))
 	{
-		std::vector<std::string> vec;
+		string_v vec;
 		size_t x = 0;
 		char s[100];
 		for (size_t i = 0; i <= str.size(); i++)
@@ -361,10 +365,10 @@ bool Socket::u2ip(const std::string& str, struct in6_addr& l)
 				{
 					Parse pa(s,".");
 					char slask[100];
-					unsigned long b0 = pa.getvalue();
-					unsigned long b1 = pa.getvalue();
-					unsigned long b2 = pa.getvalue();
-					unsigned long b3 = pa.getvalue();
+					unsigned long b0 = static_cast<unsigned long>(pa.getvalue());
+					unsigned long b1 = static_cast<unsigned long>(pa.getvalue());
+					unsigned long b2 = static_cast<unsigned long>(pa.getvalue());
+					unsigned long b3 = static_cast<unsigned long>(pa.getvalue());
 					sprintf(slask,"%lx",b0 * 256 + b1);
 					vec.push_back(slask);
 					sprintf(slask,"%lx",b2 * 256 + b3);
@@ -380,7 +384,7 @@ bool Socket::u2ip(const std::string& str, struct in6_addr& l)
 		}
 		size_t sz = vec.size(); // number of byte pairs
 		size_t i = 0; // index in in6_addr.in6_u.u6_addr16[] ( 0 .. 7 )
-		for (std::vector<std::string>::iterator it = vec.begin(); it != vec.end(); it++)
+		for (string_v::iterator it = vec.begin(); it != vec.end(); it++)
 		{
 			std::string bytepair = *it;
 			if (bytepair.size())

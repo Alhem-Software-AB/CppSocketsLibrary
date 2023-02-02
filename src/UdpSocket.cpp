@@ -52,7 +52,7 @@ UdpSocket::UdpSocket(SocketHandler& h,size_t ibufsz) : Socket(h)
 
 UdpSocket::~UdpSocket()
 {
-	delete m_ibuf;
+	delete[] m_ibuf;
 }
 
 
@@ -386,14 +386,14 @@ void UdpSocket::SetBroadcast(bool b)
 
 	if (b)
 	{
-		if (setsockopt(GetSocket(), SOL_SOCKET, SO_BROADCAST, (void*) &one, sizeof(one)) == -1)
+		if (setsockopt(GetSocket(), SOL_SOCKET, SO_BROADCAST, (char *) &one, sizeof(one)) == -1)
 		{
 			Handler().LogError(this, "SetBroadcast", errno, strerror(errno), LOG_LEVEL_WARNING);
 		}
 	}
 	else
 	{
-		if (setsockopt(GetSocket(), SOL_SOCKET, SO_BROADCAST, (void*) &zero, sizeof(zero)) == -1)
+		if (setsockopt(GetSocket(), SOL_SOCKET, SO_BROADCAST, (char *) &zero, sizeof(zero)) == -1)
 		{
 			Handler().LogError(this, "SetBroadcast", errno, strerror(errno), LOG_LEVEL_WARNING);
 		}
@@ -405,17 +405,17 @@ bool UdpSocket::IsBroadcast()
 {
 	int is_broadcast = 0;
 	socklen_t size;
-	if (getsockopt(GetSocket(), SOL_SOCKET, SO_BROADCAST, (void *)&is_broadcast, &size) == -1)
+	if (getsockopt(GetSocket(), SOL_SOCKET, SO_BROADCAST, (char *)&is_broadcast, &size) == -1)
 	{
 		Handler().LogError(this, "IsBroadcast", errno, strerror(errno), LOG_LEVEL_WARNING);
 	}
-	return is_broadcast;
+	return is_broadcast != 0;
 }
 
 
 void UdpSocket::SetMulticastTTL(int ttl)
 {
-	if (setsockopt(GetSocket(), SOL_IP, IP_MULTICAST_TTL, (void *)&ttl, sizeof(int)) == -1)
+	if (setsockopt(GetSocket(), SOL_IP, IP_MULTICAST_TTL, (char *)&ttl, sizeof(int)) == -1)
 	{
 		Handler().LogError(this, "SetMulticastTTL", errno, strerror(errno), LOG_LEVEL_WARNING);
 	}
@@ -426,7 +426,7 @@ int UdpSocket::GetMulticastTTL()
 {
 	int ttl = 0;
 	socklen_t size = sizeof(int);
-	if (getsockopt(GetSocket(), SOL_IP, IP_MULTICAST_TTL, (void *)&ttl, &size) == -1)
+	if (getsockopt(GetSocket(), SOL_IP, IP_MULTICAST_TTL, (char *)&ttl, &size) == -1)
 	{
 		Handler().LogError(this, "GetMulticastTTL", errno, strerror(errno), LOG_LEVEL_WARNING);
 	}
@@ -440,14 +440,14 @@ void UdpSocket::SetMulticastLoop(bool x)
 	if (IsIpv6())
 	{
 		int val = x ? 1 : 0;
-		if (setsockopt(GetSocket(), IPPROTO_IPV6, IPV6_MULTICAST_LOOP, (void *)&val, sizeof(int)) == -1)
+		if (setsockopt(GetSocket(), IPPROTO_IPV6, IPV6_MULTICAST_LOOP, (char *)&val, sizeof(int)) == -1)
 		{
 			Handler().LogError(this, "SetMulticastLoop", errno, strerror(errno), LOG_LEVEL_WARNING);
 		}
 	}
 #endif
 	int val = x ? 1 : 0;
-	if (setsockopt(GetSocket(), SOL_IP, IP_MULTICAST_LOOP, (void *)&val, sizeof(int)) == -1)
+	if (setsockopt(GetSocket(), SOL_IP, IP_MULTICAST_LOOP, (char *)&val, sizeof(int)) == -1)
 	{
 		Handler().LogError(this, "SetMulticastLoop", errno, strerror(errno), LOG_LEVEL_WARNING);
 	}
@@ -461,7 +461,7 @@ bool UdpSocket::IsMulticastLoop()
 	{
 		int is_loop = 0;
 		socklen_t size = sizeof(int);
-		if (getsockopt(GetSocket(), IPPROTO_IPV6, IPV6_MULTICAST_LOOP, (void *)&is_loop, &size) == -1)
+		if (getsockopt(GetSocket(), IPPROTO_IPV6, IPV6_MULTICAST_LOOP, (char *)&is_loop, &size) == -1)
 		{
 			Handler().LogError(this, "IsMulticastLoop", errno, strerror(errno), LOG_LEVEL_WARNING);
 		}
@@ -470,7 +470,7 @@ bool UdpSocket::IsMulticastLoop()
 #endif
 	int is_loop = 0;
 	socklen_t size = sizeof(int);
-	if (getsockopt(GetSocket(), SOL_IP, IP_MULTICAST_LOOP, (void *)&is_loop, &size) == -1)
+	if (getsockopt(GetSocket(), SOL_IP, IP_MULTICAST_LOOP, (char *)&is_loop, &size) == -1)
 	{
 		Handler().LogError(this, "IsMulticastLoop", errno, strerror(errno), LOG_LEVEL_WARNING);
 	}
@@ -489,7 +489,7 @@ void UdpSocket::AddMulticastMembership(const std::string& group,const std::strin
 		{
 			x.ipv6mr_multiaddr = addr;
 			x.ipv6mr_interface = if_index;
-			if (setsockopt(GetSocket(), IPPROTO_IPV6, IPV6_ADD_MEMBERSHIP, (void *)&x, sizeof(struct ipv6_mreq)) == -1)
+			if (setsockopt(GetSocket(), IPPROTO_IPV6, IPV6_ADD_MEMBERSHIP, (char *)&x, sizeof(struct ipv6_mreq)) == -1)
 			{
 				Handler().LogError(this, "AddMulticastMembership", errno, strerror(errno), LOG_LEVEL_WARNING);
 			}
@@ -505,7 +505,7 @@ void UdpSocket::AddMulticastMembership(const std::string& group,const std::strin
 		u2ip( local_if, addr);
 		memcpy(&x.imr_interface.s_addr, &addr, sizeof(addr));
 //		x.imr_ifindex = if_index;
-		if (setsockopt(GetSocket(), SOL_IP, IP_ADD_MEMBERSHIP, (void *)&x, sizeof(struct ip_mreq)) == -1)
+		if (setsockopt(GetSocket(), SOL_IP, IP_ADD_MEMBERSHIP, (char *)&x, sizeof(struct ip_mreq)) == -1)
 		{
 			Handler().LogError(this, "AddMulticastMembership", errno, strerror(errno), LOG_LEVEL_WARNING);
 		}
@@ -524,7 +524,7 @@ void UdpSocket::DropMulticastMembership(const std::string& group,const std::stri
 		{
 			x.ipv6mr_multiaddr = addr;
 			x.ipv6mr_interface = if_index;
-			if (setsockopt(GetSocket(), IPPROTO_IPV6, IPV6_DROP_MEMBERSHIP, (void *)&x, sizeof(struct ipv6_mreq)) == -1)
+			if (setsockopt(GetSocket(), IPPROTO_IPV6, IPV6_DROP_MEMBERSHIP, (char *)&x, sizeof(struct ipv6_mreq)) == -1)
 			{
 				Handler().LogError(this, "DropMulticastMembership", errno, strerror(errno), LOG_LEVEL_WARNING);
 			}
@@ -540,7 +540,7 @@ void UdpSocket::DropMulticastMembership(const std::string& group,const std::stri
 		u2ip( local_if, addr);
 		memcpy(&x.imr_interface.s_addr, &addr, sizeof(addr));
 //		x.imr_ifindex = if_index;
-		if (setsockopt(GetSocket(), SOL_IP, IP_DROP_MEMBERSHIP, (void *)&x, sizeof(struct ip_mreq)) == -1)
+		if (setsockopt(GetSocket(), SOL_IP, IP_DROP_MEMBERSHIP, (char *)&x, sizeof(struct ip_mreq)) == -1)
 		{
 			Handler().LogError(this, "DropMulticastMembership", errno, strerror(errno), LOG_LEVEL_WARNING);
 		}
@@ -556,7 +556,7 @@ void UdpSocket::SetMulticastHops(int hops)
 		Handler().LogError(this, "SetMulticastHops", 0, "Ipv6 only", LOG_LEVEL_ERROR);
 		return;
 	}
-	if (setsockopt(GetSocket(), IPPROTO_IPV6, IPV6_MULTICAST_HOPS, (void *)&hops, sizeof(int)) == -1)
+	if (setsockopt(GetSocket(), IPPROTO_IPV6, IPV6_MULTICAST_HOPS, (char *)&hops, sizeof(int)) == -1)
 	{
 		Handler().LogError(this, "SetMulticastHops", errno, strerror(errno), LOG_LEVEL_WARNING);
 	}
@@ -572,7 +572,7 @@ int UdpSocket::GetMulticastHops()
 	}
 	int hops = 0;
 	socklen_t size = sizeof(int);
-	if (getsockopt(GetSocket(), IPPROTO_IPV6, IPV6_MULTICAST_HOPS, (void *)&hops, &size) == -1)
+	if (getsockopt(GetSocket(), IPPROTO_IPV6, IPV6_MULTICAST_HOPS, (char *)&hops, &size) == -1)
 	{
 		Handler().LogError(this, "GetMulticastHops", errno, strerror(errno), LOG_LEVEL_WARNING);
 	}

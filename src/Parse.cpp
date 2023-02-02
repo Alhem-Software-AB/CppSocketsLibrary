@@ -173,11 +173,9 @@ std::string Parse::getword(void)
 			while (C && (C == ' ' || C == 9 || C == 13 || C == 10 || issplit(C)))
 				pa_the_ptr++;
 			x = pa_the_ptr;
-DEB(printf("Split starts at %d\n",x);)
 			while (C && C != ' ' && C != 9 && C != 13 && C != 10 && !issplit(C) &&
 			 (C != pa_breakchar || !pa_breakchar || disabled))
 			{
-DEB(printf("Char '%c'\n",C);)
 				if (pa_breakchar && C == pa_disable)
 					disabled = 1;
 				if (pa_breakchar && C == pa_enable)

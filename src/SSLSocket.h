@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #ifndef _SSLSOCKET_H
 #define _SSLSOCKET_H
+#ifdef HAVE_OPENSSL
 
 #include <openssl/ssl.h>
 #include "SocketHandler.h"
@@ -73,4 +74,5 @@ static	std::string m_password;
 };
 
 
+#endif // HAVE_OPENSSL
 #endif // _SSLSOCKET_H

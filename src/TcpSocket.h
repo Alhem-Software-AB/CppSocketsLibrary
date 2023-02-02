@@ -37,17 +37,18 @@ class TcpSocket : public Socket
 		{
 			memcpy(buf,buf_in,len);
 		}
-		~MES() { delete buf; }
+		~MES() { delete[] buf; }
 		size_t left() { return len - ptr; }
 		 char *curbuf() { return buf + ptr; }
 		 char *buf;
 		size_t len;
 		size_t ptr;
 	};
-	typedef std::vector<MES *> ucharp_v;
+	typedef std::list<MES *> ucharp_v;
 
 public:
 	TcpSocket(SocketHandler& );
+	TcpSocket(SocketHandler& ,size_t isize,size_t osize);
 	~TcpSocket();
 
 	bool Open4(ipaddr_t,port_t);
@@ -65,8 +66,8 @@ public:
 	void ReadLine();
 	virtual void OnLine(const std::string& );
 
-	unsigned long GetBytesReceived() { return ibuf.GetCount(); }
-	unsigned long GetBytesSent() { return obuf.GetCount(); }
+	unsigned long GetBytesReceived() { return ibuf.ByteCounter(); }
+	unsigned long GetBytesSent() { return obuf.ByteCounter(); }
 
 protected:
 	void OnRead();

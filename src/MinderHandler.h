@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #ifndef _MINION_MINDERHANDLER_H
 #define _MINION_MINDERHANDLER_H
+#ifdef HAVE_OPENSSL
 
 //#include <string>
 //#include <time.h>
@@ -31,6 +32,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "Base64.h"
 
 
+class MinderSocket;
 
 class MinderHandler : public SocketHandler
 {
@@ -129,5 +131,5 @@ private:
 
 
 
-
+#endif // HAVE_OPENSSL
 #endif // _MINION_MINDERHANDLER_H

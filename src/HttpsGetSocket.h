@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #ifndef _HTTPSGETSOCKET_H
 #define _HTTPSGETSOCKET_H
+#ifdef HAVE_OPENSSL
 
 #include "HttpsSocket.h"
 
@@ -67,5 +68,5 @@ private:
 
 
 
-
+#endif // HAVE_OPENSSL
 #endif // _HTTPSGETSOCKET_H

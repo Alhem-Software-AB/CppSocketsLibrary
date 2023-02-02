@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #ifndef _MINDERSOCKET_H
 #define _MINDERSOCKET_H
+#ifdef HAVE_OPENSSL
 
 #include "SSLSocket.h"
 #include "MinionSocket.h"
@@ -65,5 +66,5 @@ private:
 };
 
 
-
+#endif // HAVE_OPENSSL
 #endif // _MINDERSOCKET_H

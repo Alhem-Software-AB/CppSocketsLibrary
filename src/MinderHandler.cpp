@@ -23,6 +23,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifdef _WIN32
 #pragma warning(disable:4786)
 #endif
+#ifdef HAVE_OPENSSL
+
 #include <stdlib.h>
 //#include <time.h>
 //#include "socket_include.h"
@@ -62,6 +64,25 @@ MinderHandler::MinderHandler()
 
 MinderHandler::~MinderHandler()
 {
+	for (seen_v::iterator it = m_seen.begin(); it != m_seen.end(); it++)
+	{
+		SEEN *p = *it;
+		delete p;
+	}
+	{
+		for (store_v::iterator it = m_store.begin(); it != m_store.end(); it++)
+		{
+			STORE *p = *it;
+			delete p;
+		}
+	}
+	{
+		for (hosts_v::iterator it = m_hosts.begin(); it != m_hosts.end(); it++)
+		{
+			HOSTS *p = *it;
+			delete p;
+		}
+	}
 }
 
 
@@ -442,3 +463,4 @@ void MinderHandler::Tops(FILE *fil)
 
 
 
+#endif // HAVE_OPENSSL

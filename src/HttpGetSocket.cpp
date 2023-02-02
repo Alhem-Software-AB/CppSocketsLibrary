@@ -26,11 +26,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifdef _WIN32
 #define strcasecmp stricmp
 #endif
+#include <errno.h>
 #include "Utility.h"
 #include "Parse.h"
+#include "StdLog.h"
+#include "SocketHandler.h"
 #include "HttpGetSocket.h"
-
-#define DEB(x)
 
 
 HttpGetSocket::HttpGetSocket(SocketHandler& h,const std::string& url_in,const std::string& filename)
@@ -51,8 +52,7 @@ HttpGetSocket::HttpGetSocket(SocketHandler& h,const std::string& url_in,const st
 	{
 		if (!Connecting())
 		{
-			fprintf(stderr,"connect() failed\n");
-DEB(			fprintf(fil,"connect() failed\n");)
+			Handler().LogError(this, "HttpGetSocket", -1, "connect() failed miserably", LOG_LEVEL_FATAL);
 			SetCloseAndDelete();
 		}
 	}
@@ -76,8 +76,7 @@ HttpGetSocket::HttpGetSocket(SocketHandler& h,const std::string& host,port_t por
 	{
 		if (!Connecting())
 		{
-			fprintf(stderr,"connect() failed\n");
-DEB(			fprintf(fil,"connect() failed\n");)
+			Handler().LogError(this, "HttpGetSocket", -1, "connect() failed miserably", LOG_LEVEL_FATAL);
 			SetCloseAndDelete();
 		}
 	}
@@ -106,14 +105,12 @@ void HttpGetSocket::OnConnect()
 #endif
 		"Host: " + m_host + ":" + Utility::l2string(m_port) + "\n"
 		"\n";
-DEB(		fprintf(fil,"%s\n",str.c_str());)
 	Send(str);
 }
 
 
 void HttpGetSocket::OnContent()
 {
-DEB(	fprintf(fil,"Content read\n");)
 	if (m_fil)
 	{
 		fflush(m_fil);
@@ -184,7 +181,7 @@ void HttpGetSocket::OnHeaderComplete()
 	m_fil = fopen(m_to_file.c_str(),"wb");
 	if (!m_fil)
 	{
-DEB(		fprintf(m_fil,"couldn't open '%s' for writing\n",m_to_file.c_str());)
+		Handler().LogError(this, "OnHeaderComplete", errno, strerror(errno), LOG_LEVEL_FATAL);
 		SetCloseAndDelete();
 	}
 }
@@ -213,7 +210,7 @@ void HttpGetSocket::url_this(const std::string& url_in,std::string& host,port_t&
 	{
 		Parse pa(host,":");
 		pa.getword(host);
-		port = pa.getvalue();
+		port = static_cast<port_t>(pa.getvalue());
 	}
 	else
 	{

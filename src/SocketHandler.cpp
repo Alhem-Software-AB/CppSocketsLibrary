@@ -64,7 +64,7 @@ SocketHandler::~SocketHandler()
 		{
 			Socket *p = (*it).second;
 			p -> Close();
-//			p -> OnDelete();
+			p -> OnDelete(); // hey, I turn this back on. what's the worst that could happen??!!
 			if (p -> DeleteByHandler())
 			{
 				delete p;

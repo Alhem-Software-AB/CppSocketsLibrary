@@ -1,13 +1,19 @@
-VERSION =	1.5.4
+VERSION =	1.6
 
 INCLUDE =	-I/usr/devel/include -I.
 CFLAGS =	-Wall -g -O2 $(INCLUDE) -MD -D_VERSION='"$(VERSION)"' 
-CPPFLAGS =	$(CFLAGS) 
+# manual autoconf ....
 
-# autoconf ....
+# uncomment if your operating system is linux, mac os x, or solaris
 #CFLAGS +=	-DLINUX
 #CFLAGS +=	-DMACOSX 
 #CFLAGS +=	-DSOLARIS
+
+# uncomment if openssl is installed
+CFLAGS += 	-DHAVE_OPENSSL
+
+
+CPPFLAGS =	$(CFLAGS) 
 
 
 PROGS =		
@@ -61,10 +67,12 @@ tar:		clean
 		rm -f uuid.h
 		rm -f Stdin.*
 		./mkdot.sh
-		tar czf /usr/local/apache/www.libsockets.net/htdocs/Sockets-$(VERSION).tar.gz *.h *.cpp Makefile Project/*.dsp \
+		tar czf Sockets-$(VERSION).tar.gz *.h *.cpp Makefile Project/*.dsp \
 			README.macosx gpl.txt
 		cp Changelog /usr/local/apache/www.libsockets.net/htdocs
 		doxygen doxygen.cfg
+		/usr/local/bin/tarfix.sh Sockets-$(VERSION)
+		cp Sockets-$(VERSION).tar.gz /usr/local/apache/www.libsockets.net/htdocs
 
 docs:		clean
 		rm -f Mutex.*

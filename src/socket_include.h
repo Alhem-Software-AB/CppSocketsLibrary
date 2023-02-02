@@ -1,23 +1,30 @@
 #ifndef _SOCKET_INCLUDE_H
 #define _SOCKET_INCLUDE_H
 
-#ifdef SOLARIS
-//typedef unsigned long ipaddr_t;
+#ifdef SOLARIS // Solaris
 typedef unsigned short port_t;
 
-#elif defined MACOSX
+#elif defined MACOSX // Mac OS X
 typedef unsigned long ipaddr_t;
-//typedef unsigned short port_t;
 #define s6_addr16 __u6_addr.__u6_addr16
 #define MSG_NOSIGNAL 0 // oops - thanks Derek
-#define SOL_IP IPPROTO_IP
 #define IPV6_ADD_MEMBERSHIP IPV6_JOIN_GROUP
 #define IPV6_DROP_MEMBERSHIP IPV6_LEAVE_GROUP
 
-#else // LINUX / _WIN32
+#elif defined WIN32 // Win32
+typedef unsigned long ipaddr_t;
+typedef unsigned short port_t;
+#pragma comment(lib, "wsock32.lib")
+
+#else // LINUX 
 typedef unsigned long ipaddr_t;
 typedef unsigned short port_t;
 
+#endif
+
+// Generic
+#ifndef SOL_IP
+#define SOL_IP IPPROTO_IP
 #endif
 
 

@@ -23,15 +23,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifdef _WIN32
 #pragma warning(disable:4786)
 #endif
+#ifdef HAVE_OPENSSL
 #ifdef _WIN32
 #define strcasecmp stricmp
 #endif
-
+#include <errno.h>
 #include "Utility.h"
 #include "Parse.h"
 #include "HttpsGetSocket.h"
-
-#define DEB(x) x
 
 
 HttpsGetSocket::HttpsGetSocket(SocketHandler& h,const std::string& url_in,const std::string& filename)
@@ -50,8 +49,7 @@ HttpsGetSocket::HttpsGetSocket(SocketHandler& h,const std::string& url_in,const 
 	{
 		if (!Connecting())
 		{
-			fprintf(stderr,"connect() failed\n");
-DEB(			printf("connect() failed\n");)
+			Handler().LogError(this, "HttpsGetSocket", -1, "connect() failed miserably", LOG_LEVEL_FATAL);
 			SetCloseAndDelete();
 		}
 	}
@@ -74,8 +72,7 @@ HttpsGetSocket::HttpsGetSocket(SocketHandler& h,const std::string& host,port_t p
 	{
 		if (!Connecting())
 		{
-			fprintf(stderr,"connect() failed\n");
-DEB(			printf("connect() failed\n");)
+			Handler().LogError(this, "HttpsGetSocket", -1, "connect() failed miserably", LOG_LEVEL_FATAL);
 			SetCloseAndDelete();
 		}
 	}
@@ -105,108 +102,12 @@ void HttpsGetSocket::OnSSLInitDone()
 #endif
 		"Host: " + m_host + ":" + Utility::l2string(m_port) + "\n"
 		"\n";
-DEB(		printf("%s\n",str.c_str());)
 	Send(str);
 }
 
 
-/*
-#define BUFSIZE 5000
-void HttpsGetSocket::ReadLine()
-{
-DEB(	printf("HttpsGetSocket ReadLine ibuf GetLength = %d\n",ibuf.GetLength());)
-	if (ibuf.GetLength())
-	{
-		size_t x = 0;
-		size_t n = ibuf.GetLength();
-		char tmp[BUFSIZE];
-
-		n = (n >= BUFSIZE) ? BUFSIZE - 1 : n;
-		ibuf.Read(tmp,n);
-		tmp[n] = 0;
-
-		for (size_t i = 0; i < n; i++)
-		{
-//printf("%c\n",tmp[i]);
-			if (m_bHeader)
-			{
-				if (tmp[i] == 13 || tmp[i] == 10)
-				{
-					tmp[i] = 0;
-					m_line += (tmp + x);
-					OnLine( m_line );
-//					i++;
-					if (i + 1 < n && (tmp[i + 1] == 13 || tmp[i + 1] == 10))
-						i++;
-					x = i + 1;
-					m_line = "";
-				}
-			}
-			else
-			{
-				if (m_fil && (m_content_ptr < m_content_length || !m_content_length) )
-				{
-					fwrite(&tmp[i],1,1,m_fil);
-					m_content_ptr++;
-				}
-				if (m_content_length && m_content_ptr == m_content_length)
-				{
-					OnContent();
-				}
-			}
-		}
-		m_line += (tmp + x);
-	}
-}
-
-
-void HttpsGetSocket::OnLine(const std::string& line)
-{
-	Parse pa(line,":");
-	std::string key = pa.getword();
-
-DEB(	printf("OnLine: %s\n",line.c_str());)
-DEB(	printf(" line size: %d\n",line.size());)
-	if (key.size() > 3 && key.substr(0,4) == "HTTP")
-	{
-		int result = pa.getvalue();
-		if (result != 200)
-		{
-DEB(			printf("result != 200 (%d)\n",result);)
-			SetCloseAndDelete();
-		}
-	}
-	else
-	if (!strcasecmp(key.c_str(),"content-type"))
-	{
-		m_content_type = pa.getrest();
-	}
-	else
-	if (!strcasecmp(key.c_str(),"content-length"))
-	{
-		m_content_length = pa.getvalue();
-	}
-	else
-	if (key == "")
-	{
-		m_fil = fopen(m_to_file.c_str(),"wb");
-		if (!m_fil)
-		{
-DEB(			printf("couldn't open '%s' for writing\n",m_to_file.c_str());)
-			SetCloseAndDelete();
-		}
-		if (m_content_length || m_content_type.size() )
-		{
-			m_bHeader = false;
-		}
-	}
-}
-*/
-
-
 void HttpsGetSocket::OnContent()
 {
-DEB(	printf("Content read\n");)
 	if (m_fil)
 	{
 		fflush(m_fil);
@@ -220,7 +121,6 @@ DEB(	printf("Content read\n");)
 
 void HttpsGetSocket::OnDelete()
 {
-DEB(	printf("OnDelete()\n");)
 	if (m_fil)
 	{
 		OnContent();
@@ -261,7 +161,7 @@ void HttpsGetSocket::OnHeaderComplete()
 	m_fil = fopen(m_to_file.c_str(),"wb");
 	if (!m_fil)
 	{
-DEB(		fprintf(stderr,"couldn't open '%s' for writing\n",m_to_file.c_str());)
+		Handler().LogError(this, "OnHeaderComplete", errno, strerror(errno), LOG_LEVEL_FATAL);
 		SetCloseAndDelete();
 	}
 }
@@ -296,7 +196,7 @@ void HttpsGetSocket::url_this(const std::string& url_in,std::string& host,port_t
 	{
 		Parse pa(host,":");
 		pa.getword(host);
-		port = pa.getvalue();
+		port = static_cast<port_t>(pa.getvalue());
 	}
 	else
 	{
@@ -315,3 +215,4 @@ void HttpsGetSocket::url_this(const std::string& url_in,std::string& host,port_t
 } // url_this
 
 
+#endif // HAVE_OPENSSL

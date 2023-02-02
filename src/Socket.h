@@ -33,7 +33,8 @@ class SocketHandler;
 class SocketThread;
 
 
-	typedef std::vector<std::string> string_v;
+#include <list>
+	typedef std::list<std::string> string_v;
 
 class Socket
 {

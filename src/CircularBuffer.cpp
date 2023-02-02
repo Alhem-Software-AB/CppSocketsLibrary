@@ -23,6 +23,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <stdio.h>
 #include <string.h>
 
+#include "Socket.h"
+#include "SocketHandler.h"
 #include "CircularBuffer.h"
 
 #ifdef _DEBUG
@@ -32,8 +34,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #endif
 
 
-CircularBuffer::CircularBuffer(size_t size)
-:buf(new char[size])
+CircularBuffer::CircularBuffer(Socket& owner,size_t size)
+:m_owner(owner)
+,buf(new char[size])
 ,m_max(size)
 ,m_q(0)
 ,m_b(0)
@@ -45,7 +48,7 @@ CircularBuffer::CircularBuffer(size_t size)
 
 CircularBuffer::~CircularBuffer()
 {
-	delete buf;
+	delete[] buf;
 }
 
 
@@ -53,13 +56,13 @@ bool CircularBuffer::Write(const char *s,size_t l)
 {
 	if (m_q + l > m_max)
 	{
+		m_owner.Handler().LogError(&m_owner, "CircularBuffer::Write", -1, "write buffer overflow");
 		return false; // overflow
 	}
-DEB(	printf("adding %d bytes\n",l);)
 	m_count += l;
-	if (m_t + l > m_max)
+	if (m_t + l > m_max) // block crosses circular border
 	{
-		size_t l1 = m_t + l - m_max;
+		size_t l1 = m_max - m_t; // size left until circular border crossing
 		memcpy(buf + m_t, s, l1);
 		memcpy(buf, s + l1, l - l1);
 		m_t = l - l1;
@@ -81,19 +84,26 @@ bool CircularBuffer::Read(char *s,size_t l)
 {
 	if (l > m_q)
 	{
+		m_owner.Handler().LogError(&m_owner, s ? "CircularBuffer::Read" : "CircularBuffer::Write", -1, "attempt to read beyond buffer");
 		return false; // not enough chars
 	}
-	if (m_b + l > m_max)
+	if (m_b + l > m_max) // block crosses circular border
 	{
-		size_t l1 = m_b + l - m_max;
-		memcpy(s, buf + m_b, l1);
-		memcpy(s + l1, buf, l - l1);
+		size_t l1 = m_max - m_b;
+		if (s)
+		{
+			memcpy(s, buf + m_b, l1);
+			memcpy(s + l1, buf, l - l1);
+		}
 		m_b = l - l1;
 		m_q -= l;
 	}
 	else
 	{
-		memcpy(s, buf + m_b, l);
+		if (s)
+		{
+			memcpy(s, buf + m_b, l);
+		}
 		m_b += l;
 		if (m_b >= m_max)
 			m_b -= m_max;
@@ -103,35 +113,13 @@ bool CircularBuffer::Read(char *s,size_t l)
 	{
 		m_b = m_t = 0;
 	}
-//	s[l] = 0;
 	return true;
 }
 
 
 bool CircularBuffer::Remove(size_t l)
 {
-	if (l > m_q)
-	{
-		return false; // not enough chars
-	}
-	if (m_b + l > m_max)
-	{
-		size_t l1 = m_b + l - m_max;
-		m_b = l - l1;
-		m_q -= l;
-	}
-	else
-	{
-		m_b += l;
-		if (m_b >= m_max)
-			m_b -= m_max;
-		m_q -= l;
-	}
-	if (!m_q)
-	{
-		m_b = m_t = 0;
-	}
-	return true;
+	return Read(NULL, l);
 }
 
 
