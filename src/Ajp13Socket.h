@@ -26,6 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "AjpBaseSocket.h"
 #include "HttpRequest.h"
 #include "IHttpServer.h"
+#include "HttpResponse.h"
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
@@ -57,7 +58,7 @@ private:
 	//
 	size_t m_body_size_left;
 	HttpRequest m_req;
-	const IFile *m_res_file;
+	HttpResponse m_res;
 };
 
 

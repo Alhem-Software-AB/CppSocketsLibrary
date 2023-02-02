@@ -37,7 +37,10 @@ class HttpResponse : public HttpTransaction
 {
 public:
 	HttpResponse(const std::string& version = "HTTP/1.0");
+	HttpResponse(const HttpResponse& src);
 	~HttpResponse();
+
+	HttpResponse& operator=(const HttpResponse& src);
 
 	/** HTTP/1.x */
 	void SetHttpVersion(const std::string& value);
@@ -69,7 +72,7 @@ private:
 	int m_http_status_code;
 	std::string m_http_status_msg;
 	Utility::ncmap<std::string> m_cookie;
-	IFile *m_file;
+	mutable std::auto_ptr<IFile> m_file;
 
 }; // end of class
 

@@ -36,13 +36,12 @@ namespace SOCKETS_NAMESPACE {
 #ifdef _DEBUG
 #define DEB(x) x
 #else
-#define DEB(x) x
+#define DEB(x) 
 #endif
 
 
 HttpBaseSocket::HttpBaseSocket(ISocketHandler& h)
 :HTTPSocket(h)
-,m_res_file(NULL)
 ,m_b_keepalive(false)
 {
 }
@@ -143,28 +142,27 @@ DEB(printf(" *** keepalive: true\n");)
 void HttpBaseSocket::Respond(const HttpResponse& res)
 {
 DEB(	Debug deb("HttpBaseSocket::Respond");)
-//	res.SetHeader("connection", "close");
+	m_res = res;
+//	m_res.SetHeader("connection", "close");
 
-	SetHttpVersion( res.HttpVersion() );
-	SetStatus( Utility::l2string(res.HttpStatusCode()) );
-	SetStatusText( res.HttpStatusMsg() );
+	SetHttpVersion( m_res.HttpVersion() );
+	SetStatus( Utility::l2string(m_res.HttpStatusCode()) );
+	SetStatusText( m_res.HttpStatusMsg() );
 
 	if (!ResponseHeaderIsSet("content-length"))
 	{
-		AddResponseHeader( "content-length", Utility::l2string( res.GetFile().size() ) );
+		AddResponseHeader( "content-length", Utility::l2string( m_res.GetFile().size() ) );
 	}
-	for (Utility::ncmap<std::string>::const_iterator it = res.Headers().begin(); it != res.Headers().end(); ++it)
+	for (Utility::ncmap<std::string>::const_iterator it = m_res.Headers().begin(); it != m_res.Headers().end(); ++it)
 	{
 		AddResponseHeader( it -> first, it -> second );
 	}
-	std::list<std::string> vec = res.CookieNames();
+	std::list<std::string> vec = m_res.CookieNames();
 	for (std::list<std::string>::iterator it2 = vec.begin(); it2 != vec.end(); it2++)
 	{
-		AppendResponseHeader( "set-cookie", res.Cookie(*it2) );
+		AppendResponseHeader( "set-cookie", m_res.Cookie(*it2) );
 	}
 	SendResponse();
-
-	m_res_file = &res.GetFile();
 
 	OnTransferLimit();
 }
@@ -175,7 +173,7 @@ void HttpBaseSocket::OnTransferLimit()
 {
 DEB(	Debug deb("HttpBaseSocket::OnTransferLimit");)
 	char msg[32768];
-	size_t n = m_res_file -> fread(msg, 1, 32768);
+	size_t n = m_res.GetFile().fread(msg, 1, 32768);
 	while (n > 0)
 	{
 		SendBuf( msg, n );
@@ -184,7 +182,7 @@ DEB(	Debug deb("HttpBaseSocket::OnTransferLimit");)
 			SetTransferLimit( 1 );
 			break;
 		}
-		n = m_res_file -> fread(msg, 1, 32768);
+		n = m_res.GetFile().fread(msg, 1, 32768);
 	}
 	if (!GetOutputLength())
 	{

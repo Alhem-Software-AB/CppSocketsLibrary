@@ -26,6 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "HTTPSocket.h"
 #include "HttpRequest.h"
 #include "IHttpServer.h"
+#include "HttpResponse.h"
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
@@ -54,6 +55,7 @@ protected:
 	HttpBaseSocket(const HttpBaseSocket& s) : HTTPSocket(s) {} // copy constructor
 	//
 	HttpRequest m_req;
+	HttpResponse m_res;
 	void Reset();
 
 private:
@@ -61,7 +63,6 @@ private:
 	void Execute();
 	//
 	size_t m_body_size_left;
-	const IFile *m_res_file;
 	bool m_b_keepalive;
 };
 

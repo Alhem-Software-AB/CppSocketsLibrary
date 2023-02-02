@@ -54,9 +54,34 @@ HttpResponse::HttpResponse(const std::string& version) : HttpTransaction()
 
 
 // --------------------------------------------------------------------------------------
+HttpResponse::HttpResponse(const HttpResponse& src) : HttpTransaction(src)
+, m_http_version( src.m_http_version )
+, m_http_status_code( src.m_http_status_code )
+, m_http_status_msg( src.m_http_status_msg )
+, m_cookie( src.m_cookie )
+, m_file( src.m_file )
+{
+}
+
+
+// --------------------------------------------------------------------------------------
 HttpResponse::~HttpResponse()
 {
-	delete m_file;
+}
+
+
+// --------------------------------------------------------------------------------------
+HttpResponse& HttpResponse::operator=(const HttpResponse& src)
+{
+	m_http_version = src.m_http_version;
+	m_http_status_code = src.m_http_status_code;
+	m_http_status_msg = src.m_http_status_msg;
+	m_cookie = src.m_cookie;
+	m_file = src.m_file;
+
+	HttpTransaction::operator=(src);
+
+	return *this;
 }
 
 
@@ -170,8 +195,7 @@ void HttpResponse::Writef( const char *format, ... )
 // --------------------------------------------------------------------------------------
 void HttpResponse::SetFile( const std::string& path )
 {
-	delete m_file;
-	m_file = new File();
+	m_file = std::auto_ptr<IFile>(new File);
 	m_file -> fopen( path, "rb" );
 }
 
@@ -187,11 +211,7 @@ void HttpResponse::Reset()
 	{
 		m_cookie.erase(m_cookie.begin());
 	}
-	if (m_file)
-	{
-		delete m_file;
-		m_file = new MemFile;
-	}
+	m_file = std::auto_ptr<IFile>(new MemFile);
 }
 
 

@@ -29,6 +29,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "HttpdForm.h"
 #include "HttpdCookies.h"
 #include "Parse.h"
+#include "Exception.h"
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
@@ -74,18 +75,6 @@ HttpRequest::HttpRequest(const HttpRequest& src) : HttpTransaction(src)
 // --------------------------------------------------------------------------------------
 HttpRequest::~HttpRequest()
 {
-	m_body_file = std::auto_ptr<IFile>(NULL);
-	m_form = std::auto_ptr<HttpdForm>(NULL);
-/*
-	if (m_body_file)
-	{
-		delete m_body_file;
-	}
-	if (m_form)
-	{
-		delete m_form;
-	}
-*/
 }
 
 
@@ -302,6 +291,8 @@ void HttpRequest::ParseBody()
 // --------------------------------------------------------------------------------------
 const HttpdForm& HttpRequest::Form() const
 {
+	if (!m_form.get())
+		throw Exception("Form not available");
 	return *m_form;
 }
 
@@ -331,18 +322,6 @@ void HttpRequest::Reset()
 	}
 	m_body_file = std::auto_ptr<IFile>(NULL);
 	m_form = std::auto_ptr<HttpdForm>(NULL);
-/*
-	if (m_body_file)
-	{
-		delete m_body_file;
-		m_body_file = NULL;
-	}
-	if (m_form)
-	{
-		delete m_form;
-		m_form = NULL;
-	}
-*/
 	m_cookies.Reset();
 	while (!m_cookie.empty())
 	{
