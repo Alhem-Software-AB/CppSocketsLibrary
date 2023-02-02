@@ -53,8 +53,8 @@ namespace SOCKETS_NAMESPACE {
 #endif
 
 
-std::map<int, IMutex *> SSLInitializer::m_mmap;
-Mutex SSLInitializer::m_mmap_mutex;
+std::map<int, IMutex *> *SSLInitializer::m_mmap = NULL;
+Mutex *SSLInitializer::m_mmap_mutex = NULL;
 
 
 SSLInitializer::SSLInitializer()
@@ -128,12 +128,12 @@ void SSLInitializer::SSL_locking_function(int mode, int n, const char *file, int
 {
 	IMutex *mutex = NULL;
 	{
-		Lock lock(m_mmap_mutex);
-		if (m_mmap.find(n) == m_mmap.end())
+		Lock lock(MMapMutex());
+		if (MMap().find(n) == MMap().end())
 		{
-			m_mmap[n] = new Mutex;
+			MMap()[n] = new Mutex;
 		}
-		mutex = m_mmap[n];
+		mutex = MMap()[n];
 	}
 	if (mode & CRYPTO_LOCK)
 	{
@@ -149,6 +149,22 @@ void SSLInitializer::SSL_locking_function(int mode, int n, const char *file, int
 unsigned long SSLInitializer::SSL_id_function()
 {
 	return Utility::ThreadID();
+}
+
+
+std::map<int, IMutex *>& SSLInitializer::MMap()
+{
+	if (m_mmap == NULL)
+		m_mmap = new std::map<int, IMutex *>();
+	return *m_mmap;
+}
+
+
+Mutex& SSLInitializer::MMapMutex()
+{
+	if (m_mmap_mutex == NULL)
+		m_mmap_mutex = new Mutex();
+	return *m_mmap_mutex;
 }
 
 

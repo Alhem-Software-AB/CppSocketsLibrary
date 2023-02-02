@@ -642,7 +642,7 @@ void UdpSocket::SetMulticastLoop(bool x)
 		int val = x ? 1 : 0;
 		if (setsockopt(GetSocket(), IPPROTO_IPV6, IPV6_MULTICAST_LOOP, (char *)&val, sizeof(int)) == -1)
 		{
-			Handler().LogError(this, "SetMulticastLoop", Errno, StrError(Errno), LOG_LEVEL_WARNING);
+			Handler().LogError(this, "SetMulticastLoop(ipv6)", Errno, StrError(Errno), LOG_LEVEL_WARNING);
 		}
 		return;
 	}
@@ -651,7 +651,7 @@ void UdpSocket::SetMulticastLoop(bool x)
 	int val = x ? 1 : 0;
 	if (setsockopt(GetSocket(), SOL_IP, IP_MULTICAST_LOOP, (char *)&val, sizeof(int)) == -1)
 	{
-		Handler().LogError(this, "SetMulticastLoop", Errno, StrError(Errno), LOG_LEVEL_WARNING);
+		Handler().LogError(this, "SetMulticastLoop(ipv4)", Errno, StrError(Errno), LOG_LEVEL_WARNING);
 	}
 }
 
@@ -670,7 +670,7 @@ bool UdpSocket::IsMulticastLoop()
 		socklen_t size = sizeof(int);
 		if (getsockopt(GetSocket(), IPPROTO_IPV6, IPV6_MULTICAST_LOOP, (char *)&is_loop, &size) == -1)
 		{
-			Handler().LogError(this, "IsMulticastLoop", Errno, StrError(Errno), LOG_LEVEL_WARNING);
+			Handler().LogError(this, "IsMulticastLoop(ipv6)", Errno, StrError(Errno), LOG_LEVEL_WARNING);
 		}
 		return is_loop ? true : false;
 	}
@@ -680,7 +680,7 @@ bool UdpSocket::IsMulticastLoop()
 	socklen_t size = sizeof(int);
 	if (getsockopt(GetSocket(), SOL_IP, IP_MULTICAST_LOOP, (char *)&is_loop, &size) == -1)
 	{
-		Handler().LogError(this, "IsMulticastLoop", Errno, StrError(Errno), LOG_LEVEL_WARNING);
+		Handler().LogError(this, "IsMulticastLoop(ipv4)", Errno, StrError(Errno), LOG_LEVEL_WARNING);
 	}
 	return is_loop ? true : false;
 }
@@ -704,7 +704,7 @@ void UdpSocket::AddMulticastMembership(const std::string& group, const std::stri
 			x.ipv6mr_interface = if_index;
 			if (setsockopt(GetSocket(), IPPROTO_IPV6, IPV6_ADD_MEMBERSHIP, (char *)&x, sizeof(struct ipv6_mreq)) == -1)
 			{
-				Handler().LogError(this, "AddMulticastMembership", Errno, StrError(Errno), LOG_LEVEL_WARNING);
+				Handler().LogError(this, "AddMulticastMembership(ipv6)", Errno, StrError(Errno), LOG_LEVEL_WARNING);
 			}
 		}
 		return;
@@ -721,7 +721,7 @@ void UdpSocket::AddMulticastMembership(const std::string& group, const std::stri
 //		x.imr_ifindex = if_index;
 		if (setsockopt(GetSocket(), SOL_IP, IP_ADD_MEMBERSHIP, (char *)&x, sizeof(struct ip_mreq)) == -1)
 		{
-			Handler().LogError(this, "AddMulticastMembership", Errno, StrError(Errno), LOG_LEVEL_WARNING);
+			Handler().LogError(this, "AddMulticastMembership(ipv4)", Errno, StrError(Errno), LOG_LEVEL_WARNING);
 		}
 	}
 }
@@ -745,7 +745,7 @@ void UdpSocket::DropMulticastMembership(const std::string& group, const std::str
 			x.ipv6mr_interface = if_index;
 			if (setsockopt(GetSocket(), IPPROTO_IPV6, IPV6_DROP_MEMBERSHIP, (char *)&x, sizeof(struct ipv6_mreq)) == -1)
 			{
-				Handler().LogError(this, "DropMulticastMembership", Errno, StrError(Errno), LOG_LEVEL_WARNING);
+				Handler().LogError(this, "DropMulticastMembership(ipv6)", Errno, StrError(Errno), LOG_LEVEL_WARNING);
 			}
 		}
 		return;
@@ -762,7 +762,7 @@ void UdpSocket::DropMulticastMembership(const std::string& group, const std::str
 //		x.imr_ifindex = if_index;
 		if (setsockopt(GetSocket(), SOL_IP, IP_DROP_MEMBERSHIP, (char *)&x, sizeof(struct ip_mreq)) == -1)
 		{
-			Handler().LogError(this, "DropMulticastMembership", Errno, StrError(Errno), LOG_LEVEL_WARNING);
+			Handler().LogError(this, "DropMulticastMembership(ipv4)", Errno, StrError(Errno), LOG_LEVEL_WARNING);
 		}
 	}
 }
@@ -842,6 +842,57 @@ int UdpSocket::GetLastSizeWritten()
 void UdpSocket::SetTimestamp(bool x)
 {
 	m_b_read_ts = x;
+}
+
+
+void UdpSocket::SetMulticastDefaultInterface(ipaddr_t a, int if_index)
+{
+	struct in_addr x;
+	memcpy(&x.s_addr, &a, sizeof(a));
+	if (setsockopt(GetSocket(), IPPROTO_IP, IP_MULTICAST_IF, (char *)&x, sizeof(x)) == -1)
+	{
+		Handler().LogError(this, "SetMulticastDefaultInterface(ipv4)", Errno, StrError(Errno), LOG_LEVEL_WARNING);
+	}
+}
+
+
+#ifdef ENABLE_IPV6
+#ifdef IPPROTO_IPV6
+void UdpSocket::SetMulticastDefaultInterface(in6_addr a, int if_index)
+{
+	if (setsockopt(GetSocket(), IPPROTO_IPV6, IPV6_MULTICAST_IF, &if_index, sizeof(if_index)) == -1)
+	{
+		Handler().LogError(this, "SetMulticastDefaultInterface(ipv6)", Errno, StrError(Errno), LOG_LEVEL_WARNING);
+	}
+}
+#endif
+#endif
+
+
+void UdpSocket::SetMulticastDefaultInterface(const std::string& intf, int if_index)
+{
+	if (GetSocket() == INVALID_SOCKET)
+	{
+		CreateConnection();
+	}
+#ifdef ENABLE_IPV6
+#ifdef IPPROTO_IPV6
+	if (IsIpv6())
+	{
+		struct in6_addr a;
+		if (Utility::u2ip( intf, a ))
+		{
+			SetMulticastDefaultInterface( a, if_index );
+		}
+		return;
+	}
+#endif
+#endif
+	ipaddr_t a;
+	if (Utility::u2ip( intf, a ))
+	{
+		SetMulticastDefaultInterface( a, if_index );
+	}
 }
 
 

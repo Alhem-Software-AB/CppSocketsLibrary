@@ -7,18 +7,9 @@ CFLAGS +=	-Wall -g $(INCLUDE) -MD -D_VERSION='"$(VERSION)"'
 CFLAGS +=	-O2
 
 
-# uncomment depending on your operating system
 CFLAGS +=	-DLINUX
-#CFLAGS +=	-DMACOSX 
-# solaris > 8
-#CFLAGS +=	-DSOLARIS
-# solaris 8
-#CFLAGS +=	-DSOLARIS8
-# windows and/or cygwin
-#CFLAGS +=	-D_WIN32
-# cygwin
-#CFLAGS +=	-D__CYGWIN__
 
+CFLAGS +=	-fPIC
 
 LIBS +=		\
 		-lssl -lcrypto \

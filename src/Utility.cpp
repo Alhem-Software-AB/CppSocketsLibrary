@@ -954,13 +954,12 @@ bool Utility::reverse(struct sockaddr *sa, socklen_t sa_len, std::string& hostna
 	return false;
 #else
 	char host[NI_MAXHOST];
-	char serv[NI_MAXSERV];
 	// NI_NOFQDN
 	// NI_NUMERICHOST
 	// NI_NAMEREQD
 	// NI_NUMERICSERV
 	// NI_DGRAM
-	int n = getnameinfo(sa, sa_len, host, sizeof(host), serv, sizeof(serv), flags);
+	int n = getnameinfo(sa, sa_len, host, sizeof(host), NULL, 0, flags);
 	if (n)
 	{
 		// EAI_AGAIN
@@ -974,7 +973,6 @@ bool Utility::reverse(struct sockaddr *sa, socklen_t sa_len, std::string& hostna
 		return false;
 	}
 	hostname = host;
-	service = serv;
 	return true;
 #endif // NO_GETADDRINFO
 }
@@ -1131,12 +1129,22 @@ Utility::Uri::Uri(const std::string& url) : m_url(url), m_port(0), m_path(url)
 			m_host = m_host.substr(0, pos);
 		}
 	}
+	pos = m_path.find("?");
+	if (pos != std::string::npos)
+	{
+		m_uri = m_path.substr(0, pos);
+		m_query_string = m_path.substr(pos + 1);
+	}
+	else
+	{
+		m_uri = m_path;
+	}
 	pos = std::string::npos;
-	for (size_t i = 0; i < m_path.size(); i++)
-		if (m_path[i] == '.')
+	for (size_t i = 0; i < m_uri.size(); i++)
+		if (m_uri[i] == '.')
 			pos = i;
 	if (pos != std::string::npos)
-		m_ext = m_path.substr(pos + 1);
+		m_ext = m_uri.substr(pos + 1);
 }
 
 

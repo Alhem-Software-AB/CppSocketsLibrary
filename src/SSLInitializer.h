@@ -75,8 +75,11 @@ static	unsigned long SSL_id_function();
 private:
 	std::string m_rand_file;
 	long m_rand_size;
-static	std::map<int, IMutex *> m_mmap;
-static	Mutex m_mmap_mutex;
+static	std::map<int, IMutex *> *m_mmap;
+static	Mutex *m_mmap_mutex;
+
+static	std::map<int, IMutex *>& MMap();
+static	Mutex& MMapMutex();
 
 };
 

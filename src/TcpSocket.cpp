@@ -1234,14 +1234,14 @@ void TcpSocket::InitSSLServer()
 }
 
 
-void TcpSocket::InitializeContext(const std::string& context, SSL_METHOD *meth_in)
+void TcpSocket::InitializeContext(const std::string& context, const SSL_METHOD *meth_in)
 {
 	static Mutex mutex;
 	Lock lock(mutex);
 	/* Create our context*/
 	if (m_client_contexts.find(context) == m_client_contexts.end())
 	{
-		SSL_METHOD *meth = meth_in ? meth_in : SSLv3_method();
+		SSL_METHOD *meth = meth_in ? const_cast<SSL_METHOD *>(meth_in) : SSLv3_method();
 		m_ssl_ctx = m_client_contexts[context] = SSL_CTX_new(meth);
 		SSL_CTX_set_mode(m_ssl_ctx, SSL_MODE_AUTO_RETRY);
 	}
@@ -1252,13 +1252,13 @@ void TcpSocket::InitializeContext(const std::string& context, SSL_METHOD *meth_i
 }
 
 
-void TcpSocket::InitializeContext(const std::string& context,const std::string& keyfile,const std::string& password,SSL_METHOD *meth_in)
+void TcpSocket::InitializeContext(const std::string& context,const std::string& keyfile,const std::string& password,const SSL_METHOD *meth_in)
 {
 	Lock lock(m_server_ssl_mutex);
 	/* Create our context*/
 	if (m_server_contexts.find(context) == m_server_contexts.end())
 	{
-		SSL_METHOD *meth = meth_in ? meth_in : SSLv3_method();
+		SSL_METHOD *meth = meth_in ? const_cast<SSL_METHOD *>(meth_in) : SSLv3_method();
 		m_ssl_ctx = m_server_contexts[context] = SSL_CTX_new(meth);
 		SSL_CTX_set_mode(m_ssl_ctx, SSL_MODE_AUTO_RETRY);
 		// session id
@@ -1288,13 +1288,13 @@ void TcpSocket::InitializeContext(const std::string& context,const std::string& 
 }
 
 
-void TcpSocket::InitializeContext(const std::string& context,const std::string& certfile,const std::string& keyfile,const std::string& password,SSL_METHOD *meth_in)
+void TcpSocket::InitializeContext(const std::string& context,const std::string& certfile,const std::string& keyfile,const std::string& password,const SSL_METHOD *meth_in)
 {
 	Lock lock(m_server_ssl_mutex);
 	/* Create our context*/
 	if (m_server_contexts.find(context) == m_server_contexts.end())
 	{
-		SSL_METHOD *meth = meth_in ? meth_in : SSLv3_method();
+		SSL_METHOD *meth = meth_in ? const_cast<SSL_METHOD *>(meth_in) : SSLv3_method();
 		m_ssl_ctx = m_server_contexts[context] = SSL_CTX_new(meth);
 		SSL_CTX_set_mode(m_ssl_ctx, SSL_MODE_AUTO_RETRY);
 		// session id

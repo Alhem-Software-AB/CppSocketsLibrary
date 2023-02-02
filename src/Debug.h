@@ -5,6 +5,7 @@
 #include <string>
 #include "Utility.h"
 #include <map>
+#include <stdio.h>
 
 
 #ifdef SOCKETS_NAMESPACE

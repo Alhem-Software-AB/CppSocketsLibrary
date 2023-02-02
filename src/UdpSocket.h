@@ -163,6 +163,13 @@ public:
 	int GetMulticastTTL();
 	void SetMulticastLoop(bool = true);
 	bool IsMulticastLoop();
+	void SetMulticastDefaultInterface(ipaddr_t a, int if_index = 0);
+#ifdef ENABLE_IPV6
+#ifdef IPPROTO_IPV6
+	void SetMulticastDefaultInterface(in6_addr a, int if_index = 0);
+#endif
+#endif
+	void SetMulticastDefaultInterface(const std::string& intf, int if_index = 0);
 	void AddMulticastMembership(const std::string& group,const std::string& intf = "0.0.0.0",int if_index = 0);
 	void DropMulticastMembership(const std::string& group,const std::string& intf = "0.0.0.0",int if_index = 0);
 #ifdef ENABLE_IPV6

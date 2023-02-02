@@ -141,7 +141,7 @@ const std::string& HttpRequest::HttpVersion() const
 // --------------------------------------------------------------------------------------
 void HttpRequest::SetUri(const std::string& value)
 {
-	m_req_uri = Utility::rfc1738_decode(value);
+	m_req_uri = value;
 }
 
 

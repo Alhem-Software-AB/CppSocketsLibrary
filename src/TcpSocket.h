@@ -271,18 +271,18 @@ protected:
 #ifdef HAVE_OPENSSL
 	/** SSL; Initialize ssl context for a client socket. 
 		\param meth_in SSL method */
-	void InitializeContext(const std::string& context, SSL_METHOD *meth_in = NULL);
+	void InitializeContext(const std::string& context, const SSL_METHOD *meth_in = NULL);
 	/** SSL; Initialize ssl context for a server socket. 
 		\param keyfile Combined private key/certificate file 
 		\param password Password for private key 
 		\param meth_in SSL method */
-	void InitializeContext(const std::string& context, const std::string& keyfile, const std::string& password, SSL_METHOD *meth_in = NULL);
+	void InitializeContext(const std::string& context, const std::string& keyfile, const std::string& password, const SSL_METHOD *meth_in = NULL);
 	/** SSL; Initialize ssl context for a server socket. 
 		\param certfile Separate certificate file
 		\param keyfile Combined private key/certificate file 
 		\param password Password for private key 
 		\param meth_in SSL method */
-	void InitializeContext(const std::string& context, const std::string& certfile, const std::string& keyfile, const std::string& password, SSL_METHOD *meth_in = NULL);
+	void InitializeContext(const std::string& context, const std::string& certfile, const std::string& keyfile, const std::string& password, const SSL_METHOD *meth_in = NULL);
 	/** SSL; Password callback method. */
 static	int SSL_password_cb(char *buf,int num,int rwflag,void *userdata);
 	/** SSL; Get pointer to ssl context structure. */

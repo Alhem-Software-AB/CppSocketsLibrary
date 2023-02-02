@@ -78,6 +78,8 @@ public:
 		Uri(const std::string& url);
 
 		const std::string Url() { return m_url; }
+		const std::string& UrlUri() { return m_uri; }
+		const std::string& QueryString() { return m_query_string; }
 		const std::string Protocol() { return m_protocol; }
 		const std::string Host() { return m_host; }
 		int Port() { return m_port; }
@@ -85,6 +87,8 @@ public:
 		const std::string Extension() { return m_ext; }
 	private:
 		std::string m_url;
+		std::string m_uri;
+		std::string m_query_string;
 		std::string m_protocol;
 		std::string m_host;
 		int m_port;
