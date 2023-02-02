@@ -73,24 +73,35 @@ SocketHandler::~SocketHandler()
 {
 DEB(printf("~SocketHandler()\n");)
 	if (m_resolver)
+	{
+DEB(printf("    m_resolver -> Quit()\n");)
 		m_resolver -> Quit();
+	}
 	if (!m_slave)
 	{
-		for (socket_m::iterator it = m_sockets.begin(); it != m_sockets.end(); it++)
+DEB(printf("    not slave: removing sockets (%d in list)\n", m_sockets.size());)
+		while (m_sockets.size())
 		{
+			socket_m::iterator it = m_sockets.begin();
 			Socket *p = (*it).second;
+DEB(printf("        socket.Close fd = %d\n", (*it).first);)
 			p -> Close();
 //			p -> OnDelete(); // hey, I turn this back on. what's the worst that could happen??!!
 			// MinionSocket breaks, calling MinderHandler methods in OnDelete -
 			// MinderHandler is already gone when that happens...
+			m_sockets.erase(it);
 			if (p -> DeleteByHandler())
 			{
+DEB(printf("        delete socket\n");)
 				delete p;
 			}
 		}
 	}
 	if (m_resolver)
+	{
+DEB(printf("    delete m_resolver\n");)
 		delete m_resolver;
+	}
 }
 
 
@@ -247,9 +258,6 @@ DEB(
 			}
 		}
 ) // DEB
-#else
-DEB(		printf("slave: %s\n",m_slave ? "YES" : "NO");
-		exit(-1);)
 #endif
 	}
 	else
@@ -466,6 +474,11 @@ DEB(		printf("slave: %s\n",m_slave ? "YES" : "NO");
 				}
 				if (p && p -> CloseAndDelete() )
 				{
+					if (tcp && tcp -> GetOutputLength() && tcp -> GetFlushBeforeClose() && !tcp -> IsSSL() ) // wait until all data sent
+					{
+						LogError(p, "Closing", tcp -> GetOutputLength(), "Sending all data before closing", LOG_LEVEL_INFO);
+					}
+					else
 					if (tcp && tcp -> IsConnected() && tcp -> Reconnect())
 					{
 						p -> SetCloseAndDelete(false);
@@ -488,6 +501,10 @@ DEB(		printf("slave: %s\n",m_slave ? "YES" : "NO");
 					}
 					else
 					{
+						if (tcp && tcp -> GetOutputLength())
+						{
+							LogError(p, "Closing", tcp -> GetOutputLength(), "Closing socket while data still left to send", LOG_LEVEL_WARNING);
+						}
 //DEB(printf("%s: calling Close for socket %d\n",m_slave ? "slave" : "master",s);)
 						if (p -> Retain() && !p -> Lost())
 						{
@@ -502,11 +519,11 @@ DEB(		printf("slave: %s\n",m_slave ? "YES" : "NO");
 							p -> Close();
 						}
 						p -> OnDelete();
+						m_sockets.erase(it3);
 						if (p -> DeleteByHandler())
 						{
 							delete p;
 						}
-						m_sockets.erase(it3);
 						repeat = true;
 						break;
 					}
@@ -533,11 +550,11 @@ DEB(		printf("slave: %s\n",m_slave ? "YES" : "NO");
 		std::list<Socket *>::iterator it = m_delete.begin();
 		Socket *p = *it;
 		p -> OnDelete();
+		m_delete.erase(it);
 		if (p -> DeleteByHandler())
 		{
 			delete p;
 		}
-		m_delete.erase(it);
 	}
 	return n;
 }
@@ -593,7 +610,7 @@ bool SocketHandler::OkToAccept()
 
 size_t SocketHandler::GetCount()
 {
-	return m_sockets.size() + m_add.size();
+	return m_sockets.size() + m_add.size() + m_delete.size();
 }
 
 
@@ -806,6 +823,38 @@ port_t SocketHandler::GetResolverPort()
 bool SocketHandler::PoolEnabled() 
 { 
 	return m_b_enable_pool; 
+}
+
+
+void SocketHandler::Remove(Socket *p)
+{
+	for (socket_m::iterator it = m_sockets.begin(); it != m_sockets.end(); it++)
+	{
+		if ((*it).second == p)
+		{
+			LogError(p, "Remove", -1, "Socket destructor called while still in use", LOG_LEVEL_WARNING);
+			m_sockets.erase(it);
+			return;
+		}
+	}
+	for (socket_m::iterator it2 = m_add.begin(); it2 != m_add.end(); it2++)
+	{
+		if ((*it2).second == p)
+		{
+			LogError(p, "Remove", -2, "Socket destructor called while still in use", LOG_LEVEL_WARNING);
+			m_add.erase(it2);
+			return;
+		}
+	}
+	for (std::list<Socket *>::iterator it3 = m_delete.begin(); it3 != m_delete.end(); it3++)
+	{
+		if (*it3 == p)
+		{
+			LogError(p, "Remove", -3, "Socket destructor called while still in use", LOG_LEVEL_WARNING);
+			m_delete.erase(it3);
+			return;
+		}
+	}
 }
 
 

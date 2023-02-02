@@ -126,10 +126,7 @@ public:
 		std::string arg = pa.getrest();
 		if (cmd == "get")
 		{
-//			MyHandler& h = static_cast<MyHandler&>(Handler());
 			HttpGetSocket *p = new hSocket(Handler(), arg, "tmpfile.html");
-//			p -> EnableSSL();
-//			HttpGetSocket *p = new HttpGetSocket(Handler(), arg, h.m_html, h.m_ok, h.m_done);
 			p -> SetHttpVersion("HTTP/1.1");
 			p -> AddResponseHeader("Connection", "keep-alive");
 			p -> SetDeleteByHandler();
@@ -217,6 +214,8 @@ int main()
 	h.ResolveLocal();
 	printf(" *** My hostname: %s\n", h.GetLocalHostname().c_str());
 	printf(" *** My local IP: %s\n", h.GetLocalAddress().c_str());
+
+	// socks4 options
 /*
 	h.SetSocks4Host("127.0.0.1");
 	h.SetSocks4Port(1080);
@@ -224,8 +223,6 @@ int main()
 	h.SetSocks4TryDirect( true );
 	printf("Socks4Host: %x\n", h.GetSocks4Host());
 */
-//	h.AddNameserver("192.168.7.1");
-//	h.AddNameserver("80.88.97.142");
 
 	// first server
 	ListenSocket<MySocket> l1(h);

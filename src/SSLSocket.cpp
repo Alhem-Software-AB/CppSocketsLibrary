@@ -27,9 +27,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <assert.h>
 #include "SSLSocket.h"
 #include <openssl/rand.h>
-#ifdef _WIN32
-#define strcasecmp stricmp
-#endif
 
 #define DEB(x) 
 #define D2(x) 

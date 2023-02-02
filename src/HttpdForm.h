@@ -72,23 +72,23 @@ public:
 
 	void EnableRaw(bool);
 
-	void strcpyval(char *,const char *,size_t);
+	void strcpyval(std::string&,const char *); //,size_t);
 
 	/* get names */
-	bool getfirst(char *,size_t);
-	bool getnext(char *,size_t);
+	bool getfirst(std::string& n); //char *,size_t);
+	bool getnext(std::string& n); //char *,size_t);
 
 	/* get names and values */
-	bool getfirst(char *,size_t,char *,size_t);
-	bool getnext(char *,size_t,char *,size_t);
+	bool getfirst(std::string& n,std::string& v); //char *,size_t,char *,size_t);
+	bool getnext(std::string& n,std::string& v); //char *,size_t,char *,size_t);
 
 	/* get value */
-	int getvalue(const std::string& ,char *,size_t);
+	int getvalue(const std::string& ,std::string& ); //char *,size_t);
 	std::string getvalue(const std::string& );
 	size_t getlength(const std::string& );
-	cgi_v& getbase() { return m_cgi; }
+	cgi_v& getbase();
 
-	const std::string& GetBoundary() { return m_strBoundary; }
+	const std::string& GetBoundary();
 
 private:
 	HttpdForm(const HttpdForm& ) {}

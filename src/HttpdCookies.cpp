@@ -19,7 +19,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #ifdef _WIN32
 #pragma warning(disable:4786)
-#define strcasecmp stricmp
 #endif
 #include "Parse.h"
 #include "Utility.h"
@@ -63,35 +62,19 @@ HttpdCookies::~HttpdCookies()
 	}
 }
 
-int HttpdCookies::getvalue(const std::string& name,char *buffer,size_t length)
+bool HttpdCookies::getvalue(const std::string& name,std::string& buffer) //char *buffer,size_t length)
 {
-	COOKIE *c = NULL;
-
 	for (cookie_v::iterator it = m_cookies.begin(); it != m_cookies.end(); it++)
 	{
-		c = *it;
+		COOKIE *c = *it;
 		if (!strcasecmp(c -> name.c_str(),name.c_str()))
-			break;
-		c = NULL;
-	}
-	if (c)
-	{
-		if (c -> value.size() >= length)
 		{
-			strncpy(buffer,c -> value.c_str(),length - 1);
-			buffer[length - 1] = 0;
+			buffer = c -> value;
+			return true;
 		}
-		else
-		{
-			strcpy(buffer,c -> value.c_str());
-		}
-		return 1;
 	}
-	else
-	{
-		*buffer = 0;
-		return 0;
-	}
+	buffer = "";
+	return false;
 }
 
 void HttpdCookies::replacevalue(const std::string& name,const std::string& value)

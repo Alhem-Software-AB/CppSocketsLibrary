@@ -45,13 +45,20 @@ public:
 	void OnHeaderComplete();
 	void OnData(const char *,size_t);
 
+	/** This method needs to be implemented with logic to produce
+		a response to an incoming request. */
 	virtual void Exec() = 0;
-
+	/** Get current date in http rfc format. */
 	const std::string& GetHttpDate();
+	/** Get pointer to cookie class. */
 	HttpdCookies *GetCookies();
+	/** Get pointer to query string/form data class. */
 	HttpdForm *GetForm();
 
 protected:
+	/** Decode and send a base64-encoded string. 
+		\param str64 Base64-encoded string
+		\param type Mime type of content (content-type header) */
 	void Send64(const std::string& str64, const std::string& type);
 	std::string datetime2httpdate(const std::string& dt);
 	std::string GetDate();

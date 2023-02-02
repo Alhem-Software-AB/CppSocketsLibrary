@@ -107,18 +107,18 @@ public:
 	virtual void OnConnectFailed();
 	/** Called when a socket is created, to set socket options. */
 	virtual void OnOptions(int family,int type,int protocol,SOCKET);
-	/** Socks4 client support internal use. @see TcpSocket */
+	/** Socks4 client support internal use. \sa TcpSocket */
 	virtual void OnSocks4Connect();
-	/** Socks4 client support internal use. @see TcpSocket */
+	/** Socks4 client support internal use. \sa TcpSocket */
 	virtual void OnSocks4ConnectFailed();
-	/** Socks4 client support internal use. @see TcpSocket */
+	/** Socks4 client support internal use. \sa TcpSocket */
 	virtual bool OnSocks4Read();
 	/** Called when the last write caused the tcp output buffer to 
 	 * become empty. */
 //	virtual void OnWriteComplete();
-	/** SSL client/server support - internal use. @see TcpSocket */
+	/** SSL client/server support - internal use. \sa TcpSocket */
 	virtual void OnSSLConnect();
-	/** SSL client/server support - internal use. @see TcpSocket */
+	/** SSL client/server support - internal use. \sa TcpSocket */
 	virtual void OnSSLAccept();
 	/** Connection retry callback - return false to abort connection attempts */
 	virtual bool OnConnectRetry();
@@ -270,7 +270,12 @@ public:
 	void SetClientRemotePort(port_t p);
 	/** Returns port number of last connect() call. */
 	port_t GetClientRemotePort();
-	/** Instruct a client socket to stay open in the connection pool after use. */
+	/** Instruct a client socket to stay open in the connection pool after use. 
+		If you have connected to a server using tcp, you can call SetRetain 
+		to leave the connection open after your socket instance has been deleted.
+		The next connection you make to the same server will reuse the already 
+		opened connection, if it is still available.
+	*/
 	void SetRetain();
 	/** Check retain flag.
 		\return true if the socket should be moved to connection pool after use */
@@ -377,6 +382,18 @@ public:
 		\sa SendBuf */
 	Mutex& GetMutex();
 #endif
+	/** Set connected status. */
+	void SetConnected(bool = true);
+	/** Check connected status.
+		\return true if connected */
+	bool IsConnected();
+
+	/** Set flush before close to make a tcp socket completely empty its
+		output buffer before closing the connection. */
+	void SetFlushBeforeClose(bool = true);
+	/** Check flush before status. 
+		\return true if the socket should send all data before closing */
+	bool GetFlushBeforeClose();
 
 protected:
 	Socket(const Socket& ); ///< do not allow use of copy constructor
@@ -437,6 +454,8 @@ static	WSAInitializer m_winsock_init; ///< Winsock initialization singleton clas
 #ifdef IPPROTO_IPV6
 	in6_addr m_client_remote_addr6; ///< Address used by connect() ipv6
 #endif
+	bool m_connected; ///< Socket is connected (tcp/udp)
+	bool m_flush_before_close; ///< Send all data before closing (default true)
 };
 
 #ifdef SOCKETS_NAMESPACE

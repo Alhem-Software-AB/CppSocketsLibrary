@@ -1,4 +1,4 @@
-VERSION =	1.9.5
+VERSION =	1.9.6
 
 INCLUDE =	-I/usr/devel/include -I.
 PREFIX =	/usr/local
@@ -6,7 +6,7 @@ PREFIX =	/usr/local
 # static lib .a files installed to $(PREFIX)/lib
 
 CFLAGS =	-Wall -g -O2 $(INCLUDE) -MD -D_VERSION='"$(VERSION)"'
-#CFLAGS +=	-D_DEBUG
+CFLAGS +=	-D_DEBUG
 #CFLAGS +=	-D_THREADSAFE_SOCKETS
 
 # uncomment depending on your operating system
@@ -115,6 +115,7 @@ tar:		clean
 		cp Sockets-$(VERSION).zip /usr/local/apache/www.alhem.net/htdocs/Sockets
 
 docs:		clean
+		doxygen dox2.cfg
 		rm -f MinderSocket_T.h
 		rm -f uuid.h
 		rm -f Stdin.*

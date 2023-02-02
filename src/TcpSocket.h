@@ -154,10 +154,6 @@ public:
 		the ssl context for an incoming connection. */
 	virtual void InitSSLServer();
 
-	/** Flag that indicates a successful connection. */
-	bool IsConnected();
-	/** Set flag indicating connected status. */
-	void SetConnected(bool = true);
 	/** Define number of connection retries.
 	    n = 0 - no retry
 	    n > 0 - number of retries
@@ -231,7 +227,6 @@ static	BIO *bio_err; ///< ssl bio err
 	std::string m_password; ///< ssl password
 #endif
 	// state flags
-	bool m_b_connected; ///< Connected state
 	int m_connection_retry; ///< Maximum connection retries
 	int m_retries; ///< Actual number of connection retries
 	bool m_b_reconnect; ///< Reconnect on lost connection flag

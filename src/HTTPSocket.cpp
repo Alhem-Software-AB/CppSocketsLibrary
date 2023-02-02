@@ -22,7 +22,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #ifdef _WIN32
 #pragma warning(disable:4786)
-#define strcasecmp stricmp
 #endif
 #include <stdio.h>
 #include <stdarg.h>
@@ -323,6 +322,11 @@ void HTTPSocket::AddResponseHeader(const std::string& x,const std::string& y)
 	m_response_header[x] = y;
 }
 
+
+void HTTPSocket::SetUri(const std::string& x)
+{
+	m_uri = x;
+}
 
 
 #ifdef SOCKETS_NAMESPACE

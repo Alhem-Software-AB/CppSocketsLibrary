@@ -125,13 +125,6 @@ void Parse::getsplit(void)
 	}
 	if (x == pa_the_ptr && C == '=')
 		pa_the_ptr++;
-	//
-/*
-	char tmp[4096];
-	strncpy(tmp,pa_the_str.c_str() + x,pa_the_ptr - x);
-	tmp[pa_the_ptr - x] = 0;
-	pa_ord = tmp;
-*/
 	pa_ord = (x < pa_the_str.size()) ? pa_the_str.substr(x,pa_the_ptr - x) : "";
 }
 
@@ -207,13 +200,6 @@ std::string Parse::getword(void)
 		if (x == pa_the_ptr && C == pa_breakchar && pa_breakchar)
 			pa_the_ptr++;
 	}
-	//
-/*
-	char tmp[4096];
-	strncpy(tmp,pa_the_str.c_str() + x,pa_the_ptr - x);
-	tmp[pa_the_ptr - x - rem] = 0;
-	pa_ord = tmp;
-*/
 	if (x < pa_the_str.size())
 	{
 		pa_ord = pa_the_str.substr(x,pa_the_ptr - x - rem);
@@ -310,17 +296,9 @@ void Parse::getline(void)
 {
 	size_t x;
 
-//	while (C && (C == 13 || C == 10))
-//		pa_the_ptr++;
 	x = pa_the_ptr;
 	while (C && C != 13 && C != 10)
 		pa_the_ptr++;
-/*
-	char tmp[4096];
-	strncpy(tmp,pa_the_str.c_str() + x,pa_the_ptr - x);
-	tmp[pa_the_ptr - x] = 0;
-	pa_ord = tmp;
-*/
 	pa_ord = (x < pa_the_str.size()) ? pa_the_str.substr(x,pa_the_ptr - x) : "";
 	if (C == 13)
 		pa_the_ptr++;

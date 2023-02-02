@@ -61,6 +61,7 @@ public:
 	const std::string& GetUrl();
 	void SetUrl(const std::string& x);
 	const std::string& GetUri();
+	void SetUri(const std::string& x);
 	const std::string& GetQueryString();
 	const std::string& GetHttpVersion();
 	const std::string& GetStatus();

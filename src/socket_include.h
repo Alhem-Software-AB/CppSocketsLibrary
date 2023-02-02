@@ -136,6 +136,8 @@ typedef unsigned long ipaddr_t;
 // ----------------------------------------
 // Win32
 #pragma comment(lib, "wsock32.lib")
+#define strcasecmp _stricmp
+
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
 #endif

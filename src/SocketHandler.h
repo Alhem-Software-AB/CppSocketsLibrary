@@ -147,6 +147,9 @@ public:
 		\return true if connection pool is enabled */
 	bool PoolEnabled();
 
+	/** Remove socket from socket map, used by Socket class. */
+	void Remove(Socket *);
+
 protected:
 	socket_m m_sockets; ///< Active sockets list
 	socket_m m_add; ///< Sockets to be added to sockets list

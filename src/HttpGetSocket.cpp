@@ -22,7 +22,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #ifdef _WIN32
 #pragma warning(disable:4786)
-#define strcasecmp stricmp
 #else
 #include <errno.h>
 #endif

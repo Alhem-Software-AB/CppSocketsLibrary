@@ -42,6 +42,10 @@ typedef void * threadparam_t;
 
 /** \defgroup threading Threading */
 /** Thread base class. 
+The Thread class is used by the resolver (ResolvServer) and running a detached socket (SocketThread). 
+When you know some processing will take a long time and will freeze up a socket, there is always the 
+possibility to call Detach() on that socket before starting the processing.
+When the OnDetached() callback is later called the processing can continue, now in its own thread.
 	\ingroup threading */
 class Thread
 {

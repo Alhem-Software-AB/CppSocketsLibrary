@@ -25,18 +25,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #endif
 #ifdef HAVE_OPENSSL
 
-#include <stdio.h>
-#include <string>
 #include <vector>
-#include <map>
-#include <ctype.h>
 
-#include "socket_include.h"
-#include "Parse.h"
 #include "MinderHandler.h"
 #include "Uid.h"
 #include "Utility.h"
-#include "MinionSocket.h"
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {

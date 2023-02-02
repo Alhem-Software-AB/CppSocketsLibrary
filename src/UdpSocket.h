@@ -130,8 +130,6 @@ public:
 	/** multicast, ipv6 only */
 	int GetMulticastHops();
 #endif
-	/** Returns true if Open completed successfully. */
-	bool IsConnected();
 	/** Returns true if Bind succeeded. */
 	bool IsBound();
 	/** Return Bind port number */
@@ -145,7 +143,6 @@ private:
 	UdpSocket& operator=(const UdpSocket& ) { return *this; }
 	/** create before using sendto methods */
 	void CreateConnection();
-	bool m_connected; ///< Open completed successfully
 	char *m_ibuf; ///< Input buffer
 	int m_ibufsz; ///< Size of input buffer
 	bool m_bind_ok; ///< Bind completed successfully

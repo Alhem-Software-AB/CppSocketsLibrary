@@ -22,7 +22,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #ifdef _WIN32
 #pragma warning(disable:4786)
-#define strcasecmp stricmp
 #include <stdlib.h>
 #else
 #include <errno.h>
@@ -70,7 +69,6 @@ TcpSocket::TcpSocket(SocketHandler& h) : Socket(h)
 ,m_ssl(NULL)
 ,m_sbio(NULL)
 #endif
-,m_b_connected(false)
 ,m_connection_retry(0)
 ,m_retries(0)
 ,m_b_reconnect(false)
@@ -96,7 +94,6 @@ TcpSocket::TcpSocket(SocketHandler& h,size_t isize,size_t osize) : Socket(h)
 ,m_ssl(NULL)
 ,m_sbio(NULL)
 #endif
-,m_b_connected(false)
 ,m_connection_retry(0)
 ,m_retries(0)
 ,m_b_reconnect(false)
@@ -110,6 +107,7 @@ TcpSocket::TcpSocket(SocketHandler& h,size_t isize,size_t osize) : Socket(h)
 
 TcpSocket::~TcpSocket()
 {
+DEB(printf("~TcpSocket()\n");)
 #ifdef HAVE_OPENSSL
 	if (m_ssl)
 	{
@@ -1109,18 +1107,6 @@ SSL *TcpSocket::GetSsl()
 #endif
 
 
-bool TcpSocket::IsConnected()
-{
-	return m_b_connected;
-}
-
-
-void TcpSocket::SetConnected(bool x)
-{
-	m_b_connected = x;
-}
-
-
 void TcpSocket::SetConnectionRetry(int x)
 {
 	m_connection_retry = x;
@@ -1204,10 +1190,12 @@ bool TcpSocket::IsReconnect()
 }
 
 
+#ifdef HAVE_OPENSSL
 const std::string& TcpSocket::GetPassword()
 {
 	return m_password;
 }
+#endif
 
 
 #ifdef SOCKETS_NAMESPACE

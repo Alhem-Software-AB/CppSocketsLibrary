@@ -45,7 +45,6 @@ namespace SOCKETS_NAMESPACE {
 
 
 UdpSocket::UdpSocket(SocketHandler& h,int ibufsz,bool ipv6) : Socket(h)
-,m_connected(false)
 ,m_ibuf(new char[ibufsz])
 ,m_ibufsz(ibufsz)
 ,m_bind_ok(false)
@@ -60,6 +59,7 @@ UdpSocket::UdpSocket(SocketHandler& h,int ibufsz,bool ipv6) : Socket(h)
 
 UdpSocket::~UdpSocket()
 {
+DEB(printf("~Socket()\n");)
 	Close();
 	delete[] m_ibuf;
 }
@@ -191,7 +191,7 @@ bool UdpSocket::Open(ipaddr_t l,port_t port)
 		SetCloseAndDelete();
 		return false;
 	}
-	m_connected = true;
+	SetConnected();
 	return true;
 }
 
@@ -237,7 +237,7 @@ bool UdpSocket::Open(struct in6_addr& a,port_t port)
 		SetCloseAndDelete();
 		return false;
 	}
-	m_connected = true;
+	SetConnected();
 	return true;
 }
 #endif
@@ -358,7 +358,7 @@ void UdpSocket::SendTo(in6_addr a,port_t p,const std::string& str,int flags)
 /** send to connected address */
 void UdpSocket::SendBuf(const char *data,size_t len,int flags)
 {
-	if (!m_connected)
+	if (!IsConnected())
 	{
 		Handler().LogError(this,"SendBuf",0,"not connected",LOG_LEVEL_ERROR);
 		return;
@@ -638,12 +638,6 @@ int UdpSocket::GetMulticastHops()
 	return hops;
 }
 #endif // IPPROTO_IPV6
-
-
-bool UdpSocket::IsConnected()
-{
-	return m_connected;
-}
 
 
 bool UdpSocket::IsBound()

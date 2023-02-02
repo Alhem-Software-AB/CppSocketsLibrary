@@ -29,9 +29,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <errno.h>
 #endif
 
-#include "Socket.h"
 #include "SocketHandler.h"
-#include "StdLog.h"
 #include "TcpSocket.h"
 
 #ifdef SOCKETS_NAMESPACE
@@ -69,6 +67,15 @@ public:
 		{
 			delete m_creator;
 		}
+	}
+
+	/** Close file descriptor. */
+	int Close() {
+		if (GetSocket() != INVALID_SOCKET)
+		{
+			closesocket(GetSocket());
+		}
+		return 0;
 	}
 
 	/** Bind and listen to any interface.

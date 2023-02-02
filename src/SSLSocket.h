@@ -24,7 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define _SSLSOCKET_H
 #ifdef HAVE_OPENSSL
 
-#include <openssl/ssl.h>
+//#include <openssl/ssl.h>
 #include "SocketHandler.h"
 #include "TcpSocket.h"
 

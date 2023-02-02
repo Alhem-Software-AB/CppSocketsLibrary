@@ -61,7 +61,7 @@ Uid::Uid()
 	if (randomGuid == GUID_NULL)
 	{
 		fprintf(stderr,"Couldn't create a random GUID\n");
-		exit(-1);
+		return;
 	}
 	memcpy(m_bufuid, &randomGuid, 16);
 #elif defined __FreeBSD__

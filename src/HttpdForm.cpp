@@ -24,9 +24,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <stdio.h>
 #ifdef _WIN32
 #pragma warning(disable:4786)
-#define strcasecmp stricmp
 #include <windows.h>
 #endif
+#include "socket_include.h"
 #include "Parse.h"
 #include "IFile.h"
 #include "HttpdForm.h"
@@ -187,7 +187,7 @@ HttpdForm::HttpdForm(IFile *infil) : raw(false)
 						int out = 0;
 						char c;
 						char fn[1000]; // where post'd file will be saved
-#ifdef WIN32
+#ifdef _WIN32
 						{
 							char tmp_path[1000];
 							::GetTempPath(1000, tmp_path);
@@ -402,97 +402,90 @@ void HttpdForm::EnableRaw(bool b)
 }
 
 
-void HttpdForm::strcpyval(char *v,const char *value,size_t len)
+void HttpdForm::strcpyval(std::string& v,const char *value) //,size_t len)
 {
-	*v = 0;
+	v = "";
 	for (size_t i = 0; i < strlen(value); i++)
 	{
 		if (value[i] == '<')
 		{
-			if (strlen(v) < len - 4)
-				sprintf(v + strlen(v),"&lt;");
+			v += "&lt;";
 		}
 		else
 		if (value[i] == '>')
 		{
-			if (strlen(v) < len - 4)
-				sprintf(v + strlen(v),"&gt;");
+			v += "&gt;";
 		}
 		else
 		if (value[i] == '&')
 		{
-			if (strlen(v) < len - 5)
-				sprintf(v + strlen(v),"&amp;");
+			v += "&amp;";
 		}
 		else
 		{
-			if (strlen(v) < len - 1)
-				sprintf(v + strlen(v),"%c",value[i]);
+			v += value[i];
 		}
 	}
 }
 
 
-bool HttpdForm::getfirst(char *n,size_t len)
+bool HttpdForm::getfirst(std::string& n) //char *n,size_t len)
 {
 	m_current = m_cgi.begin();
-	return getnext(n,len);
+	return getnext(n);
 }
 
 
-bool HttpdForm::getnext(char *n,size_t len)
+bool HttpdForm::getnext(std::string& n) //char *n,size_t len)
 {
 	if (m_current != m_cgi.end() )
 	{
 		CGI *current = *m_current;
-		strncpy(n,current -> name.c_str(),len - 1);
-		n[len - 1] = 0;
+		n = current -> name;
 		m_current++;
 		return true;
 	}
 	else
 	{
-		*n = 0;
+		n = "";
 	}
 	return false;
 }
 
 
-bool HttpdForm::getfirst(char *n,size_t len,char *v,size_t vlen)
+bool HttpdForm::getfirst(std::string& n,std::string& v) //char *n,size_t len,char *v,size_t vlen)
 {
 	m_current = m_cgi.begin();
-	return getnext(n,len,v,vlen);
+	return getnext(n,v);
 }
 
 
-bool HttpdForm::getnext(char *n,size_t len,char *v,size_t vlen)
+bool HttpdForm::getnext(std::string& n,std::string& v) //char *n,size_t len,char *v,size_t vlen)
 {
 	if (m_current != m_cgi.end() )
 	{
 		CGI *current = *m_current;
-		strncpy(n,current -> name.c_str(),len - 1);
-		n[len - 1] = 0;
+		n = current -> name;
 		if (raw)
 		{
-			strncpy(v,current -> value.c_str(),vlen - 1);
-			v[vlen - 1] = 0;
+			v = current -> value;
 		}
 		else
 		{
-			strcpyval(v,current -> value.c_str(),vlen);
+			strcpyval(v,current -> value.c_str());
 		}
 		m_current++;
 		return true;
 	}
 	else
 	{
-		*n = 0;
+		n = "";
 	}
 	return false;
 }
 
 
-int HttpdForm::getvalue(const std::string& n,char *v,size_t len)
+int HttpdForm::getvalue(const std::string& n,std::string& v) //char *v,size_t len)
 {
 	CGI *cgi = NULL;
 	int r = 0;
@@ -508,18 +501,17 @@ int HttpdForm::getvalue(const std::string& n,char *v,size_t len)
 	{
 		if (raw)
 		{
-			strncpy(v,cgi -> value.c_str(),len - 1);
-			v[len - 1] = 0;
+			v = cgi -> value;
 		}
 		else
 		{
-			strcpyval(v,cgi -> value.c_str(),len);
+			strcpyval(v,cgi -> value.c_str());
 		}
 		r++;
 	}
 	else
 	{
-		*v = 0;
+		v = "";
 	}
 
 	return r;
@@ -570,6 +562,18 @@ size_t HttpdForm::getlength(const std::string& n)
 		}
 	}
 	return l;
+}
+
+
+HttpdForm::cgi_v& HttpdForm::getbase()
+{
+	return m_cgi;
+}
+
+
+const std::string& HttpdForm::GetBoundary()
+{
+	return m_strBoundary;
 }
 
 

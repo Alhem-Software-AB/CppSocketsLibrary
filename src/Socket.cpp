@@ -88,12 +88,16 @@ Socket::Socket(SocketHandler& h)
 ,m_b_ssl_server(false)
 ,m_b_disable_read(false)
 ,m_b_retry_connect(false)
+,m_connected(false)
+,m_flush_before_close(true)
 {
 }
 
 
 Socket::~Socket()
 {
+DEB(printf("~Socket()\n");)
+	Handler().Remove(this);
 	if (m_socket != INVALID_SOCKET && !m_bRetain)
 	{
 		Close();
@@ -185,10 +189,13 @@ int Socket::Close()
 	}
 	int n;
 	SetNonblocking(true);
-	if (shutdown(m_socket, SHUT_RDWR) == -1)
+	if (IsConnected())
 	{
-		// failed...
-		Handler().LogError(this, "shutdown", Errno, StrError(Errno), LOG_LEVEL_ERROR);
+		if (shutdown(m_socket, SHUT_RDWR) == -1)
+		{
+			// failed...
+			Handler().LogError(this, "shutdown", Errno, StrError(Errno), LOG_LEVEL_ERROR);
+		}
 	}
 	//
 	char tmp[100];
@@ -240,6 +247,18 @@ SOCKET Socket::CreateSocket(int af,int type, const std::string& protocol)
 		return INVALID_SOCKET;
 	}
 	OnOptions(af, type, protno, s);
+#ifdef SO_NOSIGPIPE
+	{
+		optval = 1;
+		if (setsockopt(s, SOL_SOCKET, SO_NOSIGPIPE, (char *)&optval, sizeof(optval)) == -1)
+		{
+			Handler().LogError(this, "setsockopt(SOL_SOCKET, SO_NOSIGPIPE)", Errno, StrError(Errno), LOG_LEVEL_FATAL);
+			closesocket(s);
+			SetCloseAndDelete();
+			return INVALID_SOCKET;
+		}
+	}
+#endif
 	if (type == SOCK_STREAM)
 	{
 		optval = m_opt_reuse ? 1 : 0;
@@ -362,15 +381,16 @@ bool Socket::u2ip(const std::string& str, struct in6_addr& l)
 	{
 		std::list<std::string> vec;
 		size_t x = 0;
-		char s[100];
+//		char s[100];
 		for (size_t i = 0; i <= str.size(); i++)
 		{
 			if (i == str.size() || str[i] == ':')
 			{
-				strncpy(s, str.substr(x,i - x).c_str(), i - x);
-				s[i - x] = 0;
+//				strncpy(s, str.substr(x,i - x).c_str(), i - x);
+//				s[i - x] = 0;
+				std::string s = str.substr(x, i - x);
 				//
-				if (strstr(s,".")) // x.x.x.x
+				if (strstr(s.c_str(),".")) // x.x.x.x
 				{
 					Parse pa(s,".");
 					char slask[100];
@@ -1261,6 +1281,17 @@ void Socket::Send(const std::string&,int)
 }
 
 
+void Socket::SetConnected(bool x)
+{
+	m_connected = x;
+}
+
+
+bool Socket::IsConnected()
+{
+	return m_connected;
+}
+
 
 #ifdef _THREADSAFE_SOCKETS
 Mutex& Socket::GetMutex()
@@ -1268,6 +1299,19 @@ Mutex& Socket::GetMutex()
 	return m_rwmutex;
 }
 #endif
+
+void Socket::SetFlushBeforeClose(bool x)
+{
+	m_flush_before_close = x;
+}
+
+
+bool Socket::GetFlushBeforeClose()
+{
+	return m_flush_before_close;
+}
+
+
 
 #ifdef SOCKETS_NAMESPACE
 }

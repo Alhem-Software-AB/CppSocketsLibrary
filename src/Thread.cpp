@@ -98,7 +98,7 @@ threadfunc_t STDPREFIX Thread::StartThread(threadparam_t zz)
 		pclThread -> Run();
 	}
 	pclThread -> SetRunning(false); // if return
-	return (threadfunc_t)zz;
+	return (threadfunc_t)NULL;
 }
 
 

@@ -24,9 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #pragma warning(disable:4786)
 #endif
 #ifdef HAVE_OPENSSL
-#ifdef _WIN32
-#define strcasecmp stricmp
-#else
+#ifndef _WIN32
 #include <errno.h>
 #endif
 #include "Utility.h"
