@@ -359,11 +359,14 @@ bool Socket::DeleteByHandler()
 
 void Socket::SetCloseAndDelete(bool x)
 {
-	AddList(Handler().GetFdsClose(), x, "SetCloseAndDelete()");
-	m_bClose = x;
-	if (x)
+	if (x != m_bClose)
 	{
-		m_tClose = time(NULL);
+		AddList(Handler().GetFdsClose(), x, "SetCloseAndDelete()");
+		m_bClose = x;
+		if (x)
+		{
+			m_tClose = time(NULL);
+		}
 	}
 }
 
@@ -376,10 +379,15 @@ bool Socket::CloseAndDelete()
 
 void Socket::SetConnecting(bool x)
 {
-	AddList(Handler().GetFdsConnecting(), x, "SetConnecting()");
-	m_bConnecting = x;
-	if (x)
-		m_tConnect = time(NULL);
+	if (x != m_bConnecting)
+	{
+		AddList(Handler().GetFdsConnecting(), x, "SetConnecting()");
+		m_bConnecting = x;
+		if (x)
+		{
+			m_tConnect = time(NULL);
+		}
+	}
 }
 
 

@@ -58,20 +58,17 @@ namespace SOCKETS_NAMESPACE {
 SocketHandler::SocketHandler(StdLog *p)
 :m_stdlog(p)
 ,m_maxsock(0)
-,m_host("")
-,m_ip(0)
 #ifdef _WIN32
 ,m_preverror(-1)
 #endif
 ,m_slave(false)
-,m_local_resolved(false)
 ,m_socks4_host(0)
 ,m_socks4_port(0)
 ,m_bTryDirect(false)
 ,m_resolv_id(0)
 ,m_resolver(NULL)
 ,m_b_enable_pool(false)
-,m_mutex(m_mutex) // yum
+,m_mutex(m_mutex0) // yum
 ,m_b_use_mutex(false)
 {
 	FD_ZERO(&m_rfds);
@@ -83,13 +80,10 @@ SocketHandler::SocketHandler(StdLog *p)
 SocketHandler::SocketHandler(Mutex& mutex,StdLog *p)
 :m_stdlog(p)
 ,m_maxsock(0)
-,m_host("")
-,m_ip(0)
 #ifdef _WIN32
 ,m_preverror(-1)
 #endif
 ,m_slave(false)
-,m_local_resolved(false)
 ,m_socks4_host(0)
 ,m_socks4_port(0)
 ,m_bTryDirect(false)
@@ -148,33 +142,6 @@ SocketHandler::~SocketHandler()
 }
 
 
-void SocketHandler::ResolveLocal()
-{
-	char h[256];
-
-	// get local hostname and translate into ip-address
-	*h = 0;
-	gethostname(h,255);
-	{
-		if (Utility::u2ip(h, m_ip))
-		{
-			Utility::l2ip(m_ip, m_addr);
-		}
-	}
-#ifdef IPPROTO_IPV6
-	memset(&m_local_ip6, 0, sizeof(m_local_ip6));
-	{
-		if (Utility::u2ip(h, m_local_ip6))
-		{
-			Utility::l2ip(m_local_ip6, m_local_addr6);
-		}
-	}
-#endif
-	m_host = h;
-	m_local_resolved = true;
-}
-
-
 void SocketHandler::Add(Socket *p)
 {
 	if (p -> GetSocket() == INVALID_SOCKET)
@@ -185,6 +152,26 @@ void SocketHandler::Add(Socket *p)
 			m_delete.push_back(p);
 		}
 		return;
+	}
+	for (socket_m::iterator it = m_sockets.begin(); it != m_sockets.end(); it++)
+	{
+		if ((*it).first == p -> GetSocket())
+		{
+			LogError(p, "Add", -2, "Attempt to add socket already in controlled queue", LOG_LEVEL_FATAL);
+			m_delete.push_back(p);
+			return;
+		}
+	}
+	{
+		for (socket_m::iterator it = m_add.begin(); it != m_add.end(); it++)
+		{
+			if ((*it).first == p -> GetSocket())
+			{
+				LogError(p, "Add", -2, "Attempt to add socket already in add queue", LOG_LEVEL_FATAL);
+				m_delete.push_back(p);
+				return;
+			}
+		}
 	}
 	m_add[p -> GetSocket()] = p;
 }
@@ -615,7 +602,7 @@ DEB(
 				{
 					TcpSocket *tcp = dynamic_cast<TcpSocket *>(p);
 					// new graceful tcp - flush and close timeout 5s
-					if (tcp && tcp -> GetFlushBeforeClose() && !tcp -> IsSSL() && p -> TimeSinceClose() < 5)
+					if (tcp && p -> IsConnected() && tcp -> GetFlushBeforeClose() && !tcp -> IsSSL() && p -> TimeSinceClose() < 5)
 					{
 						if (tcp -> GetOutputLength())
 						{
@@ -658,7 +645,7 @@ DEB(
 					else
 					{
 						SOCKET nn = *it; //(*it3).first;
-						if (tcp && tcp -> GetOutputLength())
+						if (tcp && p -> IsConnected() && tcp -> GetOutputLength())
 						{
 							LogError(p, "Closing", (int)tcp -> GetOutputLength(), "Closing socket while data still left to send", LOG_LEVEL_WARNING);
 						}
@@ -764,30 +751,6 @@ DEB(printf("Delete socket with fd %d (add failed)\n", p -> GetSocket());)
 }
 
 
-const std::string& SocketHandler::GetLocalHostname()
-{
-	if (!m_local_resolved)
-		LogError(NULL, "GetLocalHostname", 0, "local address not resolved");
-	return m_host;
-}
-
-
-ipaddr_t SocketHandler::GetLocalIP()
-{
-	if (!m_local_resolved)
-		LogError(NULL, "GetLocalHostname", 0, "local address not resolved");
-	return m_ip;
-}
-
-
-const std::string& SocketHandler::GetLocalAddress()
-{
-	if (!m_local_resolved)
-		LogError(NULL, "GetLocalHostname", 0, "local address not resolved");
-	return m_addr;
-}
-
-
 bool SocketHandler::Valid(Socket *p0)
 {
 	for (socket_m::iterator it = m_sockets.begin(); it != m_sockets.end(); it++)
@@ -833,24 +796,6 @@ void SocketHandler::LogError(Socket *p,const std::string& user_text,int err,cons
 }
 
 
-#ifdef IPPROTO_IPV6
-const struct in6_addr& SocketHandler::GetLocalIP6()
-{
-	if (!m_local_resolved)
-		LogError(NULL, "GetLocalHostname", 0, "local address not resolved");
-	return m_local_ip6;
-}
-
-
-const std::string& SocketHandler::GetLocalAddress6()
-{
-	if (!m_local_resolved)
-		LogError(NULL, "GetLocalHostname", 0, "local address not resolved");
-	return m_local_addr6;
-}
-#endif
-
-
 PoolSocket *SocketHandler::FindConnection(int type,const std::string& protocol,ipaddr_t a,port_t port)
 {
 	for (socket_m::iterator it = m_sockets.begin(); it != m_sockets.end() && m_sockets.size(); it++)
@@ -883,7 +828,7 @@ PoolSocket *SocketHandler::FindConnection(int type,const std::string& protocol,i
 		{
 			if (pools -> GetSocketType() == type &&
 			    pools -> GetSocketProtocol() == protocol &&
-			    !in6_addr_compare(pools -> GetClientRemoteAddr6(), a) &&
+			    !Utility::in6_addr_compare(pools -> GetClientRemoteAddr6(), a) &&
 			    pools -> GetClientRemotePort() == port)
 			{
 				m_sockets.erase(it);
@@ -948,21 +893,6 @@ void SocketHandler::EnableResolver(port_t port)
 		m_resolver = new ResolvServer(port);
 	}
 }
-
-
-#ifdef IPPROTO_IPV6
-int SocketHandler::in6_addr_compare(in6_addr a,in6_addr b)
-{
-	for (size_t i = 0; i < 16; i++)
-	{
-		if (a.s6_addr[i] < b.s6_addr[i])
-			return -1;
-		if (a.s6_addr[i] > b.s6_addr[i])
-			return 1;
-	}
-	return 0;
-}
-#endif
 
 
 bool SocketHandler::ResolverReady()

@@ -231,9 +231,9 @@ int main()
 	MyHandler h(&log);
 
 	h.EnableResolver(9999);
-	h.ResolveLocal();
-	printf(" *** My hostname: %s\n", h.GetLocalHostname().c_str());
-	printf(" *** My local IP: %s\n", h.GetLocalAddress().c_str());
+	Utility::ResolveLocal();
+	printf(" *** My hostname: %s\n", Utility::GetLocalHostname().c_str());
+	printf(" *** My local IP: %s\n", Utility::GetLocalAddress().c_str());
 
 	// socks4 options
 /*

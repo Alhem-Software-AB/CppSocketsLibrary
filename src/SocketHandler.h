@@ -35,6 +35,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "socket_include.h"
 #include "StdLog.h"
+#include "Mutex.h"
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
@@ -88,26 +89,6 @@ public:
 	/** Get status of read/write/exception file descriptor set for a socket. */
 	void Get(SOCKET s,bool& r,bool& w,bool& e);
 
-	/** ResolveLocal (hostname) - call once before calling any GetLocal method. */
-	void ResolveLocal();
-	/** Returns local hostname, ResolveLocal must be called once before using.
-		\sa ResolveLocal */
-	const std::string& GetLocalHostname();
-	/** Returns local ip, ResolveLocal must be called once before using.
-		\sa ResolveLocal */
-	ipaddr_t GetLocalIP();
-	/** Returns local ip number as string.
-		\sa ResolveLocal */
-	const std::string& GetLocalAddress();
-#ifdef IPPROTO_IPV6
-	/** Returns local ipv6 ip.
-		\sa ResolveLocal */
-	const struct in6_addr& GetLocalIP6();
-	/** Returns local ipv6 address.
-		\sa ResolveLocal */
-	const std::string& GetLocalAddress6();
-#endif
-
 	/** Return number of sockets handled by this handler.  */
 	size_t GetCount();
 	/** Indicates that the handler runs under SocketThread. */
@@ -155,10 +136,6 @@ public:
 	/** Resolver thread ready for queries. */
 	bool ResolverReady();
 
-#ifdef IPPROTO_IPV6
-	/** ipv6 address compare. */
-	int in6_addr_compare(in6_addr,in6_addr);
-#endif
 	/** Enable connection pool (by default disabled). */
 	void EnablePool(bool x = true);
 	/** Check pool status. 
@@ -192,9 +169,6 @@ private:
 	SocketHandler& operator=(const SocketHandler& ) { return *this; }
 	StdLog *m_stdlog; ///< Registered log class, or NULL
 	SOCKET m_maxsock; ///< Highest file descriptor + 1 in active sockets list
-	std::string m_host; ///< local hostname
-	ipaddr_t m_ip; ///< local ip address
-	std::string m_addr; ///< local ip address in string format
 	fd_set m_rfds; ///< file descriptor set monitored for read events
 	fd_set m_wfds; ///< file descriptor set monitored for write events
 	fd_set m_efds; ///< file descriptor set monitored for exceptions
@@ -202,11 +176,6 @@ private:
 	int m_preverror; ///< debug select() error
 #endif
 	bool m_slave; ///< Indicates that this is a SocketHandler run in SocketThread
-#ifdef IPPROTO_IPV6
-	struct in6_addr m_local_ip6; ///< local ipv6 address
-#endif
-	std::string m_local_addr6; ///< local ipv6 address in string format
-	bool m_local_resolved; ///< ResolveLocal has been called if true
 	ipaddr_t m_socks4_host; ///< Socks4 server host ip
 	port_t m_socks4_port; ///< Socks4 server port number
 	std::string m_socks4_userid; ///< Socks4 userid
@@ -224,6 +193,7 @@ private:
 	socket_v m_fds_close; ///< checklist close and delete
 	Mutex& m_mutex; ///< Thread safety mutex
 	bool m_b_use_mutex; ///< Mutex correctly initialized
+	Mutex m_mutex0; ///< Dummy mutex when not using threadsafe
 };
 
 

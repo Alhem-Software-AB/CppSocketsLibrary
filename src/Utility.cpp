@@ -35,6 +35,17 @@ namespace SOCKETS_NAMESPACE {
 #endif
 
 
+// statics
+std::string Utility::m_host;
+bool Utility::m_local_resolved = false;
+ipaddr_t Utility::m_ip = 0;
+std::string Utility::m_addr;
+#ifdef IPPROTO_IPV6
+struct in6_addr Utility::m_local_ip6;
+#endif
+std::string Utility::m_local_addr6;
+
+
 std::string Utility::base64(const std::string& str_in)
 {
 	std::string str;
@@ -124,9 +135,10 @@ static	char hex[] = "0123456789ABCDEF";
 		}
 		else
 		{
+			unsigned char c = static_cast<unsigned char>(src[i]);
 			dst += '%';
-			dst += hex[src[i] / 16];
-			dst += hex[src[i] % 16];
+			dst += hex[c / 16];
+			dst += hex[c % 16];
 		}
 	}
 	return dst;
@@ -397,6 +409,100 @@ void Utility::l2ip(const struct in6_addr& ip, std::string& str,bool mixed)
 		}
 	}
 	str = slask;
+}
+#endif
+
+
+#ifdef IPPROTO_IPV6
+int Utility::in6_addr_compare(in6_addr a,in6_addr b)
+{
+	for (size_t i = 0; i < 16; i++)
+	{
+		if (a.s6_addr[i] < b.s6_addr[i])
+			return -1;
+		if (a.s6_addr[i] > b.s6_addr[i])
+			return 1;
+	}
+	return 0;
+}
+#endif
+
+
+void Utility::ResolveLocal()
+{
+	char h[256];
+
+	// get local hostname and translate into ip-address
+	*h = 0;
+	gethostname(h,255);
+	{
+		if (Utility::u2ip(h, m_ip))
+		{
+			Utility::l2ip(m_ip, m_addr);
+		}
+	}
+#ifdef IPPROTO_IPV6
+	memset(&m_local_ip6, 0, sizeof(m_local_ip6));
+	{
+		if (Utility::u2ip(h, m_local_ip6))
+		{
+			Utility::l2ip(m_local_ip6, m_local_addr6);
+		}
+	}
+#endif
+	m_host = h;
+	m_local_resolved = true;
+}
+
+
+const std::string& Utility::GetLocalHostname()
+{
+	if (!m_local_resolved)
+	{
+		ResolveLocal();
+	}
+	return m_host;
+}
+
+
+ipaddr_t Utility::GetLocalIP()
+{
+	if (!m_local_resolved)
+	{
+		ResolveLocal();
+	}
+	return m_ip;
+}
+
+
+const std::string& Utility::GetLocalAddress()
+{
+	if (!m_local_resolved)
+	{
+		ResolveLocal();
+	}
+	return m_addr;
+}
+
+
+#ifdef IPPROTO_IPV6
+const struct in6_addr& Utility::GetLocalIP6()
+{
+	if (!m_local_resolved)
+	{
+		ResolveLocal();
+	}
+	return m_local_ip6;
+}
+
+
+const std::string& Utility::GetLocalAddress6()
+{
+	if (!m_local_resolved)
+	{
+		ResolveLocal();
+	}
+	return m_local_addr6;
 }
 #endif
 

@@ -79,6 +79,39 @@ public:
 	static void l2ip(const struct in6_addr&,std::string& ,bool mixed = false);
 #endif
 
+#ifdef IPPROTO_IPV6
+	/** ipv6 address compare. */
+	static int in6_addr_compare(in6_addr,in6_addr);
+#endif
+	/** ResolveLocal (hostname) - call once before calling any GetLocal method. */
+	static void ResolveLocal();
+	/** Returns local hostname, ResolveLocal must be called once before using.
+		\sa ResolveLocal */
+	static const std::string& GetLocalHostname();
+	/** Returns local ip, ResolveLocal must be called once before using.
+		\sa ResolveLocal */
+	static ipaddr_t GetLocalIP();
+	/** Returns local ip number as string.
+		\sa ResolveLocal */
+	static const std::string& GetLocalAddress();
+#ifdef IPPROTO_IPV6
+	/** Returns local ipv6 ip.
+		\sa ResolveLocal */
+	static const struct in6_addr& GetLocalIP6();
+	/** Returns local ipv6 address.
+		\sa ResolveLocal */
+	static const std::string& GetLocalAddress6();
+#endif
+
+private:
+	static std::string m_host; ///< local hostname
+	static ipaddr_t m_ip; ///< local ip address
+	static std::string m_addr; ///< local ip address in string format
+#ifdef IPPROTO_IPV6
+	static struct in6_addr m_local_ip6; ///< local ipv6 address
+#endif
+	static std::string m_local_addr6; ///< local ipv6 address in string format
+	static bool m_local_resolved; ///< ResolveLocal has been called if true
 };
 
 
