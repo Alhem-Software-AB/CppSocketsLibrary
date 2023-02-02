@@ -23,7 +23,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef _TCPSOCKET_H
 #define _TCPSOCKET_H
 
-#include <vector>
 #include "Socket.h"
 #include "CircularBuffer.h"
 

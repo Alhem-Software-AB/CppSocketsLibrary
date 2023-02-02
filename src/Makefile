@@ -1,4 +1,4 @@
-VERSION =	1.3rc1-pthreads
+VERSION =	1.3
 
 INCLUDE =	-I/usr/devel/include -I.
 CFLAGS =	-Wall -g -O2 $(INCLUDE) -MD -D_VERSION='"$(VERSION)"' 
