@@ -49,14 +49,17 @@ void StdoutLog::error(SocketHandler *,Socket *,const std::string& call,int err,c
 	case LOG_LEVEL_FATAL:
 		level = "Fatal";
 		break;
+	case LOG_LEVEL_INFO:
+		level = "Info";
+		break;
 	}
 
-	printf("%d-%02d-%02d %02d:%02d:%02d :: %s: %s (%s)\n",
+	printf("%d-%02d-%02d %02d:%02d:%02d :: %s: %d %s (%s)\n",
 		tp -> tm_year + 1900,
 		tp -> tm_mon + 1,
 		tp -> tm_mday,
 		tp -> tm_hour,tp -> tm_min,tp -> tm_sec,
-		call.c_str(),sys_err.c_str(),level.c_str());
+		call.c_str(),err,sys_err.c_str(),level.c_str());
 }
 
 

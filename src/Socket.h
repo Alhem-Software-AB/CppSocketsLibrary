@@ -63,6 +63,7 @@ public:
 	virtual void OnLine(const std::string& );
 	virtual void OnSSLInitDone();
 	virtual void OnConnectFailed();
+	virtual void OnOptions(int family,int type,int protocol,SOCKET);
 
 	virtual bool CheckConnect();
 	virtual void ReadLine();
@@ -157,6 +158,9 @@ public:
 	// copy connection parameters from sock
 	void CopyConnection(Socket *sock);
 
+	void SetReuse(bool x) { m_opt_reuse = x; }
+	void SetKeepalive(bool x) { m_opt_keepalive = x; }
+
 protected:
 	Socket(const Socket& ); // do not allow use of copy constructor
 	void DetachSocket(); // protected, friend class SocketHandler;
@@ -194,6 +198,8 @@ static	WSAInitializer m_winsock_init;
 	bool m_bRetain; // keep connection on close
 	bool m_bLost; // connection lost
 	bool m_call_on_connect;
+	bool m_opt_reuse;
+	bool m_opt_keepalive;
 };
 
 

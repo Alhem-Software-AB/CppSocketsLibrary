@@ -31,6 +31,7 @@ typedef enum
 	LOG_LEVEL_WARNING = 0,
 	LOG_LEVEL_ERROR,
 	LOG_LEVEL_FATAL,
+	LOG_LEVEL_INFO
 } loglevel_t;
 
 

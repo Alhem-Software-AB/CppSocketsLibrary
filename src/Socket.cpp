@@ -71,6 +71,8 @@ Socket::Socket(SocketHandler& h)
 ,m_bRetain(false)
 ,m_bLost(false)
 ,m_call_on_connect(false)
+,m_opt_reuse(true)
+,m_opt_keepalive(true)
 {
 }
 
@@ -158,10 +160,21 @@ void Socket::OnAccept()
 int Socket::Close()
 {
 	int n;
+	SetNonblocking(true);
 	if (shutdown(m_socket, SHUT_RDWR) == -1)
 	{
 		// failed...
 		Handler().LogError(this, "shutdown", Errno, StrError(Errno), LOG_LEVEL_ERROR);
+	}
+	//
+	char tmp[100];
+	if ((n = recv(m_socket,tmp,100,0)) == -1)
+	{
+		Handler().LogError(this, "read() after shutdown", Errno, StrError(Errno), LOG_LEVEL_WARNING);
+	}
+	else
+	{
+		Handler().LogError(this, "read() after shutdown", n, "bytes read", LOG_LEVEL_WARNING);
 	}
 	if ((n = closesocket(m_socket)) == -1)
 	{
@@ -190,17 +203,18 @@ SOCKET Socket::CreateSocket4(int type, const std::string& protocol)
 			return INVALID_SOCKET;
 		}
 	}
+	int protno = p ? p -> p_proto : 0;
 
-	s = socket(AF_INET, type, p ? p -> p_proto : 0);
+	s = socket(AF_INET, type, protno);
 	if (s == INVALID_SOCKET)
 	{
 		Handler().LogError(this, "socket", Errno, StrError(Errno), LOG_LEVEL_FATAL);
 		return INVALID_SOCKET;
 	}
-
+	OnOptions(AF_INET, type, protno, s);
 	if (type == SOCK_STREAM)
 	{
-		optval = 1;
+		optval = m_opt_reuse ? 1 : 0;
 		if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, (char *)&optval, sizeof(optval)) == -1)
 		{
 			Handler().LogError(this, "setsockopt(SOL_SOCKET, SO_REUSEADDR)", Errno, StrError(Errno), LOG_LEVEL_FATAL);
@@ -208,7 +222,7 @@ SOCKET Socket::CreateSocket4(int type, const std::string& protocol)
 			return INVALID_SOCKET;
 		}
 
-		optval = 1;
+		optval = m_opt_keepalive ? 1 : 0;
 		if (setsockopt(s, SOL_SOCKET, SO_KEEPALIVE, (char *)&optval, sizeof(optval)) == -1)
 		{
 			Handler().LogError(this, "setsockopt(SOL_SOCKET, SO_KEEPALIVE)", Errno, StrError(Errno), LOG_LEVEL_FATAL);
@@ -239,15 +253,18 @@ SOCKET Socket::CreateSocket6(int type, const std::string& protocol)
 			return INVALID_SOCKET;
 		}
 	}
-	s = socket(AF_INET6, type, p ? p -> p_proto : 0);
+	int protno = p ? p -> p_proto : 0;
+
+	s = socket(AF_INET6, type, protno);
 	if (s == INVALID_SOCKET)
 	{
 		Handler().LogError(this, "socket", Errno, StrError(Errno), LOG_LEVEL_FATAL);
 		return INVALID_SOCKET;
 	}
+	OnOptions(AF_INET6, type, protno, s);
 	if (type == SOCK_STREAM)
 	{
-		optval = 1;
+		optval = m_opt_reuse ? 1 : 0;
 		if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, (char *)&optval, sizeof(optval)) == -1)
 		{
 			Handler().LogError(this, "setsockopt(SOL_SOCKET, SO_REUSEADDR)", Errno, StrError(Errno), LOG_LEVEL_FATAL);
@@ -255,7 +272,7 @@ SOCKET Socket::CreateSocket6(int type, const std::string& protocol)
 			return INVALID_SOCKET;
 		}
 
-		optval = 1;
+		optval = m_opt_keepalive ? 1 : 0;
 		if (setsockopt(s, SOL_SOCKET, SO_KEEPALIVE, (char *)&optval, sizeof(optval)) == -1)
 		{
 			Handler().LogError(this, "setsockopt(SOL_SOCKET, SO_KEEPALIVE)", Errno, StrError(Errno), LOG_LEVEL_FATAL);
@@ -853,6 +870,16 @@ void Socket::CopyConnection(Socket *sock)
 	socklen_t sa_len;
 	sock -> GetRemoteSocketAddress(sa, sa_len);
 	SetRemoteAddress(&sa, sa_len);
+}
+
+
+void Socket::OnOptions(int family,int type,int protocol,SOCKET s)
+{
+	Handler().LogError(this, "OnOptions", family, "Address Family", LOG_LEVEL_INFO);
+	Handler().LogError(this, "OnOptions", type, "Type", LOG_LEVEL_INFO);
+	Handler().LogError(this, "OnOptions", protocol, "Protocol", LOG_LEVEL_INFO);
+	SetReuse(true);
+	SetKeepalive(true);
 }
 
 

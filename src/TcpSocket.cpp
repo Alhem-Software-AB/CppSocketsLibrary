@@ -404,7 +404,15 @@ void TcpSocket::SendBuf(const char *buf,size_t len)
 	int n = (int)obuf.GetLength();
 	if (!Ready())
 	{
-		Handler().LogError(this, "SendBuf", -1, "Attempt to write to a non-ready socket" );
+		Handler().LogError(this, "SendBuf", -1, "Attempt to write to a non-ready socket" ); // warning
+//	if (m_socket != INVALID_SOCKET && !Connecting() && !CloseAndDelete())
+		Handler().LogError(this, "SendBuf: Data to Write", len, static_cast<std::string>(buf).substr(0,len).c_str(), LOG_LEVEL_INFO);
+		if (GetSocket() == INVALID_SOCKET)
+			Handler().LogError(this, "SendBuf", 0, " * GetSocket() == INVALID_SOCKET", LOG_LEVEL_INFO);
+		if (Connecting())
+			Handler().LogError(this, "SendBuf", 0, " * Connecting()", LOG_LEVEL_INFO);
+		if (CloseAndDelete())
+			Handler().LogError(this, "SendBuf", 0, " * CloseAndDelete()", LOG_LEVEL_INFO);
 		return;
 	}
 //DEB(	printf("trying to send %d bytes;  buf before = %d bytes\n",len,n);)

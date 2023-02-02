@@ -70,6 +70,13 @@ public:
 	virtual int GetMaxConnections() = 0;
 	virtual unsigned char *GetKey_m2minion() = 0;
 
+	ipaddr_t GetMyIP() { return my_ip; }
+	port_t GetMyPort() { return my_port; }
+	void SetRemoteId(const std::string& x) { m_remote_id = x; }
+	void SetIP(ipaddr_t x) { m_ip = x; }
+	void SetPort(port_t x) { m_port = x; }
+	void SetIDVerified(bool x = true) { m_bIDVerified = x; }
+
 protected:
 	void OnDelete();
 	void OnConnect();

@@ -116,6 +116,28 @@ public:
 		}
 		Send("Cmd>");
 	}
+	void OnDelete() {
+		printf("OrderSocket::OnDelete()\n");
+	}
+};
+
+
+class TestSocket : public TcpSocket
+{
+public:
+	TestSocket(SocketHandler& h) : TcpSocket(h) {
+		SetLineProtocol();
+	}
+	void OnConnect() {
+		printf("TestSocket connected, sending QUIT\n");
+		Send( "quit\n" );
+	}
+	void OnLine(const std::string& line) {
+		printf("TestSocket: %s\n", line.c_str());
+	}
+	void OnDelete() {
+		printf("TestSocket::OnDelete()\n");
+	}
 };
 
 
@@ -143,6 +165,10 @@ int main()
 	ListenSocket<HttpDebugSocket> l4(h);
 	l4.Bind(8080);
 	h.Add(&l4);
+
+	TestSocket ts(h);
+	ts.Open("localhost", 1026);
+	h.Add(&ts);
 
 	h.Select(1, 0);
 	while (!h.Quit())
