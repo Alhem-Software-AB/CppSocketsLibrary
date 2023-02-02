@@ -71,11 +71,13 @@ public:
 	int GetMulticastHops();
 
 protected:
+	UdpSocket(const UdpSocket& s) : Socket(s) {}
 	void OnRead();
 
 // int  recvfrom(int  s,  void *buf, size_t len, int flags, struct sockaddr *from, socklen_t *fromlen);
 // int  sendto(int  s,  const  void  *msg, size_t len, int flags, const struct sockaddr *to, socklen_t tolen);
 private:
+	UdpSocket& operator=(const UdpSocket& ) { return *this; }
 	bool m_connected;
 	char *m_ibuf;
 	size_t m_ibufsz;

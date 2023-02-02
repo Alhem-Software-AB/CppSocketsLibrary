@@ -82,7 +82,7 @@ private:
 	ipaddr_t 	my_ip;
 	port_t 		my_port;
 	bool 		m_bIDVerified;
-	string_v 	m_clist;
+	std::list<std::string> 	m_clist;
 	bool 		m_bStopMessage;
 	long		m_messagecount;
 	long		m_seencount;

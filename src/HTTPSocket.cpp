@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifdef _WIN32
 #pragma warning(disable:4786)
 #endif
+#include <stdarg.h>
 #include "Parse.h"
 #include "HTTPSocket.h"
 
@@ -118,6 +119,16 @@ void HTTPSocket::OnLine(const std::string& line)
 		{
 			m_method = str;
 			m_url = pa.getword();
+			size_t spl = m_url.find("?");
+			if (spl != std::string::npos)
+			{
+				m_uri = m_url.substr(0,spl);
+				m_query_string = m_url.substr(spl + 1);
+			}
+			else
+			{
+				m_uri = m_url;
+			}
 			m_http_version = pa.getword();
 			m_request = true;
 		}
@@ -150,6 +161,23 @@ void HTTPSocket::SendResponse()
 	}
 	msg += "\n";
 	Send( msg );
+}
+
+
+void HTTPSocket::AddResponseHeader(const std::string& header, char *format, ...)
+{
+	char slask[5000];
+	va_list ap;
+
+	va_start(ap, format);
+#ifdef _WIN32
+	vsprintf(slask, format, ap);
+#else
+	vsnprintf(slask, 5000, format, ap);
+#endif
+	va_end(ap);
+
+	m_response_header[header] = slask;
 }
 
 

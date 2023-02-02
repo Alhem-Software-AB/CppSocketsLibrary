@@ -40,6 +40,8 @@ public:
 	const unsigned char *GetBuf() { return m_bufuid; }
 
 private:
+	Uid(const Uid& ) {}
+	Uid& operator=(const Uid& ) { return *this; }
 	unsigned char m_bufuid[16];
 //	std::string m_uid;
 };

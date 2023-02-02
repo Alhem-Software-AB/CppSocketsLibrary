@@ -1,6 +1,7 @@
-VERSION =	1.6
+VERSION =	1.6.1
 
 INCLUDE =	-I/usr/devel/include -I.
+PREFIX =	/usr/local
 CFLAGS =	-Wall -g -O2 $(INCLUDE) -MD -D_VERSION='"$(VERSION)"' 
 # manual autoconf ....
 
@@ -18,8 +19,10 @@ CPPFLAGS =	$(CFLAGS)
 
 PROGS =		
 
-all:		libSockets.a $(PROGS) libSocketsEx.a
+all:		libSockets.a $(PROGS) libSocketsEx.a Sockets-config
 
+Sockets-config:	Sockets-config.o
+		g++ -o $@ $^
 
 OBJS =		CircularBuffer.o \
 		Socket.o \
@@ -51,10 +54,11 @@ libSocketsEx.a:	$(EX)
 		ranlib $@
 
 install:	all
-		cp libSockets.a /usr/local/lib
-		cp libSocketsEx.a /usr/local/lib
-		mkdir -p /usr/local/include/Sockets
-		cp -a *.h /usr/local/include/Sockets
+		cp libSockets.a $(PREFIX)/lib
+		cp libSocketsEx.a $(PREFIX)/lib
+		mkdir -p $(PREFIX)/include/Sockets
+		cp -a *.h $(PREFIX)/include/Sockets
+		install Sockets-config $(PREFIX)/bin
 
 clean:
 		rm -f *.o *~ slask *.d $(PROGS) *.a
@@ -69,7 +73,6 @@ tar:		clean
 		./mkdot.sh
 		tar czf Sockets-$(VERSION).tar.gz *.h *.cpp Makefile Project/*.dsp \
 			README.macosx gpl.txt
-		cp Changelog /usr/local/apache/www.libsockets.net/htdocs
 		doxygen doxygen.cfg
 		/usr/local/bin/tarfix.sh Sockets-$(VERSION)
 		cp Sockets-$(VERSION).tar.gz /usr/local/apache/www.libsockets.net/htdocs

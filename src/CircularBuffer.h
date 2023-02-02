@@ -52,6 +52,9 @@ public:
 	unsigned long ByteCounter() { return m_count; }
 
 private:
+	Socket& GetOwner() const { return m_owner; }
+	CircularBuffer(const CircularBuffer& s) : m_owner( s.GetOwner() ) {}
+	CircularBuffer& operator=(const CircularBuffer& ) { return *this; }
 	Socket& m_owner;
 	char *buf;
 	size_t m_max;

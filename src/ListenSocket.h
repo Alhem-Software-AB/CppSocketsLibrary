@@ -305,7 +305,10 @@ public:
 		}
 	}
 
+protected:
+	ListenSocket(const ListenSocket& ) {}
 private:
+	ListenSocket& operator=(const ListenSocket& ) { return *this; }
 	port_t m_port;
 	int m_depth;
 };

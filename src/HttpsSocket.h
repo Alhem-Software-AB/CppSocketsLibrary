@@ -57,7 +57,10 @@ public:
 	void AddResponseHeader(const std::string& x,const std::string& y) { m_response_header[x] = y; }
 	void SendResponse();
 
+protected:
+	HttpsSocket(const HttpsSocket& s) : SSLSocket(s) {}
 private:
+	HttpsSocket& operator=(const HttpsSocket& ) { return *this; }
 	bool m_first;
 	bool m_header;
 	std::string m_line;

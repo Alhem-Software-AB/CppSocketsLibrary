@@ -39,7 +39,7 @@ class SocketHandler
 	typedef std::map<int,Socket *> socket_m;
 
 public:
-	SocketHandler();
+	SocketHandler(StdLog * = NULL);
 	virtual ~SocketHandler();
 
 	/** Register StdLog object for error callback */
@@ -70,6 +70,8 @@ protected:
 	socket_m m_add;
 
 private:
+	SocketHandler(const SocketHandler& ) {}
+	SocketHandler& operator=(const SocketHandler& ) { return *this; }
 	StdLog *m_stdlog;
 	int m_maxsock;
 	std::string m_host; // local

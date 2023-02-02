@@ -41,8 +41,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #endif
 
 
-SocketHandler::SocketHandler()
-:m_stdlog(NULL)
+SocketHandler::SocketHandler(StdLog *p)
+:m_stdlog(p)
 ,m_maxsock(0)
 ,m_host("")
 ,m_ip(0)

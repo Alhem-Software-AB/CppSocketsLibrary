@@ -36,6 +36,9 @@ public:
 	void Run();
 
 private:
+	Socket& GetSocket() const { return m_socket; }
+	SocketThread(const SocketThread& s) : m_socket(s.GetSocket()) {}
+	SocketThread& operator=(const SocketThread& ) { return *this; }
 	Socket& m_socket;
 };
 

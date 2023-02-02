@@ -40,6 +40,8 @@ public:
 	void decode(const std::string&, unsigned char *, size_t&);
 
 private:
+	Base64(const Base64& ) {}
+	Base64& operator=(const Base64& ) { return *this; }
 static	char *bstr;
 static	char rstr[128];
 };

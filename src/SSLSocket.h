@@ -55,10 +55,12 @@ public:
 	int Close();
 
 protected:
+	SSLSocket(const SSLSocket& s) : TcpSocket(s) {}
 	void InitializeContext(SSL_METHOD * = NULL);
 	void InitializeContext(const std::string& keyfile,const std::string& password,SSL_METHOD * = NULL);
 
 private:
+	SSLSocket& operator=(const SSLSocket& ) { return *this; }
 	bool CheckCertificateChain(const std::string& );
 static	int verify_cb(int ok, X509_STORE_CTX *store);
 static	int password_cb(char *buf,int num,int rwflag,void *userdata);

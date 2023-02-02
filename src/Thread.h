@@ -27,8 +27,10 @@ public:
 	void SetRelease(bool x);
 
 private:
+	Thread(const Thread& ) {}
+	Thread& operator=(const Thread& ) { return *this; }
 #ifdef _WIN32
-  int m_thread;
+	int m_thread;
 #else
 	pthread_t m_thread;
 #endif

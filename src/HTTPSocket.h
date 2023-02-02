@@ -45,6 +45,8 @@ public:
 
 	const std::string& GetMethod() { return m_method; }
 	const std::string& GetUrl() { return m_url; }
+	const std::string& GetUri() { return m_uri; }
+	const std::string& GetQueryString() { return m_query_string; }
 	const std::string& GetHttpVersion() { return m_http_version; }
 	const std::string& GetStatus() { return m_status; }
 	const std::string& GetStatusText() { return m_status_text; }
@@ -55,14 +57,20 @@ public:
 	void SetStatus(const std::string& x) { m_status = x; }
 	void SetStatusText(const std::string& x) { m_status_text = x; }
 	void AddResponseHeader(const std::string& x,const std::string& y) { m_response_header[x] = y; }
+	void AddResponseHeader(const std::string& x,char *format, ...);
 	void SendResponse();
 
+protected:
+	HTTPSocket(const HTTPSocket& s) : TcpSocket(s) {}
 private:
+	HTTPSocket& operator=(const HTTPSocket& ) { return *this; }
 	bool m_first;
 	bool m_header;
 	std::string m_line;
 	std::string m_method;
 	std::string m_url;
+	std::string m_uri;
+	std::string m_query_string;
 	std::string m_http_version;
 	std::string m_status;
 	std::string m_status_text;

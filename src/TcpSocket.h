@@ -70,6 +70,7 @@ public:
 	unsigned long GetBytesSent() { return obuf.ByteCounter(); }
 
 protected:
+	TcpSocket(const TcpSocket& s) : Socket(s),ibuf(*this,0),obuf(*this,0) {}
 	void OnRead();
 	void OnWrite();
 	//
@@ -77,6 +78,10 @@ protected:
 	CircularBuffer obuf;
 	std::string m_line;
 	ucharp_v m_mes; // overflow protection
+
+private:
+	TcpSocket& operator=(const TcpSocket& ) { return *this; }
+
 };
 
 

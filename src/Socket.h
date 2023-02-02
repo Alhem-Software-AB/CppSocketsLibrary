@@ -34,7 +34,7 @@ class SocketThread;
 
 
 #include <list>
-	typedef std::list<std::string> string_v;
+//	typedef std::list<std::string> string_v;
 
 class Socket
 {
@@ -109,7 +109,7 @@ public:
 	/** ipv4 and ipv6(not implemented) */
 	std::string GetRemoteHostname();
 
-	SocketHandler& Handler();
+	SocketHandler& Handler() const;
 	bool SetNonblocking(bool);
 	bool SetNonblocking(bool, SOCKET);
 
@@ -132,9 +132,12 @@ public:
 	bool IsIpv6() { return m_ipv6; }
 
 protected:
+	Socket(const Socket& ); // do not allow use of copy constructor
 	void DetachSocket(); // protected, friend class SocketHandler;
 
 private:
+	Socket& operator=(const Socket& ) { return *this; }
+	//
 	SocketHandler& m_handler;
 	SOCKET m_socket;
 	bool m_bDel;

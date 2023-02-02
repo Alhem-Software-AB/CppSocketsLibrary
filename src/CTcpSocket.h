@@ -40,7 +40,10 @@ public:
 	std::string encrypt(unsigned char *,const std::string& );
 	bool decrypt(unsigned char *,const std::string& ,std::string& );
 
+protected:
+	CTcpSocket(const CTcpSocket& s) : TcpSocket(s) {}
 private:
+	CTcpSocket& operator=(const CTcpSocket& ) { return *this; }
 	ICrypt *m_crypt;
 };
 

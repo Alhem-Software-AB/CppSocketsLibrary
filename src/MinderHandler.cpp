@@ -143,7 +143,7 @@ DEB(	printf("Message:\n%s\n",msg.c_str());)
 }
 
 
-void MinderHandler::SendMessage(const std::string& hid,const std::string& mid,short ttl,const std::string& msg_in,string_v& clist,ulong_v& hosts)
+void MinderHandler::SendMessage(const std::string& hid,const std::string& mid,short ttl,const std::string& msg_in,std::list<std::string>& clist,ulong_v& hosts)
 {
 	std::string msg;
 	long host_id = atol(hid.c_str());
@@ -164,7 +164,7 @@ void MinderHandler::SendMessage(const std::string& hid,const std::string& mid,sh
 			if (p && p -> Ready() )
 			{
 				bool ok = true;
-				for (string_v::iterator it = clist.begin(); it != clist.end() && ok; it++)
+				for (std::list<std::string>::iterator it = clist.begin(); it != clist.end() && ok; it++)
 				{
 					std::string id = *it;
 					if (!strcmp(p -> GetRemoteId().c_str(),id.c_str()))
@@ -196,7 +196,7 @@ void MinderHandler::SendMessage(const std::string& hid,const std::string& mid,sh
 			if (p && p -> Ready() )
 			{
 				bool ok = true;
-				for (string_v::iterator it = clist.begin(); it != clist.end(); it++)
+				for (std::list<std::string>::iterator it = clist.begin(); it != clist.end(); it++)
 				{
 					std::string id = *it;
 					if (!strcmp(p -> GetRemoteId().c_str(),id.c_str()))

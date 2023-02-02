@@ -318,7 +318,7 @@ DEB(		printf("Incoming command: '%s'\n",cmd.c_str());)
 		std::string id;
 		while (m_clist.size())
 		{
-			string_v::iterator it = m_clist.begin();
+			std::list<std::string>::iterator it = m_clist.begin();
 			m_clist.erase(it);
 		}
 		pa.getword(id);

@@ -49,7 +49,10 @@ public:
 
 	void url_this(const std::string& url_in,std::string& host,port_t& port,std::string& url,std::string& file);
 
+protected:
+	HttpGetSocket(const HttpGetSocket& s) : HTTPSocket(s) {}
 private:
+	HttpGetSocket& operator=(const HttpGetSocket& ) { return *this; }
 	std::string m_host;
 	port_t m_port;
 	std::string m_url;

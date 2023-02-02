@@ -78,7 +78,7 @@ public:
 	unsigned long GetHostId() { return m_host_id; }
 
 	void SendMessage(const std::string&,short ttl = 30);
-	void SendMessage(const std::string&,const std::string&,short,const std::string&,string_v&,ulong_v&);
+	void SendMessage(const std::string&,const std::string&,short,const std::string&,std::list<std::string>&,ulong_v&);
 
 	bool Seen(unsigned long,unsigned long,bool = false);
 

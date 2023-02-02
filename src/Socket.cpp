@@ -351,7 +351,7 @@ bool Socket::u2ip(const std::string& str, struct in6_addr& l)
 	}
 	if (isip(str))
 	{
-		string_v vec;
+		std::list<std::string> vec;
 		size_t x = 0;
 		char s[100];
 		for (size_t i = 0; i <= str.size(); i++)
@@ -384,7 +384,7 @@ bool Socket::u2ip(const std::string& str, struct in6_addr& l)
 		}
 		size_t sz = vec.size(); // number of byte pairs
 		size_t i = 0; // index in in6_addr.in6_u.u6_addr16[] ( 0 .. 7 )
-		for (string_v::iterator it = vec.begin(); it != vec.end(); it++)
+		for (std::list<std::string>::iterator it = vec.begin(); it != vec.end(); it++)
 		{
 			std::string bytepair = *it;
 			if (bytepair.size())
@@ -548,7 +548,7 @@ void Socket::SetRemoteAddress(struct sockaddr* sa, socklen_t l)
 }
 
 
-SocketHandler& Socket::Handler()
+SocketHandler& Socket::Handler() const
 {
 	return m_handler;
 }
@@ -790,6 +790,11 @@ void Socket::ReadLine()
 
 
 void Socket::OnConnectFailed()
+{
+}
+
+
+Socket::Socket(const Socket& s) : m_handler(s.Handler())
 {
 }
 
