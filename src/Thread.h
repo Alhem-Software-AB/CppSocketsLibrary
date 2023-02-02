@@ -27,8 +27,8 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
-#ifndef _THREAD_H
-#define _THREAD_H
+#ifndef _SOCKETS_THREAD_H
+#define _SOCKETS_THREAD_H
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
@@ -36,9 +36,12 @@ namespace SOCKETS_NAMESPACE {
 
 #ifdef _WIN32
 // to be
-typedef DWORD  threadfunc_t;
-typedef LPVOID threadparam_t;
-#define STDPREFIX WINAPI
+//typedef DWORD  threadfunc_t;
+//typedef LPVOID threadparam_t;
+//#define STDPREFIX WINAPI
+typedef unsigned threadfunc_t;
+typedef void * threadparam_t;
+#define STDPREFIX __stdcall
 #else
 #include <pthread.h>
 
@@ -68,18 +71,23 @@ public:
 	void SetRunning(bool x);
 	bool IsReleased();
 	void SetRelease(bool x);
+	bool DeleteOnExit();
+	void SetDeleteOnExit(bool x = true);
+	bool IsDestructor();
 
 private:
 	Thread(const Thread& ) {}
 	Thread& operator=(const Thread& ) { return *this; }
 #ifdef _WIN32
 	HANDLE m_thread;
-	DWORD m_dwThreadId;
+	unsigned m_dwThreadId;
 #else
 	pthread_t m_thread;
 #endif
 	bool m_running;
 	bool m_release;
+	bool m_b_delete_on_exit;
+	bool m_b_destructor;
 };
 
 
@@ -87,4 +95,4 @@ private:
 }
 #endif
 
-#endif // _THREAD_H
+#endif // _SOCKETS_THREAD_H

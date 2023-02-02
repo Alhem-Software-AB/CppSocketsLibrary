@@ -27,8 +27,8 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
-#ifndef _LOCK_H
-#define _LOCK_H
+#ifndef _SOCKETS_LOCK_H
+#define _SOCKETS_LOCK_H
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
@@ -54,4 +54,4 @@ private:
 #ifdef SOCKETS_NAMESPACE
 }
 #endif
-#endif // _LOCK_H
+#endif // _SOCKETS_LOCK_H

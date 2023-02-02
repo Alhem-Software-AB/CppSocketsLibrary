@@ -1,9 +1,9 @@
-/** \file File.h
- **	\date  2005-04-25
+/** \file Event.cpp
+ **	\date  2005-12-07
  **	\author grymse@alhem.net
 **/
 /*
-Copyright (C) 2004,2005  Anders Hedstrom
+Copyright (C) 2005  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL.
 
@@ -27,50 +27,59 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
-#ifndef _SOCKETS_FILE_H
-#define _SOCKETS_FILE_H
+#include <stdio.h>
+#ifdef _WIN32
+#else
+#include <sys/time.h>
+#endif
 
-#include "IFile.h"
+#include "Event.h"
+//#include "IEventOwner.h"
+
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
 #endif
 
 
-/** IFile implementation of a disk file. 
-	\ingroup file */
-class File : public IFile
+// statics
+long Event::m_unique_id = 0;
+
+
+Event::Event(IEventOwner *from,long sec,long usec) : m_from(from), m_time(sec, usec), m_id(++m_unique_id)
 {
-public:
-	File();
-	~File();
-
-	bool fopen(const std::string&, const std::string&);
-	void fclose();
-
-	size_t fread(char *, size_t, size_t);
-	size_t fwrite(const char *, size_t, size_t);
-
-	char *fgets(char *, int);
-	void fprintf(char *format, ...);
-
-	off_t size();
-	bool eof();
-
-private:
-	File(const File& ) {} // copy constructor
-	File& operator=(const File& ) { return *this; } // assignment operator
-
-	std::string m_path;
-	std::string m_mode;
-	FILE *m_fil;
-};
+}
 
 
+Event::~Event()
+{
+}
+
+
+bool Event::operator<(Event& e)
+{
+	return m_time < e.m_time;
+}
+
+
+long Event::GetID()
+{
+	return m_id;
+}
+
+
+const Time& Event::GetTime() const
+{
+	return m_time;
+}
+
+
+IEventOwner *Event::GetFrom()
+{
+	return m_from;
+}
 
 
 #ifdef SOCKETS_NAMESPACE
 }
 #endif
-
-#endif // _SOCKETS_FILE_H

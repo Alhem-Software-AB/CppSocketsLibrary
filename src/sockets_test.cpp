@@ -155,6 +155,23 @@ public:
 			//Resolve( arg );
 		}
 		else
+		if (cmd == "detach")
+		{
+			if (!Detach())
+			{
+				Send("Detach() call failed\n");
+			}
+			else
+			{
+				Send("Ok.\n");
+			}
+		}
+		else
+		if (cmd == "count")
+		{
+			Send("Socket count: " + Utility::l2string(Handler().GetCount()) + "\n");
+		}
+		else
 		{
 			Send("Huh?\n");
 		}
@@ -174,6 +191,9 @@ public:
 				printf("<%02X>",c);
 		}
 		printf("\n");
+	}
+	void OnDetached() {
+		Send("\nDetached.\nCmd>");
 	}
 };
 

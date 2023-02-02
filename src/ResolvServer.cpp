@@ -67,11 +67,10 @@ void ResolvServer::Run()
 	}
 	h.Add(&l);
 
-	h.Select(0,0);
 	m_ready = true;
 	while (!m_quit && IsRunning() )
 	{
-		h.Select(1,0);
+		h.Select(0, 500000);
 	}
 	SetRunning(false);
 }

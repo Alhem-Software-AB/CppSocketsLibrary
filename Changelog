@@ -423,3 +423,27 @@ Version 1.9.8
 Version 1.9.9
 --------------------------
 
+Version 1.9.10rc1
+--------------------------
+6a7,10
+> Event.cpp
+> Event.h
+> EventHandler.cpp
+> EventHandler.h
+24,25d27
+< HttpsGetSocket.cpp
+< HttpsGetSocket.h
+28,29d29
+< HttpsSocket.cpp
+< HttpsSocket.h
+30a31,33
+> IEventHandler.h
+> IEventOwner.cpp
+> IEventOwner.h
+67,68d69
+< SSLSocket.cpp
+< SSLSocket.h
+75a77,78
+> Time.cpp
+> Time.h
+

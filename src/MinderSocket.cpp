@@ -48,7 +48,7 @@ char MinderSocket::g_UpdateUrl[256];
 
 
 MinderSocket::MinderSocket(SocketHandler& h,const std::string& app)
-:SSLSocket(h)
+:TcpSocket(h)
 ,m_app(app)
 ,my_ip(0)
 ,my_port(0)
@@ -190,7 +190,7 @@ void MinderSocket::SendHello()
 }
 
 
-void MinderSocket::OnSSLInitDone()
+void MinderSocket::OnConnect()
 {
 	SendHello();
 }

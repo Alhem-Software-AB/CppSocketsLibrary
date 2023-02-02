@@ -1,9 +1,9 @@
-/** \file File.h
- **	\date  2005-04-25
+/** \file EventHandler.h
+ **	\date  2005-12-07
  **	\author grymse@alhem.net
 **/
 /*
-Copyright (C) 2004,2005  Anders Hedstrom
+Copyright (C) 2005  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL.
 
@@ -27,45 +27,44 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
-#ifndef _SOCKETS_FILE_H
-#define _SOCKETS_FILE_H
+#ifndef _EVENTHANDLER_H
+#define _EVENTHANDLER_H
 
-#include "IFile.h"
+#include "SocketHandler.h"
+#include "IEventHandler.h"
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
 #endif
 
 
-/** IFile implementation of a disk file. 
-	\ingroup file */
-class File : public IFile
+class StdLog;
+class IEventOwner;
+class Event;
+
+/** SocketHandler implementing the IEventHandler interface.
+	\ingroup timer */
+class EventHandler : public SocketHandler,public IEventHandler
 {
 public:
-	File();
-	~File();
+	EventHandler();
+	EventHandler(StdLog *);
+	~EventHandler();
 
-	bool fopen(const std::string&, const std::string&);
-	void fclose();
+	bool GetTimeUntilNextEvent(struct timeval *);
+	void CheckEvents();
+	int AddEvent(IEventOwner *,long sec,long usec);
+	void ClearEvents(IEventOwner *);
 
-	size_t fread(char *, size_t, size_t);
-	size_t fwrite(const char *, size_t, size_t);
-
-	char *fgets(char *, int);
-	void fprintf(char *format, ...);
-
-	off_t size();
-	bool eof();
+	void EventLoop();
+	void SetQuit(bool = true);
 
 private:
-	File(const File& ) {} // copy constructor
-	File& operator=(const File& ) { return *this; } // assignment operator
-
-	std::string m_path;
-	std::string m_mode;
-	FILE *m_fil;
+	EventHandler(const EventHandler& ) {} // copy constructor
+	EventHandler& operator=(const EventHandler& ) { return *this; } // assignment operator
+	std::list<Event *> m_events;
+	bool m_quit;
 };
-
 
 
 
@@ -73,4 +72,4 @@ private:
 }
 #endif
 
-#endif // _SOCKETS_FILE_H
+#endif // _EVENTHANDLER_H

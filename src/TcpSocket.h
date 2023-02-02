@@ -34,12 +34,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "CircularBuffer.h"
 #ifdef HAVE_OPENSSL
 #include <openssl/ssl.h>
-#ifdef _WIN32
-// TODO: systray.exe??
-#define RANDOM "systray.exe"
-#else
-#define RANDOM "/dev/urandom"
-#endif
+#else // !HAVE_OPENSSL
+typedef void * BIO;
+typedef void * SSL;
+typedef void * SSL_CTX;
+typedef void * SSL_METHOD;
 #endif
 
 #define TCP_BUFSIZE_READ 16400
@@ -170,10 +169,9 @@ public:
 	/** Socket is reconnecting. */
 	bool IsReconnect();
 
-#ifdef HAVE_OPENSSL
-	/** Get ssl password */
+	/** SSL; Get ssl password. */
 	const std::string& GetPassword();
-#endif
+
 	/** Get timeout value for sending of all data before closing. */
 	long CheckSendTimeoutCount();
 
@@ -181,24 +179,21 @@ protected:
 	TcpSocket(const TcpSocket& s);
 	void OnRead();
 	void OnWrite();
-	// SSL
-#ifdef HAVE_OPENSSL
-	/** Initialize ssl context for a client socket. 
+	/** SSL; Initialize ssl context for a client socket. 
 		\param meth_in SSL method */
 	void InitializeContext(SSL_METHOD *meth_in = NULL);
-	/** Initialize ssl context for a server socket. 
+	/** SSL; Initialize ssl context for a server socket. 
 		\param keyfile Combined private key/certificate file 
 		\param password Password for private key 
 		\param meth_in SSL method */
 	void InitializeContext(const std::string& keyfile,const std::string& password,SSL_METHOD *meth_in = NULL);
-	/** SSL Password callback method. */
+	/** SSL; Password callback method. */
 static	int password_cb(char *buf,int num,int rwflag,void *userdata);
-	/** Get pointer to ssl context structure. */
+	/** SSL; Get pointer to ssl context structure. */
 	virtual SSL_CTX *GetSslContext();
-	/** Get pointer to ssl structure. */
+	/** SSL; Get pointer to ssl structure. */
 	virtual SSL *GetSsl();
-#endif
-	/** ssl still negotiating connection. */
+	/** ssl; still negotiating connection. */
 	bool SSLNegotiate();
 	//
 	CircularBuffer ibuf; ///< Circular input buffer
@@ -215,13 +210,11 @@ private:
 	unsigned long m_socks4_dstip; ///< socks4 support
 	int m_resolver_id; ///< Resolver id (if any) for current Open call
 	// SSL
-#ifdef HAVE_OPENSSL
 	SSL_CTX *m_context; ///< ssl context
 	SSL *m_ssl; ///< ssl 'socket'
 	BIO *m_sbio; ///< ssl bio
 static	BIO *bio_err; ///< ssl bio err
 	std::string m_password; ///< ssl password
-#endif
 	// state flags
 	bool m_b_reconnect; ///< Reconnect on lost connection flag
 	bool m_b_is_reconnect; ///< Trying to reconnect

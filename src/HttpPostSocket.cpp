@@ -268,7 +268,7 @@ void HttpPostSocket::DoMultipartPost()
 				FILE *fil = fopen(filename.c_str(),"rb");
 				if (fil)
 				{
-					char slask[2000];
+					char slask[2000]; // for fread
 					size_t n;
 					while ((n = fread(slask, 1, 2000, fil)) > 0)
 					{

@@ -1,5 +1,5 @@
-VERSION =	1.9.9
-DIFF_VERSION =	1.9.8
+VERSION =	1.9.10rc1
+DIFF_VERSION =	1.9.9
 
 INCLUDE =	-I.
 PREFIX =	/usr/local
@@ -7,7 +7,7 @@ PREFIX =	/usr/local
 # static lib .a files installed to $(PREFIX)/lib
 
 CFLAGS =	-Wall -g -O2 $(INCLUDE) -MD -D_VERSION='"$(VERSION)"'
-#CFLAGS +=	-D_DEBUG
+CFLAGS +=	-D_DEBUG
 #CFLAGS +=	-D_THREADSAFE_SOCKETS
 
 # uncomment depending on your operating system
@@ -49,11 +49,8 @@ OBJS =		CircularBuffer.o \
 		Base64.o \
 		NullCrypt.o \
 		HttpGetSocket.o \
-		SSLSocket.o \
-		HttpsGetSocket.o \
 		CTcpSocket.o \
 		HTTPSocket.o \
-		HttpsSocket.o \
 		Thread.o SocketThread.o \
 		StdoutLog.o \
 		HttpPutSocket.o \
@@ -70,7 +67,8 @@ OBJS =		CircularBuffer.o \
 		MemFile.o \
 		socket_include.o \
 		Mutex.o \
-		Lock.o 
+		Lock.o \
+		Time.o Event.o IEventOwner.o EventHandler.o
 
 libSockets.a:	$(OBJS)
 		ar cru $@ $(OBJS)
@@ -95,6 +93,9 @@ install:	all
 		cp libSocketsEx.a $(PREFIX)/lib
 		@mkdir -p $(PREFIX)/include/Sockets
 		cp -a *.h $(PREFIX)/include/Sockets
+		@rm -f $(PREFIX)/include/Sockets/SSLSocket.*
+		@rm -f $(PREFIX)/include/Sockets/HttpsGetSocket.*
+		@rm -f $(PREFIX)/include/Sockets/HttpsSocket.*
 		@mkdir -p $(PREFIX)/bin
 		install Sockets-config $(PREFIX)/bin
 

@@ -42,6 +42,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 namespace SOCKETS_NAMESPACE {
 #endif
 
+#define TMPSIZE 10000
+
 
 HttpdForm::HttpdForm(IFile *infil) : raw(false)
 {
@@ -49,7 +51,7 @@ HttpdForm::HttpdForm(IFile *infil) : raw(false)
 	char *c_t = getenv("CONTENT_TYPE");
 	char *c_l = getenv("CONTENT_LENGTH");
 	size_t extra = 2;
-	char name[200];
+	char name[TMPSIZE];
 
 	m_current = m_cgi.end();
 	*name = 0;
@@ -78,8 +80,8 @@ HttpdForm::HttpdForm(IFile *infil) : raw(false)
 			std::string content_type;
 			std::string current_name;
 			std::string current_filename;
-			char slask[200];
-			infil -> fgets(slask, 200);
+			char slask[TMPSIZE];
+			infil -> fgets(slask, TMPSIZE);
 			while (!infil -> eof())
 			{
 				while (strlen(slask) && (slask[strlen(slask) - 1] == 13 || slask[strlen(slask) - 1] == 10))
@@ -99,7 +101,7 @@ HttpdForm::HttpdForm(IFile *infil) : raw(false)
 				if (!strcmp(slask, m_strBoundary.c_str()))
 				{
 					// Get headers until empty line
-					infil -> fgets(slask, 200);
+					infil -> fgets(slask, TMPSIZE);
 					while (strlen(slask) && (slask[strlen(slask) - 1] == 13 || slask[strlen(slask) - 1] == 10))
 					{
 						slask[strlen(slask) - 1] = 0;
@@ -163,7 +165,7 @@ HttpdForm::HttpdForm(IFile *infil) : raw(false)
 							}
 						}
 						// get next header value
-						infil -> fgets(slask, 200);
+						infil -> fgets(slask, TMPSIZE);
 						while (strlen(slask) && (slask[strlen(slask) - 1] == 13 || slask[strlen(slask) - 1] == 10))
 						{
 							slask[strlen(slask) - 1] = 0;
@@ -173,11 +175,11 @@ HttpdForm::HttpdForm(IFile *infil) : raw(false)
 					if (!current_filename.size()) // not a file
 					{
 						std::string val;
-						infil -> fgets(slask,1000);
+						infil -> fgets(slask, TMPSIZE);
 						while (!infil -> eof() && strncmp(slask,m_strBoundary.c_str(),m_strBoundary.size() ))
 						{
 							val += slask;
-							infil -> fgets(slask,1000);
+							infil -> fgets(slask, TMPSIZE);
 						}
 						// remove trailing cr/linefeed
 						while (val.size() && (val[val.size() - 1] == 13 || val[val.size() - 1] == 10))
@@ -193,11 +195,11 @@ HttpdForm::HttpdForm(IFile *infil) : raw(false)
 						FILE *fil;
 						int out = 0;
 						char c;
-						char fn[1000]; // where post'd file will be saved
+						char fn[2000]; // where post'd file will be saved
 #ifdef _WIN32
 						{
-							char tmp_path[1000];
-							::GetTempPath(1000, tmp_path);
+							char tmp_path[2000];
+							::GetTempPathA(2000, tmp_path);
 							if (tmp_path[strlen(tmp_path) - 1] != '\\')
 							{
 								strcat(tmp_path, "\\");
@@ -246,7 +248,7 @@ HttpdForm::HttpdForm(IFile *infil) : raw(false)
 							m_cgi.push_back(cgi);
 						
 							strcpy(slask, m_strBoundary.c_str());
-							infil -> fgets(slask + strlen(slask), 200); // next line
+							infil -> fgets(slask + strlen(slask), TMPSIZE); // next line
 						}
 						else
 						{
@@ -272,7 +274,7 @@ HttpdForm::HttpdForm(IFile *infil) : raw(false)
 		int i = 0;
 		int cl = c_l ? atoi(c_l) : -1;
 		char c,chigh,clow;
-		char slask[8888];
+		char slask[TMPSIZE];
 		m_current = m_cgi.end();
 
 		*name = 0;
@@ -336,8 +338,8 @@ HttpdForm::HttpdForm(IFile *infil) : raw(false)
 HttpdForm::HttpdForm(const std::string& buffer,size_t l) : raw(false)
 {
 	CGI *cgi = NULL;
-	char slask[8888];
-	char name[200];
+	char slask[TMPSIZE];
+	char name[TMPSIZE];
 	int i = 0;
 	char c,chigh,clow;
 	size_t ptr = 0;

@@ -153,20 +153,23 @@ void ResolvSocket::OnDetached()
 		struct hostent *h = gethostbyname(m_data.c_str());
 		if (h)
 		{
-			char slask[1000];
-			sprintf(slask, "Name: %s\n", h -> h_name);
-			Send( slask );
+//			sprintf(slask, "Name: %s\n", h -> h_name);
+//			Send( slask );
+			Send("Name: " + (std::string)h -> h_name + "\n");
 			size_t i = 0;
 			while (h -> h_aliases[i])
 			{
-				sprintf(slask, "Alias: %s\n", h -> h_aliases[i]);
-				Send( slask );
+//				sprintf(slask, "Alias: %s\n", h -> h_aliases[i]);
+//				Send( slask );
+				Send("Alias: " + (std::string)h -> h_aliases[i] + "\n");
 				i++;
 			}
-			sprintf(slask, "AddrType: %d\n", h -> h_addrtype);
-			Send( slask );
-			sprintf(slask, "Length: %d\n", h -> h_length);
-			Send( slask );
+//			sprintf(slask, "AddrType: %d\n", h -> h_addrtype);
+//			Send( slask );
+			Send("AddrType: " + Utility::l2string(h -> h_addrtype) + "\n");
+//			sprintf(slask, "Length: %d\n", h -> h_length);
+//			Send( slask );
+			Send("Length: " + Utility::l2string(h -> h_length) + "\n");
 			i = 0;
 			while (h -> h_addr_list[i])
 			{
@@ -179,8 +182,9 @@ void ResolvSocket::OnDetached()
 						strcat(ip,".");
 					sprintf(ip + strlen(ip),"%u",(unsigned char)h -> h_addr_list[i][j]);
 				}
-				sprintf(slask, "A: %s\n", ip);
-				Send( slask );
+//				sprintf(slask, "A: %s\n", ip);
+//				Send( slask );
+				Send("A: " + (std::string)ip + "\n");
 				i++;
 			}
 		}

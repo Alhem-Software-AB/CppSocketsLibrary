@@ -41,7 +41,7 @@ namespace SOCKETS_NAMESPACE {
 #endif
 
 
-SocketThread::SocketThread(Socket& p)
+SocketThread::SocketThread(Socket *p)
 :Thread(false)
 ,m_socket(p)
 {
@@ -52,7 +52,18 @@ DEB(	printf("SocketThread()\n");)
 
 SocketThread::~SocketThread()
 {
+printf("~SocketThread\n");
 DEB(	printf("~SocketThread()\n");)
+	if (IsRunning())
+	{
+		SetRelease(true);
+		SetRunning(false);
+#ifdef _WIN32
+		Sleep(1000);
+#else
+		sleep(1);
+#endif
+	}
 }
 
 
@@ -60,19 +71,17 @@ void SocketThread::Run()
 {
 	SocketHandler h;
 	h.SetSlave();
-	h.Add(&m_socket);
+	h.Add(m_socket);
 DEB(	printf("slave: OnDetached()\n");)
-	m_socket.OnDetached();
-DEB(	printf("slave: first select\n");)
-	h.Select(1,0);
-	while (h.GetCount()) //m_socket.Ready() && IsRunning())
+	m_socket -> OnDetached();
+	while (h.GetCount() && IsRunning())
 	{
-DEB(		printf("slave: select\n");)
-		h.Select(1,0);
+		h.Select(0, 500000);
 	}
 	// m_socket now deleted oops
-DEB(	printf("slave: SetDetach( false )\n");)
-//	m_socket.SetDetach(false);
+	// yeah oops m_socket delete its socket thread, that means this
+	// so Socket will no longer delete its socket thread, instead we do this:
+	SetDeleteOnExit();
 }
 
 

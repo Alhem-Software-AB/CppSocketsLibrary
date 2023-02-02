@@ -24,7 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define _MINDERSOCKET_H
 #ifdef HAVE_OPENSSL
 
-#include "SSLSocket.h"
+#include "TcpSocket.h"
 #include "MinionSocket.h"
 //#include "Utility.h"
 
@@ -35,7 +35,7 @@ namespace SOCKETS_NAMESPACE {
 
 /** Client socket for connecting to a Minder. 
 	\ingroup minder */
-class MinderSocket : public SSLSocket
+class MinderSocket : public TcpSocket
 {
 public:
 	MinderSocket(SocketHandler& ,const std::string& );
@@ -58,7 +58,7 @@ static	char g_UpdateUrl[256];
 
 protected:
 	void OnLine(const std::string& line);
-	void OnSSLInitDone();
+	void OnConnect();
 
 private:
 	MinderSocket& operator=(const MinderSocket& ) { return *this; }

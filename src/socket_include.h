@@ -46,6 +46,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <arpa/inet.h>
 #include <netdb.h>
 
+// all typedefs in this file will be declared outside the sockets namespace,
+// because some os's will already have one or more of the type defined.
+typedef int SOCKET;
+
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
 #endif
@@ -57,7 +61,6 @@ namespace SOCKETS_NAMESPACE {
 #define closesocket close
 #define INVALID_SOCKET -1
 #define SOCKET_ERROR -1
-typedef int SOCKET;
 
 #ifndef INADDR_NONE
 #define INADDR_NONE ((unsigned long) -1)
@@ -83,11 +86,12 @@ typedef int SOCKET;
 #ifdef SOLARIS 
 // ----------------------------------------
 // Solaris
+typedef unsigned short port_t;
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
 #endif
+// no defs
 
-typedef unsigned short port_t;
 #ifdef SOCKETS_NAMESPACE
 }
 #endif
@@ -104,12 +108,13 @@ typedef unsigned short port_t;
 #   define MSG_NOSIGNAL 0
 #  endif
 #  include <netinet/in.h>
+typedef	in_addr_t ipaddr_t;
+typedef	in_port_t port_t;
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
 #endif
+// no defs
 
-typedef	in_addr_t ipaddr_t;
-typedef	in_port_t port_t;
 #ifdef SOCKETS_NAMESPACE
 }
 #endif
@@ -125,11 +130,12 @@ typedef	in_port_t port_t;
 // Mac OS X
 #include <string.h>
 #include <mach/port.h>
+typedef unsigned long ipaddr_t;
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
 #endif
+// no defs
 
-typedef unsigned long ipaddr_t;
 #ifdef SOCKETS_NAMESPACE
 }
 #endif
@@ -145,13 +151,14 @@ typedef unsigned long ipaddr_t;
 #pragma comment(lib, "wsock32.lib")
 #define strcasecmp _stricmp
 
-#ifdef SOCKETS_NAMESPACE
-namespace SOCKETS_NAMESPACE {
-#endif
-
 typedef unsigned long ipaddr_t;
 typedef unsigned short port_t;
 typedef int socklen_t;
+#ifdef SOCKETS_NAMESPACE
+namespace SOCKETS_NAMESPACE {
+#endif
+// no defs
+
 #ifdef SOCKETS_NAMESPACE
 }
 #endif
@@ -197,12 +204,13 @@ private:
 #else 
 // ----------------------------------------
 // LINUX 
+typedef unsigned long ipaddr_t;
+typedef unsigned short port_t;
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
 #endif
+// no defs
 
-typedef unsigned long ipaddr_t;
-typedef unsigned short port_t;
 #ifdef SOCKETS_NAMESPACE
 }
 #endif

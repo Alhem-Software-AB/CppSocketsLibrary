@@ -40,6 +40,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <stdarg.h>
 #ifdef HAVE_OPENSSL
 #include <openssl/rand.h>
+#ifdef _WIN32
+// TODO: systray.exe??
+#define RANDOM "systray.exe"
+#else
+#define RANDOM "/dev/urandom"
+#endif
 #endif
 
 #include "TcpSocket.h"
@@ -58,9 +64,9 @@ namespace SOCKETS_NAMESPACE {
 #endif
 
 
-#ifdef HAVE_OPENSSL
+// statics
 BIO *TcpSocket::bio_err = NULL;
-#endif
+
 
 // thanks, q
 #ifdef _WIN32
@@ -72,11 +78,9 @@ TcpSocket::TcpSocket(SocketHandler& h) : Socket(h)
 ,m_line("")
 ,m_socks4_state(0)
 ,m_resolver_id(0)
-#ifdef HAVE_OPENSSL
 ,m_context(NULL)
 ,m_ssl(NULL)
 ,m_sbio(NULL)
-#endif
 ,m_b_reconnect(false)
 ,m_b_is_reconnect(false)
 ,m_send_timeout_count(0)
@@ -97,11 +101,9 @@ TcpSocket::TcpSocket(SocketHandler& h,size_t isize,size_t osize) : Socket(h)
 ,m_line("")
 ,m_socks4_state(0)
 ,m_resolver_id(0)
-#ifdef HAVE_OPENSSL
 ,m_context(NULL)
 ,m_ssl(NULL)
 ,m_sbio(NULL)
-#endif
 ,m_b_reconnect(false)
 ,m_b_is_reconnect(false)
 ,m_send_timeout_count(0)
@@ -851,7 +853,7 @@ void TcpSocket::Sendf(char *format, ...)
 {
 	va_list ap;
 	va_start(ap, format);
-	char slask[5000];
+	char slask[5000]; // vsprintf / vsnprintf temporary
 #ifdef _WIN32
 	vsprintf(slask, format, ap);
 #else
@@ -981,6 +983,10 @@ DEB(			printf("TcpSocket::SSLNegotiate() init OK\n");)
 		else
 		{
 			r = SSL_get_error(m_ssl, r);
+DEB(			if (r == SSL_ERROR_WANT_READ)
+				printf("SSL_ERROR_WANT_READ\n");
+			if (r == SSL_ERROR_WANT_WRITE)
+				printf("SSL_ERROR_WANT_WRITE\n");)
 			if (r != SSL_ERROR_WANT_READ && r != SSL_ERROR_WANT_WRITE)
 			{
 DEB(				printf("SSL_connect() failed - closing socket, return code: %d\n",r);)
@@ -1023,6 +1029,10 @@ DEB(			printf("TcpSocket::SSLNegotiate() init OK\n");)
 		else
 		{
 			r = SSL_get_error(m_ssl, r);
+DEB(			if (r == SSL_ERROR_WANT_READ)
+				printf("SSL_ERROR_WANT_READ\n");
+			if (r == SSL_ERROR_WANT_WRITE)
+				printf("SSL_ERROR_WANT_WRITE\n");)
 			if (r != SSL_ERROR_WANT_READ && r != SSL_ERROR_WANT_WRITE)
 			{
 DEB(				printf("SSL_accept() failed - closing socket, return code: %d\n",r);)
@@ -1157,35 +1167,49 @@ int TcpSocket::password_cb(char *buf,int num,int rwflag,void *userdata)
 	strcpy(buf,pw.c_str());
 	return (int)pw.size();
 }
+#else
+void TcpSocket::InitializeContext(SSL_METHOD *) {}
+void TcpSocket::InitializeContext(const std::string& ,const std::string& ,SSL_METHOD *) {}
+int TcpSocket::password_cb(char *,int ,int ,void *) { return 0; }
 #endif // HAVE_OPENSSL
 
 
 int TcpSocket::Close()
 {
+DEB(	printf("TcpSocket::Close()\n");)
 #ifdef HAVE_OPENSSL
-	if (IsSSL())
+	if (IsSSL() && m_ssl)
 		SSL_shutdown(m_ssl);
+	if (m_ssl)
+	{
+DEB(		printf("SSL_free()\n");)
+		SSL_free(m_ssl);
+		m_ssl = NULL;
+	}
+	if (m_context)
+	{
+DEB(		printf("SSL_CTX_free()\n");)
+		SSL_CTX_free(m_context);
+		m_context = NULL;
+	}
 #endif
 	return Socket::Close();
 }
 
 
-#ifdef HAVE_OPENSSL
 SSL_CTX *TcpSocket::GetSslContext()
 {
 	if (!m_context)
-		Handler().LogError(this, "GetSslContext", 0, "SSL Context is NULL; check InitAsServer/InitAsClient", LOG_LEVEL_WARNING);
+		Handler().LogError(this, "GetSslContext", 0, "SSL Context is NULL; check InitSSLServer/InitSSLClient", LOG_LEVEL_WARNING);
 	return m_context;
 }
 
 SSL *TcpSocket::GetSsl()
 {
 	if (!m_ssl)
-		Handler().LogError(this, "GetSsl", 0, "SSL is NULL; check InitAsServer/InitAsClient", LOG_LEVEL_WARNING);
+		Handler().LogError(this, "GetSsl", 0, "SSL is NULL; check InitSSLServer/InitSSLClient", LOG_LEVEL_WARNING);
 	return m_ssl;
 }
-
-#endif
 
 
 void TcpSocket::SetReconnect(bool x)
@@ -1241,12 +1265,10 @@ bool TcpSocket::IsReconnect()
 }
 
 
-#ifdef HAVE_OPENSSL
 const std::string& TcpSocket::GetPassword()
 {
 	return m_password;
 }
-#endif
 
 
 long TcpSocket::CheckSendTimeoutCount()

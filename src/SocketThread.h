@@ -43,16 +43,16 @@ namespace SOCKETS_NAMESPACE {
 class SocketThread : public Thread
 {
 public:
-	SocketThread(Socket& p);
+	SocketThread(Socket *p);
 	~SocketThread();
 
 	void Run();
 
 private:
-	Socket& GetSocket() const { return m_socket; }
+	Socket *GetSocket() const { return m_socket; }
 	SocketThread(const SocketThread& s) : m_socket(s.GetSocket()) {}
 	SocketThread& operator=(const SocketThread& ) { return *this; }
-	Socket& m_socket;
+	Socket *m_socket;
 };
 
 

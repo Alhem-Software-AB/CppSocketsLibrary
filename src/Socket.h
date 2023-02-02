@@ -108,8 +108,6 @@ public:
 	/** Called when a complete line has been read and the socket is in
 	 * line protocol mode. */
 	virtual void OnLine(const std::string& );
-	/** Used internally by SSLSocket. */
-	virtual void OnSSLInitDone();
 	/** Called on connect timeout (5s). */
 	virtual void OnConnectFailed();
 	/** Called when a socket is created, to set socket options. */
@@ -143,15 +141,8 @@ public:
 	/** Called after OnRead if socket is in line protocol mode.
 		\sa SetLineProtocol */
 	virtual void ReadLine();
-	/** OLD SSL support. */
-	virtual bool SSLCheckConnect();
 	/** new SSL support */
 	virtual bool SSLNegotiate();
-
-	/** OLD SSL support, used by SSLSocket. */
-	void SetSSLConnecting(bool = true);
-	/** OLD SSL support. */
-	bool SSLConnecting();
 
 	/** Enable the OnLine callback. Do not create your own OnRead
 	 * callback when using this. */
@@ -422,6 +413,9 @@ public:
 	/** Reset actual connection retries (tcp only). */
 	void ResetConnectionRetries();
 
+	void SetErasedByHandler(bool x = true) { m_b_erased_by_handler = x; }
+	bool ErasedByHandler() { return m_b_erased_by_handler; }
+
 protected:
 	Socket(const Socket& ); ///< do not allow use of copy constructor
 	/** Create new thread for this socket to run detached in. */
@@ -485,6 +479,7 @@ static	WSAInitializer m_winsock_init; ///< Winsock initialization singleton clas
 	bool m_flush_before_close; ///< Send all data before closing (default true)
 	int m_connection_retry; ///< Maximum connection retries (tcp)
 	int m_retries; ///< Actual number of connection retries (tcp)
+	bool m_b_erased_by_handler;
 };
 
 #ifdef SOCKETS_NAMESPACE

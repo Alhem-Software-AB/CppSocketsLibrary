@@ -1,9 +1,9 @@
-/** \file File.h
- **	\date  2005-04-25
+/** \file Time.cpp
+ **	\date  2005-12-07
  **	\author grymse@alhem.net
 **/
 /*
-Copyright (C) 2004,2005  Anders Hedstrom
+Copyright (C) 2005  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL.
 
@@ -27,50 +27,74 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
-#ifndef _SOCKETS_FILE_H
-#define _SOCKETS_FILE_H
+#include <stdio.h>
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <sys/select.h>
+#include <sys/time.h>
+#endif
 
-#include "IFile.h"
+#include "Time.h"
+
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
 #endif
 
 
-/** IFile implementation of a disk file. 
-	\ingroup file */
-class File : public IFile
+Time::Time() : m_time(Tick())
 {
-public:
-	File();
-	~File();
-
-	bool fopen(const std::string&, const std::string&);
-	void fclose();
-
-	size_t fread(char *, size_t, size_t);
-	size_t fwrite(const char *, size_t, size_t);
-
-	char *fgets(char *, int);
-	void fprintf(char *format, ...);
-
-	off_t size();
-	bool eof();
-
-private:
-	File(const File& ) {} // copy constructor
-	File& operator=(const File& ) { return *this; } // assignment operator
-
-	std::string m_path;
-	std::string m_mode;
-	FILE *m_fil;
-};
+}
 
 
+Time::Time(mytime_t sec,long usec) : m_time(Tick())
+{
+	m_time += sec * 1000000 + usec;
+}
+
+
+Time::~Time()
+{
+}
+
+
+mytime_t Time::Tick()
+{
+	mytime_t t;
+#ifdef _WIN32
+	FILETIME ft;
+	GetSystemTimeAsFileTime(&ft);
+	t = ft.dwHighDateTime;
+	t = t << 32;
+	t += ft.dwLowDateTime;
+	t /= 10; // us
+#else
+	struct timeval tv;
+	struct timezone tz;
+	gettimeofday(&tv, &tz);
+	t = tv.tv_sec;
+	t *= 1000000;
+	t += tv.tv_usec;
+#endif
+	return t;
+}
+
+
+Time Time::operator - (const Time& x) const
+{
+	Time t;
+	t.m_time = m_time - x.m_time;
+	return t;
+}
+
+
+bool Time::operator < (const Time& x) const
+{
+	return m_time < x.m_time;
+}
 
 
 #ifdef SOCKETS_NAMESPACE
 }
 #endif
-
-#endif // _SOCKETS_FILE_H

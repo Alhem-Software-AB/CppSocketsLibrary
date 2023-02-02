@@ -100,6 +100,7 @@ Socket::Socket(SocketHandler& h)
 ,m_flush_before_close(true)
 ,m_connection_retry(0)
 ,m_retries(0)
+,m_b_erased_by_handler(false)
 {
 }
 
@@ -112,10 +113,13 @@ DEB(printf("~Socket()\n");)
 	{
 		Close();
 	}
+/*
+	// SocketThread will delete itself
 	if (m_pThread)
 	{
 		delete m_pThread;
 	}
+*/
 }
 
 
@@ -430,7 +434,7 @@ bool Socket::u2ip(const std::string& str, struct in6_addr& l)
 				if (strstr(s.c_str(),".")) // x.x.x.x
 				{
 					Parse pa(s,".");
-					char slask[100];
+					char slask[100]; // u2ip temporary hex2string conversion
 					unsigned long b0 = static_cast<unsigned long>(pa.getvalue());
 					unsigned long b1 = static_cast<unsigned long>(pa.getvalue());
 					unsigned long b2 = static_cast<unsigned long>(pa.getvalue());
@@ -529,7 +533,7 @@ void Socket::l2ip(const struct in6_addr& ip, std::string& str,bool mixed)
 		str = "";
 		return;
 	}
-	char slask[100];
+	char slask[100]; // l2ip temporary
 	*slask = 0;
 	unsigned int prev = 0;
 	bool skipped = false;
@@ -835,36 +839,13 @@ bool Socket::Detach()
 
 void Socket::DetachSocket()
 {
-	m_pThread = new SocketThread(*this);
+	m_pThread = new SocketThread(this);
 	m_pThread -> SetRelease(true);
 }
 
 
 void Socket::OnLine(const std::string& )
 {
-}
-
-
-void Socket::OnSSLInitDone()
-{
-}
-
-
-bool Socket::SSLCheckConnect()
-{
-	return false;
-}
-
-
-void Socket::SetSSLConnecting(bool x)
-{
-	m_ssl_connecting = x;
-}
-
-
-bool Socket::SSLConnecting()
-{
-	return m_ssl_connecting;
 }
 
 

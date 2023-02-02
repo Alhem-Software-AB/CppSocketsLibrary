@@ -252,13 +252,6 @@ void HttpGetSocket::url_this(const std::string& url_in,std::string& host,port_t&
 {
 	Parse pa(url_in,"/");
 	std::string protocol = pa.getword(); // http
-	host = pa.getword();
-	if (strstr(host.c_str(),":"))
-	{
-		Parse pa(host,":");
-		pa.getword(host);
-		port = static_cast<port_t>(pa.getvalue());
-	}
 	if (!strcasecmp(protocol.c_str(), "https:"))
 	{
 		EnableSSL();
@@ -267,6 +260,13 @@ void HttpGetSocket::url_this(const std::string& url_in,std::string& host,port_t&
 	else
 	{
 		port = 80;
+	}
+	host = pa.getword();
+	if (strstr(host.c_str(),":"))
+	{
+		Parse pa(host,":");
+		pa.getword(host);
+		port = static_cast<port_t>(pa.getvalue());
 	}
 	url = "/" + pa.getrest();
 	{

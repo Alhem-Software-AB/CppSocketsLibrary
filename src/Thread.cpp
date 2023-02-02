@@ -8,7 +8,7 @@ Copyright (C) 2004,2005  Anders Hedstrom
 This library is made available under the terms of the GNU GPL.
 
 If you would like to use this library in a closed-source application,
-a separate license agreement is available. For information about 
+a separate license agreement is available. For information about
 the closed-source license agreement for the C++ sockets library,
 please visit http://www.alhem.net/Sockets/license.html and/or
 email license@alhem.net.
@@ -29,6 +29,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #include <stdio.h>
 #ifdef _WIN32
+#include <process.h>
 #include "socket_include.h"
 #else
 #include <unistd.h>
@@ -45,9 +46,12 @@ Thread::Thread(bool release)
 :m_thread(0)
 ,m_running(true)
 ,m_release(false)
+,m_b_delete_on_exit(false)
+,m_b_destructor(false)
 {
 #ifdef _WIN32
-	m_thread = ::CreateThread(NULL, 0, StartThread, this, 0, &m_dwThreadId);
+//	m_thread = ::CreateThread(NULL, 0, StartThread, this, 0, &m_dwThreadId);
+	m_thread = (HANDLE)_beginthreadex(NULL, 0, &StartThread, this, 0, &m_dwThreadId);
 #else
 	pthread_attr_t attr;
 
@@ -66,70 +70,93 @@ Thread::Thread(bool release)
 
 Thread::~Thread()
 {
-//	while (m_running || m_thread)
+printf("~Thread\n");
+	m_b_destructor = true;
 	if (m_running)
 	{
-		SetRunning(false);
 		SetRelease(true);
-
+		SetRunning(false);
 #ifdef _WIN32
-		struct timeval tv;
-		tv.tv_sec = 0;
-		tv.tv_usec = 100000;
-		select(0,NULL,NULL,NULL,&tv);
-		::CloseHandle(m_thread);
+		Sleep(1000);
 #else
 		sleep(1);
 #endif
 	}
+#ifdef _WIN32
+	if (m_thread)
+		::CloseHandle(m_thread);
+#endif
 }
 
 
 threadfunc_t STDPREFIX Thread::StartThread(threadparam_t zz)
 {
-	Thread *pclThread = (Thread *)zz;
+	Thread *p = (Thread *)zz;
 
-	while (pclThread -> m_running && !pclThread -> m_release)
+	while (p -> m_running && !p -> m_release)
 	{
 #ifdef _WIN32
-		struct timeval tv;
-		tv.tv_sec = 0;
-		tv.tv_usec = 100000;
-		select(0,NULL,NULL,NULL,&tv);
+		Sleep(1000);
 #else
 		sleep(1);
 #endif
 	}
-	if (pclThread -> m_running)
+	if (p -> m_running)
 	{
-		pclThread -> Run();
+		p -> Run();
 	}
-	pclThread -> SetRunning(false); // if return
+printf("Thread: SetRunning(false) after return from Run()\n");
+	p -> SetRunning(false); // if return
+	if (p -> DeleteOnExit() && !p -> IsDestructor())
+	{
+		delete p;
+	}
+#ifdef _WIN32
+	_endthreadex(0);
+#endif
 	return (threadfunc_t)NULL;
 }
 
 
-bool Thread::IsRunning() 
+bool Thread::IsRunning()
 {
- 	return m_running; 
+ 	return m_running;
 }
 
 
-void Thread::SetRunning(bool x) 
+void Thread::SetRunning(bool x)
 {
- 	m_running = x; 
+ 	m_running = x;
 }
 
 
-bool Thread::IsReleased() 
+bool Thread::IsReleased()
 {
- 	return m_release; 
+ 	return m_release;
 }
 
 
-void Thread::SetRelease(bool x) 
+void Thread::SetRelease(bool x)
 {
- 	m_release = x; 
+ 	m_release = x;
+}
+
+
+bool Thread::DeleteOnExit()
+{
+	return m_b_delete_on_exit;
+}
+
+
+void Thread::SetDeleteOnExit(bool x)
+{
+	m_b_delete_on_exit = x;
+}
+
+
+bool Thread::IsDestructor()
+{
+	return m_b_destructor;
 }
 
 

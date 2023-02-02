@@ -48,6 +48,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 namespace SOCKETS_NAMESPACE {
 #endif
 
+#define TMPSIZE 10000
 
 
 // statics
@@ -120,7 +121,7 @@ void HttpdSocket::OnHeaderComplete()
 
 #if (defined(SOLARIS8) || defined(SOLARIS))
 	{
-		char slask[1000];
+		char slask[TMPSIZE];
 		if (GetMethod() == "GET")
 		{
 			sprintf(slask,"QUERY_STRING=%s", GetQueryString().c_str());
@@ -137,7 +138,7 @@ void HttpdSocket::OnHeaderComplete()
 	}
 #elif defined _WIN32
 	{
-		char slask[1000];
+		char slask[TMPSIZE];
 		if (GetMethod() == "GET")
 		{
 			sprintf(slask,"QUERY_STRING=%s", GetQueryString().c_str());
@@ -466,7 +467,7 @@ std::string HttpdSocket::GetDate()
 {
 	time_t t = time(NULL);
 	struct tm* tp = localtime(&t);
-	char slask[40];
+	char slask[40]; // yyyy-mm-dd hh:mm:ss
 	if (tp)
 	{
 		sprintf(slask,"%d-%02d-%02d %02d:%02d:%02d",

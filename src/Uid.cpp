@@ -110,7 +110,7 @@ Uid::~Uid()
 std::string Uid::GetUid()
 {
 	std::string tmp;
-	char slask[100];
+	char slask[100]; // Uid::GetUid temporary
 
 	sprintf(slask,"%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x",
 		m_bufuid[0],m_bufuid[1],m_bufuid[2],m_bufuid[3],
