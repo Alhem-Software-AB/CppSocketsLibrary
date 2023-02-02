@@ -49,6 +49,13 @@ namespace SOCKETS_NAMESPACE {
 #endif
 
 
+#ifdef _DEBUG
+#define DEB(x) x
+#else
+#define DEB(x) 
+#endif
+
+
 SocketHandler::SocketHandler(StdLog *p)
 :m_stdlog(p)
 ,m_maxsock(0)
@@ -477,7 +484,7 @@ DEB(
 				p -> OnException();
 				n--;
 			}
-		}
+		} // m_fds loop
 	} // if (n > 0)
 
 	// check CallOnConnect
