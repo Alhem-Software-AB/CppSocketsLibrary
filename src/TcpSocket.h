@@ -34,16 +34,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "CircularBuffer.h"
 #ifdef HAVE_OPENSSL
 #include <openssl/ssl.h>
-#else // !HAVE_OPENSSL
-/*
-typedef void * BIO;
-typedef void * SSL;
-typedef void * SSL_CTX;
-typedef void * SSL_METHOD;
-*/
+#include "SSLInitializer.h"
 #endif
 
+
 #define TCP_BUFSIZE_READ 16400
+
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
@@ -77,20 +73,20 @@ class TcpSocket : public Socket
 	typedef std::list<MES *> ucharp_v;
 public:
 	/** SSL Initialization, Removes ssl .rnd file */
+/*
 #ifdef HAVE_OPENSSL
 	class SSLInitializer {
 	public:
 		SSLInitializer() {
 		}
 		~SSLInitializer() {
-#ifdef HAVE_OPENSSL
 			TcpSocket::DeleteRandFile();
-#endif
 		}
 	};
 #endif
+*/
 public:
-	/** Contructor with standard values on input/output buffers. */
+	/** Constructor with standard values on input/output buffers. */
 	TcpSocket(ISocketHandler& );
 	/** Constructor with custom values for i/o buffer. 
 		\param h ISocketHandler reference
@@ -202,9 +198,9 @@ public:
 	/** SSL; Get ssl password. */
 	const std::string& GetPassword();
 	/** SSL; Set random filename + size to be used. */
-	void SetRandFile(const std::string& file,long size);
+//	void SetRandFile(const std::string& file,long size);
 	/** SSL; delete random file when shutting down. */
-static	void DeleteRandFile();
+//static	void DeleteRandFile();
 #endif
 
 	void DisableInputBuffer(bool = true);
@@ -229,9 +225,9 @@ protected:
 	/** SSL; Password callback method. */
 static	int SSL_password_cb(char *buf,int num,int rwflag,void *userdata);
 	/** SSL; mutex locking function callback. */
-static	void SSL_locking_function(int mode, int n, const char *file, int line);
+//static	void SSL_locking_function(int mode, int n, const char *file, int line);
 	/** Return thread id. */
-static	unsigned long SSL_id_function();
+//static	unsigned long SSL_id_function();
 	/** SSL; Get pointer to ssl context structure. */
 	virtual SSL_CTX *GetSslContext();
 	/** SSL; Get pointer to ssl structure. */
@@ -265,11 +261,11 @@ private:
 	SSL_CTX *m_ssl_ctx; ///< ssl context
 	SSL *m_ssl; ///< ssl 'socket'
 	BIO *m_sbio; ///< ssl bio
-static	BIO *m_bio_err; ///< ssl bio err
+//static	BIO *m_bio_err; ///< ssl bio err
 	std::string m_password; ///< ssl password
-static	bool m_b_rand_file_generated; ///< rand_file is generated once
-static	std::string m_rand_file;
-static	long m_rand_size;
+//static	bool m_b_rand_file_generated; ///< rand_file is generated once
+//static	std::string m_rand_file;
+//static	long m_rand_size;
 #endif
 	// state flags
 #ifdef ENABLE_RECONNECT

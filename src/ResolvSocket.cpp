@@ -73,7 +73,7 @@ void ResolvSocket::OnLine(const std::string& line)
 	{
 		m_query = pa.getword();
 		m_data = pa.getrest();
-DEB(		printf("ResolvSocket server; query=%s, data=%s\n", m_query.c_str(), m_data.c_str());)
+DEB(		fprintf(stderr, "ResolvSocket server; query=%s, data=%s\n", m_query.c_str(), m_data.c_str());)
 		if (!Detach()) // detach failed?
 		{
 			SetCloseAndDelete();
@@ -85,7 +85,7 @@ DEB(		printf("ResolvSocket server; query=%s, data=%s\n", m_query.c_str(), m_data
 
 	if (key == "Failed" && m_parent)
 	{
-DEB(		printf("************ Resolve failed\n");)
+DEB(		fprintf(stderr, "************ Resolve failed\n");)
 		if (Handler().Valid(m_parent))
 			m_parent -> OnResolveFailed(m_resolv_id);
 		m_parent = NULL;
@@ -124,7 +124,7 @@ DEB(		printf("************ Resolve failed\n");)
 
 void ResolvSocket::OnDetached()
 {
-DEB(	printf("ResolvSocket::OnDetached(); query=%s, data=%s\n", m_query.c_str(), m_data.c_str());)
+DEB(	fprintf(stderr, "ResolvSocket::OnDetached(); query=%s, data=%s\n", m_query.c_str(), m_data.c_str());)
 	if (m_query == "gethostbyname")
 	{
 		struct sockaddr_in sa;

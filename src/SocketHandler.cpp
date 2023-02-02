@@ -194,7 +194,7 @@ void SocketHandler::Get(SOCKET s,bool& r,bool& w,bool& e)
 
 void SocketHandler::Set(SOCKET s,bool bRead,bool bWrite,bool bException)
 {
-DEB(printf("Set(%d, %s, %s, %s)\n", s, bRead ? "true" : "false", bWrite ? "true" : "false", bException ? "true" : "false");)
+DEB(fprintf(stderr, "Set(%d, %s, %s, %s)\n", s, bRead ? "true" : "false", bWrite ? "true" : "false", bException ? "true" : "false");)
 	if (s >= 0)
 	{
 		if (bRead)
@@ -272,7 +272,7 @@ int SocketHandler::Select(struct timeval *tsel)
 		socket_m::iterator it = m_add.begin();
 		SOCKET s = it -> first;
 		Socket *p = it -> second;
-DEB(printf("Trying to add fd %d\n", s);)
+DEB(fprintf(stderr, "Trying to add fd %d\n", s);)
 		//
 		{
 			bool dup = false;
@@ -367,16 +367,16 @@ DEB(
 		int errcode = Errno;
 		if (errcode != m_preverror)
 		{
-			printf("  select() errcode = %d\n",errcode);
+			fprintf(stderr, "  select() errcode = %d\n",errcode);
 			m_preverror = errcode;
 			for (size_t i = 0; i <= m_maxsock; i++)
 			{
 				if (FD_ISSET(i, &m_rfds))
-					printf("%4d: Read\n",i);
+					fprintf(stderr, "%4d: Read\n",i);
 				if (FD_ISSET(i, &m_wfds))
-					printf("%4d: Write\n",i);
+					fprintf(stderr, "%4d: Write\n",i);
 				if (FD_ISSET(i, &m_efds))
-					printf("%4d: Exception\n",i);
+					fprintf(stderr, "%4d: Exception\n",i);
 			}
 		}
 //		exit(-1); /// \todo remove....
@@ -674,7 +674,7 @@ DEB(
 	if (m_fds_close.size())
 	{
 		socket_v tmp = m_fds_close;
-DEB(printf("m_fds_close.size() == %d\n", m_fds_close.size());)
+DEB(fprintf(stderr, "m_fds_close.size() == %d\n", m_fds_close.size());)
 		for (socket_v::iterator it = tmp.begin(); it != tmp.end(); it++)
 		{
 			Socket *p = NULL;
@@ -709,7 +709,7 @@ DEB(printf("m_fds_close.size() == %d\n", m_fds_close.size());)
 #endif
 						p -> TimeSinceClose() < 5)
 					{
-DEB(printf(" close(1)\n");)
+DEB(fprintf(stderr, " close(1)\n");)
 						if (tcp -> GetOutputLength())
 						{
 							LogError(p, "Closing", (int)tcp -> GetOutputLength(), "Sending all data before closing", LOG_LEVEL_INFO);
@@ -730,7 +730,7 @@ DEB(printf(" close(1)\n");)
 					if (tcp && p -> IsConnected() && tcp -> Reconnect())
 					{
 						SOCKET nn = *it; //(*it3).first;
-DEB(printf(" close(2) fd %d\n", nn);)
+DEB(fprintf(stderr, " close(2) fd %d\n", nn);)
 						p -> SetCloseAndDelete(false);
 						tcp -> SetIsReconnect();
 						p -> SetConnected(false);
@@ -765,7 +765,7 @@ DEB(printf(" close(2) fd %d\n", nn);)
 #endif
 					{
 						SOCKET nn = *it; //(*it3).first;
-DEB(printf(" close(3) fd %d GetSocket() %d\n", nn, p -> GetSocket());)
+DEB(fprintf(stderr, " close(3) fd %d GetSocket() %d\n", nn, p -> GetSocket());)
 						if (tcp && p -> IsConnected() && tcp -> GetOutputLength())
 						{
 							LogError(p, "Closing", (int)tcp -> GetOutputLength(), "Closing socket while data still left to send", LOG_LEVEL_WARNING);
@@ -1185,7 +1185,7 @@ void SocketHandler::CheckList(socket_v& ref,const std::string& listname)
 		}
 		if (!found)
 		{
-			printf("CheckList failed for \"%s\": fd %d\n", listname.c_str(), s);
+			fprintf(stderr, "CheckList failed for \"%s\": fd %d\n", listname.c_str(), s);
 		}
 	}
 }
@@ -1207,7 +1207,7 @@ void SocketHandler::AddList(SOCKET s,list_t which_one,bool add)
 		(which_one == LIST_CLOSE) ? m_fds_close : m_fds_close;
 #ifdef ENABLE_DETACH
 DEB(
-printf("%5d: %s: %s\n", s, (which_one == LIST_CALLONCONNECT) ? "CallOnConnect" :
+fprintf(stderr, "%5d: %s: %s\n", s, (which_one == LIST_CALLONCONNECT) ? "CallOnConnect" :
 	(which_one == LIST_DETACH) ? "Detach" :
 	(which_one == LIST_CONNECTING) ? "Connecting" :
 	(which_one == LIST_RETRY) ? "Retry" :
@@ -1216,7 +1216,7 @@ printf("%5d: %s: %s\n", s, (which_one == LIST_CALLONCONNECT) ? "CallOnConnect" :
 )
 #else
 DEB(
-printf("%5d: %s: %s\n", s, (which_one == LIST_CALLONCONNECT) ? "CallOnConnect" :
+fprintf(stderr, "%5d: %s: %s\n", s, (which_one == LIST_CALLONCONNECT) ? "CallOnConnect" :
 	(which_one == LIST_CONNECTING) ? "Connecting" :
 	(which_one == LIST_RETRY) ? "Retry" :
 	(which_one == LIST_CLOSE) ? "Close" : "<undef>",

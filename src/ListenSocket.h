@@ -377,24 +377,20 @@ public:
 		tmp -> SetConnected(true);
 		tmp -> Init();
 		tmp -> SetDeleteByHandler(true);
+		Handler().Add(tmp);
 #ifdef HAVE_OPENSSL
 		if (tmp -> IsSSL()) // SSL Enabled socket
 		{
+			// %! OnSSLAccept calls SSLNegotiate that can finish in this one call.
+			// %! If that happens and negotiation fails, the 'tmp' instance is
+			// %! still added to the list of active sockets in the sockethandler.
+			// %! See bugfix for this in SocketHandler::Select - don't Set rwx
+			// %! flags if CloseAndDelete() flag is true.
 			tmp -> OnSSLAccept();
-			if (1||tmp -> GetSslContext())
-			{
-				Handler().Add(tmp);
-			}
-			else
-			{
-Handler().LogError(this, "ListenSocket/OnRead", 0, "Accept: not adding ssl socket because context init failed", LOG_LEVEL_FATAL);
-				delete tmp;
-			}
 		}
 		else
 #endif
 		{
-			Handler().Add(tmp);
 			tmp -> OnAccept();
 		}
 	}

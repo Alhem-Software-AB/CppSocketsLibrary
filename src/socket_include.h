@@ -199,7 +199,9 @@ namespace SOCKETS_NAMESPACE {
 #include <ws2tcpip.h>
 #if MSC_VER < 1200
 #ifndef __CYGWIN__
+#ifdef ENABLE_IPV6
 #include <tpipv6.h>  // For IPv6 Tech Preview.
+#endif
 #endif
 #endif // MSC_VER < 1200
 

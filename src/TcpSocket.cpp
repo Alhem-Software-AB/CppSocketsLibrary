@@ -64,11 +64,11 @@ namespace SOCKETS_NAMESPACE {
 
 // statics
 #ifdef HAVE_OPENSSL
-BIO *TcpSocket::m_bio_err = NULL;
-bool TcpSocket::m_b_rand_file_generated = false;
-std::string TcpSocket::m_rand_file;
-long TcpSocket::m_rand_size = 1024;
-TcpSocket::SSLInitializer TcpSocket::m_ssl_init;
+//BIO *TcpSocket::m_bio_err = NULL;
+//bool TcpSocket::m_b_rand_file_generated = false;
+//std::string TcpSocket::m_rand_file;
+//long TcpSocket::m_rand_size = 1024;
+SSLInitializer TcpSocket::m_ssl_init;
 #endif
 
 
@@ -103,6 +103,7 @@ TcpSocket::TcpSocket(ISocketHandler& h) : Socket(h)
 ,m_bytes_received(0)
 ,m_skip_c(false)
 {
+/*
 #ifdef HAVE_OPENSSL
 	if (!m_b_rand_file_generated)
 	{
@@ -132,6 +133,7 @@ TcpSocket::TcpSocket(ISocketHandler& h) : Socket(h)
 		}
 	}
 #endif // HAVE_OPENSSL
+*/
 }
 #ifdef _WIN32
 #pragma warning(default:4355)
@@ -168,6 +170,7 @@ TcpSocket::TcpSocket(ISocketHandler& h,size_t isize,size_t osize) : Socket(h)
 ,m_bytes_received(0)
 ,m_skip_c(false)
 {
+/*
 #ifdef HAVE_OPENSSL
 	if (!m_b_rand_file_generated)
 	{
@@ -196,6 +199,7 @@ TcpSocket::TcpSocket(ISocketHandler& h,size_t isize,size_t osize) : Socket(h)
 		}
 	}
 #endif // HAVE_OPENSSL
+*/
 }
 #ifdef _WIN32
 #pragma warning(default:4355)
@@ -513,7 +517,7 @@ void TcpSocket::OnRead()
 			case SSL_ERROR_WANT_WRITE:
 				break;
 			case SSL_ERROR_ZERO_RETURN:
-DEB(				printf("SSL_read() returns zero - closing socket\n");)
+DEB(				fprintf(stderr, "SSL_read() returns zero - closing socket\n");)
 				SetCloseAndDelete(true);
 				SetFlushBeforeClose(false);
 #ifdef ENABLE_POOL
@@ -521,7 +525,7 @@ DEB(				printf("SSL_read() returns zero - closing socket\n");)
 #endif
 				break;
 			default:
-DEB(				printf("SSL read problem, errcode = %d\n",n);)
+DEB(				fprintf(stderr, "SSL read problem, errcode = %d\n",n);)
 				SetCloseAndDelete(true);
 				SetFlushBeforeClose(false);
 #ifdef ENABLE_POOL
@@ -775,7 +779,7 @@ void TcpSocket::OnWrite()
 			SetLost();
 #endif
 DEB(			const char *errbuf = ERR_error_string(errnr, NULL);
-			printf("SSL_write() returns 0: %d : %s\n",errnr, errbuf);)
+			fprintf(stderr, "SSL_write() returns 0: %d : %s\n",errnr, errbuf);)
 		}
 		else
 		{
@@ -1135,7 +1139,7 @@ void TcpSocket::OnSSLConnect()
 	{
 		if (m_ssl_ctx)
 		{
-DEB(			printf("SSL Context already initialized - closing socket\n");)
+DEB(			fprintf(stderr, "SSL Context already initialized - closing socket\n");)
 			SetCloseAndDelete(true);
 			return;
 		}
@@ -1147,7 +1151,7 @@ DEB(			printf("SSL Context already initialized - closing socket\n");)
 		m_ssl = SSL_new(m_ssl_ctx);
 		if (!m_ssl)
 		{
-DEB(			printf(" m_ssl is NULL\n");)
+DEB(			fprintf(stderr, " m_ssl is NULL\n");)
 			SetCloseAndDelete(true);
 			return;
 		}
@@ -1155,7 +1159,7 @@ DEB(			printf(" m_ssl is NULL\n");)
 		m_sbio = BIO_new_socket((int)GetSocket(), BIO_NOCLOSE);
 		if (!m_sbio)
 		{
-DEB(			printf(" m_sbio is NULL\n");)
+DEB(			fprintf(stderr, " m_sbio is NULL\n");)
 			SetCloseAndDelete(true);
 			return;
 		}
@@ -1178,7 +1182,7 @@ void TcpSocket::OnSSLAccept()
 	{
 		if (m_ssl_ctx)
 		{
-DEB(			printf("SSL Context already initialized - closing socket\n");)
+DEB(			fprintf(stderr, "SSL Context already initialized - closing socket\n");)
 			SetCloseAndDelete(true);
 			return;
 		}
@@ -1190,7 +1194,7 @@ DEB(			printf("SSL Context already initialized - closing socket\n");)
 		m_ssl = SSL_new(m_ssl_ctx);
 		if (!m_ssl)
 		{
-DEB(			printf(" m_ssl is NULL\n");)
+DEB(			fprintf(stderr, " m_ssl is NULL\n");)
 			SetCloseAndDelete(true);
 			return;
 		}
@@ -1198,7 +1202,7 @@ DEB(			printf(" m_ssl is NULL\n");)
 		m_sbio = BIO_new_socket((int)GetSocket(), BIO_NOCLOSE);
 		if (!m_sbio)
 		{
-DEB(			printf(" m_sbio is NULL\n");)
+DEB(			fprintf(stderr, " m_sbio is NULL\n");)
 			SetCloseAndDelete(true);
 			return;
 		}
@@ -1257,7 +1261,7 @@ bool TcpSocket::SSLNegotiate()
 			if (r != SSL_ERROR_WANT_READ && r != SSL_ERROR_WANT_WRITE)
 			{
 				Handler().LogError(this, "SSLNegotiate/SSL_connect", -1, "Connection failed", LOG_LEVEL_INFO);
-DEB(				printf("SSL_connect() failed - closing socket, return code: %d\n",r);)
+DEB(				fprintf(stderr, "SSL_connect() failed - closing socket, return code: %d\n",r);)
 				SetSSLNegotiate(false);
 				SetCloseAndDelete(true);
 				OnSSLConnectFailed();
@@ -1299,7 +1303,7 @@ DEB(				printf("SSL_connect() failed - closing socket, return code: %d\n",r);)
 			if (r != SSL_ERROR_WANT_READ && r != SSL_ERROR_WANT_WRITE)
 			{
 				Handler().LogError(this, "SSLNegotiate/SSL_accept", -1, "Connection failed", LOG_LEVEL_INFO);
-DEB(				printf("SSL_accept() failed - closing socket, return code: %d\n",r);)
+DEB(				fprintf(stderr, "SSL_accept() failed - closing socket, return code: %d\n",r);)
 				SetSSLNegotiate(false);
 				SetCloseAndDelete(true);
 				OnSSLAcceptFailed();
@@ -1326,19 +1330,20 @@ void TcpSocket::InitSSLServer()
 
 void TcpSocket::InitializeContext(const std::string& context, SSL_METHOD *meth_in)
 {
+/*
 	if (!m_bio_err)
 	{
-		/* An error write context */
+		// An error write context
 		m_bio_err = BIO_new_fp(stderr, BIO_NOCLOSE);
 
-		/* Global system initialization*/
+		// Global system initialization
 		SSL_library_init();
 		SSL_load_error_strings();
 		OpenSSL_add_all_algorithms();
 		CRYPTO_set_locking_callback( SSL_locking_function );
 		CRYPTO_set_id_callback( SSL_id_function );
 	}
-
+*/
 	/* Create our context*/
 	static std::map<std::string, SSL_CTX *> client_contexts;
 	if (client_contexts.find(context) == client_contexts.end())
@@ -1353,29 +1358,31 @@ void TcpSocket::InitializeContext(const std::string& context, SSL_METHOD *meth_i
 	}
 
 	/* Load randomness */
+/*
 	if (!m_rand_file.size() || !RAND_load_file(m_rand_file.c_str(), m_rand_size))
 	{
 		Handler().LogError(this, "TcpSocket InitializeContext", 0, "Couldn't load randomness", LOG_LEVEL_ERROR);
 	}
-		
+*/		
 }
 
 
 void TcpSocket::InitializeContext(const std::string& context,const std::string& keyfile,const std::string& password,SSL_METHOD *meth_in)
 {
+/*
 	if (!m_bio_err)
 	{
-		/* An error write context */
+		// An error write context 
 		m_bio_err = BIO_new_fp(stderr, BIO_NOCLOSE);
 
-		/* Global system initialization*/
+		// Global system initialization
 		SSL_library_init();
 		SSL_load_error_strings();
 		OpenSSL_add_all_algorithms();
 		CRYPTO_set_locking_callback( SSL_locking_function );
 		CRYPTO_set_id_callback( SSL_id_function );
 	}
-
+*/
 	/* Create our context*/
 	static std::map<std::string, SSL_CTX *> server_contexts;
 	if (server_contexts.find(context) == server_contexts.end())
@@ -1385,7 +1392,7 @@ void TcpSocket::InitializeContext(const std::string& context,const std::string& 
 		SSL_CTX_set_mode(m_ssl_ctx, SSL_MODE_AUTO_RETRY);
 		// session id
 		if (context.size())
-			SSL_CTX_set_session_id_context(m_ssl_ctx, (const unsigned char *)context.c_str(), context.size());
+			SSL_CTX_set_session_id_context(m_ssl_ctx, (const unsigned char *)context.c_str(), (unsigned int)context.size());
 		else
 			SSL_CTX_set_session_id_context(m_ssl_ctx, (const unsigned char *)"--empty--", 9);
 	}
@@ -1409,11 +1416,12 @@ void TcpSocket::InitializeContext(const std::string& context,const std::string& 
 	}
 
 	/* Load randomness */
+/*
 	if (!m_rand_file.size() || !RAND_load_file(m_rand_file.c_str(), m_rand_size))
 	{
 		Handler().LogError(this, "TcpSocket InitializeContext", 0, "Couldn't load randomness", LOG_LEVEL_ERROR);
 	}
-		
+*/		
 }
 
 
@@ -1432,6 +1440,7 @@ int TcpSocket::SSL_password_cb(char *buf,int num,int rwflag,void *userdata)
 }
 
 
+/*
 void TcpSocket::SSL_locking_function(int mode, int n, const char *file, int line)
 {
 static	std::map<int, Mutex *> mmap;
@@ -1454,6 +1463,7 @@ unsigned long TcpSocket::SSL_id_function()
 {
 	return Utility::ThreadID();
 }
+*/
 
 
 #endif // HAVE_OPENSSL
@@ -1568,6 +1578,7 @@ const std::string& TcpSocket::GetPassword()
 }
 
 
+/*
 void TcpSocket::SetRandFile(const std::string& file,long size)
 {
 	m_rand_file = file;
@@ -1596,6 +1607,7 @@ void TcpSocket::DeleteRandFile()
 		unlink(m_rand_file.c_str());
 	}
 }
+*/
 #endif
 
 
@@ -1607,7 +1619,7 @@ void TcpSocket::DisableInputBuffer(bool x)
 
 void TcpSocket::OnOptions(int family,int type,int protocol,SOCKET s)
 {
-DEB(printf("Socket::OnOptions()\n");)
+DEB(	fprintf(stderr, "Socket::OnOptions()\n");)
 /*
 	Handler().LogError(this, "OnOptions", family, "Address Family", LOG_LEVEL_INFO);
 	Handler().LogError(this, "OnOptions", type, "Type", LOG_LEVEL_INFO);

@@ -898,17 +898,11 @@ bool Utility::u2service(const std::string& name, int& service, int ai_flags)
 
 unsigned long Utility::ThreadID()
 {
-#ifdef LINUX
-	return pthread_self();
-#endif
-#ifdef SOLARIS
-	return thr_self();
-#endif
 #ifdef _WIN32
 	return GetCurrentThreadId();
+#else
+	return pthread_self();
 #endif
-
-	return 0;
 }
 
 

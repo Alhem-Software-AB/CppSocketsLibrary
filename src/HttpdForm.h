@@ -68,7 +68,7 @@ public:
 	 * Input is read from stdin. Number of characters to read
 	 * can be found in the environment variable CONTENT_LENGTH.
 	*/
-	HttpdForm(IFile *);
+	HttpdForm(IFile *, const std::string& content_type, size_t content_length);
 	/**
 	 * Another constructor (used in GET operations).
 	 * Input is read from the environment variable QUERY_STRING.

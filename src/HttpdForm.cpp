@@ -43,20 +43,18 @@ namespace SOCKETS_NAMESPACE {
 #define TMPSIZE 10000
 
 
-HttpdForm::HttpdForm(IFile *infil) : raw(false)
+HttpdForm::HttpdForm(IFile *infil, const std::string& content_type, size_t content_length) : raw(false)
 {
 	CGI *cgi = NULL;
-	char *c_t = getenv("CONTENT_TYPE");
-	char *c_l = getenv("CONTENT_LENGTH");
 	size_t extra = 2;
 	char name[TMPSIZE];
 
 	m_current = m_cgi.end();
 	*name = 0;
 
-	if (c_t && !strncmp(c_t, "multipart/form-data",19))
+	if (content_type.size() >= 19 && content_type.substr(0, 19) == "multipart/form-data")
 	{
-		Parse pa(c_t,";=");
+		Parse pa(content_type,";=");
 		char *tempcmp = NULL;
 		size_t tc = 0;
 		size_t l = 0;
@@ -269,10 +267,11 @@ HttpdForm::HttpdForm(IFile *infil) : raw(false)
 		}
 	}
 	else
+	if (strstr(content_type.c_str(), "x-www-form-urlencoded"))
 	{
 		bool got_name = false; // tnx to FatherNitwit
 		int i = 0;
-		int cl = c_l ? atoi(c_l) : -1;
+		int cl = (int)content_length;
 		char c,chigh,clow;
 		char *slask = new char[TMPSIZE];
 		m_current = m_cgi.end();

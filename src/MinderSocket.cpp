@@ -87,12 +87,12 @@ void MinderSocket::OnLine(const std::string& line)
 
 		Utility::u2ip(ipstr,ip);
 
-DEB(		printf(" received my id '%s' %s:%d - %lu\n",id.c_str(),ipstr.c_str(),port,hostid);)
+DEB(		fprintf(stderr, " received my id '%s' %s:%d - %lu\n",id.c_str(),ipstr.c_str(),port,hostid);)
 		// this is ourselves
 		my_ip = ip;
 		my_port = port;
 		static_cast<MinderHandler&>(Handler()).SetMyIpPort(my_ip, my_port);
-DEB(		printf("ignoring %s:%d\n",ipstr.c_str(),port);)
+DEB(		fprintf(stderr, "ignoring %s:%d\n",ipstr.c_str(),port);)
 		static_cast<MinderHandler&>(Handler()).SetExternalAddress(ipstr);
 		if (static_cast<MinderHandler&>(Handler()).GetHostId() == 0)
 		{
@@ -131,8 +131,8 @@ DEB(		printf("ignoring %s:%d\n",ipstr.c_str(),port);)
 		{
 			if (0 && static_cast<MinderHandler&>(Handler()).Count() < max)
 			{
-DEB(				printf(" connect to %s:%d\n",ipstr.c_str(),port);)
-//printf("Minder List: %s:%d id %s\n",ipstr.c_str(),port,id.c_str());
+DEB(				fprintf(stderr, " connect to %s:%d\n",ipstr.c_str(),port);)
+//fprintf(stderr, "Minder List: %s:%d id %s\n",ipstr.c_str(),port,id.c_str());
 				MinionSocket *tmp = CreateMinionSocket(id,ip,port); //new MinionSocket(Handler(),id,ip,port);
 				tmp -> SetMyIpPort(my_ip,my_port);
 				if (tmp -> Open(ip,port))
@@ -161,7 +161,7 @@ DEB(				printf(" connect to %s:%d\n",ipstr.c_str(),port);)
 		}
 		else
 		{
-DEB(			printf(" id found\n");)
+DEB(			fprintf(stderr, " id found\n");)
 		}
 	}
 	else

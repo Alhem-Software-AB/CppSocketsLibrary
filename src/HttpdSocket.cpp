@@ -288,7 +288,7 @@ void HttpdSocket::OnData(const char *p,size_t l)
 		// all done
 		if (m_file && !m_form)
 		{
-			m_form = new HttpdForm(m_file);
+			m_form = new HttpdForm(m_file, m_content_type, m_content_length);
 			AddResponseHeader("Date", datetime2httpdate(GetDate()) );
 			if (GetUri() == "/image")
 			{

@@ -78,7 +78,7 @@ MinionSocket::MinionSocket(ISocketHandler& h,const std::string& id,ipaddr_t l,po
 
 	std::string str;
 	Utility::l2ip(l,str);
-DEB(	printf(" new connect: %s:%d\n",str.c_str(),s);)
+DEB(	fprintf(stderr, " new connect: %s:%d\n",str.c_str(),s);)
 }
 
 
@@ -105,7 +105,7 @@ void MinionSocket::OnDelete()
 
 void MinionSocket::OnConnect()
 {
-//	printf("Connected to: %s\n",GetRemoteAddress().c_str());
+//	fprintf(stderr, "Connected to: %s\n",GetRemoteAddress().c_str());
 	SendHello("Hello");
 }
 
@@ -120,7 +120,7 @@ void MinionSocket::SendHello(const std::string& cmd)
 		static_cast<MinderHandler&>(Handler()).GetHostId() );
 	{
 		Uid ruid(m_remote_id);
-//printf("encrypt with remote id '%s'\n",m_remote_id.c_str());
+//fprintf(stderr, "encrypt with remote id '%s'\n",m_remote_id.c_str());
 		memcpy(GetKey_m2minion() + 8,ruid.GetBuf(),16);
 //		Send( Utility::base64(msg) + "\n" );
 		Send( encrypt(GetKey_m2minion(), msg) + "\n" );
@@ -173,7 +173,7 @@ void MinionSocket::OnLine(const std::string& line)
 				!static_cast<MinderHandler&>(Handler()).FindMinion(remote_id) &&
 				static_cast<MinderHandler&>(Handler()).Count() < max * 2 + 1)
 			{
-DEB(				printf("My ID verified!\n");)
+DEB(				fprintf(stderr, "My ID verified!\n");)
 				m_remote_id = remote_id;
 				m_ip = ip; // remote ip
 				m_port = port; // remote listen port
@@ -216,25 +216,25 @@ bool MinionSocket::OnVerifiedLine(const std::string& cmd,Parse& pa)
 		Notify( str );
 	}
 
-DEB(		printf("Incoming command: '%s'\n",cmd.c_str());)
+DEB(		fprintf(stderr, "Incoming command: '%s'\n",cmd.c_str());)
 	if (cmd == "Tip")
 	{
 		// Tip _ host id
 		std::string hid = pa.getword();
-//printf("Tip from: %s\n",hid.c_str());
+//fprintf(stderr, "Tip from: %s\n",hid.c_str());
 		static_cast<MinderHandler&>(Handler()).SendTop( hid );
 	}
 	else
 	if (cmd == "Top")
 	{
 		unsigned long hid = pa.getvalue();
-//printf("Top to: %ld\n",hid);
+//fprintf(stderr, "Top to: %ld\n",hid);
 		if (hid == static_cast<MinderHandler&>(Handler()).GetHostId())
 		{
 			std::string src = pa.getword();
 			std::string vstr = Utility::base64d(pa.getword());
 			std::string os = pa.getword();
-//printf(" (Top from: %s)\n",src.c_str());
+//fprintf(stderr, " (Top from: %s)\n",src.c_str());
 			std::string dst;
 			if (isdigit(os[0]))
 			{
@@ -268,7 +268,7 @@ DEB(		printf("Incoming command: '%s'\n",cmd.c_str());)
 		}
 		else
 		{
-//printf("Top ignored: %ld != %ld\n",hid,static_cast<MinderHandler&>(Handler()).GetHostId());
+//fprintf(stderr, "Top ignored: %ld != %ld\n",hid,static_cast<MinderHandler&>(Handler()).GetHostId());
 		}
 	}
 	else
@@ -339,8 +339,8 @@ DEB(		printf("Incoming command: '%s'\n",cmd.c_str());)
 
 		if (!static_cast<MinderHandler&>(Handler()).Seen(host_id,message_id))
 		{
-DEB(				printf("Message\n hostid: %ld\n messageid: %ld\n ttl: %d\n message:\n%s\n--end of message\n", host_id, message_id, ttl, msg_in.c_str());)
-DEB(				printf("Message:\n%s\n--End of Message\n",Utility::base64d(msg_in).c_str());)
+DEB(				fprintf(stderr, "Message\n hostid: %ld\n messageid: %ld\n ttl: %d\n message:\n%s\n--end of message\n", host_id, message_id, ttl, msg_in.c_str());)
+DEB(				fprintf(stderr, "Message:\n%s\n--End of Message\n",Utility::base64d(msg_in).c_str());)
 			if (static_cast<MinderHandler&>(Handler()).Debug() )
 			{
 				str = "&l&fMessage: Not Seen&n\n";
@@ -402,7 +402,7 @@ DEB(				printf("Message:\n%s\n--End of Message\n",Utility::base64d(msg_in).c_str
 
 void MinionSocket::OnAccept()
 {
-DEB(	printf("Incoming connection from: %s\n",GetRemoteAddress().c_str());)
+DEB(	fprintf(stderr, "Incoming connection from: %s\n",GetRemoteAddress().c_str());)
 }
 
 

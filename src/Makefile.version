@@ -1,4 +1,4 @@
-VERSION =	2.1.3rc1
+VERSION =	2.1.3
 DIFF_VERSION =	2.1.2
 
 # Sockets
@@ -35,7 +35,8 @@ OBJS =		CircularBuffer.o \
 		Ipv4Address.o Ipv6Address.o \
 		Semaphore.o \
 		RandomNumber.o \
-		EventSocket.o
+		EventSocket.o \
+		SSLInitializer.o
 
 # SocketsEx
 EX =		Uid.o \

@@ -109,7 +109,7 @@ void MinderHandler::SendMessage(const std::string& msg_in,short ttl)
 	msg += ":" + Utility::l2string(ttl);
 	msg += ":" + msg_in;
 
-DEB(	printf("Message:\n%s\n",msg.c_str());)
+DEB(	fprintf(stderr, "Message:\n%s\n",msg.c_str());)
 
 	if (msg.size() > 255) // try is good even here, because of possible bandwidth differences between nodes
 	{
@@ -243,7 +243,7 @@ void MinderHandler::SendConnectList()
 		}
 	}
 	m_b.encode(msg, tmp, false);
-//printf("ConnectList:\n%s\n",msg.c_str());
+//fprintf(stderr, "ConnectList:\n%s\n",msg.c_str());
 	SendMessage(tmp, 0);
 }
 
@@ -383,7 +383,7 @@ bool MinderHandler::StoreGet(long hid,long mid,std::string& msg)
 
 void MinderHandler::AddHost(ipaddr_t a,port_t p,const std::string& k,long r)
 {
-DEB(	printf("AddHost: size %d\n",m_hosts.size());)
+DEB(	fprintf(stderr, "AddHost: size %d\n",m_hosts.size());)
 	if (m_hosts.size() >= 20)
 		return;
 	for (hosts_v::iterator it = m_hosts.begin(); it != m_hosts.end(); it++)
@@ -440,7 +440,7 @@ void MinderHandler::SendTop(const std::string& hid)
 			msg += ":" + Utility::l2string(p -> GetRemoteHostId() );
 		}
 	}
-//printf(" Top reply: %s\n",msg.c_str());
+//fprintf(stderr, " Top reply: %s\n",msg.c_str());
 	m_b.encode(msg, tmp, false);
 	SendMessage(tmp);
 }
