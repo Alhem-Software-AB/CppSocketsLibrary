@@ -964,7 +964,7 @@ void SocketHandler::CheckCallOnConnect()
 	for (socket_m::iterator it = m_sockets.begin(); it != m_sockets.end(); it++)
 	{
 		Socket *p = it -> second;
-		if (p -> CallOnConnect())
+		if (Valid(p) && Valid(p -> UniqueIdentifier()) && p -> CallOnConnect())
 		{
 			TcpSocket *tcp = dynamic_cast<TcpSocket *>(p);
 			p -> SetConnected(); // moved here from inside if (tcp) check below
@@ -1031,7 +1031,7 @@ void SocketHandler::CheckTimeout(time_t tnow)
 	for (socket_m::iterator it = m_sockets.begin(); it != m_sockets.end(); it++)
 	{
 		Socket *p = it -> second;
-		if (p -> CheckTimeout())
+		if (Valid(p) && Valid(p -> UniqueIdentifier()) && p -> CheckTimeout())
 		{
 			if (p -> Timeout(tnow))
 			{
@@ -1060,7 +1060,7 @@ void SocketHandler::CheckRetry()
 	for (socket_m::iterator it = m_sockets.begin(); it != m_sockets.end(); it++)
 	{
 		Socket *p = it -> second;
-		if (p -> RetryClientConnect())
+		if (Valid(p) && Valid(p -> UniqueIdentifier()) && p -> RetryClientConnect())
 		{
 			TcpSocket *tcp = dynamic_cast<TcpSocket *>(p);
 			tcp -> SetRetryClientConnect(false);
@@ -1089,7 +1089,7 @@ void SocketHandler::CheckClose()
 	for (socket_m::iterator it = m_sockets.begin(); it != m_sockets.end(); it++)
 	{
 		Socket *p = it -> second;
-		if (p -> CloseAndDelete() )
+		if (Valid(p) && Valid(p -> UniqueIdentifier()) && p -> CloseAndDelete() )
 		{
 			TcpSocket *tcp = dynamic_cast<TcpSocket *>(p);
 #ifdef ENABLE_RECONNECT
