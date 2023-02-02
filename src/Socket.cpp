@@ -101,6 +101,7 @@ Socket::Socket(SocketHandler& h)
 ,m_connection_retry(0)
 ,m_retries(0)
 ,m_b_erased_by_handler(false)
+,m_slave_handler(NULL)
 {
 }
 
@@ -661,6 +662,8 @@ void Socket::GetRemoteSocketAddress(struct sockaddr& sa,socklen_t& sa_len)
 
 SocketHandler& Socket::Handler() const
 {
+	if (IsDetached())
+		return *m_slave_handler;
 	return m_handler;
 }
 
@@ -813,7 +816,7 @@ bool Socket::SetNonblocking(bool bNb, SOCKET s)
 
 void Socket::Set(bool bRead, bool bWrite, bool bException)
 {
-	m_handler.Set(m_socket, bRead, bWrite, bException);
+	Handler().Set(m_socket, bRead, bWrite, bException);
 }
 
 
@@ -1043,7 +1046,7 @@ void Socket::SetDetached(bool x)
 }
 
 
-bool Socket::IsDetached()
+const bool Socket::IsDetached() const
 {
 	return m_detached;
 }
@@ -1418,6 +1421,12 @@ void Socket::AddList(socket_v& ref, bool add)
 			}
 		}
 	}
+}
+
+
+void Socket::SetSlaveHandler(SocketHandler *p)
+{
+	m_slave_handler = p;
 }
 
 

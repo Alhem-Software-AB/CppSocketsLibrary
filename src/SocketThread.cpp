@@ -74,6 +74,7 @@ void SocketThread::Run()
 	h.Add(m_socket);
 DEB(	printf("slave: OnDetached()\n");)
 	m_socket -> OnDetached();
+	m_socket -> SetSlaveHandler(&h);
 	while (h.GetCount() && IsRunning())
 	{
 		h.Select(0, 500000);

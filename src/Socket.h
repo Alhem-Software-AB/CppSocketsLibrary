@@ -229,7 +229,7 @@ public:
 	void SetDetached(bool x = true);
 	/** Check detached flag.
 		\return true if the socket runs in its own thread. */
-	bool IsDetached();
+	const bool IsDetached() const;
 	/** Order this socket to start its own thread and call OnDetached
 		when ready for operation. */
 	bool Detach();
@@ -417,6 +417,9 @@ public:
 	/** Get value of flag indicating socket is deleted by sockethandler. */
 	bool ErasedByHandler();
 
+	/** Store the slave sockethandler pointer. */
+	void SetSlaveHandler(SocketHandler *);
+
 protected:
 	Socket(const Socket& ); ///< do not allow use of copy constructor
 	/** Create new thread for this socket to run detached in. */
@@ -482,6 +485,7 @@ static	WSAInitializer m_winsock_init; ///< Winsock initialization singleton clas
 	int m_connection_retry; ///< Maximum connection retries (tcp)
 	int m_retries; ///< Actual number of connection retries (tcp)
 	bool m_b_erased_by_handler; ///< Set by handler before delete
+	SocketHandler *m_slave_handler; ///< Actual sockethandler while detached
 };
 
 #ifdef SOCKETS_NAMESPACE
