@@ -151,6 +151,10 @@ private:
 	/** Remove socket from socket map, used by Socket class. */
 	void Remove(Socket *);
 public:
+	/** Get checklist: active sockets */
+	socket_v& GetFds();
+	/** Get checklist: sockets to be erased (should always be empty) */
+	socket_v& GetFdsErase();
 	/** Get checklist: callonconnect */
 	socket_v& GetFdsCallOnConnect();
 	/** Get checklist: Detach */
@@ -168,6 +172,9 @@ public:
 	/** Get socket from active list. */
 	Socket *GetSocket(SOCKET );
 
+	/** Sanity check of those accursed lists. */
+	void CheckSanity();
+
 protected:
 	socket_m m_sockets; ///< Active sockets list
 	socket_m m_add; ///< Sockets to be added to sockets list
@@ -176,6 +183,7 @@ protected:
 private:
 	SocketHandler(const SocketHandler& h) : m_mutex(h.GetMutex()) {}
 	SocketHandler& operator=(const SocketHandler& ) { return *this; }
+	void CheckList(socket_v&,const std::string&); ///< Used by CheckSanity
 	StdLog *m_stdlog; ///< Registered log class, or NULL
 	SOCKET m_maxsock; ///< Highest file descriptor + 1 in active sockets list
 	fd_set m_rfds; ///< file descriptor set monitored for read events

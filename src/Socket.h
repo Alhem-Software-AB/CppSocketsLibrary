@@ -440,7 +440,7 @@ static	WSAInitializer m_winsock_init; ///< Winsock initialization singleton clas
 	/** assignment operator not available. */
 	Socket& operator=(const Socket& ) { return *this; }
 	//
-	void AddList(socket_v&, bool, const std::string& src = ""); ///< Add file descriptor to specified checklist
+	void AddList(socket_v&, bool); ///< Add file descriptor to specified checklist
 	SocketHandler& m_handler; ///< Reference of SocketHandler in control of this socket
 	SOCKET m_socket; ///< File descriptor
 	bool m_bDel; ///< Delete by handler flag

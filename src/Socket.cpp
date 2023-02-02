@@ -252,11 +252,11 @@ int Socket::Close()
 		Handler().LogError(this, "close", Errno, StrError(Errno), LOG_LEVEL_ERROR);
 	}
 	Set(false, false, false); // remove from fd_set's
-	AddList(Handler().GetFdsCallOnConnect(), false, "Close()/CallOnConnect");
-	AddList(Handler().GetFdsDetach(), false, "Close()/Detach");
-	AddList(Handler().GetFdsConnecting(), false, "Close()/Connecting");
-	AddList(Handler().GetFdsRetry(), false, "Close()/Retry");
-	AddList(Handler().GetFdsClose(), false, "Close()/Close");
+	AddList(Handler().GetFdsCallOnConnect(), false); //, "Close()/CallOnConnect");
+	AddList(Handler().GetFdsDetach(), false); //, "Close()/Detach");
+	AddList(Handler().GetFdsConnecting(), false); //, "Close()/Connecting");
+	AddList(Handler().GetFdsRetry(), false); //, "Close()/Retry");
+	AddList(Handler().GetFdsClose(), false); //, "Close()/Close");
 	m_socket = INVALID_SOCKET;
 	return n;
 }
@@ -354,7 +354,7 @@ void Socket::SetCloseAndDelete(bool x)
 {
 	if (x != m_bClose)
 	{
-		AddList(Handler().GetFdsClose(), x, "SetCloseAndDelete()");
+		AddList(Handler().GetFdsClose(), x); //, "SetCloseAndDelete()");
 		m_bClose = x;
 		if (x)
 		{
@@ -374,7 +374,7 @@ void Socket::SetConnecting(bool x)
 {
 	if (x != m_bConnecting)
 	{
-		AddList(Handler().GetFdsConnecting(), x, "SetConnecting()");
+		AddList(Handler().GetFdsConnecting(), x); //, "SetConnecting()");
 		m_bConnecting = x;
 		if (x)
 		{
@@ -797,7 +797,7 @@ void Socket::OnDetached()
 
 void Socket::SetDetach(bool x)
 {
-	AddList(Handler().GetFdsDetach(), x, "SetDetach()");
+	AddList(Handler().GetFdsDetach(), x); //, "SetDetach()");
 	m_detach = x;
 }
 
@@ -926,7 +926,7 @@ bool Socket::Lost()
 
 void Socket::SetCallOnConnect(bool x)
 {
-	AddList(Handler().GetFdsCallOnConnect(), x, "SetCallOnConnect()");
+	AddList(Handler().GetFdsCallOnConnect(), x); //, "SetCallOnConnect()");
 	m_call_on_connect = x;
 }
 
@@ -1059,7 +1059,7 @@ bool Socket::IsDisableRead()
 
 void Socket::SetRetryClientConnect(bool x)
 {
-	AddList(Handler().GetFdsRetry(), x, "SetRetryClientConnect()");
+	AddList(Handler().GetFdsRetry(), x); //, "SetRetryClientConnect()");
 	m_b_retry_connect = x;
 }
 
@@ -1161,7 +1161,7 @@ bool Socket::ErasedByHandler()
 }
 
 
-void Socket::AddList(socket_v& ref, bool add, const std::string& src)
+void Socket::AddList(socket_v& ref, bool add) //, const std::string& src)
 {
 	if (m_socket == INVALID_SOCKET)
 	{
@@ -1169,7 +1169,7 @@ void Socket::AddList(socket_v& ref, bool add, const std::string& src)
 	}
 	if (add)
 	{
-		AddList(ref, false, "remove before add");
+		AddList(ref, false); //, "remove before add");
 		ref.push_back(m_socket);
 	}
 	else // remove

@@ -1,5 +1,5 @@
-VERSION =	2.0.7b
-DIFF_VERSION =	2.0.7a
+VERSION =	2.0.8
+DIFF_VERSION =	2.0.7
 
 INCLUDE =	-I.
 PREFIX =	/usr/local

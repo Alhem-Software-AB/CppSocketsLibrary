@@ -584,8 +584,15 @@ DEB(
 				}
 				else
 				{
-					// %! this one fires from time to time
-//					LogError(p, "GetSocket/handler/6", (int)*it, "Did not find expected socket using file descriptor", LOG_LEVEL_WARNING);
+					itmp = m_add.find(*it);
+					if (itmp != m_add.end())
+					{
+						p = itmp -> second;
+					}
+					else
+					{
+						LogError(p, "GetSocket/handler/6", (int)*it, "Did not find expected socket using file descriptor", LOG_LEVEL_WARNING);
+					}
 				}
 			}
 			if (p)
@@ -683,7 +690,15 @@ DEB(
 				}
 				else
 				{
-					LogError(p, "GetSocket/handler/8", (int)*it, "Did not find expected socket using file descriptor", LOG_LEVEL_WARNING);
+					itmp = m_add.find(*it);
+					if (itmp != m_add.end())
+					{
+						p = itmp -> second;
+					}
+					else
+					{
+						LogError(p, "GetSocket/handler/8", (int)*it, "Did not find expected socket using file descriptor", LOG_LEVEL_WARNING);
+					}
 				}
 			}
 			if (p)
@@ -808,6 +823,7 @@ DEB(
 		m_fds_erase.erase(it);
 		check_max_fd = true;
 	}
+	// calculate max file descriptor for select() call
 	if (check_max_fd)
 	{
 		m_maxsock = 0;
@@ -1159,8 +1175,64 @@ Socket *SocketHandler::GetSocket(SOCKET n)
 	{
 		return it -> second;
 	}
+	it = m_add.find(n);
+	if (it != m_add.end())
+	{
+		return it -> second;
+	}
 	// TODO: why do we sometimes get here?
 	return NULL;
+}
+
+
+socket_v& SocketHandler::GetFds()
+{
+	return m_fds;
+}
+
+
+socket_v& SocketHandler::GetFdsErase()
+{
+	return m_fds_erase;
+}
+
+
+void SocketHandler::CheckSanity()
+{
+	CheckList(m_fds, "active sockets"); // active sockets
+	CheckList(m_fds_erase, "sockets to be erased"); // should always be empty anyway
+	CheckList(m_fds_callonconnect, "checklist CallOnConnect");
+	CheckList(m_fds_detach, "checklist Detach");
+	CheckList(m_fds_connecting, "checklist Connecting");
+	CheckList(m_fds_retry, "checklist retry client connect");
+	CheckList(m_fds_close, "checklist close and delete");
+}
+
+
+void SocketHandler::CheckList(socket_v& ref,const std::string& listname)
+{
+	for (socket_v::iterator it = ref.begin(); it != ref.end(); it++)
+	{
+		SOCKET s = *it;
+		if (m_sockets.find(s) != m_sockets.end())
+			continue;
+		if (m_add.find(s) != m_add.end())
+			continue;
+		bool found = false;
+		for (std::list<Socket *>::iterator it = m_delete.begin(); it != m_delete.end(); it++)
+		{
+			Socket *p = *it;
+			if (p -> GetSocket() == s)
+			{
+				found = true;
+				break;
+			}
+		}
+		if (!found)
+		{
+			printf("CheckList failed for \"%s\": fd %d\n", listname.c_str(), s);
+		}
+	}
 }
 
 

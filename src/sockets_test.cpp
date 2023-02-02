@@ -326,6 +326,7 @@ printf(">>> mainloop\n");
 	while (!h.Quit())
 	{
 		h.Select(1,0);
+		h.CheckSanity();
 	}
 
 	return 0;
