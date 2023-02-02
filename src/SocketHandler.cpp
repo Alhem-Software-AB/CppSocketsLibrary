@@ -655,11 +655,11 @@ DEB(			fprintf(stderr, "Checking %d socket(s) for timeout\n", tmp.size());)
 					if (p -> Timeout(tnow))
 					{
 						StreamSocket *scp = dynamic_cast<StreamSocket *>(p);
+						p -> SetTimeout(0);
 						if (scp && scp -> Connecting())
 							p -> OnConnectTimeout();
 						else
 							p -> OnTimeout();
-						p -> SetTimeout(0);
 					}
 				}
 			}

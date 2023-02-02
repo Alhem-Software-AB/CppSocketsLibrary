@@ -1,5 +1,5 @@
-VERSION =	2.3
-DIFF_VERSION =	2.2.9a
+VERSION =	2.3.1
+DIFF_VERSION =	2.3
 
 # Sockets
 OBJS =		\

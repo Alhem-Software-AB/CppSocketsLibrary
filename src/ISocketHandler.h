@@ -100,7 +100,7 @@ public:
 	// -------------------------------------------------------------------------
 	/** Add socket instance to socket map. Removal is always automatic. */
 	virtual void Add(Socket *) = 0;
-private:
+protected:
 	/** Remove socket from socket map, used by Socket class. */
 	virtual void Remove(Socket *) = 0;
 public:

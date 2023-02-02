@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #pragma warning(disable:4786)
 #endif
 #include "Exception.h"
+#include "Utility.h"
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
@@ -32,6 +33,7 @@ namespace SOCKETS_NAMESPACE {
 
 
 Exception::Exception(const std::string& description) : m_description(description)
+, m_stack(Utility::Stack())
 {
 }
 
@@ -39,6 +41,12 @@ Exception::Exception(const std::string& description) : m_description(description
 const std::string Exception::ToString() const
 {
 	return m_description;
+}
+
+
+const std::string Exception::Stack() const
+{
+	return m_stack;
 }
 
 

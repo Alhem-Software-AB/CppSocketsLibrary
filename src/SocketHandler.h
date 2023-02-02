@@ -205,14 +205,14 @@ protected:
 	std::list<Socket *> m_delete; ///< Sockets to be deleted (failed when Add)
 
 protected:
+	/** Remove socket from socket map, used by Socket class. */
+	void Remove(Socket *);
 	StdLog *m_stdlog; ///< Registered log class, or NULL
 	Mutex& m_mutex; ///< Thread safety mutex
 	bool m_b_use_mutex; ///< Mutex correctly initialized
 
 private:
 	void CheckList(socket_v&,const std::string&); ///< Used by CheckSanity
-	/** Remove socket from socket map, used by Socket class. */
-	void Remove(Socket *);
 	SOCKET m_maxsock; ///< Highest file descriptor + 1 in active sockets list
 	fd_set m_rfds; ///< file descriptor set monitored for read events
 	fd_set m_wfds; ///< file descriptor set monitored for write events

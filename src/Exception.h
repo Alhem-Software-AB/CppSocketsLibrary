@@ -39,6 +39,7 @@ public:
 	virtual ~Exception() {}
 
 	virtual const std::string ToString() const;
+	virtual const std::string Stack() const;
 
 	Exception(const Exception& ) {} // copy constructor
 
@@ -46,6 +47,7 @@ public:
 
 private:
 	std::string m_description;
+	std::string m_stack;
 
 };
 

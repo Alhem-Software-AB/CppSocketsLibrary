@@ -182,6 +182,8 @@ public:
 
 	static const char *Logo;
 
+	static const std::string Stack();
+
 private:
 	static std::string m_host; ///< local hostname
 	static ipaddr_t m_ip; ///< local ip address

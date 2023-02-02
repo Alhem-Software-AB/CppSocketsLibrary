@@ -63,13 +63,11 @@ typedef unsigned __int64 uint64_t;
 #ifndef _WIN32 
 // ----------------------------------------
 // common unix includes / defines
-#include <unistd.h>
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-//#include <netdb.h>
 
 // all typedefs in this file will be declared outside the sockets namespace,
 // because some os's will already have one or more of the type defined.

@@ -6,12 +6,12 @@
 #  solaris8
 PLATFORM =	linux-x86-32
 
-# .h files installed to $(PREFIX)/include/Sockets
-# static lib .a files installed to $(PREFIX)/lib
+# .h files installed to $(DESTDIR)/$(PREFIX)/include/Sockets
+# static lib .a files installed to $(DESTDIR)/$(PREFIX)/lib
 PREFIX =	/usr/local
 
 # include paths
-INCLUDE =	
+INCLUDE =	-I/usr/include/libxml2
 
 include		Makefile.version
 
@@ -54,24 +54,24 @@ diff:
 			$(HTDOCS)/Sockets/latest_diff.html
 
 install:	all 
-		@mkdir -p $(PREFIX)/lib
-		cp libSockets.a $(PREFIX)/lib
-		@mkdir -p $(PREFIX)/include/Sockets
-		cp -a *.h $(PREFIX)/include/Sockets
-		@rm -f $(PREFIX)/include/Sockets/SSLSocket.*
-		@rm -f $(PREFIX)/include/Sockets/HttpsGetSocket.*
-		@rm -f $(PREFIX)/include/Sockets/HttpsSocket.*
-		@rm -f $(PREFIX)/include/Sockets/EventSocket.*
-		@rm -f $(PREFIX)/include/Sockets/PoolSocket.*
-		@rm -f $(PREFIX)/include/Sockets/SocketThread.*
-		@rm -f $(PREFIX)/include/Sockets/CircularBuffer.*
-		@rm -f $(PREFIX)/include/Sockets/*Crypt.h
-		@rm -f $(PREFIX)/include/Sockets/CTcpSocket.h
-		@rm -f $(PREFIX)/include/Sockets/Min*Socket.h
-		@rm -f $(PREFIX)/include/Sockets/Min*Handler.h
-		@rm -f $(PREFIX)/include/Sockets/Uid.h
-		@mkdir -p $(PREFIX)/bin
-		install Sockets-config $(PREFIX)/bin
+		@mkdir -p $(DESTDIR)/$(PREFIX)/lib
+		cp libSockets.a $(DESTDIR)/$(PREFIX)/lib
+		@mkdir -p $(DESTDIR)/$(PREFIX)/include/Sockets
+		cp -a *.h $(DESTDIR)/$(PREFIX)/include/Sockets
+		@rm -f $(DESTDIR)/$(PREFIX)/include/Sockets/SSLSocket.*
+		@rm -f $(DESTDIR)/$(PREFIX)/include/Sockets/HttpsGetSocket.*
+		@rm -f $(DESTDIR)/$(PREFIX)/include/Sockets/HttpsSocket.*
+		@rm -f $(DESTDIR)/$(PREFIX)/include/Sockets/EventSocket.*
+		@rm -f $(DESTDIR)/$(PREFIX)/include/Sockets/PoolSocket.*
+		@rm -f $(DESTDIR)/$(PREFIX)/include/Sockets/SocketThread.*
+		@rm -f $(DESTDIR)/$(PREFIX)/include/Sockets/CircularBuffer.*
+		@rm -f $(DESTDIR)/$(PREFIX)/include/Sockets/*Crypt.h
+		@rm -f $(DESTDIR)/$(PREFIX)/include/Sockets/CTcpSocket.h
+		@rm -f $(DESTDIR)/$(PREFIX)/include/Sockets/Min*Socket.h
+		@rm -f $(DESTDIR)/$(PREFIX)/include/Sockets/Min*Handler.h
+		@rm -f $(DESTDIR)/$(PREFIX)/include/Sockets/Uid.h
+		@mkdir -p $(DESTDIR)/$(PREFIX)/bin
+		install Sockets-config $(DESTDIR)/$(PREFIX)/bin
 
 # no binary files, zip will translate lf to cr lf
 FILES =		*.h *.cpp Makefile Makefile.* Project/*.ds* \
