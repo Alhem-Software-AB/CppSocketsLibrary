@@ -49,13 +49,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // all typedefs in this file will be declared outside the sockets namespace,
 // because some os's will already have one or more of the type defined.
 typedef int SOCKET;
+#define Errno errno
+#define StrError strerror
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
 #endif
 
-#define Errno errno
-#define StrError strerror
 
 // WIN32 adapt
 #define closesocket close
@@ -173,11 +173,12 @@ namespace SOCKETS_NAMESPACE {
 #define SHUT_WR 1
 
 #define Errno WSAGetLastError()
+const char *StrError(int x);
+
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
 #endif
 
-const char *StrError(int x);
 
 // class WSAInitializer is a part of the Socket class (on win32)
 // as a static instance - so whenever an application uses a Socket,

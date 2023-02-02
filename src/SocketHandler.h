@@ -50,6 +50,7 @@ class Mutex;
 	\ingroup basic */
 class SocketHandler
 {
+protected:
 	/** Map type for holding file descriptors/socket object pointers. */
 	typedef std::map<SOCKET,Socket *> socket_m;
 

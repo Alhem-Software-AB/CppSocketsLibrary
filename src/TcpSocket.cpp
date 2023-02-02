@@ -226,6 +226,13 @@ DEB(printf("Reusing connection\n");)
 			return Open(ip, port, true);
 		}
 		else
+		if (Reconnect())
+		{
+			Handler().LogError(this, "connect: failed, reconnect pending", Errno, StrError(Errno), LOG_LEVEL_INFO);
+			Attach(s);
+			SetConnecting( true ); // this flag will control fd_set's
+		}
+		else
 		{
 			Handler().LogError(this, "connect: failed", Errno, StrError(Errno), LOG_LEVEL_FATAL);
 			SetCloseAndDelete();
@@ -315,6 +322,13 @@ DEB(printf("Reusing connection\n");)
 #endif
 		{
 			Handler().LogError(this, "connect: connection pending", Errno, StrError(Errno), LOG_LEVEL_INFO);
+			Attach(s);
+			SetConnecting( true ); // this flag will control fd_set's
+		}
+		else
+		if (Reconnect())
+		{
+			Handler().LogError(this, "connect: failed, reconnect pending", Errno, StrError(Errno), LOG_LEVEL_INFO);
 			Attach(s);
 			SetConnecting( true ); // this flag will control fd_set's
 		}
