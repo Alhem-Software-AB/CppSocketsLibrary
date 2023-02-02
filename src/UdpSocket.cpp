@@ -41,6 +41,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define DEB(x) 
 #endif
 
+#ifdef SOCKETS_NAMESPACE
+namespace SOCKETS_NAMESPACE {
+#endif
+
 
 UdpSocket::UdpSocket(SocketHandler& h,int ibufsz) : Socket(h)
 ,m_connected(false)
@@ -387,7 +391,7 @@ void UdpSocket::SendTo6(const std::string& a,port_t p,const std::string& str,int
 
 
 /** send to connected address */
-void UdpSocket::SendBuf(const char *data,int len,int flags)
+void UdpSocket::SendBuf(const char *data,size_t len,int flags)
 {
 	if (!m_connected)
 	{
@@ -651,4 +655,8 @@ bool UdpSocket::IsConnected()
 	return m_connected;
 }
 
+
+#ifdef SOCKETS_NAMESPACE
+}
+#endif
 

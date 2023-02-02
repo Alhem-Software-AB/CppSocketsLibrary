@@ -25,6 +25,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include <string>
 
+#ifdef SOCKETS_NAMESPACE
+namespace SOCKETS_NAMESPACE {
+#endif
+
 
 typedef enum
 {
@@ -50,5 +54,9 @@ public:
 		loglevel_t = LOG_LEVEL_WARNING) = 0;
 };
 
+
+#ifdef SOCKETS_NAMESPACE
+}
+#endif
 
 #endif // _STDLOG_H

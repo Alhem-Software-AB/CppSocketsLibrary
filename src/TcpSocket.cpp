@@ -39,6 +39,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "TcpSocket.h"
 #include "PoolSocket.h"
 
+#ifdef SOCKETS_NAMESPACE
+namespace SOCKETS_NAMESPACE {
+#endif
+
 
 #ifdef _DEBUG
 #define DEB(x) x
@@ -528,20 +532,20 @@ signal is not sent when the write call specified the MSG_NOSIGNAL flag.
 }
 
 
-void TcpSocket::Send(const std::string &str)
+void TcpSocket::Send(const std::string &str,int i)
 {
-	SendBuf(str.c_str(),str.size());
+	SendBuf(str.c_str(),str.size(),i);
 }
 
 
-void TcpSocket::SendBuf(const char *buf,size_t len)
+void TcpSocket::SendBuf(const char *buf,size_t len,int)
 {
 	int n = (int)obuf.GetLength();
 	if (!IsConnected())
 	{
 		Handler().LogError(this, "SendBuf", -1, "Attempt to write to a non-connected socket, will be sent on connect" ); // warning
 	}
-	if (!Ready())
+	if (!Ready() && !Connecting())
 	{
 		Handler().LogError(this, "SendBuf", -1, "Attempt to write to a non-ready socket" ); // warning
 //	if (m_socket != INVALID_SOCKET && !Connecting() && !CloseAndDelete())
@@ -1078,4 +1082,8 @@ void TcpSocket::SetReconnect(bool x)
 	m_b_reconnect = x;
 }
 
+
+#ifdef SOCKETS_NAMESPACE
+}
+#endif
 

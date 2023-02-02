@@ -30,6 +30,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "socket_include.h"
 #include <time.h>
 
+#ifdef SOCKETS_NAMESPACE
+namespace SOCKETS_NAMESPACE {
+#endif
+
 
 class SocketHandler;
 class SocketThread;
@@ -243,6 +247,14 @@ public:
 	void DisableRead(bool x = true) { m_b_disable_read = x; }
 	bool IsDisableRead() { return m_b_disable_read; }
 
+	//
+	void SetRetryClientConnect(bool x = true) { m_b_retry_connect = x; }
+	bool RetryClientConnect() { return m_b_retry_connect; }
+
+	//
+	virtual void SendBuf(const char *,size_t,int = 0) {}
+	virtual void Send(const std::string&,int = 0) {}
+
 protected:
 	Socket(const Socket& ); // do not allow use of copy constructor
 	void DetachSocket(); // protected, friend class SocketHandler;
@@ -293,7 +305,12 @@ static	WSAInitializer m_winsock_init;
 	bool m_b_ssl; // ssl negotiation mode (TcpSocket)
 	bool m_b_ssl_server;
 	bool m_b_disable_read;
+	bool m_b_retry_connect;
 };
+
+#ifdef SOCKETS_NAMESPACE
+}
+#endif
 
 
 #endif // _SOCKETBASE_H

@@ -26,6 +26,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <stdio.h>
 #include <string>
 
+#ifdef SOCKETS_NAMESPACE
+namespace SOCKETS_NAMESPACE {
+#endif
+
 
 class Base64
 {
@@ -49,5 +53,9 @@ static	char *bstr;
 static	char rstr[128];
 };
 
+
+#ifdef SOCKETS_NAMESPACE
+}
+#endif
 
 #endif // _BASE64_H

@@ -28,6 +28,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <string>
 #include <list>
 
+#ifdef SOCKETS_NAMESPACE
+namespace SOCKETS_NAMESPACE {
+#endif
+
 
 /**
  * Store the name/value pairs from a GET/POST operation.
@@ -95,5 +99,9 @@ private:
 	bool raw;
 };
 
+
+#ifdef SOCKETS_NAMESPACE
+}
+#endif
 
 #endif // _FORM_H

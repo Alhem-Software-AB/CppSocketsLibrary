@@ -43,6 +43,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "Uid.h"
 
+#ifdef SOCKETS_NAMESPACE
+namespace SOCKETS_NAMESPACE {
+#endif
+
 
 //e682119c-dea0-4e09-acf4-e66b8c522e99
 
@@ -110,4 +114,8 @@ std::string Uid::GetUid()
 	return tmp;
 }
 
+
+#ifdef SOCKETS_NAMESPACE
+}
+#endif
 

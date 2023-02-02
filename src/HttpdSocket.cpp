@@ -39,6 +39,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 }
 */
 
+#ifdef SOCKETS_NAMESPACE
+namespace SOCKETS_NAMESPACE {
+#endif
+
 
 
 // statics
@@ -144,6 +148,7 @@ void HttpdSocket::OnHeaderComplete()
 	if (GetMethod() == "GET")
 	{
 		m_form = new HttpdForm(GetQueryString(), GetQueryString().size() );
+		AddResponseHeader("Date", datetime2httpdate(GetDate()) );
 		if (GetUri() == "/image")
 		{
 			std::string str64 = 
@@ -160,6 +165,7 @@ void HttpdSocket::OnHeaderComplete()
 		{
 			Exec();
 		}
+		Reset(); // prepare for next request
 	}
 	else
 	{
@@ -185,6 +191,7 @@ void HttpdSocket::OnData(const char *p,size_t l)
 		if (m_file && !m_form)
 		{
 			m_form = new HttpdForm(m_file);
+			AddResponseHeader("Date", datetime2httpdate(GetDate()) );
 			if (GetUri() == "/image")
 			{
 				std::string str64 = 
@@ -201,6 +208,7 @@ void HttpdSocket::OnData(const char *p,size_t l)
 			{
 				Exec();
 			}
+			Reset(); // prepare for next request
 		}
 	}
 }
@@ -306,4 +314,28 @@ std::string HttpdSocket::GetDate()
 	return slask;
 }
 
+
+void HttpdSocket::Reset()
+{
+	HTTPSocket::Reset();
+	m_content_length = 0;
+	if (m_file)
+	{
+		delete m_file;
+		m_file = NULL;
+	}
+	m_received = 0;
+	m_request_id = ++m_request_count;
+	if (m_cookies)
+		delete m_cookies;
+	m_cookies = NULL;
+	if (m_form)
+		delete m_form;
+	m_form = NULL;
+}
+
+
+#ifdef SOCKETS_NAMESPACE
+}
+#endif
 

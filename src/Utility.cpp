@@ -22,6 +22,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #include "Utility.h"
 
+#ifdef SOCKETS_NAMESPACE
+namespace SOCKETS_NAMESPACE {
+#endif
+
 
 std::string Utility::base64(const std::string& str_in)
 {
@@ -151,4 +155,8 @@ std::string Utility::rfc1738_decode(const std::string& src)
 	return dst;
 } // rfc1738_decode
 
+
+#ifdef SOCKETS_NAMESPACE
+}
+#endif
 

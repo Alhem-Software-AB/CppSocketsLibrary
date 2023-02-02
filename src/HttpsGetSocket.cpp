@@ -33,6 +33,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "Parse.h"
 #include "HttpsGetSocket.h"
 
+#ifdef SOCKETS_NAMESPACE
+namespace SOCKETS_NAMESPACE {
+#endif
+
 
 HttpsGetSocket::HttpsGetSocket(SocketHandler& h,const std::string& url_in,const std::string& filename)
 :HttpsSocket(h)
@@ -211,5 +215,9 @@ void HttpsGetSocket::url_this(const std::string& url_in,std::string& host,port_t
 	}
 } // url_this
 
+
+#ifdef SOCKETS_NAMESPACE
+}
+#endif
 
 #endif // HAVE_OPENSSL

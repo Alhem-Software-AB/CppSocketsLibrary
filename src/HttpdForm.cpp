@@ -31,6 +31,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "IFile.h"
 #include "HttpdForm.h"
 
+#ifdef SOCKETS_NAMESPACE
+namespace SOCKETS_NAMESPACE {
+#endif
+
 
 HttpdForm::HttpdForm(IFile *infil) : raw(false)
 {
@@ -568,4 +572,8 @@ size_t HttpdForm::getlength(const std::string& n)
 	return l;
 }
 
+
+#ifdef SOCKETS_NAMESPACE
+}
+#endif
 

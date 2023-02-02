@@ -1,4 +1,4 @@
-VERSION =	1.9.1
+VERSION =	1.9.2
 
 INCLUDE =	-I/usr/devel/include -I.
 PREFIX =	/usr/local
@@ -21,6 +21,10 @@ CFLAGS =	-Wall -g -O2 $(INCLUDE) -MD -D_VERSION='"$(VERSION)"'
 # uncomment if openssl is installed
 CFLAGS += 	-DHAVE_OPENSSL
 
+# uncomment these three lines if the library should be in its own namespace
+#NAMESPACE = 	sock
+#CFLAGS +=	-DSOCKETS_NAMESPACE=$(NAMESPACE)
+#CFLAGS +=	-DSOCKETS_NAMESPACE_STR='"$(NAMESPACE)"'
 
 CPPFLAGS =	$(CFLAGS) 
 

@@ -26,6 +26,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "SocketHandler.h"
 #include "TcpSocket.h"
 
+#ifdef SOCKETS_NAMESPACE
+namespace SOCKETS_NAMESPACE {
+#endif
+
 
 class ResolvSocket : public TcpSocket
 {
@@ -57,5 +61,9 @@ private:
 
 
 
+
+#ifdef SOCKETS_NAMESPACE
+}
+#endif
 
 #endif // _RESOLVSOCKET_H

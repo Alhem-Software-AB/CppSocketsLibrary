@@ -28,6 +28,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "HTTPSocket.h"
 #include "HttpdCookies.h"
 
+#ifdef SOCKETS_NAMESPACE
+namespace SOCKETS_NAMESPACE {
+#endif
+
 
 HttpdCookies::HttpdCookies()
 {
@@ -214,4 +218,8 @@ const std::string& HttpdCookies::expiredatetime()
 	return m_date;
 }
 
+
+#ifdef SOCKETS_NAMESPACE
+}
+#endif
 

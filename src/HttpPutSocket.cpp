@@ -34,6 +34,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "HttpPutSocket.h"
 
+#ifdef SOCKETS_NAMESPACE
+namespace SOCKETS_NAMESPACE {
+#endif
+
 
 
 
@@ -140,4 +144,8 @@ void HttpPutSocket::OnData(const char *,size_t)
 {
 }
 
+
+#ifdef SOCKETS_NAMESPACE
+}
+#endif
 

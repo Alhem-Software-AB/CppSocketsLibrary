@@ -29,6 +29,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "Parse.h"
 #include "HTTPSocket.h"
 
+#ifdef SOCKETS_NAMESPACE
+namespace SOCKETS_NAMESPACE {
+#endif
+
 
 
 
@@ -213,4 +217,24 @@ std::string HTTPSocket::MyUseragent()
 	return version;
 }
 
+
+void HTTPSocket::Reset()
+{
+	m_first = true;
+	m_header = true;
+	m_request = false;
+	m_response = false;
+	SetLineProtocol(true);
+        while (m_response_header.size())
+        {
+                string_m::iterator it = m_response_header.begin();
+                m_response_header.erase(it);
+        }
+
+}
+
+
+#ifdef SOCKETS_NAMESPACE
+}
+#endif
 

@@ -37,6 +37,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #define TCP_BUFSIZE_READ 16400
 
+#ifdef SOCKETS_NAMESPACE
+namespace SOCKETS_NAMESPACE {
+#endif
+
 
 class TcpSocket : public Socket
 {
@@ -71,10 +75,10 @@ public:
 	bool Open6(const std::string& host,port_t port);
 	int Close();
 
-	void Send(const std::string &);
+	void Send(const std::string &,int = 0);
 	void Sendf(char *format, ...);
 
-	virtual void SendBuf(const char *,size_t);
+	virtual void SendBuf(const char *,size_t,int = 0);
 	virtual void OnRawData(const char *,size_t) {}
 
 	size_t GetInputLength() { return ibuf.GetLength(); }
@@ -110,6 +114,7 @@ public:
 	/** number of connection retries */
 	void IncreaseConnectionRetries() { m_retries++; }
 	int GetConnectionRetries();
+	void ResetConnectionRetries() { m_retries = 0; }
 	/** Flag that says a broken connection will try to reconnect. */
 	void SetReconnect(bool = true);
 	bool Reconnect() { return m_b_reconnect; }
@@ -160,5 +165,9 @@ static	std::string m_password;
 	bool m_b_is_reconnect;
 };
 
+
+#ifdef SOCKETS_NAMESPACE
+}
+#endif
 
 #endif // _TCPSOCKET_H

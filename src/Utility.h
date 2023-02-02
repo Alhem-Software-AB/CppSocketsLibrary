@@ -36,6 +36,10 @@ typedef unsigned __int64 uint64_t;
 #endif
 #include "Base64.h"
 
+#ifdef SOCKETS_NAMESPACE
+namespace SOCKETS_NAMESPACE {
+#endif
+
 
 class Utility
 {
@@ -50,5 +54,9 @@ public:
 	static std::string rfc1738_decode(const std::string& src);
 };
 
+
+#ifdef SOCKETS_NAMESPACE
+}
+#endif
 
 #endif // _UTILITY_H

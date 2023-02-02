@@ -30,6 +30,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "ResolvSocket.h"
 #include "ResolvServer.h"
 
+#ifdef SOCKETS_NAMESPACE
+namespace SOCKETS_NAMESPACE {
+#endif
+
 
 ResolvServer::ResolvServer(port_t port)
 :Thread()
@@ -69,4 +73,8 @@ void ResolvServer::Quit()
 	m_quit = true;
 }
 
+
+#ifdef SOCKETS_NAMESPACE
+}
+#endif
 

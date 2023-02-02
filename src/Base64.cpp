@@ -22,6 +22,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #include "Base64.h"
 
+#ifdef SOCKETS_NAMESPACE
+namespace SOCKETS_NAMESPACE {
+#endif
+
 
 char *Base64::bstr =
 	"ABCDEFGHIJKLMNOPQ"
@@ -255,4 +259,8 @@ size_t Base64::decode_length(const std::string& str64)
 	return l;
 }
 
+
+#ifdef SOCKETS_NAMESPACE
+}
+#endif
 

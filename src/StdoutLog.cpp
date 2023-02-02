@@ -29,6 +29,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "Socket.h"
 #include "StdoutLog.h"
 
+#ifdef SOCKETS_NAMESPACE
+namespace SOCKETS_NAMESPACE {
+#endif
+
 
 
 
@@ -62,4 +66,8 @@ void StdoutLog::error(SocketHandler *,Socket *,const std::string& call,int err,c
 		call.c_str(),err,sys_err.c_str(),level.c_str());
 }
 
+
+#ifdef SOCKETS_NAMESPACE
+}
+#endif
 

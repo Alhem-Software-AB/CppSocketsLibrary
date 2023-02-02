@@ -26,6 +26,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <map>
 #include "TcpSocket.h"
 
+#ifdef SOCKETS_NAMESPACE
+namespace SOCKETS_NAMESPACE {
+#endif
+
 
 class HTTPSocket : public TcpSocket
 {
@@ -67,6 +71,8 @@ public:
 
 protected:
 	HTTPSocket(const HTTPSocket& s) : TcpSocket(s) {}
+	virtual void Reset();
+
 private:
 	HTTPSocket& operator=(const HTTPSocket& ) { return *this; }
 	bool m_first;
@@ -86,5 +92,9 @@ private:
 
 
 
+
+#ifdef SOCKETS_NAMESPACE
+}
+#endif
 
 #endif // _HTTPSOCKET_H

@@ -36,6 +36,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "Socket.h"
 
+#ifdef SOCKETS_NAMESPACE
+namespace SOCKETS_NAMESPACE {
+#endif
+
+
 #ifdef _DEBUG
 #define DEB(x) x
 #else
@@ -82,6 +87,7 @@ Socket::Socket(SocketHandler& h)
 ,m_b_ssl(false)
 ,m_b_ssl_server(false)
 ,m_b_disable_read(false)
+,m_b_retry_connect(false)
 {
 }
 
@@ -154,11 +160,12 @@ bool Socket::CheckConnect()
 		Handler().LogError(this, "connect failed", err, StrError(err), LOG_LEVEL_FATAL);
 		r = false;
 	}
-	SetConnecting(false);
+	// don't reset connecting flag on error here, we want the OnConnectFailed timeout later on
 	// %! add to read fd_set here
 	if (r) // ok
 	{
 		Set(!IsDisableRead(), false);
+		SetConnecting(false);
 	}
 	return r;
 }
@@ -199,6 +206,7 @@ int Socket::Close()
 		// failed...
 		Handler().LogError(this, "close", Errno, StrError(Errno), LOG_LEVEL_ERROR);
 	}
+	Set(false, false, false); // remove from fd_set's
 	m_socket = INVALID_SOCKET;
 	return n;
 }
@@ -967,4 +975,8 @@ void Socket::Resolved(int,ipaddr_t,port_t)
 {
 }
 
+
+#ifdef SOCKETS_NAMESPACE
+}
+#endif
 

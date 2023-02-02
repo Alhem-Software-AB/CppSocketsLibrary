@@ -23,6 +23,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef _THREAD_H
 #define _THREAD_H
 
+#ifdef SOCKETS_NAMESPACE
+namespace SOCKETS_NAMESPACE {
+#endif
+
 #ifdef _WIN32
 // to be
 typedef DWORD  threadfunc_t;
@@ -65,5 +69,9 @@ private:
 	bool m_release;
 };
 
+
+#ifdef SOCKETS_NAMESPACE
+}
+#endif
 
 #endif // _THREAD_H

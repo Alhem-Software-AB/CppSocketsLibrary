@@ -28,7 +28,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "MemFile.h"
 
+#ifdef _DEBUG
 #define DEB(x) x
+#else
+#define DEB(x)
+#endif
+
+#ifdef SOCKETS_NAMESPACE
+namespace SOCKETS_NAMESPACE {
+#endif
 
 
 std::map<std::string,MemFile::block_t *> MemFile::m_files;
@@ -188,4 +196,8 @@ bool MemFile::eof()
 	return (m_read_ptr < m_write_ptr) ? false : true;
 }
 
+
+#ifdef SOCKETS_NAMESPACE
+}
+#endif
 

@@ -22,6 +22,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #include "CTcpSocket.h"
 
+#ifdef SOCKETS_NAMESPACE
+namespace SOCKETS_NAMESPACE {
+#endif
+
 
 
 
@@ -56,4 +60,8 @@ bool CTcpSocket::decrypt(unsigned char *ik,const std::string& msg,std::string& o
 	return m_crypt ? m_crypt -> decrypt(ik, msg, output) : false;
 }
 
+
+#ifdef SOCKETS_NAMESPACE
+}
+#endif
 

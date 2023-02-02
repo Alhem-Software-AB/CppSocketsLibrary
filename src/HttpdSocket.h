@@ -22,6 +22,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "HTTPSocket.h"
 #include "SocketHandler.h"
 
+#ifdef SOCKETS_NAMESPACE
+namespace SOCKETS_NAMESPACE {
+#endif
+
 
 class HttpdCookies;
 class HttpdForm;
@@ -48,6 +52,7 @@ protected:
 	void Send64(const std::string& str64, const std::string& type);
 	std::string datetime2httpdate(const std::string& dt);
 	std::string GetDate();
+	void Reset();
 	// headers
 	std::string m_http_cookie;
 	std::string m_content_type;
@@ -66,5 +71,9 @@ static	std::string m_start;
 	HttpdForm *m_form;
 };
 
+
+#ifdef SOCKETS_NAMESPACE
+}
+#endif
 
 #endif // _HTTPDSOCKET_H

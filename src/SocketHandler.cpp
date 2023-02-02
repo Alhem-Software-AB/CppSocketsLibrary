@@ -36,6 +36,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "ResolvSocket.h"
 #include "ResolvServer.h"
 
+#ifdef SOCKETS_NAMESPACE
+namespace SOCKETS_NAMESPACE {
+#endif
 
 #ifdef _DEBUG
 #define DEB(x) x
@@ -58,6 +61,7 @@ SocketHandler::SocketHandler(StdLog *p)
 ,m_resolv_id(0)
 ,m_resolver(NULL)
 {
+DEB(printf("SocketHandler()\n");)
 	FD_ZERO(&m_rfds);
 	FD_ZERO(&m_wfds);
 	FD_ZERO(&m_efds);
@@ -66,6 +70,7 @@ SocketHandler::SocketHandler(StdLog *p)
 
 SocketHandler::~SocketHandler()
 {
+DEB(printf("~SocketHandler()\n");)
 	if (m_resolver)
 		m_resolver -> Quit();
 	if (!m_slave)
@@ -351,16 +356,20 @@ DEB(		printf("slave: %s\n",m_slave ? "YES" : "NO");
 									(tcp -> GetConnectionRetry() &&
 									 tcp -> GetConnectionRetries() < tcp -> GetConnectionRetry() )))
 								{
+									// even though the connection failed at once, only retry after
+									// the connection timeout
+/*
 									tcp -> IncreaseConnectionRetries();
 									if (p -> OnConnectRetry())
 									{
-										tcp -> Open(p -> GetClientRemoteAddr(), p -> GetClientRemotePort());
+										p -> SetRetryClientConnect();
 									}
 									else
 									{
 										p -> SetCloseAndDelete( true );
 										p -> OnConnectFailed();
 									}
+*/
 								}
 								else
 								{
@@ -427,7 +436,7 @@ DEB(		printf("slave: %s\n",m_slave ? "YES" : "NO");
 						tcp -> IncreaseConnectionRetries();
 						if (p -> OnConnectRetry())
 						{
-							tcp -> Open(p -> GetClientRemoteAddr(), p -> GetClientRemotePort());
+							p -> SetRetryClientConnect();
 						}
 						else
 						{
@@ -441,6 +450,16 @@ DEB(		printf("slave: %s\n",m_slave ? "YES" : "NO");
 						p -> OnConnectFailed();
 					}
 				}
+				if (p -> RetryClientConnect())
+				{
+					p -> SetRetryClientConnect(false);
+					p -> Close();
+					tcp -> Open(p -> GetClientRemoteAddr(), p -> GetClientRemotePort());
+					m_add[p -> GetSocket()] = p; // don't repeat add logic here
+					m_sockets.erase(it3); // remove old SOCKET/Socket* pair
+					repeat = true;
+					break;
+				}
 				if (p && p -> CloseAndDelete() )
 				{
 					if (tcp && tcp -> IsConnected() && tcp -> Reconnect())
@@ -450,7 +469,11 @@ DEB(		printf("slave: %s\n",m_slave ? "YES" : "NO");
 						tcp -> SetConnected(false);
 						p -> Close(); // dispose of old file descriptor (Open creates a new)
 						tcp -> Open(p -> GetClientRemoteAddr(), p -> GetClientRemotePort());
-						p -> Set(false, true);
+						tcp -> ResetConnectionRetries();
+						m_add[p -> GetSocket()] = p; // don't repeat add logic here
+						m_sockets.erase(it3); // remove old SOCKET/Socket* pair
+						repeat = true;
+						break;
 					}
 					else
 					{
@@ -662,4 +685,8 @@ void SocketHandler::EnableResolver(port_t port)
 	}
 }
 
+
+#ifdef SOCKETS_NAMESPACE
+}
+#endif
 

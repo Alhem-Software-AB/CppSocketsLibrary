@@ -28,6 +28,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "MinionSocket.h"
 //#include "Utility.h"
 
+#ifdef SOCKETS_NAMESPACE
+namespace SOCKETS_NAMESPACE {
+#endif
+
 
 
 class MinderSocket : public SSLSocket
@@ -66,6 +70,10 @@ private:
 	long m_extra_info;
 };
 
+
+#ifdef SOCKETS_NAMESPACE
+}
+#endif
 
 #endif // HAVE_OPENSSL
 #endif // _MINDERSOCKET_H

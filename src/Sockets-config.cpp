@@ -17,6 +17,7 @@ CFLAGS += 	-DHAVE_OPENSSL
 int main()
 {
 	printf(" -D_VERSION='\"%s\"'", _VERSION);
+
 #ifdef LINUX
 	printf(" -DLINUX");
 #endif
@@ -26,8 +27,14 @@ int main()
 #ifdef SOLARIS
 	printf(" -DSOLARIS");
 #endif
+#ifdef SOLARIS8
+	printf(" -DSOLARIS8");
+#endif
 #ifdef HAVE_OPENSSL
 	printf(" -DHAVE_OPENSSL");
+#endif
+#ifdef SOCKETS_NAMESPACE
+	printf(" -DSOCKETS_NAMESPACE=%s", SOCKETS_NAMESPACE_STR);
 #endif
 
 }

@@ -25,6 +25,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "Socket.h"
 
+#ifdef SOCKETS_NAMESPACE
+namespace SOCKETS_NAMESPACE {
+#endif
+
 
 class UdpSocket : public Socket
 {
@@ -58,7 +62,7 @@ public:
 	void SendTo6(const std::string&,port_t,const std::string&,int flags = 0);
 
 	/** send to connected address */
-	void SendBuf(const char *data,int,int flags = 0);
+	void SendBuf(const char *data,size_t,int flags = 0);
 	void Send(const std::string& ,int flags = 0);
 
 	/** broadcast */
@@ -90,5 +94,9 @@ private:
 	int m_ibufsz;
 };
 
+
+#ifdef SOCKETS_NAMESPACE
+}
+#endif
 
 #endif // _UDPSOCKET_H

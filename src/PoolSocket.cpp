@@ -29,6 +29,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #define DEB(x) 
 
+#ifdef SOCKETS_NAMESPACE
+namespace SOCKETS_NAMESPACE {
+#endif
+
 
 PoolSocket::PoolSocket(SocketHandler& h,Socket *src)
 :Socket(h)
@@ -51,4 +55,8 @@ void PoolSocket::OnRead()
 	SetCloseAndDelete();
 }
 
+
+#ifdef SOCKETS_NAMESPACE
+}
+#endif
 

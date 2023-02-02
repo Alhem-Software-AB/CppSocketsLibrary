@@ -28,6 +28,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #define BLOCKSIZE 32768
 
+#ifdef SOCKETS_NAMESPACE
+namespace SOCKETS_NAMESPACE {
+#endif
+
 
 class MemFile : public IFile
 {
@@ -70,5 +74,9 @@ static	std::map<std::string,block_t *> m_files;
 
 
 
+
+#ifdef SOCKETS_NAMESPACE
+}
+#endif
 
 #endif // _MEMFILE_H

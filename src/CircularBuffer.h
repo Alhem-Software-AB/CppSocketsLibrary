@@ -23,6 +23,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef _CIRCULARBUFFER_H
 #define _CIRCULARBUFFER_H
 
+#ifdef SOCKETS_NAMESPACE
+namespace SOCKETS_NAMESPACE {
+#endif
+
 
 class Socket;
 
@@ -64,6 +68,10 @@ private:
 	unsigned long m_count;
 };
 
+
+#ifdef SOCKETS_NAMESPACE
+}
+#endif
 
 
 

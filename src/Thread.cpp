@@ -29,6 +29,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "Thread.h"
 
+#ifdef SOCKETS_NAMESPACE
+namespace SOCKETS_NAMESPACE {
+#endif
+
 
 Thread::Thread(bool release)
 :m_thread(0)
@@ -121,4 +125,8 @@ void Thread::SetRelease(bool x)
  	m_release = x; 
 }
 
+
+#ifdef SOCKETS_NAMESPACE
+}
+#endif
 

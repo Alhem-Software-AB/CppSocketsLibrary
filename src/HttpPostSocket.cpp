@@ -35,6 +35,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "HttpPostSocket.h"
 
+#ifdef SOCKETS_NAMESPACE
+namespace SOCKETS_NAMESPACE {
+#endif
+
 
 
 HttpPostSocket::HttpPostSocket(SocketHandler& h,const std::string& url)
@@ -302,4 +306,8 @@ void HttpPostSocket::SetMultipart()
 	m_bMultipart = true;
 }
 
+
+#ifdef SOCKETS_NAMESPACE
+}
+#endif
 

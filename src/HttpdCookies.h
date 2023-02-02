@@ -22,6 +22,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include <list>
 
+#ifdef SOCKETS_NAMESPACE
+namespace SOCKETS_NAMESPACE {
+#endif
+
 
 //! Store the cookies name/value pairs.
 
@@ -60,5 +64,10 @@ private:
 	cookie_v m_cookies;
 	std::string m_date;
 };
+
+
+#ifdef SOCKETS_NAMESPACE
+}
+#endif
 
 #endif // _COOKIES_H

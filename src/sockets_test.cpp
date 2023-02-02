@@ -9,6 +9,9 @@
 #include <Socket.h>
 #include <HttpDebugSocket.h>
 #include <ResolvServer.h>
+#ifdef SOCKETS_NAMESPACE
+using namespace SOCKETS_NAMESPACE;
+#endif
 
 
 class MyHandler : public SocketHandler
@@ -184,6 +187,7 @@ int main()
 {
 	StdoutLog log;
 	MyHandler h(&log);
+
 	h.EnableResolver(9999);
 /*
 	h.SetSocks4Host("127.0.0.1");

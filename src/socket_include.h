@@ -38,6 +38,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
+
+#ifdef SOCKETS_NAMESPACE
+namespace SOCKETS_NAMESPACE {
+#endif
+
 #define Errno errno
 #define StrError strerror
 
@@ -50,6 +55,10 @@ typedef int SOCKET;
 #ifndef INADDR_NONE
 #define INADDR_NONE ((unsigned long) -1)
 #endif // INADDR_NONE
+
+#ifdef SOCKETS_NAMESPACE
+}
+#endif
 
 #endif // !_WIN32
 
@@ -67,7 +76,15 @@ typedef int SOCKET;
 #ifdef SOLARIS 
 // ----------------------------------------
 // Solaris
+#ifdef SOCKETS_NAMESPACE
+namespace SOCKETS_NAMESPACE {
+#endif
+
 typedef unsigned short port_t;
+#ifdef SOCKETS_NAMESPACE
+}
+#endif
+
 #define s6_addr16 _S6_un._S6_u8
 #define MSG_NOSIGNAL 0
 
@@ -80,8 +97,16 @@ typedef unsigned short port_t;
 #   define MSG_NOSIGNAL 0
 #  endif
 #  include <netinet/in.h>
+#ifdef SOCKETS_NAMESPACE
+namespace SOCKETS_NAMESPACE {
+#endif
+
 typedef	in_addr_t ipaddr_t;
 typedef	in_port_t port_t;
+#ifdef SOCKETS_NAMESPACE
+}
+#endif
+
 #  define IPV6_ADD_MEMBERSHIP IPV6_JOIN_GROUP
 #  define IPV6_DROP_MEMBERSHIP IPV6_LEAVE_GROUP
 # else
@@ -93,7 +118,15 @@ typedef	in_port_t port_t;
 // Mac OS X
 #include <string.h>
 #include <mach/port.h>
+#ifdef SOCKETS_NAMESPACE
+namespace SOCKETS_NAMESPACE {
+#endif
+
 typedef unsigned long ipaddr_t;
+#ifdef SOCKETS_NAMESPACE
+}
+#endif
+
 #define s6_addr16 __u6_addr.__u6_addr16
 #define MSG_NOSIGNAL 0 // oops - thanks Derek
 #define IPV6_ADD_MEMBERSHIP IPV6_JOIN_GROUP
@@ -103,9 +136,17 @@ typedef unsigned long ipaddr_t;
 // ----------------------------------------
 // Win32
 #pragma comment(lib, "wsock32.lib")
+#ifdef SOCKETS_NAMESPACE
+namespace SOCKETS_NAMESPACE {
+#endif
+
 typedef unsigned long ipaddr_t;
 typedef unsigned short port_t;
 typedef int socklen_t;
+#ifdef SOCKETS_NAMESPACE
+}
+#endif
+
 #define MSG_NOSIGNAL 0
 #define SHUT_RDWR 2
 
@@ -115,6 +156,10 @@ typedef int socklen_t;
 #include <winsock.h>
 
 #define Errno WSAGetLastError()
+#ifdef SOCKETS_NAMESPACE
+namespace SOCKETS_NAMESPACE {
+#endif
+
 const char *StrError(int x);
 
 // class WSAInitializer is a part of the Socket class (on win32)
@@ -136,11 +181,23 @@ private:
 	WSADATA m_wsadata;
 };
 
+#ifdef SOCKETS_NAMESPACE
+}
+#endif
+
 #else 
 // ----------------------------------------
 // LINUX 
+#ifdef SOCKETS_NAMESPACE
+namespace SOCKETS_NAMESPACE {
+#endif
+
 typedef unsigned long ipaddr_t;
 typedef unsigned short port_t;
+#ifdef SOCKETS_NAMESPACE
+}
+#endif
+
 
 #endif
 

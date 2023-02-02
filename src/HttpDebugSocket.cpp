@@ -27,6 +27,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "HttpDebugSocket.h"
 
+#ifdef SOCKETS_NAMESPACE
+namespace SOCKETS_NAMESPACE {
+#endif
+
 
 HttpDebugSocket::HttpDebugSocket(SocketHandler& h) : HTTPSocket(h)
 ,m_content_length(0)
@@ -88,4 +92,8 @@ void HttpDebugSocket::OnData(const char *p,size_t l)
 	}
 }
 
+
+#ifdef SOCKETS_NAMESPACE
+}
+#endif
 

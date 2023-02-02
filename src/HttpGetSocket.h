@@ -25,6 +25,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "HTTPSocket.h"
 
+#ifdef SOCKETS_NAMESPACE
+namespace SOCKETS_NAMESPACE {
+#endif
+
 
 class HttpGetSocket : public HTTPSocket
 {
@@ -74,5 +78,9 @@ private:
 
 
 
+
+#ifdef SOCKETS_NAMESPACE
+}
+#endif
 
 #endif // _HTTPGETSOCKET_H
