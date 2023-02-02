@@ -184,12 +184,12 @@ int Socket::Close()
 		return 0;
 	}
 	int n;
+	Handler().ISocketHandler_Del(this); // remove from fd_set's
 	if ((n = closesocket(m_socket)) == -1)
 	{
 		// failed...
 		Handler().LogError(this, "close", Errno, StrError(Errno), LOG_LEVEL_ERROR);
 	}
-	Handler().Set(m_socket, false, false, false); // remove from fd_set's
 	m_socket = INVALID_SOCKET;
 	return n;
 }
@@ -444,12 +444,6 @@ bool Socket::SetNonblocking(bool bNb, SOCKET s)
 	}
 	return true;
 #endif
-}
-
-
-void Socket::Set(bool bRead, bool bWrite, bool bException)
-{
-	Handler().Set(m_socket, bRead, bWrite, bException);
 }
 
 

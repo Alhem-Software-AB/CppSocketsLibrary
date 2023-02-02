@@ -126,7 +126,7 @@ FILES =		*.h *.cpp \
 		Project.net/Sockets/*.vcproj Project.net/Sockets/*.sln \
 		Project.net/Test/*.vcproj \
 		DevCpp/*.dev tests/Makefile tests/*.cpp \
-		OSX.zip pkgconfig/*pc
+		OSX.zip pkgconfig/*.IN
 
 tar:		clean
 		rm -f MinderSocket_T.h
@@ -176,7 +176,7 @@ docs:		clean
 		rm -rf /usr/local/apache/www.alhem.net/htdocs/Sockets/html
 		doxygen doxygen.cfg
 		./packdocs.sh Sockets-$(VERSION)-doxygendocs
-		cvs up
+		svn up
 
 tmpdocs:	clean
 		rm -f MinderSocket_T.h
@@ -192,4 +192,4 @@ tmpdocs:	clean
 		./mkdot-tmp.sh
 		rm -rf /usr/local/apache/www.alhem.net/htdocs/Sockets-tmp/html
 		doxygen doxygen-tmp.cfg
-		cvs up
+		svn up

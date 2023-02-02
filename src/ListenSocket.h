@@ -328,7 +328,6 @@ public:
 		{
 			socklen_t sa_len = sizeof(struct sockaddr);
 			SOCKET a_s = accept(GetSocket(), &sa, &sa_len);
-
 			if (a_s == INVALID_SOCKET)
 			{
 				// EAGAIN or EWOULDBLOCK
@@ -348,9 +347,9 @@ public:
 				closesocket(a_s);
 				return;
 			}
-			if (Handler().GetCount() >= FD_SETSIZE)
+			if (Handler().GetCount() >= Handler().MaxCount())
 			{
-				Handler().LogError(this, "accept", (int)Handler().GetCount(), "ISocketHandler fd_set limit reached", LOG_LEVEL_FATAL);
+				Handler().LogError(this, "accept", (int)Handler().GetCount(), "ISocketHandler socket limit reached", LOG_LEVEL_FATAL);
 				closesocket(a_s);
 				return;
 			}
@@ -366,13 +365,13 @@ public:
 #ifdef IPPROTO_IPV6
 				if (sa_len == sizeof(struct sockaddr_in6))
 				{
-					struct sockaddr_in6 *p = (struct sockaddr_in6 *)&sa;
-					if (p -> sin6_family == AF_INET6)
+					if (reinterpret_cast<struck sockaddr_in6&>(sa).sin6_family == AF_INET6)
 					{
-						Ipv6Address ad(p -> sin6_addr,ntohs(p -> sin6_port));
-						ad.SetFlowinfo(p -> sin6_flowinfo);
+						Ipv6Address ad(reinterpret_cast<struck sockaddr_in6&>(sa).sin6_addr,
+							ntohs(reinterpret_cast<struck sockaddr_in6&>(sa).sin6_port));
+						ad.SetFlowinfo(reinterpret_cast<struck sockaddr_in6&>(sa).sin6_flowinfo);
 #ifndef _WIN32
-						ad.SetScopeId(p -> sin6_scope_id);
+						ad.SetScopeId(reinterpret_cast<struck sockaddr_in6&>(sa).sin6_scope_id);
 #endif
 						tmp -> SetRemoteAddress(ad);
 					}

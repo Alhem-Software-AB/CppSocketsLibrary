@@ -168,9 +168,6 @@ public:
 		\sa SetCloseAndDelete */
 	virtual int Close();
 
-	/** Add file descriptor to sockethandler fd_set's. */
-	void Set(bool bRead,bool bWrite,bool bException = true);
-
 	/** Returns true when socket file descriptor is valid
 		and socket is not about to be closed. */
 	virtual bool Ready();

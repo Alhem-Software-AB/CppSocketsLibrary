@@ -1,5 +1,19 @@
 diff for next release always available @ http://www.alhem.net/Sockets/latest_diff.html
 
+2.3.9.2
+--------
+More internal restructuring of SocketHandler.
+The Get() method has been removed. Set() has been split into three:
+ISocketHandler_Add(), ISocketHandler_Mod(), and ISocketHandler_Del().
+New methods defined in ISocketHandler interface to support different 
+models of socket io: ISocketHandler_Select(), MaxCount().
+Removed Set() method from Socket class.
+Implemented SocketHandlerEp using epoll for linux only.
+reinterpret_cast<> added in ListenSocket for ipv6 address struct.
+HttpPostSocket member variable holding http headers (m_fields) is now
+protected (changed from private).
+Repaired Reconnect function in sockethandler.
+
 2.3.9.1
 --------
 Using thread- and memory safe clib/c runtime function when possible.
@@ -8,7 +22,6 @@ Quicker tcp shutdown sequence when sockets lib initiates close.
 Renamed Utility::GetCurrentDirectory to Utility::CurrentDirectory, and
 added Utility::GetEnv().
 Removed unused triggers code.
-
 
 2.3.9
 ------

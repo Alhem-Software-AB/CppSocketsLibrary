@@ -93,14 +93,19 @@ public:
 	// -------------------------------------------------------------------------
 	/** Add socket instance to socket map. Removal is always automatic. */
 	virtual void Add(Socket *) = 0;
+
 protected:
 	/** Remove socket from socket map, used by Socket class. */
 	virtual void Remove(Socket *) = 0;
+
+	/** Actual call to select() */
+	virtual int ISocketHandler_Select(struct timeval *) = 0;
+
 public:
-	/** Get status of read/write/exception file descriptor set for a socket. */
-	virtual void Get(SOCKET s,bool& r,bool& w,bool& e) = 0;
 	/** Set read/write/exception file descriptor sets (fd_set). */
-	virtual void Set(SOCKET s,bool bRead,bool bWrite,bool bException = true) = 0;
+	virtual void ISocketHandler_Add(Socket *,bool bRead,bool bWrite) = 0;
+	virtual void ISocketHandler_Mod(Socket *,bool bRead,bool bWrite) = 0;
+	virtual void ISocketHandler_Del(Socket *) = 0;
 
 	/** Wait for events, generate callbacks. */
 	virtual int Select(long sec,long usec) = 0;
@@ -116,6 +121,9 @@ public:
 
 	/** Return number of sockets handled by this handler.  */
 	virtual size_t GetCount() = 0;
+
+	/** Return maximum number of sockets allowed. */
+	virtual size_t MaxCount() = 0;
 
 	/** Override and return false to deny all incoming connections. 
 		\param p ListenSocket class pointer (use GetPort to identify which one) */

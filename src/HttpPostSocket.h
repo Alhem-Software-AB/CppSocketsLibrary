@@ -72,12 +72,14 @@ public:
 	/** http put client implemented in OnConnect */
 	void OnConnect();
 
+protected:
+	std::map<std::string,std::list<std::string> > m_fields;
+
 private:
 	HttpPostSocket(const HttpPostSocket& s) : HttpClientSocket(s) {} // copy constructor
 	HttpPostSocket& operator=(const HttpPostSocket& ) { return *this; } // assignment operator
 	void DoMultipartPost();
 	//
-	std::map<std::string,std::list<std::string> > m_fields;
 	std::map<std::string,std::string> m_files;
 	std::string m_boundary;
 	std::map<std::string,long> m_content_length;

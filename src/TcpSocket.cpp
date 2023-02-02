@@ -212,9 +212,9 @@ bool TcpSocket::Open(SocketAddress& ad,SocketAddress& bind_ad,bool skip_socks)
 		SetCloseAndDelete();
 		return false;
 	}
-	if (Handler().GetCount() >= FD_SETSIZE)
+	if (Handler().GetCount() >= Handler().MaxCount())
 	{
-		Handler().LogError(this, "Open", 0, "no space left in fd_set", LOG_LEVEL_FATAL);
+		Handler().LogError(this, "Open", 0, "no space left for more sockets", LOG_LEVEL_FATAL);
 		SetCloseAndDelete();
 		return false;
 	}
@@ -679,13 +679,13 @@ void TcpSocket::OnWrite()
 		// don't reset connecting flag on error here, we want the OnConnectFailed timeout later on
 		if (!err) // ok
 		{
-			Set(!IsDisableRead(), false);
+			Handler().ISocketHandler_Mod(this, !IsDisableRead(), false);
 			SetConnecting(false);
 			SetCallOnConnect();
 			return;
 		}
 		Handler().LogError(this, "tcp: connect failed", err, StrError(err), LOG_LEVEL_FATAL);
-		Set(false, false); // no more monitoring because connection failed
+		Handler().ISocketHandler_Mod(this, false, false); // no more monitoring because connection failed
 
 		// failed
 #ifdef ENABLE_SOCKS4
@@ -763,14 +763,11 @@ void TcpSocket::SendFromOutputBuffer()
 
 	// check output buffer set, set/reset m_wfds accordingly
 	{
-		bool br;
-		bool bw;
-		bool bx;
-		Handler().Get(GetSocket(), br, bw, bx);
+		bool br = !IsDisableRead();
 		if (m_obuf.size())
-			Set(br, true);
+			Handler().ISocketHandler_Mod(this, br, true);
 		else
-			Set(br, false);
+			Handler().ISocketHandler_Mod(this, br, false);
 	}
 }
 
@@ -937,14 +934,11 @@ void TcpSocket::SendBuf(const char *buf,size_t len,int)
 
 	// check output buffer set, set/reset m_wfds accordingly
 	{
-		bool br;
-		bool bw;
-		bool bx;
-		Handler().Get(GetSocket(), br, bw, bx);
+		bool br = !IsDisableRead();
 		if (m_obuf.size())
-			Set(br, true);
+			Handler().ISocketHandler_Mod(this, br, true);
 		else
-			Set(br, false);
+			Handler().ISocketHandler_Mod(this, br, false);
 	}
 }
 
@@ -1289,7 +1283,8 @@ void TcpSocket::InitializeContext(const std::string& context, const SSL_METHOD *
 	/* Create our context*/
 	if (m_client_contexts.find(context) == m_client_contexts.end())
 	{
-		SSL_METHOD *meth = meth_in ? const_cast<SSL_METHOD *>(meth_in) : SSLv3_method();
+		SSL_METHOD *meth = const_cast<SSL_METHOD *>(meth_in) ?
+			const_cast<SSL_METHOD *>(meth_in) : const_cast<SSL_METHOD *>(SSLv3_method());
 		m_ssl_ctx = m_client_contexts[context] = SSL_CTX_new(meth);
 		SSL_CTX_set_mode(m_ssl_ctx, SSL_MODE_AUTO_RETRY|SSL_MODE_ENABLE_PARTIAL_WRITE);
 	}

@@ -773,3 +773,11 @@ Version 2.3.9
 Version 2.3.9.1
 --------------------------
 
+Version 2.3.9.2
+--------------------------
+68a69
+> Makefile.Defines.linux-x86-64
+96a98,99
+> SocketHandlerEp.cpp
+> SocketHandlerEp.h
+

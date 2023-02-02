@@ -224,22 +224,30 @@ void SocketHandler::Add(Socket *p)
 }
 
 
-void SocketHandler::Get(SOCKET s,bool& r,bool& w,bool& e)
+void SocketHandler::ISocketHandler_Add(Socket *p,bool bRead,bool bWrite)
 {
-	if (s >= 0)
-	{
-		r = FD_ISSET(s, &m_rfds) ? true : false;
-		w = FD_ISSET(s, &m_wfds) ? true : false;
-		e = FD_ISSET(s, &m_efds) ? true : false;
-	}
+	Set(p, bRead, bWrite);
 }
 
 
-void SocketHandler::Set(SOCKET s,bool bRead,bool bWrite,bool bException)
+void SocketHandler::ISocketHandler_Mod(Socket *p,bool bRead,bool bWrite)
 {
-DEB(	fprintf(stderr, "Set(%d, %s, %s, %s)\n", s, bRead ? "true" : "false", bWrite ? "true" : "false", bException ? "true" : "false");)
+	Set(p, bRead, bWrite);
+}
+
+
+void SocketHandler::ISocketHandler_Del(Socket *p)
+{
+	Set(p, false, false);
+}
+
+
+void SocketHandler::Set(Socket *p,bool bRead,bool bWrite)
+{
+	SOCKET s = p -> GetSocket();
 	if (s >= 0)
 	{
+		bool bException = true;
 		if (bRead)
 		{
 			if (!FD_ISSET(s, &m_rfds))
@@ -662,9 +670,9 @@ void SocketHandler::AddIncoming()
 {
 	while (m_add.size() > 0)
 	{
-		if (m_sockets.size() >= FD_SETSIZE)
+		if (m_sockets.size() >= MaxCount())
 		{
-			LogError(NULL, "Select", (int)m_sockets.size(), "FD_SETSIZE reached", LOG_LEVEL_WARNING);
+			LogError(NULL, "Select", (int)m_sockets.size(), "socket limit reached", LOG_LEVEL_WARNING);
 			break;
 		}
 		std::list<Socket *>::iterator it = m_add.begin();
@@ -713,7 +721,7 @@ DEB(		fprintf(stderr, "Trying to add fd %d,  m_add.size() %d\n", (int)s, (int)m_
 			StreamSocket *scp = dynamic_cast<StreamSocket *>(p);
 			if (scp && scp -> Connecting()) // 'Open' called before adding socket
 			{
-				Set(s,false,true);
+				ISocketHandler_Add(p,false,true);
 			}
 			else
 			{
@@ -721,11 +729,11 @@ DEB(		fprintf(stderr, "Trying to add fd %d,  m_add.size() %d\n", (int)s, (int)m_
 				bool bWrite = tcp ? tcp -> GetOutputLength() != 0 : false;
 				if (p -> IsDisableRead())
 				{
-					Set(s, false, bWrite);
+					ISocketHandler_Add(p, false, bWrite);
 				}
 				else
 				{
-					Set(s, true, bWrite);
+					ISocketHandler_Add(p, true, bWrite);
 				}
 			}
 			m_maxsock = (s > m_maxsock) ? s : m_maxsock;
@@ -841,7 +849,7 @@ void SocketHandler::CheckDetach()
 		Socket *p = it -> second;
 		if (p -> IsDetach())
 		{
-			Set(p -> GetSocket(), false, false, false);
+			ISocketHandler_Del(p);
 			// After DetachSocket(), all calls to Handler() will return a reference
 			// to the new slave SocketHandler running in the new thread.
 			p -> DetachSocket();
@@ -921,8 +929,9 @@ void SocketHandler::CheckClose()
 		if (p -> CloseAndDelete() )
 		{
 			TcpSocket *tcp = dynamic_cast<TcpSocket *>(p);
-			if (p -> Lost())
+			if (p -> Lost() && !(tcp && tcp -> Reconnect()))
 			{
+				// remove instance when Lost, if not reconnect flag is set
 				DeleteSocket(p);
 			}
 			else
@@ -950,7 +959,7 @@ DEB(						fprintf(stderr, " close(1)\n");)
 				}
 				else
 				{
-					Set(p -> GetSocket(),false,false,false);
+					ISocketHandler_Del(p);
 					tcp -> Close();
 					DeleteSocket(p);
 				}
@@ -997,7 +1006,7 @@ DEB(						fprintf(stderr, "Close() before reconnect\n");)
 				else
 #endif // ENABLE_POOL
 				{
-					Set(p -> GetSocket(),false,false,false);
+					ISocketHandler_Del(p);
 DEB(							fprintf(stderr, "Close() before OnDelete\n");)
 					p -> Close();
 				}
@@ -1009,35 +1018,8 @@ DEB(							fprintf(stderr, "Close() before OnDelete\n");)
 }
 
 
-int SocketHandler::Select(long sec,long usec)
+int SocketHandler::ISocketHandler_Select(struct timeval *tsel)
 {
-	struct timeval tv;
-	tv.tv_sec = sec;
-	tv.tv_usec = usec;
-	return Select(&tv);
-}
-
-
-int SocketHandler::Select()
-{
-	if (m_b_check_callonconnect ||
-		m_b_check_detach ||
-		m_b_check_timeout ||
-		m_b_check_retry ||
-		m_b_check_close)
-	{
-		return Select(0, 200000);
-	}
-	return Select(NULL);
-}
-
-
-int SocketHandler::Select(struct timeval *tsel)
-{
-	if (!m_add.empty())
-	{
-		AddIncoming();
-	}
 #ifdef MACOSX
 	fd_set rfds;
 	fd_set wfds;
@@ -1150,7 +1132,40 @@ printf("]\n");
 			}
 		} // m_sockets ...
 	} // if (n > 0)
+	return n;
+}
 
+
+int SocketHandler::Select(long sec,long usec)
+{
+	struct timeval tv;
+	tv.tv_sec = sec;
+	tv.tv_usec = usec;
+	return Select(&tv);
+}
+
+
+int SocketHandler::Select()
+{
+	if (m_b_check_callonconnect ||
+		m_b_check_detach ||
+		m_b_check_timeout ||
+		m_b_check_retry ||
+		m_b_check_close)
+	{
+		return Select(0, 200000);
+	}
+	return Select(NULL);
+}
+
+
+int SocketHandler::Select(struct timeval *tsel)
+{
+	if (!m_add.empty())
+	{
+		AddIncoming();
+	}
+	int n = ISocketHandler_Select(tsel);
 	// check CallOnConnect - EVENT
 	if (m_b_check_callonconnect)
 	{

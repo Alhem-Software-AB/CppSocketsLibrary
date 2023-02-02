@@ -83,11 +83,10 @@ public:
 	/** Add socket instance to socket map. Removal is always automatic. */
 	void Add(Socket *);
 
-	/** Get status of read/write/exception file descriptor set for a socket. */
-	void Get(SOCKET s,bool& r,bool& w,bool& e);
-
 	/** Set read/write/exception file descriptor sets (fd_set). */
-	void Set(SOCKET s,bool bRead,bool bWrite,bool bException = true);
+	void ISocketHandler_Add(Socket *,bool bRead,bool bWrite);
+	void ISocketHandler_Mod(Socket *,bool bRead,bool bWrite);
+	void ISocketHandler_Del(Socket *);
 
 	/** Wait for events, generate callbacks. */
 	int Select(long sec,long usec);
@@ -104,6 +103,7 @@ public:
 
 	/** Return number of sockets handled by this handler.  */
 	size_t GetCount();
+	size_t MaxCount() { return FD_SETSIZE; }
 
 	/** Override and return false to deny all incoming connections. 
 		\param p ListenSocket class pointer (use GetPort to identify which one) */
@@ -198,16 +198,12 @@ protected:
 	std::list<Socket *> m_delete; ///< Sockets to be deleted (failed when Add)
 
 protected:
+	/** Actual call to select() */
+	int ISocketHandler_Select(struct timeval *);
 	/** Remove socket from socket map, used by Socket class. */
 	void Remove(Socket *);
-	StdLog *m_stdlog; ///< Registered log class, or NULL
-	IMutex& m_mutex; ///< Thread safety mutex
-	bool m_b_use_mutex; ///< Mutex correctly initialized
-
-private:
 	/** Schedule socket for deletion */
 	void DeleteSocket(Socket *);
-	void RebuildFdset();
 	void AddIncoming();
 	void CheckErasedSockets();
 	void CheckCallOnConnect();
@@ -215,7 +211,14 @@ private:
 	void CheckTimeout(time_t);
 	void CheckRetry();
 	void CheckClose();
+	//
+	StdLog *m_stdlog; ///< Registered log class, or NULL
+	IMutex& m_mutex; ///< Thread safety mutex
+	bool m_b_use_mutex; ///< Mutex correctly initialized
 
+private:
+	void RebuildFdset();
+	void Set(Socket *,bool,bool);
 	//
 	SOCKET m_maxsock; ///< Highest file descriptor + 1 in active sockets list
 	fd_set m_rfds; ///< file descriptor set monitored for read events

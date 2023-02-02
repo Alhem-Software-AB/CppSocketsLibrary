@@ -1,7 +1,7 @@
 MAJOR =		2
-MINOR =		3.9.1
+MINOR =		3.9.2
 VERSION =	$(MAJOR).$(MINOR)
-DIFF_VERSION =	2.3.9
+DIFF_VERSION =	2.3.9.1
 
 # Sockets
 OBJS =		\
@@ -42,6 +42,7 @@ OBJS =		\
 		SmtpdSocket.o \
 		Socket.o \
 		SocketHandler.o \
+		SocketHandlerEp.o \
 		SocketStream.o \
 		StdoutLog.o \
 		StreamSocket.o \
