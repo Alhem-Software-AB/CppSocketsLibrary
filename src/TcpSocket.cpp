@@ -20,6 +20,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
+#include "SocketHandler.h"
 #ifdef _WIN32
 #pragma warning(disable:4786)
 #define strcasecmp stricmp
@@ -35,7 +36,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <openssl/rand.h>
 #endif
 
-#include "SocketHandler.h"
 #include "TcpSocket.h"
 #include "PoolSocket.h"
 
@@ -1017,5 +1017,21 @@ int TcpSocket::Close()
 }
 
 
+#ifdef HAVE_OPENSSL
+SSL_CTX *TcpSocket::GetSslContext()
+{
+	if (!m_context)
+		Handler().LogError(this, "GetSslContext", 0, "SSL Context is NULL; check InitAsServer/InitAsClient", LOG_LEVEL_WARNING);
+	return m_context;
+}
+
+SSL *TcpSocket::GetSsl()
+{
+	if (!m_ssl)
+		Handler().LogError(this, "GetSsl", 0, "SSL is NULL; check InitAsServer/InitAsClient", LOG_LEVEL_WARNING);
+	return m_ssl;
+}
+
+#endif
 
 

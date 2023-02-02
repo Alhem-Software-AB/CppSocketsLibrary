@@ -42,6 +42,7 @@ class Socket;
 class StdLog
 {
 public:
+	virtual ~StdLog() {}
 	virtual void error(SocketHandler *,Socket *,
 		const std::string& user_text,
 		int err,

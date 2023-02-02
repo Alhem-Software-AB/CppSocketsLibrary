@@ -1,4 +1,4 @@
-VERSION =	1.8.6
+VERSION =	1.8.7
 
 INCLUDE =	-I/usr/devel/include -I.
 PREFIX =	/usr/local
@@ -84,7 +84,7 @@ install:	all
 		install Sockets-config $(PREFIX)/bin
 
 clean:
-		rm -f *.o *~ slask *.d $(PROGS) *.a
+		rm -f *.o *~ slask *.d $(PROGS) *.a */*~
 
 -include	*.d
 

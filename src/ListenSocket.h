@@ -340,13 +340,15 @@ public:
 		}
 	}
 
+//	X *GetCreator() { return m_creator; }
+
 protected:
 	ListenSocket(const ListenSocket& ) {}
 private:
 	ListenSocket& operator=(const ListenSocket& ) { return *this; }
 	port_t m_port;
 	int m_depth;
-	Socket *m_creator;
+	X *m_creator;
 	bool m_bHasCreate;
 };
 

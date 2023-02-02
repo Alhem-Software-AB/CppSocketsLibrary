@@ -477,7 +477,7 @@ bool SocketHandler::OkToAccept()
 
 size_t SocketHandler::GetCount()
 {
-	return m_sockets.size();
+	return m_sockets.size() + m_add.size();
 }
 
 

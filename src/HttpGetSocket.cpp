@@ -188,11 +188,14 @@ void HttpGetSocket::OnHeaderComplete()
 {
 	m_content += "\n";
 
-	m_fil = fopen(m_to_file.c_str(),"wb");
-	if (!m_fil)
+	if (m_to_file.size())
 	{
-		Handler().LogError(this, "OnHeaderComplete", Errno, StrError(Errno), LOG_LEVEL_FATAL);
-		SetCloseAndDelete();
+		m_fil = fopen(m_to_file.c_str(),"wb");
+		if (!m_fil)
+		{
+			Handler().LogError(this, "OnHeaderComplete", Errno, StrError(Errno), LOG_LEVEL_FATAL);
+			SetCloseAndDelete();
+		}
 	}
 }
 

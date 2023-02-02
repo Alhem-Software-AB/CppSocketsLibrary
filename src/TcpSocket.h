@@ -108,6 +108,8 @@ protected:
 	void InitializeContext(SSL_METHOD * = NULL);
 	void InitializeContext(const std::string& keyfile,const std::string& password,SSL_METHOD * = NULL);
 static	int password_cb(char *buf,int num,int rwflag,void *userdata);
+	virtual SSL_CTX *GetSslContext();
+	virtual SSL *GetSsl();
 #endif
 	bool SSLNegotiate();
 	//
