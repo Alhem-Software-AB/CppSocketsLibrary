@@ -27,9 +27,10 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
-#ifndef _HTTPPOSTSOCKET_H
-#define _HTTPPOSTSOCKET_H
+#ifndef _SOCKETS_HttpPostSocket_H
+#define _SOCKETS_HttpPostSocket_H
 
+#include "sockets-config.h"
 #include "HttpClientSocket.h"
 
 #ifdef SOCKETS_NAMESPACE
@@ -86,4 +87,4 @@ private:
 }
 #endif
 
-#endif // _HTTPPOSTSOCKET_H
+#endif // _SOCKETS_HttpPostSocket_H

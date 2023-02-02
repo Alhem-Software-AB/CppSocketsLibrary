@@ -39,11 +39,17 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <fcntl.h>
 
 #include "ISocketHandler.h"
-#include "SocketThread.h"
 #include "Utility.h"
 
 #include "TcpSocket.h"
 #include "SocketAddress.h"
+#include "SocketHandler.h"
+
+#ifdef _DEBUG
+#define DEB(x) x; fflush(stderr);
+#else
+#define DEB(x)
+#endif
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
@@ -84,6 +90,7 @@ Socket::Socket(ISocketHandler& h)
 ,m_shutdown(0)
 ,m_client_remote_address(NULL)
 ,m_remote_address(NULL)
+,m_traffic_monitor(NULL)
 #ifdef HAVE_OPENSSL
 ,m_b_enable_ssl(false)
 ,m_b_ssl(false)
@@ -228,6 +235,7 @@ void Socket::OnAccept()
 
 int Socket::Close()
 {
+DEB(	fprintf(stderr, " fd %d\n", m_socket);)
 	if (m_socket == INVALID_SOCKET) // this could happen
 	{
 		Handler().LogError(this, "Socket::Close", 0, "file descriptor invalid", LOG_LEVEL_WARNING);
@@ -235,7 +243,7 @@ int Socket::Close()
 	}
 	int n;
 	SetNonblocking(true);
-	if (IsConnected())
+	if (IsConnected() && !(GetShutdown() & SHUT_WR))
 	{
 		if (shutdown(m_socket, SHUT_WR) == -1)
 		{
@@ -270,6 +278,7 @@ int Socket::Close()
 	Handler().AddList(m_socket, LIST_RETRY, false);
 	Handler().AddList(m_socket, LIST_CLOSE, false);
 	m_socket = INVALID_SOCKET;
+DEB(	fprintf(stderr, " fd %d\n", m_socket);)
 	return n;
 }
 
@@ -591,29 +600,6 @@ bool Socket::Ready()
 }
 
 
-#ifdef ENABLE_DETACH
-bool Socket::Detach()
-{
-	if (!DeleteByHandler())
-		return false;
-	if (m_pThread)
-		return false;
-	if (m_detached)
-		return false;
-	SetDetach();
-	return true;
-}
-
-
-void Socket::DetachSocket()
-{
-	SetDetached();
-	m_pThread = new SocketThread(this);
-	m_pThread -> SetRelease(true);
-}
-#endif
-
-
 void Socket::OnLine(const std::string& )
 {
 }
@@ -629,13 +615,6 @@ bool Socket::LineProtocol()
 {
 	return m_line_protocol;
 }
-
-
-/*
-void Socket::ReadLine()
-{
-}
-*/
 
 
 void Socket::OnConnectFailed()
@@ -667,140 +646,10 @@ port_t Socket::GetPort()
 }
 
 
-#ifdef ENABLE_POOL
-void Socket::CopyConnection(Socket *sock)
-{
-	Attach( sock -> GetSocket() );
-#ifdef ENABLE_IPV6
-	SetIpv6( sock -> IsIpv6() );
-#endif
-	SetSocketType( sock -> GetSocketType() );
-	SetSocketProtocol( sock -> GetSocketProtocol() );
-
-/*
-	SocketAddress *client = sock -> GetClientRemoteAddress();
-	if (client)
-	{
-		SetClientRemoteAddress( *client );
-	}
-*/
-	SetClientRemoteAddress( *sock -> GetClientRemoteAddress() );
-/*
-	SocketAddress *remote = GetRemoteSocketAddress();
-	if (remote)
-	{
-		SetRemoteAddress(*remote);
-	}
-*/
-	SetRemoteAddress( *sock -> GetRemoteSocketAddress() );
-}
-#endif
-
-
-#ifdef ENABLE_RESOLVER
-int Socket::Resolve(const std::string& host,port_t port)
-{
-	return Handler().Resolve(this, host, port);
-}
-
-
-#ifdef ENABLE_IPV6
-int Socket::Resolve6(const std::string& host,port_t port)
-{
-	return Handler().Resolve6(this, host, port);
-}
-#endif
-
-
-int Socket::Resolve(ipaddr_t a)
-{
-	return Handler().Resolve(this, a);
-}
-
-
-#ifdef ENABLE_IPV6
-int Socket::Resolve(in6_addr& a)
-{
-	return Handler().Resolve(this, a);
-}
-#endif
-#endif
-
-
-#ifdef ENABLE_SOCKS4
-void Socket::OnSocks4Connect()
-{
-	Handler().LogError(this, "OnSocks4Connect", 0, "Use with TcpSocket only");
-}
-
-
-void Socket::OnSocks4ConnectFailed()
-{
-	Handler().LogError(this, "OnSocks4ConnectFailed", 0, "Use with TcpSocket only");
-}
-
-
-bool Socket::OnSocks4Read()
-{
-	Handler().LogError(this, "OnSocks4Read", 0, "Use with TcpSocket only");
-	return true;
-}
-
-
-void Socket::SetSocks4Host(const std::string& host)
-{
-	Utility::u2ip(host, m_socks4_host);
-}
-#endif
-
-
-/*
-void Socket::OnWriteComplete()
-{
-}
-*/
-
-
-#ifdef ENABLE_RESOLVER
-void Socket::OnResolved(int,ipaddr_t,port_t)
-{
-}
-
-
-#ifdef ENABLE_IPV6
-void Socket::OnResolved(int,in6_addr&,port_t)
-{
-}
-#endif
-
-
-void Socket::OnReverseResolved(int,const std::string&)
-{
-}
-
-
-void Socket::OnResolveFailed(int)
-{
-}
-#endif
-
-
 Socket *Socket::Create()
 {
 	return NULL;
 }
-
-
-#ifdef HAVE_OPENSSL
-void Socket::OnSSLConnect()
-{
-}
-
-
-void Socket::OnSSLAccept()
-{
-}
-#endif
 
 
 bool Socket::OnConnectRetry()
@@ -816,50 +665,10 @@ void Socket::OnReconnect()
 #endif
 
 
-#ifdef HAVE_OPENSSL
-bool Socket::SSLNegotiate()
-{
-	return false;
-}
-#endif
-
-
 time_t Socket::Uptime()
 {
 	return time(NULL) - m_tCreate;
 }
-
-
-#ifdef ENABLE_DETACH
-void Socket::OnDetached()
-{
-}
-
-
-void Socket::SetDetach(bool x)
-{
-	Handler().AddList(m_socket, LIST_DETACH, x);
-	m_detach = x;
-}
-
-
-bool Socket::IsDetach()
-{
-	return m_detach;
-}
-
-
-void Socket::SetDetached(bool x)
-{
-	m_detached = x;
-}
-
-
-const bool Socket::IsDetached() const
-{
-	return m_detached;
-}
-#endif
 
 
 #ifdef ENABLE_IPV6
@@ -872,62 +681,6 @@ void Socket::SetIpv6(bool x)
 bool Socket::IsIpv6()
 {
 	return m_ipv6;
-}
-#endif
-
-
-#ifdef ENABLE_POOL
-void Socket::SetIsClient()
-{
-	m_bClient = true;
-}
-
-
-void Socket::SetSocketType(int x)
-{
-	m_socket_type = x;
-}
-
-
-int Socket::GetSocketType()
-{
-	return m_socket_type;
-}
-
-
-void Socket::SetSocketProtocol(const std::string& x)
-{
-	m_socket_protocol = x;
-}
-
-
-const std::string& Socket::GetSocketProtocol()
-{
-	return m_socket_protocol;
-}
-
-
-void Socket::SetRetain()
-{
-	if (m_bClient) m_bRetain = true;
-}
-
-
-bool Socket::Retain()
-{
-	return m_bRetain;
-}
-
-
-void Socket::SetLost()
-{
-	m_bLost = true;
-}
-
-
-bool Socket::Lost()
-{
-	return m_bLost;
 }
 #endif
 
@@ -957,56 +710,6 @@ void Socket::SetKeepalive(bool x)
 }
 
 
-#ifdef ENABLE_SOCKS4
-bool Socket::Socks4()
-{
-	return m_bSocks4;
-}
-
-
-void Socket::SetSocks4(bool x)
-{
-	m_bSocks4 = x;
-}
-
-
-void Socket::SetSocks4Host(ipaddr_t a)
-{
-	m_socks4_host = a;
-}
-
-
-void Socket::SetSocks4Port(port_t p)
-{
-	m_socks4_port = p;
-}
-
-
-void Socket::SetSocks4Userid(const std::string& x)
-{
-	m_socks4_userid = x;
-}
-
-
-ipaddr_t Socket::GetSocks4Host()
-{
-	return m_socks4_host;
-}
-
-
-port_t Socket::GetSocks4Port()
-{
-	return m_socks4_port;
-}
-
-
-const std::string& Socket::GetSocks4Userid()
-{
-	return m_socks4_userid;
-}
-#endif
-
-
 void Socket::SetConnectTimeout(int x)
 {
 	m_connect_timeout = x;
@@ -1017,44 +720,6 @@ int Socket::GetConnectTimeout()
 {
 	return m_connect_timeout;
 }
-
-
-#ifdef HAVE_OPENSSL
-bool Socket::IsSSL()
-{
-	return m_b_enable_ssl;
-}
-
-
-void Socket::EnableSSL(bool x)
-{
-	m_b_enable_ssl = x;
-}
-
-
-bool Socket::IsSSLNegotiate()
-{
-	return m_b_ssl;
-}
-
-
-void Socket::SetSSLNegotiate(bool x)
-{
-	m_b_ssl = x;
-}
-
-
-bool Socket::IsSSLServer()
-{
-	return m_b_ssl_server;
-}
-
-
-void Socket::SetSSLServer(bool x)
-{
-	m_b_ssl_server = x;
-}
-#endif
 
 
 void Socket::DisableRead(bool x)
@@ -1116,18 +781,6 @@ bool Socket::GetFlushBeforeClose()
 }
 
 
-#ifdef HAVE_OPENSSL
-void Socket::OnSSLConnectFailed()
-{
-}
-
-
-void Socket::OnSSLAcceptFailed()
-{
-}
-#endif
-
-
 int Socket::GetConnectionRetry()
 {
 	return m_connection_retry;
@@ -1175,14 +828,6 @@ bool Socket::ErasedByHandler()
 {
 	return m_b_erased_by_handler;
 }
-
-
-#ifdef ENABLE_DETACH
-void Socket::SetSlaveHandler(ISocketHandler *p)
-{
-	m_slave_handler = p;
-}
-#endif
 
 
 time_t Socket::TimeSinceClose()
@@ -1239,6 +884,367 @@ unsigned long int Socket::Random()
 {
 	return m_prng.next();
 }
+
+
+#ifdef HAVE_OPENSSL
+void Socket::OnSSLConnect()
+{
+}
+
+
+void Socket::OnSSLAccept()
+{
+}
+
+
+bool Socket::SSLNegotiate()
+{
+	return false;
+}
+
+
+bool Socket::IsSSL()
+{
+	return m_b_enable_ssl;
+}
+
+
+void Socket::EnableSSL(bool x)
+{
+	m_b_enable_ssl = x;
+}
+
+
+bool Socket::IsSSLNegotiate()
+{
+	return m_b_ssl;
+}
+
+
+void Socket::SetSSLNegotiate(bool x)
+{
+	m_b_ssl = x;
+}
+
+
+bool Socket::IsSSLServer()
+{
+	return m_b_ssl_server;
+}
+
+
+void Socket::SetSSLServer(bool x)
+{
+	m_b_ssl_server = x;
+}
+
+
+void Socket::OnSSLConnectFailed()
+{
+}
+
+
+void Socket::OnSSLAcceptFailed()
+{
+}
+#endif // HAVE_OPENSSL
+
+
+#ifdef ENABLE_POOL
+void Socket::CopyConnection(Socket *sock)
+{
+	Attach( sock -> GetSocket() );
+#ifdef ENABLE_IPV6
+	SetIpv6( sock -> IsIpv6() );
+#endif
+	SetSocketType( sock -> GetSocketType() );
+	SetSocketProtocol( sock -> GetSocketProtocol() );
+
+	SetClientRemoteAddress( *sock -> GetClientRemoteAddress() );
+	SetRemoteAddress( *sock -> GetRemoteSocketAddress() );
+}
+
+
+void Socket::SetIsClient()
+{
+	m_bClient = true;
+}
+
+
+void Socket::SetSocketType(int x)
+{
+	m_socket_type = x;
+}
+
+
+int Socket::GetSocketType()
+{
+	return m_socket_type;
+}
+
+
+void Socket::SetSocketProtocol(const std::string& x)
+{
+	m_socket_protocol = x;
+}
+
+
+const std::string& Socket::GetSocketProtocol()
+{
+	return m_socket_protocol;
+}
+
+
+void Socket::SetRetain()
+{
+	if (m_bClient) m_bRetain = true;
+}
+
+
+bool Socket::Retain()
+{
+	return m_bRetain;
+}
+
+
+void Socket::SetLost()
+{
+	m_bLost = true;
+}
+
+
+bool Socket::Lost()
+{
+	return m_bLost;
+}
+#endif // ENABLE_POOL
+
+
+#ifdef ENABLE_SOCKS4
+void Socket::OnSocks4Connect()
+{
+	Handler().LogError(this, "OnSocks4Connect", 0, "Use with TcpSocket only");
+}
+
+
+void Socket::OnSocks4ConnectFailed()
+{
+	Handler().LogError(this, "OnSocks4ConnectFailed", 0, "Use with TcpSocket only");
+}
+
+
+bool Socket::OnSocks4Read()
+{
+	Handler().LogError(this, "OnSocks4Read", 0, "Use with TcpSocket only");
+	return true;
+}
+
+
+void Socket::SetSocks4Host(const std::string& host)
+{
+	Utility::u2ip(host, m_socks4_host);
+}
+
+
+bool Socket::Socks4()
+{
+	return m_bSocks4;
+}
+
+
+void Socket::SetSocks4(bool x)
+{
+	m_bSocks4 = x;
+}
+
+
+void Socket::SetSocks4Host(ipaddr_t a)
+{
+	m_socks4_host = a;
+}
+
+
+void Socket::SetSocks4Port(port_t p)
+{
+	m_socks4_port = p;
+}
+
+
+void Socket::SetSocks4Userid(const std::string& x)
+{
+	m_socks4_userid = x;
+}
+
+
+ipaddr_t Socket::GetSocks4Host()
+{
+	return m_socks4_host;
+}
+
+
+port_t Socket::GetSocks4Port()
+{
+	return m_socks4_port;
+}
+
+
+const std::string& Socket::GetSocks4Userid()
+{
+	return m_socks4_userid;
+}
+#endif // ENABLE_SOCKS4
+
+
+#ifdef ENABLE_DETACH
+bool Socket::Detach()
+{
+	if (!DeleteByHandler())
+		return false;
+	if (m_pThread)
+		return false;
+	if (m_detached)
+		return false;
+	SetDetach();
+	return true;
+}
+
+
+void Socket::DetachSocket()
+{
+	SetDetached();
+	m_pThread = new SocketThread(this);
+	m_pThread -> SetRelease(true);
+}
+
+
+void Socket::OnDetached()
+{
+}
+
+
+void Socket::SetDetach(bool x)
+{
+	Handler().AddList(m_socket, LIST_DETACH, x);
+	m_detach = x;
+}
+
+
+bool Socket::IsDetach()
+{
+	return m_detach;
+}
+
+
+void Socket::SetDetached(bool x)
+{
+	m_detached = x;
+}
+
+
+const bool Socket::IsDetached() const
+{
+	return m_detached;
+}
+
+
+void Socket::SetSlaveHandler(ISocketHandler *p)
+{
+	m_slave_handler = p;
+}
+
+
+Socket::SocketThread::SocketThread(Socket *p)
+:Thread(false)
+,m_socket(p)
+{
+	// Creator will release
+}
+
+
+Socket::SocketThread::~SocketThread()
+{
+	if (IsRunning())
+	{
+		SetRelease(true);
+		SetRunning(false);
+#ifdef _WIN32
+		Sleep(1000);
+#else
+		sleep(1);
+#endif
+	}
+}
+
+
+void Socket::SocketThread::Run()
+{
+	SocketHandler h;
+	h.SetSlave();
+	h.Add(m_socket);
+	m_socket -> SetSlaveHandler(&h);
+	m_socket -> OnDetached();
+	while (h.GetCount() && IsRunning())
+	{
+		h.Select(0, 500000);
+	}
+	// m_socket now deleted oops
+	// yeah oops m_socket delete its socket thread, that means this
+	// so Socket will no longer delete its socket thread, instead we do this:
+	SetDeleteOnExit();
+}
+#endif // ENABLE_DETACH
+
+
+#ifdef ENABLE_RESOLVER
+int Socket::Resolve(const std::string& host,port_t port)
+{
+	return Handler().Resolve(this, host, port);
+}
+
+
+#ifdef ENABLE_IPV6
+int Socket::Resolve6(const std::string& host,port_t port)
+{
+	return Handler().Resolve6(this, host, port);
+}
+#endif
+
+
+int Socket::Resolve(ipaddr_t a)
+{
+	return Handler().Resolve(this, a);
+}
+
+
+#ifdef ENABLE_IPV6
+int Socket::Resolve(in6_addr& a)
+{
+	return Handler().Resolve(this, a);
+}
+#endif
+
+
+void Socket::OnResolved(int,ipaddr_t,port_t)
+{
+}
+
+
+#ifdef ENABLE_IPV6
+void Socket::OnResolved(int,in6_addr&,port_t)
+{
+}
+#endif
+
+
+void Socket::OnReverseResolved(int,const std::string&)
+{
+}
+
+
+void Socket::OnResolveFailed(int)
+{
+}
+#endif // ENABLE_RESOLVER
 
 
 #ifdef SOCKETS_NAMESPACE

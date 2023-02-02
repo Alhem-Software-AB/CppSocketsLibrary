@@ -20,8 +20,8 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
-#ifndef _MINION_MINDERHANDLER_H
-#define _MINION_MINDERHANDLER_H
+#ifndef _MINION_MinderHandler_H
+#define _MINION_MinderHandler_H
 #include "sockets-config.h"
 #ifdef HAVE_OPENSSL
 
@@ -151,4 +151,4 @@ private:
 #endif
 
 #endif // HAVE_OPENSSL
-#endif // _MINION_MINDERHANDLER_H
+#endif // _MINION_MinderHandler_H

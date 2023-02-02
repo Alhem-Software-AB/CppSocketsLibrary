@@ -43,12 +43,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #endif
 
 #include "TcpSocket.h"
-#include "PoolSocket.h"
 #include "Utility.h"
 #include "Ipv4Address.h"
 #include "Ipv6Address.h"
 #include "Mutex.h"
 #include "Uid.h"
+#include "IFile.h"
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
@@ -64,10 +64,6 @@ namespace SOCKETS_NAMESPACE {
 
 // statics
 #ifdef HAVE_OPENSSL
-//BIO *TcpSocket::m_bio_err = NULL;
-//bool TcpSocket::m_b_rand_file_generated = false;
-//std::string TcpSocket::m_rand_file;
-//long TcpSocket::m_rand_size = 1024;
 SSLInitializer TcpSocket::m_ssl_init;
 #endif
 
@@ -79,9 +75,17 @@ SSLInitializer TcpSocket::m_ssl_init;
 TcpSocket::TcpSocket(ISocketHandler& h) : Socket(h)
 ,ibuf(*this, TCP_BUFSIZE_READ)
 ,obuf(*this, 32768)
-,m_line("")
+,m_b_input_buffer_disabled(false)
+,m_bytes_sent(0)
+,m_bytes_received(0)
+,m_skip_c(false)
 #ifdef SOCKETS_DYNAMIC_TEMP
 ,m_buf(new char[TCP_BUFSIZE_READ + 1])
+#endif
+#ifdef HAVE_OPENSSL
+,m_ssl_ctx(NULL)
+,m_ssl(NULL)
+,m_sbio(NULL)
 #endif
 #ifdef ENABLE_SOCKS4
 ,m_socks4_state(0)
@@ -89,51 +93,11 @@ TcpSocket::TcpSocket(ISocketHandler& h) : Socket(h)
 #ifdef ENABLE_RESOLVER
 ,m_resolver_id(0)
 #endif
-#ifdef HAVE_OPENSSL
-,m_ssl_ctx(NULL)
-,m_ssl(NULL)
-,m_sbio(NULL)
-#endif
 #ifdef ENABLE_RECONNECT
 ,m_b_reconnect(false)
 ,m_b_is_reconnect(false)
 #endif
-,m_b_input_buffer_disabled(false)
-,m_bytes_sent(0)
-,m_bytes_received(0)
-,m_skip_c(false)
 {
-/*
-#ifdef HAVE_OPENSSL
-	if (!m_b_rand_file_generated)
-	{
-		m_b_rand_file_generated = true;
-		char *randfile = getenv("RANDFILE");
-		char *home = getenv("HOME");
-		if (!randfile && !home)
-		{
-			char *homepath = getenv("HOMEPATH");
-			if (homepath)
-			{
-				Utility::SetEnv("HOME", homepath);
-			}
-		}
-		char path[512];
-		*path = 0;
-		RAND_file_name(path, 512);
-		if (*path)
-		{
-			m_rand_file = path;
-			m_rand_size = 1024;
-			RAND_write_file(path);
-		}
-		else
-		{
-			Handler().LogError(this, "TcpSocket constructor", 0, "No random file generated", LOG_LEVEL_ERROR);
-		}
-	}
-#endif // HAVE_OPENSSL
-*/
 }
 #ifdef _WIN32
 #pragma warning(default:4355)
@@ -146,9 +110,17 @@ TcpSocket::TcpSocket(ISocketHandler& h) : Socket(h)
 TcpSocket::TcpSocket(ISocketHandler& h,size_t isize,size_t osize) : Socket(h)
 ,ibuf(*this, isize)
 ,obuf(*this, osize)
-,m_line("")
+,m_b_input_buffer_disabled(false)
+,m_bytes_sent(0)
+,m_bytes_received(0)
+,m_skip_c(false)
 #ifdef SOCKETS_DYNAMIC_TEMP
 ,m_buf(new char[TCP_BUFSIZE_READ + 1])
+#endif
+#ifdef HAVE_OPENSSL
+,m_ssl_ctx(NULL)
+,m_ssl(NULL)
+,m_sbio(NULL)
 #endif
 #ifdef ENABLE_SOCKS4
 ,m_socks4_state(0)
@@ -156,50 +128,11 @@ TcpSocket::TcpSocket(ISocketHandler& h,size_t isize,size_t osize) : Socket(h)
 #ifdef ENABLE_RESOLVER
 ,m_resolver_id(0)
 #endif
-#ifdef HAVE_OPENSSL
-,m_ssl_ctx(NULL)
-,m_ssl(NULL)
-,m_sbio(NULL)
-#endif
 #ifdef ENABLE_RECONNECT
 ,m_b_reconnect(false)
 ,m_b_is_reconnect(false)
 #endif
-,m_b_input_buffer_disabled(false)
-,m_bytes_sent(0)
-,m_bytes_received(0)
-,m_skip_c(false)
 {
-/*
-#ifdef HAVE_OPENSSL
-	if (!m_b_rand_file_generated)
-	{
-		m_b_rand_file_generated = true;
-		char *randfile = getenv("RANDFILE");
-		char *home = getenv("HOME");
-		if (!randfile && !home)
-		{
-			char *homepath = getenv("HOMEPATH");
-			if (homepath)
-			{
-				Utility::SetEnv("HOME", homepath);
-			}
-		}
-		char path[512];
-		*path = 0;
-		RAND_file_name(path, 512);
-		if (*path)
-		{
-			m_rand_file = path;
-			RAND_write_file(path);
-		}
-		else
-		{
-			Handler().LogError(this, "TcpSocket constructor", 0, "No random file generated", LOG_LEVEL_ERROR);
-		}
-	}
-#endif // HAVE_OPENSSL
-*/
 }
 #ifdef _WIN32
 #pragma warning(default:4355)
@@ -227,13 +160,6 @@ TcpSocket::~TcpSocket()
 	{
 		SSL_free(m_ssl);
 	}
-// ssl context is now global (sort of)
-/*
-	if (m_ssl_ctx)
-	{
-		SSL_CTX_free(m_ssl_ctx);
-	}
-*/
 #endif
 }
 
@@ -286,7 +212,7 @@ bool TcpSocket::Open(SocketAddress& ad,SocketAddress& bind_ad,bool skip_socks)
 #ifdef ENABLE_POOL
 	if (Handler().PoolEnabled())
 	{
-		PoolSocket *pools = Handler().FindConnection(SOCK_STREAM, "tcp", ad);
+		ISocketHandler::PoolSocket *pools = Handler().FindConnection(SOCK_STREAM, "tcp", ad);
 		if (pools)
 		{
 			CopyConnection( pools );
@@ -350,7 +276,6 @@ bool TcpSocket::Open(SocketAddress& ad,SocketAddress& bind_ad,bool skip_socks)
 		if (Errno == EINPROGRESS)
 #endif
 		{
-//			Handler().LogError(this, "connect: connection pending", Errno, StrError(Errno), LOG_LEVEL_INFO);
 			Attach(s);
 			SetConnecting( true ); // this flag will control fd_set's
 		}
@@ -381,10 +306,8 @@ bool TcpSocket::Open(SocketAddress& ad,SocketAddress& bind_ad,bool skip_socks)
 	}
 	else
 	{
-//		Handler().LogError(this, "connect", 0, "connection established", LOG_LEVEL_INFO);
 		Attach(s);
 		SetCallOnConnect(); // ISocketHandler must call OnConnect
-//		Handler().LogError(this, "SetCallOnConnect", n, "connect() returns != -1", LOG_LEVEL_INFO);
 	}
 
 	// 'true' means connected or connecting(not yet connected)
@@ -399,16 +322,24 @@ bool TcpSocket::Open(const std::string &host,port_t port)
 #ifdef IPPROTO_IPV6
 	if (IsIpv6())
 	{
-		in6_addr a;
-		/// \todo enable ipv6 async resolver
-		if (!Utility::u2ip(host, a))
+#ifdef ENABLE_RESOLVER
+		if (!Handler().ResolvedEnabled() || Utility::isipv4(host) )
 		{
-			SetCloseAndDelete();
-			return false;
+#endif
+			in6_addr a;
+			if (!Utility::u2ip(host, a))
+			{
+				SetCloseAndDelete();
+				return false;
+			}
+			Ipv6Address ad(a, port);
+			Ipv6Address local;
+			return Open(ad, local);
+#ifdef ENABLE_RESOLVER
 		}
-		Ipv6Address ad(a, port);
-		Ipv6Address local;
-		return Open(ad, local);
+		m_resolver_id = Resolve6(host, port);
+		return true;
+#endif
 	}
 #endif
 #endif
@@ -543,16 +474,19 @@ DEB(				fprintf(stderr, "SSL read problem, errcode = %d\n",n);)
 #ifdef ENABLE_POOL
 			SetLost();
 #endif
+			SetShutdown(SHUT_WR);
 			return;
 		}
 		else
 		if (n > 0 && n <= TCP_BUFSIZE_READ)
 		{
 			m_bytes_received += n;
-//			OnRawData(buf,n);
+			if (GetTrafficMonitor())
+			{
+				GetTrafficMonitor() -> fwrite(buf, 1, n);
+			}
 			if (!m_b_input_buffer_disabled && !ibuf.Write(buf,n))
 			{
-				// overflow
 				Handler().LogError(this, "OnRead(ssl)", 0, "ibuf overflow", LOG_LEVEL_WARNING);
 			}
 		}
@@ -578,22 +512,24 @@ DEB(				fprintf(stderr, "SSL read problem, errcode = %d\n",n);)
 		else
 		if (!n)
 		{
-//			Handler().LogError(this, "read", 0, "read returns 0", LOG_LEVEL_FATAL);
 			SetCloseAndDelete(true);
 			SetFlushBeforeClose(false);
 #ifdef ENABLE_POOL
 			SetLost();
 #endif
+			SetShutdown(SHUT_WR);
 			return;
 		}
 		else
 		if (n > 0 && n <= TCP_BUFSIZE_READ)
 		{
 			m_bytes_received += n;
-//			OnRawData(buf,n);
+			if (GetTrafficMonitor())
+			{
+				GetTrafficMonitor() -> fwrite(buf, 1, n);
+			}
 			if (!m_b_input_buffer_disabled && !ibuf.Write(buf,n))
 			{
-				// overflow
 				Handler().LogError(this, "OnRead", 0, "ibuf overflow", LOG_LEVEL_WARNING);
 			}
 		}
@@ -676,47 +612,6 @@ DEB(				fprintf(stderr, "SSL read problem, errcode = %d\n",n);)
 		}
 	}
 #endif
-/*
-	else
-	if (LineProtocol())
-	{
-		size_t x = 0;
-		size_t n = ibuf.GetLength();
-#ifdef SOCKETS_DYNAMIC_TEMP
-		char *tmp = m_buf;
-#else
-		char tmp[TCP_BUFSIZE_READ + 1];
-#endif
-		n = (n >= TCP_BUFSIZE_READ) ? TCP_BUFSIZE_READ : n;
-		ibuf.Read(tmp,n);
-		tmp[n] = 0;
-
-		for (size_t i = 0; i < n; i++)
-		{
-			while (tmp[i] == 13 || tmp[i] == 10)
-			{
-				char c = tmp[i];
-				tmp[i] = 0;
-				if (tmp[x])
-				{
-					m_line += (tmp + x);
-				}
-				OnLine( m_line );
-				i++;
-				if (i < n && (tmp[i] == 13 || tmp[i] == 10) && tmp[i] != c)
-				{
-					i++;
-				}
-				x = i;
-				m_line = "";
-			}
-		}
-		if (tmp[x])
-		{
-			m_line += (tmp + x);
-		}
-	}
-*/
 }
 
 
@@ -784,6 +679,10 @@ DEB(			const char *errbuf = ERR_error_string(errnr, NULL);
 		else
 		{
 			m_bytes_sent += n;
+			if (GetTrafficMonitor())
+			{
+				GetTrafficMonitor() -> fwrite(obuf.GetStart(), 1, n);
+			}
 			obuf.Remove(n);
 			// move data from m_mes to immediate output buffer
 			while (obuf.Space() && m_mes.size())
@@ -851,6 +750,10 @@ signal is not sent when the write call specified the MSG_NOSIGNAL flag.
 	else
 	{
 		m_bytes_sent += n;
+		if (GetTrafficMonitor())
+		{
+			GetTrafficMonitor() -> fwrite(obuf.GetStart(), 1, n);
+		}
 		obuf.Remove(n);
 		// move data from m_mes to immediate output buffer
 		while (obuf.Space() && m_mes.size())
@@ -945,51 +848,6 @@ void TcpSocket::SendBuf(const char *buf,size_t len,int)
 void TcpSocket::OnLine(const std::string& )
 {
 }
-
-
-/*
-void TcpSocket::ReadLine()
-{
-	if (ibuf.GetLength())
-	{
-		size_t x = 0;
-		size_t n = ibuf.GetLength();
-#ifdef SOCKETS_DYNAMIC_TEMP
-		char *tmp = m_buf;
-#else
-		char tmp[TCP_BUFSIZE_READ + 1];
-#endif
-		n = (n >= TCP_BUFSIZE_READ) ? TCP_BUFSIZE_READ : n;
-		ibuf.Read(tmp,n);
-		tmp[n] = 0;
-
-		for (size_t i = 0; i < n; i++)
-		{
-			while (tmp[i] == 13 || tmp[i] == 10)
-			{
-				char c = tmp[i];
-				tmp[i] = 0;
-				if (tmp[x])
-				{
-					m_line += (tmp + x);
-				}
-				OnLine( m_line );
-				i++;
-				if (i < n && (tmp[i] == 13 || tmp[i] == 10) && tmp[i] != c)
-				{
-					i++;
-				}
-				x = i;
-				m_line = "";
-			}
-		}
-		if (tmp[x])
-		{
-			m_line += (tmp + x);
-		}
-	}
-}
-*/
 
 
 #ifdef _WIN32
@@ -1164,7 +1022,7 @@ DEB(			fprintf(stderr, " m_sbio is NULL\n");)
 			return;
 		}
 		SSL_set_bio(m_ssl, m_sbio, m_sbio);
-		if (!SSLNegotiate())
+//		if (!SSLNegotiate())
 		{
 			SetSSLNegotiate();
 		}
@@ -1207,7 +1065,7 @@ DEB(			fprintf(stderr, " m_sbio is NULL\n");)
 			return;
 		}
 		SSL_set_bio(m_ssl, m_sbio, m_sbio);
-		if (!SSLNegotiate())
+//		if (!SSLNegotiate())
 		{
 			SetSSLNegotiate();
 		}
@@ -1240,10 +1098,8 @@ bool TcpSocket::SSLNegotiate()
 			else
 #endif
 			{
-//				Handler().LogError(this, "Calling OnConnect", 0, "SSLNegotiate", LOG_LEVEL_INFO);
 				OnConnect();
 			}
-//			OnConnect();
 			Handler().LogError(this, "SSLNegotiate/SSL_connect", 0, "Connection established", LOG_LEVEL_INFO);
 			return true;
 		}
@@ -1316,7 +1172,6 @@ DEB(				fprintf(stderr, "SSL_accept() failed - closing socket, return code: %d\n
 
 void TcpSocket::InitSSLClient()
 {
-//	InitializeContext();
 	InitializeContext("", SSLv23_method());
 }
 
@@ -1330,20 +1185,6 @@ void TcpSocket::InitSSLServer()
 
 void TcpSocket::InitializeContext(const std::string& context, SSL_METHOD *meth_in)
 {
-/*
-	if (!m_bio_err)
-	{
-		// An error write context
-		m_bio_err = BIO_new_fp(stderr, BIO_NOCLOSE);
-
-		// Global system initialization
-		SSL_library_init();
-		SSL_load_error_strings();
-		OpenSSL_add_all_algorithms();
-		CRYPTO_set_locking_callback( SSL_locking_function );
-		CRYPTO_set_id_callback( SSL_id_function );
-	}
-*/
 	/* Create our context*/
 	static std::map<std::string, SSL_CTX *> client_contexts;
 	if (client_contexts.find(context) == client_contexts.end())
@@ -1356,33 +1197,11 @@ void TcpSocket::InitializeContext(const std::string& context, SSL_METHOD *meth_i
 	{
 		m_ssl_ctx = client_contexts[context];
 	}
-
-	/* Load randomness */
-/*
-	if (!m_rand_file.size() || !RAND_load_file(m_rand_file.c_str(), m_rand_size))
-	{
-		Handler().LogError(this, "TcpSocket InitializeContext", 0, "Couldn't load randomness", LOG_LEVEL_ERROR);
-	}
-*/		
 }
 
 
 void TcpSocket::InitializeContext(const std::string& context,const std::string& keyfile,const std::string& password,SSL_METHOD *meth_in)
 {
-/*
-	if (!m_bio_err)
-	{
-		// An error write context 
-		m_bio_err = BIO_new_fp(stderr, BIO_NOCLOSE);
-
-		// Global system initialization
-		SSL_library_init();
-		SSL_load_error_strings();
-		OpenSSL_add_all_algorithms();
-		CRYPTO_set_locking_callback( SSL_locking_function );
-		CRYPTO_set_id_callback( SSL_id_function );
-	}
-*/
 	/* Create our context*/
 	static std::map<std::string, SSL_CTX *> server_contexts;
 	if (server_contexts.find(context) == server_contexts.end())
@@ -1414,18 +1233,9 @@ void TcpSocket::InitializeContext(const std::string& context,const std::string& 
 	{
 		Handler().LogError(this, "TcpSocket InitializeContext", 0, "Couldn't read private key file " + keyfile, LOG_LEVEL_FATAL);
 	}
-
-	/* Load randomness */
-/*
-	if (!m_rand_file.size() || !RAND_load_file(m_rand_file.c_str(), m_rand_size))
-	{
-		Handler().LogError(this, "TcpSocket InitializeContext", 0, "Couldn't load randomness", LOG_LEVEL_ERROR);
-	}
-*/		
 }
 
 
-// static
 int TcpSocket::SSL_password_cb(char *buf,int num,int rwflag,void *userdata)
 {
 	Socket *p0 = static_cast<Socket *>(userdata);
@@ -1438,34 +1248,6 @@ int TcpSocket::SSL_password_cb(char *buf,int num,int rwflag,void *userdata)
 	strcpy(buf,pw.c_str());
 	return (int)pw.size();
 }
-
-
-/*
-void TcpSocket::SSL_locking_function(int mode, int n, const char *file, int line)
-{
-static	std::map<int, Mutex *> mmap;
-	if (mmap.find(n) == mmap.end())
-	{
-		mmap[n] = new Mutex;
-	}
-	if (mode & CRYPTO_LOCK)
-	{
-		mmap[n] -> Lock();
-	}
-	else
-	{
-		mmap[n] -> Unlock();
-	}
-}
-
-
-unsigned long TcpSocket::SSL_id_function()
-{
-	return Utility::ThreadID();
-}
-*/
-
-
 #endif // HAVE_OPENSSL
 
 
@@ -1479,13 +1261,6 @@ int TcpSocket::Close()
 		SSL_free(m_ssl);
 		m_ssl = NULL;
 	}
-/*
-	if (m_ssl_ctx)
-	{
-		SSL_CTX_free(m_ssl_ctx);
-		m_ssl_ctx = NULL;
-	}
-*/
 #endif
 	return Socket::Close();
 }
@@ -1576,38 +1351,6 @@ const std::string& TcpSocket::GetPassword()
 {
 	return m_password;
 }
-
-
-/*
-void TcpSocket::SetRandFile(const std::string& file,long size)
-{
-	m_rand_file = file;
-	m_rand_size = size;
-	FILE *fil = fopen(file.c_str(), "wb");
-	if (fil)
-	{
-		for (long i = 0; i < size; i++)
-		{
-			long rnd = Random();
-			fwrite(&rnd, 1, 1, fil);
-		}
-		fclose(fil);
-	}
-	else
-	{
-		Handler().LogError(this, "TcpSocket SetRandFile", 0, "Couldn't write to random file", LOG_LEVEL_ERROR);
-	}
-}
-
-
-void TcpSocket::DeleteRandFile()
-{
-	if (m_rand_file.size())
-	{
-		unlink(m_rand_file.c_str());
-	}
-}
-*/
 #endif
 
 
@@ -1640,4 +1383,3 @@ void TcpSocket::SetLineProtocol(bool x)
 #ifdef SOCKETS_NAMESPACE
 }
 #endif
-

@@ -27,9 +27,10 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
-#ifndef _SOCKETS_EVENTTIME_H
-#define _SOCKETS_EVENTTIME_H
+#ifndef _SOCKETS_EventTime_H
+#define _SOCKETS_EventTime_H
 
+#include "sockets-config.h"
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
 #endif
@@ -72,4 +73,4 @@ private:
 }
 #endif
 
-#endif // _SOCKETS_EVENTTIME_H
+#endif // _SOCKETS_EventTime_H

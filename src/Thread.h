@@ -27,9 +27,10 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
-#ifndef _SOCKETS_THREAD_H
-#define _SOCKETS_THREAD_H
+#ifndef _SOCKETS_Thread_H
+#define _SOCKETS_Thread_H
 
+#include "sockets-config.h"
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
 #endif
@@ -95,4 +96,4 @@ private:
 }
 #endif
 
-#endif // _SOCKETS_THREAD_H
+#endif // _SOCKETS_Thread_H

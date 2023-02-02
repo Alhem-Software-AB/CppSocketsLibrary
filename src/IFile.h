@@ -27,9 +27,10 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
-#ifndef _IFILE_H
-#define _IFILE_H
+#ifndef _SOCKETS_IFile_H
+#define _SOCKETS_IFile_H
 
+#include "sockets-config.h"
 #include <string>
 
 #ifdef SOCKETS_NAMESPACE
@@ -62,4 +63,4 @@ public:
 }
 #endif
 
-#endif // _IFILE_H
+#endif // _SOCKETS_IFile_H

@@ -36,7 +36,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "SocketHandler.h"
 #include "UdpSocket.h"
-#include "PoolSocket.h"
 #include "ResolvSocket.h"
 #include "ResolvServer.h"
 #include "TcpSocket.h"
@@ -50,7 +49,7 @@ namespace SOCKETS_NAMESPACE {
 
 
 #ifdef _DEBUG
-#define DEB(x) x
+#define DEB(x) x; fflush(stderr);
 #else
 #define DEB(x) 
 #endif
@@ -116,15 +115,18 @@ SocketHandler::~SocketHandler()
 	{
 		while (m_sockets.size())
 		{
+DEB(			fprintf(stderr, "Emptying sockets list in SocketHandler destructor, %d instances\n", m_sockets.size());)
 			socket_m::iterator it = m_sockets.begin();
 			Socket *p = it -> second;
 			if (p)
 			{
+DEB(				fprintf(stderr, "  fd %d\n", p -> GetSocket());)
 				p -> Close();
+DEB(				fprintf(stderr, "  fd closed %d\n", p -> GetSocket());)
 //				p -> OnDelete(); // hey, I turn this back on. what's the worst that could happen??!!
 				// MinionSocket breaks, calling MinderHandler methods in OnDelete -
 				// MinderHandler is already gone when that happens...
-				m_sockets.erase(it);
+
 				// only delete socket when controlled
 				// ie master sockethandler can delete non-detached sockets
 				// and a slave sockethandler can only delete a detach socket
@@ -137,12 +139,15 @@ SocketHandler::~SocketHandler()
 					p -> SetErasedByHandler();
 					delete p;
 				}
+				m_sockets.erase(it);
 			}
 			else
 			{
 				m_sockets.erase(it);
 			}
+DEB(			fprintf(stderr, "next\n");)
 		}
+DEB(		fprintf(stderr, "/Emptying sockets list in SocketHandler destructor, %d instances\n", m_sockets.size());)
 	}
 #ifdef ENABLE_RESOLVER
 	if (m_resolver)
@@ -168,14 +173,11 @@ void SocketHandler::Add(Socket *p)
 		}
 		return;
 	}
-	for (socket_m::iterator it = m_add.begin(); it != m_add.end(); it++)
+	if (m_add.find(p -> GetSocket()) != m_add.end())
 	{
-		if (it -> first == p -> GetSocket())
-		{
-			LogError(p, "Add", (int)p -> GetSocket(), "Attempt to add socket already in add queue", LOG_LEVEL_FATAL);
-			m_delete.push_back(p);
-			return;
-		}
+		LogError(p, "Add", (int)p -> GetSocket(), "Attempt to add socket already in add queue", LOG_LEVEL_FATAL);
+		m_delete.push_back(p);
+		return;
 	}
 	m_add[p -> GetSocket()] = p;
 }
@@ -262,7 +264,8 @@ int SocketHandler::Select()
 
 int SocketHandler::Select(struct timeval *tsel)
 {
-	while (m_add.size())
+	size_t ignore = 0;
+	while (m_add.size() > ignore)
 	{
 		if (m_sockets.size() >= FD_SETSIZE)
 		{
@@ -272,25 +275,16 @@ int SocketHandler::Select(struct timeval *tsel)
 		socket_m::iterator it = m_add.begin();
 		SOCKET s = it -> first;
 		Socket *p = it -> second;
-DEB(fprintf(stderr, "Trying to add fd %d\n", s);)
+DEB(fprintf(stderr, "Trying to add fd %d,  m_add.size() %d,  ignore %d\n", s, m_add.size(), ignore);)
 		//
+		if (m_sockets.find(p -> GetSocket()) != m_sockets.end())
 		{
-			bool dup = false;
-			for (socket_m::iterator it = m_sockets.begin(); it != m_sockets.end(); it++)
-			{
-				if (it -> first == p -> GetSocket())
-				{
-					LogError(p, "Add", (int)p -> GetSocket(), "Attempt to add socket already in controlled queue", LOG_LEVEL_FATAL);
-					m_delete.push_back(p);
-					m_add.erase(it);
-					dup = true;
-					break;
-				}
-			}
-			if (dup)
-			{
-				continue;
-			}
+			LogError(p, "Add", (int)p -> GetSocket(), "Attempt to add socket already in controlled queue", LOG_LEVEL_FATAL);
+			// %! it's a dup, don't add to delete queue, just ignore it
+//			m_delete.push_back(p);
+//			m_add.erase(it);
+			ignore++;
+			continue;
 		}
 		if (!p -> CloseAndDelete())
 		{
@@ -355,33 +349,51 @@ DEB(fprintf(stderr, "Trying to add fd %d\n", s);)
 	}
 	if (n == -1)
 	{
+		/*
+			EBADF  An invalid file descriptor was given in one of the sets.
+			EINTR  A non blocked signal was caught.
+			EINVAL n is negative. Or struct timeval contains bad time values (<0).
+			ENOMEM select was unable to allocate memory for internal tables.
+		*/
 		if (Errno != m_preverror || m_errcnt++ % 10000 == 0)
 		{
 			LogError(NULL, "select", Errno, StrError(Errno));
+DEB(			fprintf(stderr, "m_maxsock: %d\n", m_maxsock);
+			fprintf(stderr, "%s\n", Errno == EINVAL ? "EINVAL" :
+				Errno == EINTR ? "EINTR" :
+				Errno == EBADF ? "EBADF" :
+				Errno == ENOMEM ? "ENOMEM" : "<another>");
+			// test bad fd
+			for (SOCKET i = 0; i <= m_maxsock; i++)
+			{
+				bool t = false;
+				FD_ZERO(&rfds);
+				FD_ZERO(&wfds);
+				FD_ZERO(&efds);
+				if (FD_ISSET(i, &m_rfds))
+				{
+					FD_SET(i, &rfds);
+					t = true;
+				}
+				if (FD_ISSET(i, &m_wfds))
+				{
+					FD_SET(i, &wfds);
+					t = true;
+				}
+				if (FD_ISSET(i, &m_efds))
+				{
+					FD_SET(i, &efds);
+					t = true;
+				}
+				if (t && m_sockets.find(i) == m_sockets.end())
+				{
+					fprintf(stderr, "Bad fd in fd_set: %d\n", i);
+				}
+			}
+) // DEB
 			m_preverror = Errno;
 		}
-
 		/// \todo rebuild fd_set's from active sockets list (m_sockets) here
-#ifdef _WIN32
-DEB(
-		int errcode = Errno;
-		if (errcode != m_preverror)
-		{
-			fprintf(stderr, "  select() errcode = %d\n",errcode);
-			m_preverror = errcode;
-			for (size_t i = 0; i <= m_maxsock; i++)
-			{
-				if (FD_ISSET(i, &m_rfds))
-					fprintf(stderr, "%4d: Read\n",i);
-				if (FD_ISSET(i, &m_wfds))
-					fprintf(stderr, "%4d: Write\n",i);
-				if (FD_ISSET(i, &m_efds))
-					fprintf(stderr, "%4d: Exception\n",i);
-			}
-		}
-//		exit(-1); /// \todo remove....
-) // DEB
-#endif
 	}
 	else
 	if (!n)
@@ -642,19 +654,8 @@ DEB(
 					TcpSocket *tcp = dynamic_cast<TcpSocket *>(p);
 					SOCKET nn = *it; //(*it3).first;
 					p -> SetRetryClientConnect(false);
+DEB(	fprintf(stderr, "Close() before retry client connect\n");)
 					p -> Close(); // removes from m_fds_retry
-/*
-#ifdef IPPROTO_IPV6
-					if (p -> IsIpv6())
-					{
-						tcp -> Open(p -> GetClientRemoteAddr6(), p -> GetClientRemotePort());
-					}
-					else
-#endif
-					{
-						tcp -> Open(p -> GetClientRemoteAddr(), p -> GetClientRemotePort());
-					}
-*/
 					std::auto_ptr<SocketAddress> ad = p -> GetClientRemoteAddress();
 					if (ad.get())
 					{
@@ -734,20 +735,9 @@ DEB(fprintf(stderr, " close(2) fd %d\n", nn);)
 						p -> SetCloseAndDelete(false);
 						tcp -> SetIsReconnect();
 						p -> SetConnected(false);
+DEB(	fprintf(stderr, "Close() before reconnect\n");)
 						p -> Close(); // dispose of old file descriptor (Open creates a new)
 						p -> OnDisconnect();
-/*
-#ifdef IPPROTO_IPV6
-						if (p -> IsIpv6())
-						{
-							tcp -> Open(p -> GetClientRemoteAddr6(), p -> GetClientRemotePort());
-						}
-						else
-#endif
-						{
-							tcp -> Open(p -> GetClientRemoteAddr(), p -> GetClientRemotePort());
-						}
-*/
 						std::auto_ptr<SocketAddress> ad = p -> GetClientRemoteAddress();
 						if (ad.get())
 						{
@@ -783,6 +773,7 @@ DEB(fprintf(stderr, " close(3) fd %d GetSocket() %d\n", nn, p -> GetSocket());)
 #endif // ENABLE_POOL
 						{
 							Set(p -> GetSocket(),false,false,false);
+DEB(	fprintf(stderr, "Close() before OnDelete\n");)
 							p -> Close();
 						}
 						p -> OnDelete();
@@ -826,29 +817,26 @@ DEB(fprintf(stderr, " close(3) fd %d GetSocket() %d\n", nn, p -> GetSocket());)
 			}
 		}
 		{
-			for (socket_m::iterator it = m_sockets.begin(); it != m_sockets.end(); it++)
+			socket_m::iterator it = m_sockets.find(nn);
+			if (it != m_sockets.end())
 			{
-				if (it -> first == nn)
-				{
-					Socket *p = it -> second;
-					/* Sometimes a SocketThread class can finish its run before the master
-					   sockethandler gets here. In that case, the SocketThread has set the
-					   'ErasedByHandler' flag on the socket which will make us end up with a
-					   double delete on the socket instance. 
-					   The fix is to make sure that the master sockethandler only can delete
-					   non-detached sockets, and a slave sockethandler only can delete
-					   detach sockets. */
-					if (p -> ErasedByHandler()
+				Socket *p = it -> second;
+				/* Sometimes a SocketThread class can finish its run before the master
+				   sockethandler gets here. In that case, the SocketThread has set the
+				   'ErasedByHandler' flag on the socket which will make us end up with a
+				   double delete on the socket instance. 
+				   The fix is to make sure that the master sockethandler only can delete
+				   non-detached sockets, and a slave sockethandler only can delete
+				   detach sockets. */
+				if (p -> ErasedByHandler()
 #ifdef ENABLE_DETACH
-						&& !(m_slave ^ p -> IsDetached()) 
+					&& !(m_slave ^ p -> IsDetached()) 
 #endif
-						)
-					{
-						delete p;
-					}
-					m_sockets.erase(it);
-					break;
+					)
+				{
+					delete p;
 				}
+				m_sockets.erase(it);
 			}
 		}
 		m_fds_erase.erase(it);
@@ -1079,7 +1067,7 @@ port_t SocketHandler::GetResolverPort()
 
 
 #ifdef ENABLE_POOL
-PoolSocket *SocketHandler::FindConnection(int type,const std::string& protocol,SocketAddress& ad)
+ISocketHandler::PoolSocket *SocketHandler::FindConnection(int type,const std::string& protocol,SocketAddress& ad)
 {
 	for (socket_m::iterator it = m_sockets.begin(); it != m_sockets.end() && m_sockets.size(); it++)
 	{
@@ -1245,6 +1233,7 @@ fprintf(stderr, "%5d: %s: %s\n", s, (which_one == LIST_CALLONCONNECT) ? "CallOnC
 			break;
 		}
 	}
+DEB(	fprintf(stderr, "/AddList\n");)
 }
 
 

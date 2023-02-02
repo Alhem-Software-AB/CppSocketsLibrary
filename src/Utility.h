@@ -27,9 +27,10 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
-#ifndef _UTILITY_H
-#define _UTILITY_H
+#ifndef _SOCKETS_Utility_H
+#define _SOCKETS_Utility_H
 
+#include "sockets-config.h"
 #include <ctype.h>
 #ifdef _WIN32
 typedef unsigned __int64 uint64_t;
@@ -154,4 +155,4 @@ private:
 }
 #endif
 
-#endif // _UTILITY_H
+#endif // _SOCKETS_Utility_H

@@ -35,14 +35,17 @@ namespace SOCKETS_NAMESPACE {
 #endif
 
 
-IEventOwner::IEventOwner(IEventHandler& h) : m_event_handler(h)
+IEventOwner::IEventOwner(IEventHandler& h) : m_event_handler(h), m_handler_invalid(false), m_events(0)
 {
 }
 
 
 IEventOwner::~IEventOwner()
 {
-	m_event_handler.ClearEvents(this);
+	if (m_events && !m_handler_invalid)
+	{
+		m_event_handler.ClearEvents(this);
+	}
 }
 
 
@@ -67,6 +70,19 @@ void IEventOwner::ClearEvents()
 void IEventOwner::RemoveEvent(long eid)
 {
 	m_event_handler.RemoveEvent(this, eid);
+}
+
+
+void IEventOwner::Increase()
+{
+	m_events++;
+}
+
+
+void IEventOwner::Decrease()
+{
+	if (m_events)
+		m_events--;
 }
 
 

@@ -27,9 +27,10 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
-#ifndef _IEVENTHANDLER_H
-#define _IEVENTHANDLER_H
+#ifndef _SOCKETS_IEventHandler_H
+#define _SOCKETS_IEventHandler_H
 
+#include "sockets-config.h"
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
 #endif
@@ -69,4 +70,4 @@ public:
 }
 #endif
 
-#endif // _IEVENTHANDLER_H
+#endif // _SOCKETS_IEventHandler_H

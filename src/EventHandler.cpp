@@ -34,7 +34,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "IEventOwner.h"
 #include "Event.h"
 #include "Socket.h"
-#include "EventSocket.h"
+#include "TcpSocket.h"
 #include "ListenSocket.h"
 
 
@@ -59,6 +59,7 @@ EventHandler::~EventHandler()
 	{
 		std::list<Event *>::iterator it = m_events.begin();
 		Event *e = *it;
+		e -> GetFrom() -> SetHandlerInvalid();
 		delete e;
 		m_events.erase(it);
 	}
@@ -74,6 +75,10 @@ bool EventHandler::GetTimeUntilNextEvent(struct timeval *tv)
 	{
 		EventTime now;
 		mytime_t diff = (*it) -> GetTime() - now;
+		if (diff < 1)
+		{
+			diff = 1;
+		}
 		tv -> tv_sec = static_cast<long>(diff / 1000000);
 		tv -> tv_usec = static_cast<long>(diff % 1000000);
 		return true;
@@ -98,6 +103,7 @@ void EventHandler::CheckEvents()
 		if (!s || (s && Valid(s)))
 		{
 			e -> GetFrom() -> OnEvent(e -> GetID());
+			e -> GetFrom() -> Decrease();
 		}
 		delete e;
 		m_events.erase(it);
@@ -119,6 +125,7 @@ long EventHandler::AddEvent(IEventOwner *from,long sec,long usec)
 	{
 		m_socket -> Send("\n");
 	}
+	from -> Increase();
 	return e -> GetID();
 }
 
@@ -137,6 +144,7 @@ void EventHandler::ClearEvents(IEventOwner *from)
 				delete e;
 				m_events.erase(it);
 				repeat = true;
+				from -> Decrease();
 				break;
 			}
 		}
@@ -187,12 +195,12 @@ void EventHandler::Add(Socket *p)
 {
 	if (!m_socket)
 	{
-		ListenSocket<EventSocket> *l = new ListenSocket<EventSocket>(*this);
+		ListenSocket<TcpSocket> *l = new ListenSocket<TcpSocket>(*this);
 		l -> SetDeleteByHandler();
 		l -> Bind("127.0.0.1", 0);
 		m_port = l -> GetPort();
 		SocketHandler::Add(l);
-		m_socket = new EventSocket( *this );
+		m_socket = new TcpSocket( *this );
 		m_socket -> SetDeleteByHandler();
 		m_socket -> SetConnectTimeout(5);
 		m_socket -> SetConnectionRetry(-1);

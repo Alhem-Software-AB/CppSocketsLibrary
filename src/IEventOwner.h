@@ -27,9 +27,10 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
-#ifndef _IEVENTOWNER_H
-#define _IEVENTOWNER_H
+#ifndef _SOCKETS_IEventOwner_H
+#define _SOCKETS_IEventOwner_H
 
+#include "sockets-config.h"
 #include "IEventHandler.h"
 
 #ifdef SOCKETS_NAMESPACE
@@ -59,9 +60,15 @@ public:
 	virtual void OnEvent(int) = 0;
 
 	IEventHandler& EventHandler();
+	void SetHandlerInvalid(bool x = true) { m_handler_invalid = x; }
+
+	void Increase();
+	void Decrease();
 
 private:
 	IEventHandler& m_event_handler;
+	bool m_handler_invalid;
+	int m_events;
 };
 
 
@@ -70,4 +77,4 @@ private:
 }
 #endif
 
-#endif // _IEVENTOWNER_H
+#endif // _SOCKETS_IEventOwner_H

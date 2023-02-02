@@ -27,8 +27,8 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
-#ifndef _LISTENSOCKET_H
-#define _LISTENSOCKET_H
+#ifndef _SOCKETS_ListenSocket_H
+#define _SOCKETS_ListenSocket_H
 #include "sockets-config.h"
 
 #ifdef _WIN32
@@ -386,6 +386,9 @@ public:
 			// %! still added to the list of active sockets in the sockethandler.
 			// %! See bugfix for this in SocketHandler::Select - don't Set rwx
 			// %! flags if CloseAndDelete() flag is true.
+			// %! An even better fugbix (see TcpSocket::OnSSLAccept) now avoids
+			// %! the Add problem altogether, so ignore the above.
+			// %! (OnSSLAccept does no longer call SSLNegotiate().)
 			tmp -> OnSSLAccept();
 		}
 		else
@@ -422,4 +425,4 @@ private:
 }
 #endif
 
-#endif // _LISTENSOCKET_H
+#endif // _SOCKETS_ListenSocket_H

@@ -27,8 +27,8 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
-#ifndef _RESOLVSOCKET_H
-#define _RESOLVSOCKET_H
+#ifndef _SOCKETS_ResolvSocket_H
+#define _SOCKETS_ResolvSocket_H
 #include "sockets-config.h"
 #ifdef ENABLE_RESOLVER
 #include "TcpSocket.h"
@@ -89,4 +89,4 @@ private:
 #endif
 
 #endif // ENABLE_RESOLVER
-#endif // _RESOLVSOCKET_H
+#endif // _SOCKETS_ResolvSocket_H

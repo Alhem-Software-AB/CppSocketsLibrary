@@ -27,9 +27,10 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
-#ifndef _UDPSOCKET_H
-#define _UDPSOCKET_H
+#ifndef _SOCKETS_UdpSocket_H
+#define _SOCKETS_UdpSocket_H
 
+#include "sockets-config.h"
 #include "Socket.h"
 
 #ifdef SOCKETS_NAMESPACE
@@ -193,4 +194,4 @@ private:
 }
 #endif
 
-#endif // _UDPSOCKET_H
+#endif // _SOCKETS_UdpSocket_H

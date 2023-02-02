@@ -29,9 +29,10 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
-#ifndef _PARSE_H
-#define _PARSE_H
+#ifndef _SOCKETS_Parse_H
+#define _SOCKETS_Parse_H
 
+#include "sockets-config.h"
 #ifdef _WIN32
 #pragma warning(disable:4514)
 #endif
@@ -96,4 +97,4 @@ private:
 }
 #endif
 
-#endif // _PARSE_H
+#endif // _SOCKETS_Parse_H

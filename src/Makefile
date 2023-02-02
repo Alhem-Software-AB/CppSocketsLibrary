@@ -77,6 +77,9 @@ install:	all
 		@rm -f $(PREFIX)/include/Sockets/SSLSocket.*
 		@rm -f $(PREFIX)/include/Sockets/HttpsGetSocket.*
 		@rm -f $(PREFIX)/include/Sockets/HttpsSocket.*
+		@rm -f $(PREFIX)/include/Sockets/EventSocket.*
+		@rm -f $(PREFIX)/include/Sockets/PoolSocket.*
+		@rm -f $(PREFIX)/include/Sockets/SocketThread.*
 		@mkdir -p $(PREFIX)/bin
 		install Sockets-config $(PREFIX)/bin
 

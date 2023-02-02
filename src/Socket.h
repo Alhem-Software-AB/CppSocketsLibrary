@@ -27,8 +27,8 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
-#ifndef _SOCKETBASE_H
-#define _SOCKETBASE_H
+#ifndef _SOCKETS_Socket_H
+#define _SOCKETS_Socket_H
 #include "sockets-config.h"
 
 #include <string>
@@ -43,6 +43,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "Utility.h"
 #include "SocketAddress.h"
 #include "RandomNumber.h"
+#include "Thread.h"
 
 
 #ifdef SOCKETS_NAMESPACE
@@ -51,8 +52,8 @@ namespace SOCKETS_NAMESPACE {
 
 
 class ISocketHandler;
-class SocketThread;
 class SocketAddress;
+class IFile;
 
 
 /** \defgroup basic Basic sockets */
@@ -61,6 +62,26 @@ class SocketAddress;
 class Socket
 {
 	friend class ISocketHandler;
+protected:
+	/** Detached socket run thread. 
+		\ingroup internal */
+#ifdef ENABLE_DETACH
+	class SocketThread : public Thread
+	{
+	public:
+		SocketThread(Socket *p);
+		~SocketThread();
+
+		void Run();
+
+	private:
+		Socket *GetSocket() const { return m_socket; }
+		SocketThread(const SocketThread& s) : m_socket(s.GetSocket()) {}
+		SocketThread& operator=(const SocketThread& ) { return *this; }
+		Socket *m_socket;
+	};
+#endif // ENABLE_DETACH
+
 public:
 	/** "Default" constructor */
 	Socket(ISocketHandler&);
@@ -449,9 +470,12 @@ public:
 	void DetachSocket();
 #endif // ENABLE_DETACH
 
+	void SetTrafficMonitor(IFile *p) { m_traffic_monitor = p; }
+
 protected:
 	Socket(const Socket& ); ///< do not allow use of copy constructor
 	RandomNumber m_prng; ///< Random number generator
+	IFile *GetTrafficMonitor() { return m_traffic_monitor; }
 
 private:
 	/** default constructor not available */
@@ -491,6 +515,7 @@ static	WSAInitializer m_winsock_init; ///< Winsock initialization singleton clas
 	int m_shutdown; ///< Shutdown status
 	std::auto_ptr<SocketAddress> m_client_remote_address; ///< Address of last connect()
 	std::auto_ptr<SocketAddress> m_remote_address; ///< Remote end address
+	IFile *m_traffic_monitor;
 
 #ifdef HAVE_OPENSSL
 	bool m_b_enable_ssl; ///< Enable SSL for this TcpSocket
@@ -527,4 +552,4 @@ static	WSAInitializer m_winsock_init; ///< Winsock initialization singleton clas
 #endif
 
 
-#endif // _SOCKETBASE_H
+#endif // _SOCKETS_Socket_H

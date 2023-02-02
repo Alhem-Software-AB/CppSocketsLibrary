@@ -27,9 +27,10 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
-#ifndef _SOCKETHANDLER_H
-#define _SOCKETHANDLER_H
+#ifndef _SOCKETS_SocketHandler_H
+#define _SOCKETS_SocketHandler_H
 
+#include "sockets-config.h"
 #include <map>
 #include <list>
 
@@ -44,9 +45,6 @@ namespace SOCKETS_NAMESPACE {
 
 
 class Socket;
-#ifdef ENABLE_POOL
-class PoolSocket;
-#endif
 #ifdef ENABLE_RESOLVER
 class ResolvServer;
 #endif
@@ -103,7 +101,7 @@ public:
 	// Connection pool
 #ifdef ENABLE_POOL
 	/** Find available open connection (used by connection pool). */
-	PoolSocket *FindConnection(int type,const std::string& protocol,SocketAddress&);
+	ISocketHandler::PoolSocket *FindConnection(int type,const std::string& protocol,SocketAddress&);
 	/** Enable connection pool (by default disabled). */
 	void EnablePool(bool x = true);
 	/** Check pool status. 
@@ -209,4 +207,4 @@ private:
 }
 #endif
 
-#endif // _SOCKETHANDLER_H
+#endif // _SOCKETS_SocketHandler_H

@@ -29,9 +29,10 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
-#ifndef _FORM_H
-#define _FORM_H
+#ifndef _SOCKETS_HttpdForm_H
+#define _SOCKETS_HttpdForm_H
 
+#include "sockets-config.h"
 #include <string>
 #include <list>
 
@@ -112,4 +113,4 @@ private:
 }
 #endif
 
-#endif // _FORM_H
+#endif // _SOCKETS_HttpdForm_H

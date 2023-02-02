@@ -27,9 +27,10 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
-#ifndef _CTCPSOCKET_H
-#define _CTCPSOCKET_H
+#ifndef _SOCKETS_CTcpSocket_H
+#define _SOCKETS_CTcpSocket_H
 
+#include "sockets-config.h"
 #include "TcpSocket.h"
 #include "ICrypt.h"
 
@@ -67,4 +68,4 @@ private:
 }
 #endif
 
-#endif // _CTCPSOCKET_H
+#endif // _SOCKETS_CTcpSocket_H

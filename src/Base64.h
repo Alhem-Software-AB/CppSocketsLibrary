@@ -27,9 +27,10 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
-#ifndef _BASE64_H
-#define _BASE64_H
+#ifndef _SOCKETS_Base64_H
+#define _SOCKETS_Base64_H
 
+#include "sockets-config.h"
 #ifdef _WIN32
 #pragma warning(disable:4514)
 #endif
@@ -71,4 +72,4 @@ static	const char rstr[128];
 }
 #endif
 
-#endif // _BASE64_H
+#endif // _SOCKETS_Base64_H

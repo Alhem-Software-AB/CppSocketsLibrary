@@ -27,8 +27,8 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
-#ifndef _ISOCKETHANDLER_H
-#define _ISOCKETHANDLER_H
+#ifndef _SOCKETS_ISocketHandler_H
+#define _SOCKETS_ISocketHandler_H
 #include "sockets-config.h"
 
 #include <map>
@@ -37,6 +37,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "socket_include.h"
 #include "StdLog.h"
 #include "Mutex.h"
+#include "Socket.h"
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
@@ -52,7 +53,6 @@ typedef enum {
 	LIST_CLOSE
 } list_t;
 
-class PoolSocket;
 class SocketAddress;
 
 
@@ -61,6 +61,27 @@ class SocketAddress;
 class ISocketHandler
 {
 	friend class Socket;
+
+public:
+	/** Connection pool class for internal use by the ISocketHandler. 
+		\ingroup internal */
+#ifdef ENABLE_POOL
+	class PoolSocket : public Socket
+	{
+	public:
+		PoolSocket(ISocketHandler& h,Socket *src) : Socket(h) {
+			CopyConnection( src );
+			SetIsClient();
+		}
+
+		void OnRead() {
+			Handler().LogError(this, "OnRead", 0, "data on hibernating socket", LOG_LEVEL_FATAL);
+			SetCloseAndDelete();
+		}
+		void OnOptions(int,int,int,SOCKET) {}
+
+	};
+#endif
 
 public:
 	/** ISocketHandler constructor.
@@ -126,7 +147,7 @@ public:
 	// -------------------------------------------------------------------------
 #ifdef ENABLE_POOL
 	/** Find available open connection (used by connection pool). */
-	virtual PoolSocket *FindConnection(int type,const std::string& protocol,SocketAddress&) {
+	virtual ISocketHandler::PoolSocket *FindConnection(int type,const std::string& protocol,SocketAddress&) {
 		return NULL;
 	}
 	/** Enable connection pool (by default disabled). */
@@ -228,4 +249,4 @@ protected:
 }
 #endif
 
-#endif // _ISOCKETHANDLER_H
+#endif // _SOCKETS_ISocketHandler_H

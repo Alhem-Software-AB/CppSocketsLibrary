@@ -20,8 +20,8 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
-#ifndef _IPV6ADDRESS_H
-#define _IPV6ADDRESS_H
+#ifndef _SOCKETS_Ipv6Address_H
+#define _SOCKETS_Ipv6Address_H
 #include "sockets-config.h"
 #ifdef ENABLE_IPV6
 
@@ -103,4 +103,4 @@ private:
 #endif
 #endif // IPPROTO_IPV6
 #endif // ENABLE_IPV6
-#endif // _IPV6ADDRESS_H
+#endif // _SOCKETS_Ipv6Address_H

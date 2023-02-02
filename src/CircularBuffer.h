@@ -27,9 +27,10 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
-#ifndef _CIRCULARBUFFER_H
-#define _CIRCULARBUFFER_H
+#ifndef _SOCKETS_CircularBuffer_H
+#define _SOCKETS_CircularBuffer_H
 
+#include "sockets-config.h"
 #include <string>
 
 #ifdef SOCKETS_NAMESPACE
@@ -90,4 +91,4 @@ private:
 
 
 
-#endif // _CIRCULARBUFFER_H
+#endif // _SOCKETS_CircularBuffer_H

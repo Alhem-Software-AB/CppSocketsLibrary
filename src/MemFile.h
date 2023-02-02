@@ -27,9 +27,10 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
-#ifndef _MEMFILE_H
-#define _MEMFILE_H
+#ifndef _SOCKETS_MemFile_H
+#define _SOCKETS_MemFile_H
 
+#include "sockets-config.h"
 #include <map>
 #include "IFile.h"
 
@@ -91,4 +92,4 @@ static	std::map<std::string,block_t *> m_files;
 }
 #endif
 
-#endif // _MEMFILE_H
+#endif // _SOCKETS_MemFile_H

@@ -583,3 +583,20 @@ Version 2.1.3
 > SSLInitializer.cpp
 > SSLInitializer.h
 
+Version 2.1.4
+--------------------------
+6a7
+> Debug.h
+11,12d11
+< EventSocket.cpp
+< EventSocket.h
+67,68d65
+< PoolSocket.cpp
+< PoolSocket.h
+79a77,78
+> SmtpdSocket.cpp
+> SmtpdSocket.h
+90,91d88
+< SocketThread.cpp
+< SocketThread.h
+

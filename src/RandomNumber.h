@@ -18,9 +18,10 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
-#ifndef RANDOM_NUMBER_H
-#define RANDOM_NUMBER_H
+#ifndef _SOCKET_RandomNumber_H
+#define _SOCKET_RandomNumber_H
 
+#include "sockets-config.h"
 #include <limits>
 
 #ifdef SOCKETS_NAMESPACE
@@ -197,4 +198,4 @@ private:
 } // namespace SOCKETS_NAMESPACE {
 #endif
 
-#endif
+#endif // _SOCKETS_RandomNumber_H

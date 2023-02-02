@@ -27,9 +27,10 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
-#ifndef _EVENTHANDLER_H
-#define _EVENTHANDLER_H
+#ifndef _SOCKETS_EventHandler_H
+#define _SOCKETS_EventHandler_H
 
+#include "sockets-config.h"
 #include "SocketHandler.h"
 #include "IEventHandler.h"
 
@@ -41,7 +42,7 @@ namespace SOCKETS_NAMESPACE {
 class StdLog;
 class IEventOwner;
 class Event;
-class EventSocket;
+class TcpSocket;
 
 /** SocketHandler implementing the IEventHandler interface.
 	\ingroup timer */
@@ -70,7 +71,7 @@ private:
 	EventHandler& operator=(const EventHandler& ) { return *this; } // assignment operator
 	std::list<Event *> m_events;
 	bool m_quit;
-	EventSocket *m_socket;
+	TcpSocket *m_socket;
 	port_t m_port;
 };
 
@@ -80,4 +81,4 @@ private:
 }
 #endif
 
-#endif // _EVENTHANDLER_H
+#endif // _SOCKETS_EventHandler_H
