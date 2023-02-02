@@ -103,6 +103,12 @@ int main(int argc,char *argv[])
 #ifdef SOLARIS8
 	printf(" -DSOLARIS8");
 #endif
+#ifdef _WIN32
+	printf(" -D_WIN32");
+#endif
+#ifdef __CYGWIN__
+	printf(" -D__CYGWIN__");
+#endif
 #ifdef SOCKETS_NAMESPACE
 	printf(" -DSOCKETS_NAMESPACE=%s", SOCKETS_NAMESPACE_STR);
 #endif

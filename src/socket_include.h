@@ -31,7 +31,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define _SOCKETS_socket_include_H
 #include "sockets-config.h"
 
-#ifdef _WIN32
+#ifdef _MSC_VER
 #pragma warning(disable:4514)
 #endif
 
@@ -161,7 +161,9 @@ namespace SOCKETS_NAMESPACE {
 #elif defined _WIN32 
 // ----------------------------------------
 // Win32
+#ifdef _MSC_VER
 #pragma comment(lib, "wsock32.lib")
+#endif
 #define strcasecmp _stricmp
 
 typedef unsigned long ipaddr_t;
@@ -186,13 +188,13 @@ namespace SOCKETS_NAMESPACE {
 #define WIN32_LEAN_AND_MEAN
 #include <winsock2.h>
 #include <ws2tcpip.h>
-#if MSC_VER < 1200
+#if _MSC_VER < 1200
 #ifndef __CYGWIN__
 #ifdef ENABLE_IPV6
 #include <tpipv6.h>  // For IPv6 Tech Preview.
 #endif
 #endif
-#endif // MSC_VER < 1200
+#endif // _MSC_VER < 1200
 
 
 #define MSG_NOSIGNAL 0

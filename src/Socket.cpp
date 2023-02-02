@@ -29,7 +29,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #include "Socket.h"
 #ifdef _WIN32
+#ifndef __CYGWIN__
 #pragma warning(disable:4786)
+#endif
 #include <stdlib.h>
 #else
 #include <errno.h>
@@ -542,11 +544,9 @@ bool Socket::IsConnected()
 }
 
 
-#ifdef ENABLE_RECONNECT
 void Socket::OnDisconnect()
 {
 }
-#endif
 
 
 void Socket::SetErasedByHandler(bool x)

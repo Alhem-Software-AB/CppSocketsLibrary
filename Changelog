@@ -643,3 +643,15 @@ Version 2.1.8
 31a32
 > IBase.h
 
+Version 2.1.9
+--------------------------
+10a11,12
+> Exception.cpp
+> Exception.h
+45a48,52
+> Makefile.Defines.linux-x86-32
+> Makefile.Defines.macosx
+> Makefile.Defines.solaris8
+> Makefile.Defines.solaris9-sparc-64
+> Makefile.Defines.win32-cygwin
+

@@ -1,36 +1,26 @@
-include		Makefile.version
+# platforms:
+#  linux-x86-32
+#  win32-cygwin
+#  solaris9-sparc-64
+#  macosx
+#  solaris8
+PLATFORM =	linux-x86-32
 
-INCLUDE =	
-PREFIX =	/usr/local
 # .h files installed to $(PREFIX)/include/Sockets
 # static lib .a files installed to $(PREFIX)/lib
+PREFIX =	/usr/local
 
-CXX =		g++
+# include paths
+INCLUDE =	
 
-CFLAGS =	-Wall -g $(INCLUDE) -MD -D_VERSION='"$(VERSION)"'
+include		Makefile.version
 
-# turn off optimization if compiling with gcc 2.9.x:
-#CFLAGS +=	-O0
-CFLAGS +=	-O2
-
-
-# uncomment depending on your operating system
-#CFLAGS +=	-DLINUX
-#CFLAGS +=	-DMACOSX 
-# solaris > 8
-#CFLAGS +=	-DSOLARIS
-# solaris 8
-#CFLAGS +=	-DSOLARIS8
-# windows and/or cygwin
-#CFLAGS +=	-D_WIN32
-# cygwin
-#CFLAGS +=	-D__CYGWIN__
-
+# CXX, CFLAGS, LIBS
+include		Makefile.Defines.$(PLATFORM)
 
 # uncomment these lines if the library should be in its own namespace
 #CFLAGS +=	-DSOCKETS_NAMESPACE=sockets
 #CFLAGS +=	-DSOCKETS_NAMESPACE_STR='"sockets"'
-
 
 # Enable insane amounts of debug output to stdout/stderr:
 #CFLAGS +=	-D_DEBUG
@@ -38,23 +28,22 @@ CFLAGS +=	-O2
 
 CPPFLAGS =	$(CFLAGS) 
 
-LIBS =		-lSockets -lpthread -lssl -lcrypto
-
 PROGS =		Sockets-config
 
 all:		libSockets.a $(PROGS)
-
-Sockets-config:	Sockets-config.o
-		$(CXX) -o $@ $^
 
 libSockets.a:	$(OBJS)
 		ar cru $@ $(OBJS)
 		ranlib $@
 
+Sockets-config:	Sockets-config.o
+		$(CXX) -o $@ $^
+
 clean:
 		rm -f *.o *~ slask *.d $(PROGS) *.a */*~
 
 -include	*.d
+
 
 # everything which follows is www.alhem.net/Sockets website maintenance stuff, please ignore
 HTDOCS =	/usr/local/apache/www.alhem.net/htdocs

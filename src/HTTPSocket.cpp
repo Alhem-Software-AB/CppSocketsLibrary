@@ -27,7 +27,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
-#ifdef _WIN32
+#ifdef _MSC_VER
 #pragma warning(disable:4786)
 #endif
 #include "HTTPSocket.h"
@@ -40,8 +40,6 @@ namespace SOCKETS_NAMESPACE {
 #endif
 
 
-
-
 HTTPSocket::HTTPSocket(ISocketHandler& h)
 :TcpSocket(h)
 ,m_first(true)
@@ -49,6 +47,7 @@ HTTPSocket::HTTPSocket(ISocketHandler& h)
 ,m_http_version("HTTP/1.0")
 ,m_request(false)
 ,m_response(false)
+,m_body_size_left(0)
 {
 	SetLineProtocol();
 	DisableInputBuffer();
@@ -64,7 +63,23 @@ void HTTPSocket::OnRawData(const char *buf,size_t len)
 {
 	if (!m_header)
 	{
-		OnData(buf, len);
+		size_t sz = m_body_size_left < len ? m_body_size_left : len;
+		OnData(buf, sz);
+		m_body_size_left -= sz;
+		if (!m_body_size_left)
+		{
+			SetLineProtocol( true );
+			m_first = true;
+			m_header = true;
+			m_body_size_left = 0;
+			if (len - sz > 0)
+			{
+				char tmp[TCP_BUFSIZE_READ];
+				memcpy(tmp, buf + sz, len - sz);
+				tmp[len - sz] = 0;
+				OnRead( tmp, len - sz );
+			}
+		}
 	}
 }
 
@@ -105,8 +120,11 @@ void HTTPSocket::OnLine(const std::string& line)
 	}
 	if (!line.size())
 	{
-		SetLineProtocol(false);
-		m_header = false;
+		if (m_body_size_left)
+		{
+			SetLineProtocol(false);
+			m_header = false;
+		}
 		OnHeaderComplete();
 		return;
 	}
@@ -114,6 +132,10 @@ void HTTPSocket::OnLine(const std::string& line)
 	std::string key = pa.getword();
 	std::string value = pa.getrest();
 	OnHeader(key,value);
+	if (Utility::ToLower(key) == "content-length")
+	{
+		m_body_size_left = atol(value.c_str());
+	}
 	/* If remote end tells us to keep connection alive, and we're operating
 	in http/1.1 mode (not http/1.0 mode), then we mark the socket to be
 	retained. */

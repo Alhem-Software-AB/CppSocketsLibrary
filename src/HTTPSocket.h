@@ -49,9 +49,6 @@ public:
 	HTTPSocket(ISocketHandler& );
 	~HTTPSocket();
 
-//	void OnRead();
-	/** Reimplementation of ReadLine(), to properly detect end of header start of body. */
-//	void ReadLine();
 	void OnRawData(const char *buf,size_t len);
 	void OnLine(const std::string& line);
 
@@ -134,6 +131,7 @@ private:
 	bool m_request;
 	bool m_response;
 	string_m m_response_header;
+	size_t m_body_size_left;
 };
 
 

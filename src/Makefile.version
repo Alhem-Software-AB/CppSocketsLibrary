@@ -1,5 +1,5 @@
-VERSION =	2.1.8
-DIFF_VERSION =	2.1.7
+VERSION =	2.1.9
+DIFF_VERSION =	2.1.8
 
 # Sockets
 OBJS =		Socket.o \
@@ -31,8 +31,8 @@ OBJS =		Socket.o \
 		HttpClientSocket.o \
 		SctpSocket.o \
 		Ipv4Address.o Ipv6Address.o \
-		Semaphore.o \
 		RandomNumber.o \
 		SSLInitializer.o \
 		SmtpdSocket.o \
-		Debug.o
+		Debug.o \
+		Exception.o

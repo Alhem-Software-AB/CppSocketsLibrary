@@ -28,7 +28,9 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #ifdef _WIN32
+#ifdef _MSC_VER
 #pragma warning(disable:4786)
+#endif
 #include <stdlib.h>
 #else
 #include <errno.h>
@@ -68,7 +70,7 @@ SSLInitializer TcpSocket::m_ssl_init;
 
 
 // thanks, q
-#ifdef _WIN32
+#ifdef _MSC_VER
 #pragma warning(disable:4355)
 #endif
 TcpSocket::TcpSocket(ISocketHandler& h) : StreamSocket(h)
@@ -100,12 +102,12 @@ TcpSocket::TcpSocket(ISocketHandler& h) : StreamSocket(h)
 #endif
 {
 }
-#ifdef _WIN32
+#ifdef _MSC_VER
 #pragma warning(default:4355)
 #endif
 
 
-#ifdef _WIN32
+#ifdef _MSC_VER
 #pragma warning(disable:4355)
 #endif
 TcpSocket::TcpSocket(ISocketHandler& h,size_t isize,size_t osize) : StreamSocket(h)
@@ -137,7 +139,7 @@ TcpSocket::TcpSocket(ISocketHandler& h,size_t isize,size_t osize) : StreamSocket
 #endif
 {
 }
-#ifdef _WIN32
+#ifdef _MSC_VER
 #pragma warning(default:4355)
 #endif
 
@@ -532,6 +534,13 @@ DEB(				fprintf(stderr, "SSL read problem, errcode = %d\n",n);)
 			Handler().LogError(this, "OnRead", n, "abnormal value from recv", LOG_LEVEL_ERROR);
 		}
 	}
+	//
+	OnRead( buf, n );
+}
+
+
+void TcpSocket::OnRead( char *buf, int n )
+{
 	// unbuffered
 	if (n > 0 && n <= TCP_BUFSIZE_READ)
 	{
@@ -870,7 +879,7 @@ void TcpSocket::OnLine(const std::string& )
 }
 
 
-#ifdef _WIN32
+#ifdef _MSC_VER
 #pragma warning(disable:4355)
 #endif
 TcpSocket::TcpSocket(const TcpSocket& s)
@@ -878,7 +887,7 @@ TcpSocket::TcpSocket(const TcpSocket& s)
 ,ibuf(0)
 {
 }
-#ifdef _WIN32
+#ifdef _MSC_VER
 #pragma warning(default:4355)
 #endif
 

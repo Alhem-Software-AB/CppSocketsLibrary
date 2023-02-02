@@ -272,9 +272,9 @@ public:
 #ifdef ENABLE_RECONNECT
 	/** a reconnect has been made */
 	virtual void OnReconnect();
-	/** When a socket is set to reconnect, and a disconnect has been detected. */
-	virtual void OnDisconnect();
 #endif
+	/** TcpSocket: When a disconnect has been detected (recv/SSL_read returns 0 bytes). */
+	virtual void OnDisconnect();
 	/** Timeout callback. */
 	virtual void OnTimeout();
 	/** Connection timeout. */

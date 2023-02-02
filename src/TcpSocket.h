@@ -262,6 +262,7 @@ public:
 protected:
 	TcpSocket(const TcpSocket& );
 	void OnRead();
+	void OnRead( char *buf, int n );
 	void OnWrite();
 #ifdef HAVE_OPENSSL
 	/** SSL; Initialize ssl context for a client socket. 
