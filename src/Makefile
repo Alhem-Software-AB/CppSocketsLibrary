@@ -1,4 +1,4 @@
-VERSION =	1.0
+VERSION =	1.0.1
 
 INCLUDE =	-I/usr/devel/include -I.
 CFLAGS =	-Wall -g -O2 $(INCLUDE) -MD

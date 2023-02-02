@@ -343,19 +343,28 @@ void TcpSocket::ReadLine()
 
 		for (size_t i = 0; i < n; i++)
 		{
-			if (tmp[i] == 13 || tmp[i] == 10)
+			while (tmp[i] == 13 || tmp[i] == 10)
 			{
+				char c = tmp[i];
 				tmp[i] = 0;
-				m_line += (tmp + x);
+				if (tmp[x])
+				{
+					m_line += (tmp + x);
+				}
 				OnLine( m_line );
 				i++;
-				if (i < n && (tmp[i] == 13 || tmp[i] == 10))
+				if (i < n && (tmp[i] == 13 || tmp[i] == 10) && tmp[i] != c)
+				{
 					i++;
+				}
 				x = i;
 				m_line = "";
 			}
 		}
-		m_line += (tmp + x);
+		if (tmp[x])
+		{
+			m_line += (tmp + x);
+		}
 	}
 }
 
