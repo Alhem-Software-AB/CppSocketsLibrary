@@ -8,6 +8,7 @@
 #include <PoolSocket.h>
 #include <Socket.h>
 #include <HttpDebugSocket.h>
+#include <ListenSocketBase.h>
 
 
 class MyHandler : public SocketHandler
@@ -78,6 +79,9 @@ public:
 	OrderSocket(SocketHandler& h) : TcpSocket(h) {
 		SetLineProtocol();
 	}
+	Socket *Create() {
+		return new OrderSocket(Handler());
+	}
 	void OnAccept() {
 		Send("Cmd (get,quit,list,stop)>");
 	}
@@ -111,6 +115,11 @@ public:
 			static_cast<MyHandler&>(Handler()).SetQuit();
 		}
 		else
+		if (cmd == "resolve")
+		{
+			//Resolve( arg );
+		}
+		else
 		{
 			Send("Huh?\n");
 		}
@@ -118,6 +127,18 @@ public:
 	}
 	void OnDelete() {
 		printf("OrderSocket::OnDelete()\n");
+	}
+	void OnResolved(const char *p,size_t l) {
+		printf("OnResolved, %d bytes:\n", l);
+		for (size_t i = 0; i < l; i++)
+		{
+			unsigned char c = p[i];
+			if (isprint(c))
+				printf("%c",c);
+			else
+				printf("<%02X>",c);
+		}
+		printf("\n");
 	}
 };
 
@@ -146,6 +167,9 @@ int main()
 	StdoutLog log;
 	MyHandler h(&log);
 
+//	h.AddNameserver("192.168.7.1");
+//	h.AddNameserver("80.88.97.142");
+
 	// first server
 	ListenSocket<MySocket> l1(h);
 	l1.Bind(1024);
@@ -157,7 +181,9 @@ int main()
 	h.Add(&l2);
 
 	// line server
-	ListenSocket<OrderSocket> l3(h);
+//	ListenSocket<OrderSocket> l3(h);
+	OrderSocket base(h);
+	ListenSocketBase l3(h, base);
 	l3.Bind(1026);
 	h.Add(&l3);
 

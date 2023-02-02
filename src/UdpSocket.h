@@ -45,10 +45,16 @@ public:
 	bool Open6(struct in6_addr&,port_t);
 	bool Open6(const std::string& host,port_t port);
 
+	/** create before using sendto methods */
+	void CreateConnection();
+	void CreateConnection6(); // ipv6
+
 	/** send to specified address */
 	void SendToBuf(const std::string& ,port_t,const char *data,int len,int flags = 0);
+	void SendToBuf(ipaddr_t,port_t,const char *data,int len,int flags = 0);
 	void SendToBuf6(const std::string& ,port_t,const char *data,int len,int flags = 0);
 	void SendTo(const std::string&,port_t,const std::string&,int flags = 0);
+	void SendTo(ipaddr_t,port_t,const std::string&,int flags = 0);
 	void SendTo6(const std::string&,port_t,const std::string&,int flags = 0);
 
 	/** send to connected address */

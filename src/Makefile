@@ -1,4 +1,4 @@
-VERSION =	1.7.5
+VERSION =	1.7.6
 
 INCLUDE =	-I/usr/devel/include -I.
 PREFIX =	/usr/local
@@ -52,7 +52,8 @@ OBJS =		CircularBuffer.o \
 		HttpPostSocket.o \
 		HttpDebugSocket.o \
 		Utility.o \
-		PoolSocket.o 
+		PoolSocket.o \
+		ListenSocketBase.o
 
 libSockets.a:	$(OBJS)
 		ar cru $@ $(OBJS)

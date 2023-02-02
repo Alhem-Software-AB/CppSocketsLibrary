@@ -883,3 +883,11 @@ void Socket::OnOptions(int family,int type,int protocol,SOCKET s)
 }
 
 
+/*
+void Socket::Resolve(const std::string& host)
+{
+	Handler().Resolve(this, host);
+}
+*/
+
+

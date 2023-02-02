@@ -242,6 +242,36 @@ bool UdpSocket::Open6(const std::string& host,port_t port)
 #endif
 
 
+void UdpSocket::CreateConnection()
+{
+	if (GetSocket() == INVALID_SOCKET)
+	{
+		SOCKET s = CreateSocket4(SOCK_DGRAM, "udp");
+		if (s == INVALID_SOCKET)
+		{
+			return;
+		}
+		Attach(s);
+	}
+}
+
+
+#ifdef IPPROTO_IPV6
+void UdpSocket::CreateConnection6()
+{
+	if (GetSocket() == INVALID_SOCKET)
+	{
+		SOCKET s = CreateSocket6(SOCK_DGRAM, "udp");
+		if (s == INVALID_SOCKET)
+		{
+			return;
+		}
+		Attach(s);
+	}
+}
+#endif // IPPROTO_IPV6
+
+
 /** send to specified address */
 void UdpSocket::SendToBuf(const std::string& h,port_t p,const char *data,int len,int flags)
 {
@@ -256,6 +286,35 @@ void UdpSocket::SendToBuf(const std::string& h,port_t p,const char *data,int len
 	}
 	ipaddr_t a;
 	if (u2ip(h,a))
+	{
+		struct sockaddr_in sa;
+		socklen_t sa_len = sizeof(sa);
+
+		memset(&sa,0,sizeof(sa));
+		sa.sin_family = AF_INET;
+		sa.sin_port = htons( p );
+		memmove(&sa.sin_addr,&a,4);
+
+		if (sendto(GetSocket(),data,len,flags,(struct sockaddr *)&sa,sa_len) == -1)
+		{
+			Handler().LogError(this,"sendto",Errno,StrError(Errno),LOG_LEVEL_ERROR);
+		}
+	}
+}
+
+
+/** send to specified address */
+void UdpSocket::SendToBuf(ipaddr_t a,port_t p,const char *data,int len,int flags)
+{
+	if (GetSocket() == INVALID_SOCKET)
+	{
+		SOCKET s = CreateSocket4(SOCK_DGRAM, "udp");
+		if (s == INVALID_SOCKET)
+		{
+			return;
+		}
+		Attach(s);
+	}
 	{
 		struct sockaddr_in sa;
 		socklen_t sa_len = sizeof(sa);
@@ -308,6 +367,12 @@ void UdpSocket::SendToBuf6(const std::string& h,port_t p,const char *data,int le
 
 
 void UdpSocket::SendTo(const std::string& a,port_t p,const std::string& str,int flags)
+{
+	SendToBuf(a,p,str.c_str(),(int)str.size(),flags);
+}
+
+
+void UdpSocket::SendTo(ipaddr_t a,port_t p,const std::string& str,int flags)
 {
 	SendToBuf(a,p,str.c_str(),(int)str.size(),flags);
 }

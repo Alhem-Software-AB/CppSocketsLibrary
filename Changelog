@@ -167,3 +167,9 @@ Version 1.7.4
 Version 1.7.5
 --------------------------
 
+Version 1.7.6
+--------------------------
+22a23,24
+> ListenSocketBase.cpp
+> ListenSocketBase.h
+

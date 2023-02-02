@@ -44,6 +44,7 @@ public:
 	Socket(SocketHandler&);
 	virtual ~Socket();
 
+	virtual Socket *Create() { return NULL; }
 	virtual void Init();
 
 	void Attach(SOCKET s);
@@ -160,6 +161,10 @@ public:
 
 	void SetReuse(bool x) { m_opt_reuse = x; }
 	void SetKeepalive(bool x) { m_opt_keepalive = x; }
+
+	// dns
+//	void Resolve(const std::string& host);
+//	virtual void OnResolved(const char *,size_t) {}
 
 protected:
 	Socket(const Socket& ); // do not allow use of copy constructor
