@@ -31,6 +31,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef _WIN32
 #include <signal.h>
 #include <stdint.h>
+#include <sys/sysinfo.h>
 #else
 typedef __int64 int64_t;
 #endif
@@ -60,7 +61,7 @@ static	size_t data_size = 1024;
 static	bool g_b_stop = false;
 static	bool g_b_ssl = false;
 static	bool g_b_instant = false;
-static	time_t rTime;
+static	time_t rTime = 10;
 
 
 void printreport()
@@ -131,7 +132,7 @@ double Diff(struct timeval t0,struct timeval t)
 class MySocket : public TcpSocket
 {
 public:
-  MySocket(ISocketHandler& h,bool one) : TcpSocket(h), m_b_client(false), m_b_one(one), m_b_created(false) {
+  MySocket(ISocketHandler& h,bool one) : TcpSocket(h), m_b_client(false), m_b_one(one), m_b_created(false), m_b_active(false) {
     gettime(&m_create, NULL);
     SetLineProtocol();
     if (g_b_ssl)
@@ -162,6 +163,7 @@ public:
 
   void OnConnect() {
     gettime(&m_connect, NULL);
+    m_b_active = true;
     {
       double tconnect = Diff(m_create, m_connect);
       //
@@ -181,6 +183,7 @@ public:
 
   void OnLine(const std::string& line) {
     gettime(&m_reply, NULL);
+    m_b_active = true;
     {
       double treply = Diff(m_send, m_reply);
       //
@@ -219,38 +222,21 @@ public:
     }
   }
 
+  bool IsActive() {
+    bool b = m_b_active;
+    m_b_active = false;
+    return b;
+  }
 
 private:
   bool m_b_client;
   bool m_b_one;
   bool m_b_created;
+  bool m_b_active;
   struct timeval m_create;
   struct timeval m_connect;
   struct timeval m_send;
   struct timeval m_reply;
-};
-
-
-class MyHandler : public SocketHandler
-{
-public:
-  MyHandler() : SocketHandler() {
-  }
-  MyHandler(StdoutLog *p) : SocketHandler(p) {
-  }
-  ~MyHandler() {
-  }
-  void Flood() {
-    for (socket_m::iterator it = m_sockets.begin(); it != m_sockets.end(); it++)
-    {
-      Socket *p0 = it -> second;
-      MySocket *p = dynamic_cast<MySocket *>(p0);
-      if (p)
-      {
-        p -> SendBlock();
-      }
-    }
-  }
 };
 
 
@@ -327,12 +313,51 @@ void sigusr2(int)
 #endif
 
 
+class MyHandler : public SocketHandler
+{
+public:
+  MyHandler() : SocketHandler() {
+  }
+  MyHandler(StdoutLog *p) : SocketHandler(p) {
+  }
+  ~MyHandler() {
+  }
+  void Flood() {
+    for (socket_m::iterator it = m_sockets.begin(); it != m_sockets.end(); it++)
+    {
+      Socket *p0 = it -> second;
+      MySocket *p = dynamic_cast<MySocket *>(p0);
+      if (p)
+      {
+        p -> SendBlock();
+      }
+    }
+  }
+  void Report() {
+    size_t ant = 0;
+    size_t act = 0;
+    for (socket_m::iterator it = m_sockets.begin(); it != m_sockets.end(); it++)
+    {
+      MySocket *p = dynamic_cast<MySocket *>(it -> second);
+      if (p)
+      {
+        ant++;
+        if (p -> IsActive())
+        {
+          act++;
+        }
+      }
+    }
+    printf("Number of //stress// sockets: %d  Active: %d\n", ant, act);
+  }
+};
+
+
 int main(int argc,char *argv[])
 {
   bool many = false;
   bool one = false;
   bool enableLog = false;
-  time_t rTime = 10;
   bool http = false;
   std::string url;
   for (int i = 1; i < argc; i++)
@@ -447,11 +472,16 @@ int main(int argc,char *argv[])
     {
       t = time(NULL);
       tempreport();
-      printf("Active sockets: %d\n", h.GetCount());
+      h.Report();
       if (g_b_stop)
       {
         quit = true;
       }
+/*
+      struct sysinfo info;
+      sysinfo(&info);
+      printf("Free mem: %ld / %ld\n", info.freeram, info.totalram);
+*/
     }
   }
   fprintf(stderr, "\nExiting...\n");

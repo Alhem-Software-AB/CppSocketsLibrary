@@ -1,4 +1,4 @@
-VERSION =	2.1pre
+VERSION =	2.1
 DIFF_VERSION =	2.0.9
 
 INCLUDE =	-I.

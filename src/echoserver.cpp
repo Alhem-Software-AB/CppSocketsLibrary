@@ -29,6 +29,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <TcpSocket.h>
 #ifndef _WIN32
 #include <signal.h>
+#include <sys/sysinfo.h>
 #endif
 #include <HttpDebugSocket.h>
 
@@ -40,6 +41,7 @@ static	std::string gPw;
 static	bool quit = false;
 static	bool g_b_http = false;
 static	bool g_b_nobuf = false;
+static	bool g_b_detach2 = false;
 
 #define DEB(x) 
 
@@ -73,6 +75,15 @@ public:
   }
 
   void OnLine(const std::string& line) {
+    if (g_b_detach2 && !IsDetach())
+    {
+      m_line = line;
+      if (!Detach())
+      {
+        fprintf(stderr, "\nDetach failed\n");
+      }
+      return;
+    }
 DEB(printf("fd %d OnLine; %s\n", GetSocket(), Handler().IsSlave() ? "slave" : "master");)
     Send(line + "\n");
   }
@@ -81,11 +92,18 @@ DEB(printf("fd %d OnLine; %s\n", GetSocket(), Handler().IsSlave() ? "slave" : "m
 DEB(printf("fd %d OnDetached; %s\n", GetSocket(), Handler().IsSlave() ? "slave" : "master");)
 //    fprintf(stderr, "-");
 //    fflush(stderr);
+    if (g_b_detach2)
+    {
+      Send(m_line + "\n");
+    }
   }
 
   void InitSSLServer() {
     InitializeContext(gFilename, gPw, SSLv23_method());
   }
+
+private:
+  std::string m_line;
 };
 
 
@@ -109,6 +127,8 @@ int main(int argc,char *argv[])
   {
     if (!strcmp(argv[i], "-detach"))
       g_b_detach = true;
+    if (!strcmp(argv[i], "-detach2"))
+      g_b_detach2 = true;
     if (!strcmp(argv[i], "-ssl"))
       g_b_ssl = true;
     if (!strcmp(argv[i], "-port") && i < argc - 1)
@@ -130,6 +150,7 @@ int main(int argc,char *argv[])
     	printf("Usage: %s [-port nn] [-detach] [-ssl]\n", *argv);
     	printf(" -port nn   listen on port nn\n");
     	printf(" -detach    detach each socket on accept\n");
+    	printf(" -detach2   detach when line received\n");
     	printf(" -ssl       run as ssl server, .pem file needed\n");
     	printf(" -file xx   .pem filename, default is \"server.pem\"\n");
     	printf(" -pw xx     private key password\n");
@@ -174,10 +195,21 @@ int main(int argc,char *argv[])
     fprintf(stderr, "Will detach each incoming socket\n");
   if (g_b_ssl)
     fprintf(stderr, "Using SSL\n");
+//  time_t t = time(NULL);
   while (!quit)
   {
     h.Select(1, 0);
+/*
+    if (time(NULL) - t > 10)
+    {
+      t = time(NULL);
+      struct sysinfo info;
+      sysinfo(&info);
+      printf("Free mem: %ld / %ld\n", info.freeram, info.totalram);
+    }
+*/
   }
+/*
   if (g_b_detach)
   {
     fprintf(stderr, "Waiting for threads to exit...\n");
@@ -187,6 +219,7 @@ int main(int argc,char *argv[])
     sleep(1);
 #endif
   }
+*/
   fprintf(stderr, "\nExiting...\n");
   if (log)
   {
