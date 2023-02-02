@@ -49,15 +49,9 @@ namespace SOCKETS_NAMESPACE {
 #endif
 
 
-HttpPostSocket::HttpPostSocket(SocketHandler& h,const std::string& url_in)
-:HTTPSocket(h)
-,m_port(80)
+HttpPostSocket::HttpPostSocket(SocketHandler& h,const std::string& url_in) : HttpClientSocket(h, url_in)
 ,m_bMultipart(false)
 {
-	std::string url;
-	std::string file;
-	url_this(url_in, m_protocol, m_host, m_port, url, file);
-	SetUrl(url);
 	std::string m_boundary = "----";
 	for (int i = 0; i < 12; i++)
 	{
@@ -111,7 +105,7 @@ void HttpPostSocket::AddFile(const std::string& name,const std::string& filename
 void HttpPostSocket::Open()
 {
 	// why do I have to specify TcpSocket:: to get to the Open() method??
-	TcpSocket::Open(m_host, m_port);
+	TcpSocket::Open(GetUrlHost(), GetUrlPort());
 }
 
 
@@ -151,7 +145,7 @@ void HttpPostSocket::OnConnect()
 		// build header, send body
 		SetMethod("POST");
 		SetHttpVersion( "HTTP/1.1" );
-		AddResponseHeader( "Host", m_host ); // oops - this is actually a request header that we're adding..
+		AddResponseHeader( "Host", GetUrlHost() ); // oops - this is actually a request header that we're adding..
 		AddResponseHeader( "User-agent", MyUseragent());
 		AddResponseHeader( "Accept", "text/html, text/plain, */*;q=0.01" );
 		AddResponseHeader( "Connection", "close" );
@@ -213,7 +207,7 @@ void HttpPostSocket::DoMultipartPost()
 	// build header, send body
 	SetMethod("POST");
 	SetHttpVersion( "HTTP/1.1" );
-	AddResponseHeader( "Host", m_host ); // oops - this is actually a request header that we're adding..
+	AddResponseHeader( "Host", GetUrlHost() ); // oops - this is actually a request header that we're adding..
 	AddResponseHeader( "User-agent", MyUseragent());
 	AddResponseHeader( "Accept", "text/html, text/plain, */*;q=0.01" );
 	AddResponseHeader( "Connection", "close" );
@@ -271,27 +265,6 @@ void HttpPostSocket::DoMultipartPost()
 
 	// end of send
 	Send("--" + m_boundary + "--\r\n");
-}
-
-
-void HttpPostSocket::OnFirst()
-{
-}
-
-
-void HttpPostSocket::OnHeader(const std::string& ,const std::string& )
-{
-}
-
-
-void HttpPostSocket::OnHeaderComplete()
-{
-	SetCloseAndDelete();
-}
-
-
-void HttpPostSocket::OnData(const char *,size_t)
-{
 }
 
 

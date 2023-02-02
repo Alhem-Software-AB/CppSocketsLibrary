@@ -30,7 +30,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef _HTTPPUTSOCKET_H
 #define _HTTPPUTSOCKET_H
 
-#include "HTTPSocket.h"
+#include "HttpClientSocket.h"
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
@@ -41,7 +41,7 @@ class SocketHandler;
 
 /** Put http page. 
 	\ingroup http */
-class HttpPutSocket : public HTTPSocket
+class HttpPutSocket : public HttpClientSocket
 {
 public:
 	// client constructor, url = 'http://host:port/resource'
@@ -49,30 +49,24 @@ public:
 	~HttpPutSocket();
 
 	// these must be specified before connecting / adding to handler
+	/** Set filename to send. */
 	void SetFile(const std::string& );
+	/** Set mimetype of file to send. */
 	void SetContentType(const std::string& );
 
-	// connect to host:port derived from url in constructor
+	/** connect to host:port derived from url in constructor */
 	void Open();
 
-	// http put client implemented in OnConnect
+	/** http put client implemented in OnConnect */
 	void OnConnect();
 
-	void OnFirst();
-	void OnHeader(const std::string& key,const std::string& value);
-	void OnHeaderComplete();
-	void OnData(const char *,size_t);
-
 private:
-	HttpPutSocket(const HttpPutSocket& s) : HTTPSocket(s) {} // copy constructor
+	HttpPutSocket(const HttpPutSocket& s) : HttpClientSocket(s) {} // copy constructor
 	HttpPutSocket& operator=(const HttpPutSocket& ) { return *this; } // assignment operator
 	//
 	std::string m_filename;
 	std::string m_content_type;
 	long m_content_length;
-	std::string m_protocol;
-	std::string m_host;
-	port_t m_port;
 };
 
 

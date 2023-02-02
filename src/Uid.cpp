@@ -37,7 +37,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <objbase.h>
 #elif defined MACOSX
 #include <string.h>
-#include "uuid.h"
+#include <uuid/uuid.h>
 #elif defined __FreeBSD__
 # if __FreeBSD_version >= 500000
 #  include <uuid.h>

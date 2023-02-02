@@ -30,7 +30,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef _HTTPPOSTSOCKET_H
 #define _HTTPPOSTSOCKET_H
 
-#include "HTTPSocket.h"
+#include "HttpClientSocket.h"
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
@@ -41,42 +41,37 @@ class SocketHandler;
 
 /** Generate a http post request, get response. 
 	\ingroup http */
-class HttpPostSocket : public HTTPSocket
+class HttpPostSocket : public HttpClientSocket
 {
 public:
-	// client constructor, url = 'http://host:port/resource'
+	/* client constructor, 
+		\param url_in = 'http://host:port/resource' */
 	HttpPostSocket(SocketHandler&,const std::string& url_in);
 	~HttpPostSocket();
 
 	// these must be specified before connecting / adding to handler
+	/** Add field to post. */
 	void AddField(const std::string& name,const std::string& value);
+	/** Add multiline field to post. */
 	void AddMultilineField(const std::string& name,std::list<std::string>& values);
+	/** Add file to post. */
 	void AddFile(const std::string& name,const std::string& filename,const std::string& type);
 
-	// use this to post with content-type multipart/form-data
-	// when adding a file to the post, this is the default and only content-type
+	/** use this to post with content-type multipart/form-data.
+	// when adding a file to the post, this is the default and only content-type */
 	void SetMultipart();
 
-	// connect to host:port derived from url in constructor
+	/** connect to host:port derived from url in constructor */
 	void Open();
 
-	// http put client implemented in OnConnect
+	/** http put client implemented in OnConnect */
 	void OnConnect();
 
-	void OnFirst();
-	void OnHeader(const std::string& key,const std::string& value);
-	void OnHeaderComplete();
-	void OnData(const char *,size_t);
-
-
 private:
-	HttpPostSocket(const HttpPostSocket& s) : HTTPSocket(s) {} // copy constructor
+	HttpPostSocket(const HttpPostSocket& s) : HttpClientSocket(s) {} // copy constructor
 	HttpPostSocket& operator=(const HttpPostSocket& ) { return *this; } // assignment operator
 	void DoMultipartPost();
 	//
-	std::string m_protocol;
-	std::string m_host;
-	port_t m_port;
 	std::map<std::string,std::list<std::string> > m_fields;
 	std::map<std::string,std::string> m_files;
 	std::string m_boundary;
@@ -84,8 +79,6 @@ private:
 	std::map<std::string,std::string> m_content_type;
 	bool m_bMultipart;
 };
-
-
 
 
 #ifdef SOCKETS_NAMESPACE

@@ -76,10 +76,8 @@ public:
 	class SSLInitializer {
 	public:
 		SSLInitializer() {
-			printf("SSLInitializer()\n");
 		}
 		~SSLInitializer() {
-			printf("~SSLInitializer()\n");
 #ifdef HAVE_OPENSSL
 			TcpSocket::DeleteRandFile();
 #endif

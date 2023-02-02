@@ -97,7 +97,6 @@ public:
 class hSocket : public HttpGetSocket
 {
 public:
-	hSocket(SocketHandler& h) : HttpGetSocket(h) {}
 	hSocket(SocketHandler& h,const std::string& x,const std::string& y) : HttpGetSocket(h,x,y) {}
 
 	void OnConnect() {

@@ -47,13 +47,8 @@ namespace SOCKETS_NAMESPACE {
 #endif
 
 
-HttpPutSocket::HttpPutSocket(SocketHandler& h,const std::string& url_in)
-:HTTPSocket(h)
+HttpPutSocket::HttpPutSocket(SocketHandler& h,const std::string& url_in) : HttpClientSocket(h, url_in)
 {
-	std::string url;
-	std::string file;
-	url_this(url_in, m_protocol, m_host, m_port, url, file);
-	SetUrl(url);
 }
 
 
@@ -88,7 +83,7 @@ void HttpPutSocket::SetContentType(const std::string& type)
 void HttpPutSocket::Open()
 {
 	// why do I have to specify TcpSocket:: to get to the Open() method??
-	TcpSocket::Open(m_host, m_port);
+	TcpSocket::Open(GetUrlHost(), GetUrlPort());
 }
 
 
@@ -96,9 +91,10 @@ void HttpPutSocket::OnConnect()
 {
 	SetMethod( "PUT" );
 	SetHttpVersion( "HTTP/1.1" );
-	AddResponseHeader( "Host", m_host );
+	AddResponseHeader( "Host", GetUrlHost() );
 	AddResponseHeader( "Content-type", m_content_type );
 	AddResponseHeader( "Content-length", Utility::l2string(m_content_length) );
+	AddResponseHeader( "User-agent", MyUseragent() );
 	SendRequest();
 
 	FILE *fil = fopen(m_filename.c_str(), "rb");
@@ -112,28 +108,6 @@ void HttpPutSocket::OnConnect()
 		}
 		fclose(fil);
 	}
-}
-
-
-
-void HttpPutSocket::OnFirst()
-{
-}
-
-
-void HttpPutSocket::OnHeader(const std::string& ,const std::string& )
-{
-}
-
-
-void HttpPutSocket::OnHeaderComplete()
-{
-	SetCloseAndDelete();
-}
-
-
-void HttpPutSocket::OnData(const char *,size_t)
-{
 }
 
 

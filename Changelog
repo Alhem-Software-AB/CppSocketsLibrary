@@ -489,3 +489,9 @@ Version 2.0.2b
 Version 2.0.3
 --------------------------
 
+Version 2.0.4
+--------------------------
+15a16,17
+> HttpClientSocket.cpp
+> HttpClientSocket.h
+

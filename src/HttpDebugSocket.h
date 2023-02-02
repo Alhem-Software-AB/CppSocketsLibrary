@@ -54,6 +54,8 @@ public:
 	void OnData(const char *,size_t);
 
 private:
+	HttpDebugSocket(const HttpDebugSocket& s) : HTTPSocket(s) {} // copy constructor
+	HttpDebugSocket& operator=(const HttpDebugSocket& ) { return *this; } // assignment operator
 	int m_content_length;
 	int m_read_ptr;
 };

@@ -1,5 +1,5 @@
-VERSION =	2.0.3
-DIFF_VERSION =	2.0.2b
+VERSION =	2.0.4
+DIFF_VERSION =	2.0.3
 
 INCLUDE =	-I.
 PREFIX =	/usr/local
@@ -74,7 +74,8 @@ OBJS =		CircularBuffer.o \
 		socket_include.o \
 		Mutex.o \
 		Lock.o \
-		EventTime.o Event.o IEventOwner.o EventHandler.o
+		EventTime.o Event.o IEventOwner.o EventHandler.o \
+		HttpClientSocket.o
 
 libSockets.a:	$(OBJS)
 		ar cru $@ $(OBJS)

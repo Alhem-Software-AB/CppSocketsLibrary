@@ -43,34 +43,13 @@ namespace SOCKETS_NAMESPACE {
 #endif
 
 
-HttpGetSocket::HttpGetSocket(SocketHandler& h) : HTTPSocket(h)
-,m_fil(NULL)
-,m_bComplete(false)
-,m_content_length(0)
-,m_content_ptr(0)
-,m_data(NULL)
-,m_data_set(false)
-,m_data_max(0)
+HttpGetSocket::HttpGetSocket(SocketHandler& h,const std::string& url_in,const std::string& to_file) : HttpClientSocket(h, url_in)
 {
-}
-
-
-HttpGetSocket::HttpGetSocket(SocketHandler& h,const std::string& url_in,const std::string& filename)
-:HTTPSocket(h)
-,m_fil(NULL)
-,m_bComplete(false)
-,m_content_length(0)
-,m_content_ptr(0)
-,m_data(NULL)
-,m_data_set(false)
-,m_data_max(0)
-{
-	url_this(url_in,m_protocol,m_host,m_port,m_url,m_to_file);
-	if (filename.size())
+	if (to_file.size())
 	{
-		m_to_file = filename;
+		SetFilename(to_file);
 	}
-	if (!Open(m_host,m_port))
+	if (!Open(GetUrlHost(),GetUrlPort()))
 	{
 		if (!Connecting())
 		{
@@ -81,21 +60,14 @@ HttpGetSocket::HttpGetSocket(SocketHandler& h,const std::string& url_in,const st
 }
 
 
-HttpGetSocket::HttpGetSocket(SocketHandler& h,const std::string& host,port_t port,const std::string& url,const std::string& to_file)
-:HTTPSocket(h)
-,m_host(host)
-,m_port(port)
-,m_url(url)
-,m_to_file(to_file)
-,m_fil(NULL)
-,m_bComplete(false)
-,m_content_length(0)
-,m_content_ptr(0)
-,m_data(NULL)
-,m_data_set(false)
-,m_data_max(0)
+HttpGetSocket::HttpGetSocket(SocketHandler& h,const std::string& host,port_t port,const std::string& url,const std::string& to_file) : HttpClientSocket(h)
 {
-	if (!Open(m_host,m_port))
+	SetUrl(url);
+	if (to_file.size())
+	{
+		SetFilename(to_file);
+	}
+	if (!Open(host, port))
 	{
 		if (!Connecting())
 		{
@@ -108,175 +80,23 @@ HttpGetSocket::HttpGetSocket(SocketHandler& h,const std::string& host,port_t por
 
 HttpGetSocket::~HttpGetSocket()
 {
-	if (m_fil)
-		fclose(m_fil);
-	if (m_data && !m_data_set)
-		delete[] m_data;
 }
 
 
 void HttpGetSocket::OnConnect()
 {
 	SetMethod( "GET" );
-	SetUrl( m_url );
 	AddResponseHeader( "Accept", "text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,video/x-mng,image/png,image/jpeg,image/gif;q=0.2,*/*;q=0.1");
 	AddResponseHeader( "Accept-Language", "en-us,en;q=0.5");
 	AddResponseHeader( "Accept-Encoding", "gzip,deflate");
 	AddResponseHeader( "Accept-Charset", "ISO-8859-1,utf-8;q=0.7,*;q=0.7");
 	AddResponseHeader( "User-agent", MyUseragent() );
 
-	if (m_port != 80 && m_port != 443)
-		AddResponseHeader( "Host", m_host + " " + Utility::l2string(m_port) );
+	if (GetUrlPort() != 80 && GetUrlPort() != 443)
+		AddResponseHeader( "Host", GetUrlHost() + " " + Utility::l2string(GetUrlPort()) );
 	else
-		AddResponseHeader( "Host", m_host );
+		AddResponseHeader( "Host", GetUrlHost() );
 	SendRequest();
-}
-
-
-void HttpGetSocket::OnContent()
-{
-	if (m_fil)
-	{
-		fflush(m_fil);
-		fclose(m_fil);
-	}
-	m_fil = NULL;
-	SetCloseAndDelete(true);
-	m_bComplete = true;
-}
-
-
-void HttpGetSocket::OnDelete()
-{
-	if (m_fil)
-	{
-		OnContent();
-	}
-}
-
-
-void HttpGetSocket::OnFirst()
-{
-/*
-	printf("IsRequest: %s\n",IsRequest() ? "YES" : "NO");
-	if (IsRequest())
-	{
-		printf(" Method: %s\n",GetMethod().c_str());
-		printf(" URL: %s\n",GetUrl().c_str());
-		printf(" Http version: %s\n",GetHttpVersion().c_str());
-	}
-
-	printf("IsResponse: %s\n",IsResponse() ? "YES" : "NO");
-	if (IsResponse())
-	{
-		printf(" Http version: %s\n",GetHttpVersion().c_str());
-		printf(" Status: %s\n",GetStatus().c_str());
-		printf(" Status text: %s\n",GetStatusText().c_str());
-	}
-*/
-	if (!IsResponse())
-	{
-		SetCloseAndDelete();
-	}
-	if (GetStatus() != "200")
-	{
-		SetCloseAndDelete();
-	}
-}
-
-
-void HttpGetSocket::OnHeader(const std::string& key,const std::string& value)
-{
-	m_content += key + ": " + value + "\n";
-
-	if (!strcasecmp(key.c_str(),"content-type"))
-	{
-		m_content_type = value;
-	}
-	else
-	if (!strcasecmp(key.c_str(),"content-length"))
-	{
-		m_content_length = atol(value.c_str());
-		if (!m_data_set)
-		{
-			m_data = new unsigned char[m_content_length];
-			m_data_max = m_content_length;
-		}
-	}
-}
-
-
-void HttpGetSocket::OnHeaderComplete()
-{
-	m_content += "\n";
-
-	if (m_to_file.size())
-	{
-		m_fil = fopen(m_to_file.c_str(),"wb");
-		if (!m_fil)
-		{
-			Handler().LogError(this, "OnHeaderComplete", Errno, StrError(Errno), LOG_LEVEL_FATAL);
-			SetCloseAndDelete();
-		}
-	}
-}
-
-
-void HttpGetSocket::OnData(const char *buf,size_t len)
-{
-	if (m_content_ptr + len > m_data_max)
-	{
-		Handler().LogError(this, "OnData", -1, "content buffer overflow", LOG_LEVEL_ERROR);
-	}
-	else
-	{
-		memcpy(m_data + m_content_ptr, buf, len);
-	}
-
-	if (m_fil)
-	{
-		fwrite(buf,1,len,m_fil);
-	}
-	m_content_ptr += len;
-	if (m_content_length > 0 && m_content_ptr == m_content_length)
-	{
-		OnContent();
-	}
-}
-
-
-void HttpGetSocket::SetFilename(const std::string& filename)
-{
-	m_to_file = filename;
-}
-
-
-void HttpGetSocket::Url(const std::string& url,std::string& host,port_t& port)
-{
-	url_this(url,m_protocol,m_host,m_port,m_url,m_to_file);
-	host = m_host;
-	port = m_port;
-}
-
-
-void HttpGetSocket::SetDataPtr(unsigned char *p,size_t l)
-{
-	if (m_data)
-	{
-		Handler().LogError(this, "HttpGetSocket", -1, "content data buffer already allocated", LOG_LEVEL_WARNING);
-		return;
-	}
-	m_data = p;
-	m_data_set = true;
-	m_data_max = l;
-}
-
-
-const unsigned char *HttpGetSocket::GetDataPtr()
-{
-	if (!m_data)
-		Handler().LogError(this, "GetDataPtr", 0, "content buffer not allocated", LOG_LEVEL_WARNING);
-	return m_data;
 }
 
 
