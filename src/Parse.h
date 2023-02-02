@@ -32,6 +32,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef _PARSE_H
 #define _PARSE_H
 
+#ifdef _WIN32
+#pragma warning(disable:4514)
+#endif
+
 #include <string>
 
 #ifdef SOCKETS_NAMESPACE

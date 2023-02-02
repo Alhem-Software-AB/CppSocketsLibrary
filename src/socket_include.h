@@ -30,6 +30,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef _SOCKET_INCLUDE_H
 #define _SOCKET_INCLUDE_H
 
+#ifdef _WIN32
+#pragma warning(disable:4514)
+#endif
+
 #if (defined(__unix__) || defined(unix)) && !defined(USG)
 #include <sys/param.h>
 #endif
