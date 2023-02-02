@@ -106,8 +106,9 @@ docs:		clean
 		rm -f Stdin.*
 		rm -f sockets_test.cpp
 		rm -f ListenSocketBase.*
-		rm -f echoserver.cpp stressclient.cpp
+		rm -f tests/*.cpp
 		./mkdot.sh
 		rm -rf /usr/local/apache/www.alhem.net/htdocs/Sockets/html
 		doxygen doxygen.cfg
 		./packdocs.sh Sockets-$(VERSION)-doxygendocs
+		cvs up

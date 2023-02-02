@@ -95,6 +95,7 @@ public:
 		\param port Port (0 is random)
 		\param depth Listen queue depth */
 	int Bind(port_t port,int depth = 20) {
+#ifdef ENABLE_IPV6
 #ifdef IPPROTO_IPV6
 		if (IsIpv6())
 		{
@@ -102,6 +103,7 @@ public:
 			return Bind(ad, depth);
 		}
 		else
+#endif
 #endif
 		{
 			Ipv4Address ad(port);
@@ -124,6 +126,7 @@ public:
 		\param protocol Network protocol
 		\param depth Listen queue depth */
 	int Bind(port_t port,const std::string& protocol,int depth = 20) {
+#ifdef ENABLE_IPV6
 #ifdef IPPROTO_IPV6
 		if (IsIpv6())
 		{
@@ -131,6 +134,7 @@ public:
 			return Bind(ad, protocol, depth);
 		}
 		else
+#endif
 #endif
 		{
 			Ipv4Address ad(port);
@@ -143,6 +147,7 @@ public:
 		\param port Port (0 is random)
 		\param depth Listen queue depth */
 	int Bind(const std::string& intf,port_t port,int depth = 20) {
+#ifdef ENABLE_IPV6
 #ifdef IPPROTO_IPV6
 		if (IsIpv6())
 		{
@@ -155,6 +160,7 @@ public:
 			return -1;
 		}
 		else
+#endif
 #endif
 		{
 			Ipv4Address ad(intf, port);
@@ -173,6 +179,7 @@ public:
 		\param protocol Network protocol
 		\param depth Listen queue depth */
 	int Bind(const std::string& intf,port_t port,const std::string& protocol,int depth = 20) {
+#ifdef ENABLE_IPV6
 #ifdef IPPROTO_IPV6
 		if (IsIpv6())
 		{
@@ -185,6 +192,7 @@ public:
 			return -1;
 		}
 		else
+#endif
 #endif
 		{
 			Ipv4Address ad(intf, port);
@@ -221,6 +229,7 @@ public:
 		return Bind(ad, protocol, depth);
 	}
 
+#ifdef ENABLE_IPV6
 #ifdef IPPROTO_IPV6
 	/** Bind and listen to ipv6 interface.
 		\param a Ipv6 interface address
@@ -246,6 +255,7 @@ public:
 		return Bind(ad, protocol, depth);
 	}
 #endif
+#endif
 
 	/** Bind and listen to network interface.
 		\param ad Interface address
@@ -270,6 +280,7 @@ public:
 			return -1;
 		}
 		// retrieve bound port
+#ifdef ENABLE_IPV6
 #ifdef IPPROTO_IPV6
 		if (IsIpv6())
 		{
@@ -279,6 +290,7 @@ public:
 			m_port = ntohs(sa.sin6_port);
 		}
 		else
+#endif
 #endif
 		{
 			struct sockaddr_in sa;
@@ -328,11 +340,14 @@ public:
 			return;
 		}
 		Socket *tmp = m_bHasCreate ? m_creator -> Create() : new X(Handler());
+#ifdef ENABLE_IPV6
 		tmp -> SetIpv6( IsIpv6() );
+#endif
 		tmp -> SetParent(this);
 		tmp -> Attach(a_s);
 		tmp -> SetNonblocking(true);
 		{
+#ifdef ENABLE_IPV6
 #ifdef IPPROTO_IPV6
 			if (sa_len == sizeof(struct sockaddr_in6))
 			{
@@ -348,6 +363,7 @@ public:
 				}
 			}
 #endif
+#endif
 			if (sa_len == sizeof(struct sockaddr_in))
 			{
 				struct sockaddr_in *p = (struct sockaddr_in *)&sa;
@@ -360,12 +376,27 @@ public:
 		}
 		tmp -> SetConnected(true);
 		tmp -> Init();
-		Handler().Add(tmp);
 		tmp -> SetDeleteByHandler(true);
+#ifdef HAVE_OPENSSL
 		if (tmp -> IsSSL()) // SSL Enabled socket
+		{
 			tmp -> OnSSLAccept();
+			if (1||tmp -> GetSslContext())
+			{
+				Handler().Add(tmp);
+			}
+			else
+			{
+Handler().LogError(this, "ListenSocket/OnRead", 0, "Accept: not adding ssl socket because context init failed", LOG_LEVEL_FATAL);
+				delete tmp;
+			}
+		}
 		else
+#endif
+		{
+			Handler().Add(tmp);
 			tmp -> OnAccept();
+		}
 	}
 
 	/** Please don't use this method.

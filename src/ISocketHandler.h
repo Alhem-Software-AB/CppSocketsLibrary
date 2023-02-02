@@ -44,7 +44,9 @@ namespace SOCKETS_NAMESPACE {
 
 typedef enum {
 	LIST_CALLONCONNECT = 0,
+#ifdef ENABLE_DETACH
 	LIST_DETACH,
+#endif
 	LIST_CONNECTING,
 	LIST_RETRY,
 	LIST_CLOSE
@@ -73,10 +75,12 @@ public:
 	/** Get mutex reference for threadsafe operations. */
 	Mutex& GetMutex() const;
 
+#ifdef ENABLE_DETACH
 	/** Indicates that the handler runs under SocketThread. */
 	void SetSlave(bool x = true);
 	/** Indicates that the handler runs under SocketThread. */
 	bool IsSlave();
+#endif
 
 	/** Register StdLog object for error callback. 
 		\param log Pointer to log class */
@@ -186,16 +190,20 @@ public:
 	virtual int Resolve(Socket *,const std::string& host,port_t port) {
 		return -1;
 	}
+#ifdef ENABLE_IPV6
 	virtual int Resolve6(Socket *,const std::string& host,port_t port) {
 		return -1;
 	}
+#endif
 	/** Do a reverse dns lookup. */
 	virtual int Resolve(Socket *,ipaddr_t a) {
 		return -1;
 	}
+#ifdef ENABLE_IPV6
 	virtual int Resolve(Socket *,in6_addr& a) {
 		return -1;
 	}
+#endif
 	/** Get listen port of asynchronous dns server. */
 	virtual port_t GetResolverPort() {
 		return 0;
@@ -208,7 +216,9 @@ public:
 
 protected:
 	StdLog *m_stdlog; ///< Registered log class, or NULL
+#ifdef ENABLE_DETACH
 	bool m_slave; ///< Indicates that this is a ISocketHandler run in SocketThread
+#endif
 	Mutex& m_mutex; ///< Thread safety mutex
 	bool m_b_use_mutex; ///< Mutex correctly initialized
 };

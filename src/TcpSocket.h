@@ -35,10 +35,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifdef HAVE_OPENSSL
 #include <openssl/ssl.h>
 #else // !HAVE_OPENSSL
+/*
 typedef void * BIO;
 typedef void * SSL;
 typedef void * SSL_CTX;
 typedef void * SSL_METHOD;
+*/
 #endif
 
 #define TCP_BUFSIZE_READ 16400
@@ -75,6 +77,7 @@ class TcpSocket : public Socket
 	typedef std::list<MES *> ucharp_v;
 public:
 	/** SSL Initialization, Removes ssl .rnd file */
+#ifdef HAVE_OPENSSL
 	class SSLInitializer {
 	public:
 		SSLInitializer() {
@@ -85,6 +88,7 @@ public:
 #endif
 		}
 	};
+#endif
 public:
 	/** Contructor with standard values on input/output buffers. */
 	TcpSocket(ISocketHandler& );
@@ -104,12 +108,14 @@ public:
 		\param port Port number
 		\param skip_socks Do not use socks4 even if configured */
 	bool Open(ipaddr_t ip,port_t port,bool skip_socks = false);
+#ifdef ENABLE_IPV6
 #ifdef IPPROTO_IPV6
 	/** Open connection. 
 		\param ip Ipv6 address
 		\param port Port number
 		\param skip_socks Do not use socks4 even if configured */
 	bool Open(in6_addr ip,port_t port,bool skip_socks = false);
+#endif
 #endif
 	bool Open(SocketAddress&,bool skip_socks = false);
 	bool Open(SocketAddress&,SocketAddress& bind_address,bool skip_socks = false);
@@ -161,10 +167,14 @@ public:
 		\return 'need_more' */
 	bool OnSocks4Read();
 
+#ifdef ENABLE_RESOLVER
 	/** Callback executed when resolver thread has finished a resolve request. */
 	void OnResolved(int id,ipaddr_t a,port_t port);
+#ifdef ENABLE_IPV6
 	void OnResolved(int id,in6_addr& a,port_t port);
-
+#endif
+#endif
+#ifdef HAVE_OPENSSL
 	/** Callback for 'New' ssl support - replaces SSLSocket. Internal use. */
 	void OnSSLConnect();
 	/** Callback for 'New' ssl support - replaces SSLSocket. Internal use. */
@@ -175,6 +185,7 @@ public:
 	/** This method must be implemented to initialize 
 		the ssl context for an incoming connection. */
 	virtual void InitSSLServer();
+#endif
 
 #ifdef ENABLE_RECONNECT
 	/** Flag that says a broken connection will try to reconnect. */
@@ -187,12 +198,14 @@ public:
 	bool IsReconnect();
 #endif
 
+#ifdef HAVE_OPENSSL
 	/** SSL; Get ssl password. */
 	const std::string& GetPassword();
 	/** SSL; Set random filename + size to be used. */
 	void SetRandFile(const std::string& file,long size);
 	/** SSL; delete random file when shutting down. */
 static	void DeleteRandFile();
+#endif
 
 	void DisableInputBuffer(bool = true);
 
@@ -204,22 +217,28 @@ protected:
 	TcpSocket(const TcpSocket& s);
 	void OnRead();
 	void OnWrite();
+#ifdef HAVE_OPENSSL
 	/** SSL; Initialize ssl context for a client socket. 
 		\param meth_in SSL method */
-	void InitializeContext(SSL_METHOD *meth_in = NULL);
+	void InitializeContext(const std::string& context, SSL_METHOD *meth_in = NULL);
 	/** SSL; Initialize ssl context for a server socket. 
 		\param keyfile Combined private key/certificate file 
 		\param password Password for private key 
 		\param meth_in SSL method */
-	void InitializeContext(const std::string& keyfile,const std::string& password,SSL_METHOD *meth_in = NULL);
+	void InitializeContext(const std::string& context, const std::string& keyfile, const std::string& password, SSL_METHOD *meth_in = NULL);
 	/** SSL; Password callback method. */
-static	int password_cb(char *buf,int num,int rwflag,void *userdata);
+static	int SSL_password_cb(char *buf,int num,int rwflag,void *userdata);
+	/** SSL; mutex locking function callback. */
+static	void SSL_locking_function(int mode, int n, const char *file, int line);
+	/** Return thread id. */
+static	unsigned long SSL_id_function();
 	/** SSL; Get pointer to ssl context structure. */
 	virtual SSL_CTX *GetSslContext();
 	/** SSL; Get pointer to ssl structure. */
 	virtual SSL *GetSsl();
 	/** ssl; still negotiating connection. */
 	bool SSLNegotiate();
+#endif
 	//
 	CircularBuffer ibuf; ///< Circular input buffer
 	CircularBuffer obuf; ///< Circular output buffer
@@ -238,22 +257,28 @@ private:
 	unsigned short m_socks4_dstport; ///< socks4 support
 	unsigned long m_socks4_dstip; ///< socks4 support
 #endif
+#ifdef ENABLE_RESOLVER
 	int m_resolver_id; ///< Resolver id (if any) for current Open call
+#endif
 	// SSL
+#ifdef HAVE_OPENSSL
 	SSL_CTX *m_ssl_ctx; ///< ssl context
 	SSL *m_ssl; ///< ssl 'socket'
 	BIO *m_sbio; ///< ssl bio
-static	BIO *bio_err; ///< ssl bio err
+static	BIO *m_bio_err; ///< ssl bio err
 	std::string m_password; ///< ssl password
 static	bool m_b_rand_file_generated; ///< rand_file is generated once
 static	std::string m_rand_file;
 static	long m_rand_size;
+#endif
 	// state flags
 #ifdef ENABLE_RECONNECT
 	bool m_b_reconnect; ///< Reconnect on lost connection flag
 	bool m_b_is_reconnect; ///< Trying to reconnect
 #endif
+#ifdef HAVE_OPENSSL
 static	SSLInitializer m_ssl_init;
+#endif
 	bool m_b_input_buffer_disabled;
 	uint64_t m_bytes_sent;
 	uint64_t m_bytes_received;

@@ -29,6 +29,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #ifndef _SOCKETTHREAD_H
 #define _SOCKETTHREAD_H
+#include "sockets-config.h"
+#ifdef ENABLE_DETACH
 
 #include "Thread.h"
 #include "Socket.h"
@@ -62,4 +64,5 @@ private:
 }
 #endif
 
+#endif // ENABLE_DETACH
 #endif // _SOCKETTHREAD_H

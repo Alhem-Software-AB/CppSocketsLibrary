@@ -72,6 +72,7 @@ public:
 		\param range Port range
 		\return 0 if bind succeeded */
 	int Bind(ipaddr_t a,port_t& port,int range = 1);
+#ifdef ENABLE_IPV6
 #ifdef IPPROTO_IPV6
 	/** To receive data on a specific interface:port, use this.
 		\param a Ipv6 address
@@ -79,6 +80,7 @@ public:
 		\param range Port range
 		\return 0 if bind succeeded */
 	int Bind(in6_addr a,port_t& port,int range = 1);
+#endif
 #endif
 	/** To receive data on a specific interface:port, use this.
 		\param ad Socket address
@@ -96,12 +98,14 @@ public:
 		\param port Port number
 		\return true if successful */
 	bool Open(const std::string& host,port_t port);
+#ifdef ENABLE_IPV6
 #ifdef IPPROTO_IPV6
 	/** Define remote host.
 		\param a Address of remote host, ipv6
 		\param port Port of remote host
 		\return true if successful */
 	bool Open(struct in6_addr& a,port_t port);
+#endif
 #endif
 	/** Define remote host.
 		\param ad Socket address
@@ -112,9 +116,11 @@ public:
 	void SendToBuf(const std::string& ,port_t,const char *data,int len,int flags = 0);
 	/** Send to specified address */
 	void SendToBuf(ipaddr_t,port_t,const char *data,int len,int flags = 0);
+#ifdef ENABLE_IPV6
 #ifdef IPPROTO_IPV6
 	/** Send to specified ipv6 address */
 	void SendToBuf(in6_addr,port_t,const char *data,int len,int flags = 0);
+#endif
 #endif
 	/** Send to specified socket address */
 	void SendToBuf(SocketAddress& ad,const char *data,int len,int flags = 0);
@@ -123,9 +129,11 @@ public:
 	void SendTo(const std::string&,port_t,const std::string&,int flags = 0);
 	/** Send string to specified address */
 	void SendTo(ipaddr_t,port_t,const std::string&,int flags = 0);
+#ifdef ENABLE_IPV6
 #ifdef IPPROTO_IPV6
 	/** Send string to specified ipv6 address */
 	void SendTo(in6_addr,port_t,const std::string&,int flags = 0);
+#endif
 #endif
 	/** Send string to specified socket address */
 	void SendTo(SocketAddress& ad,const std::string&,int flags = 0);
@@ -148,11 +156,13 @@ public:
 	bool IsMulticastLoop();
 	void AddMulticastMembership(const std::string& group,const std::string& intf = "0.0.0.0",int if_index = 0);
 	void DropMulticastMembership(const std::string& group,const std::string& intf = "0.0.0.0",int if_index = 0);
+#ifdef ENABLE_IPV6
 #ifdef IPPROTO_IPV6
 	/** multicast, ipv6 only */
 	void SetMulticastHops(int = -1);
 	/** multicast, ipv6 only */
 	int GetMulticastHops();
+#endif
 #endif
 	/** Returns true if Bind succeeded. */
 	bool IsBound();

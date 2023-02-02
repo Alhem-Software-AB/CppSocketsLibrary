@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #ifndef _MINION_MINDERHANDLER_H
 #define _MINION_MINDERHANDLER_H
+#include "sockets-config.h"
 #ifdef HAVE_OPENSSL
 
 //#include <string>

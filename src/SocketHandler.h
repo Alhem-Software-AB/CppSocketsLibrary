@@ -47,7 +47,9 @@ class Socket;
 #ifdef ENABLE_POOL
 class PoolSocket;
 #endif
+#ifdef ENABLE_RESOLVER
 class ResolvServer;
+#endif
 class Mutex;
 
 /** Socket container class, event generator. 
@@ -147,10 +149,14 @@ public:
 		\param host Hostname to be resolved
 		\param port Port number will be echoed in Socket::OnResolved callback */
 	int Resolve(Socket *,const std::string& host,port_t port);
+#ifdef ENABLE_IPV6
 	int Resolve6(Socket *,const std::string& host,port_t port);
+#endif
 	/** Do a reverse dns lookup. */
 	int Resolve(Socket *,ipaddr_t a);
+#ifdef ENABLE_IPV6
 	int Resolve(Socket *,in6_addr& a);
+#endif
 	/** Get listen port of asynchronous dns server. */
 	port_t GetResolverPort();
 	/** Resolver thread ready for queries. */
@@ -171,9 +177,8 @@ private:
 	fd_set m_rfds; ///< file descriptor set monitored for read events
 	fd_set m_wfds; ///< file descriptor set monitored for write events
 	fd_set m_efds; ///< file descriptor set monitored for exceptions
-#ifdef _WIN32
 	int m_preverror; ///< debug select() error
-#endif
+	int m_errcnt;
 #ifdef ENABLE_SOCKS4
 	ipaddr_t m_socks4_host; ///< Socks4 server host ip
 	port_t m_socks4_port; ///< Socks4 server port number
@@ -191,7 +196,9 @@ private:
 	socket_v m_fds; ///< Active file descriptor list
 	socket_v m_fds_erase; ///< File descriptors that are to be erased from m_sockets
 	socket_v m_fds_callonconnect; ///< checklist CallOnConnect
+#ifdef ENABLE_DETACH
 	socket_v m_fds_detach; ///< checklist Detach
+#endif
 	socket_v m_fds_connecting; ///< checklist Connecting
 	socket_v m_fds_retry; ///< checklist retry client connect
 	socket_v m_fds_close; ///< checklist close and delete

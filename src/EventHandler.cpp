@@ -151,13 +151,11 @@ void EventHandler::EventLoop()
 		struct timeval tv;
 		if (GetTimeUntilNextEvent(&tv))
 		{
-printf("Entering Select( &tv )\n");
 			Select(&tv);
 			CheckEvents();
 		}
 		else
 		{
-printf("Entering Select()\n");
 			Select();
 		}
 	}

@@ -1,5 +1,5 @@
-VERSION =	2.1.2
-DIFF_VERSION =	2.1.1
+VERSION =	2.1.3rc1
+DIFF_VERSION =	2.1.2
 
 # Sockets
 OBJS =		CircularBuffer.o \

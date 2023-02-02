@@ -34,6 +34,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <string>
 #include <vector>
 #include <list>
+#ifdef HAVE_OPENSSL
+#include <openssl/ssl.h>
+#endif
 
 #include "socket_include.h"
 #include <time.h>
@@ -116,32 +119,11 @@ public:
 	virtual void OnConnectFailed();
 	/** Called when a socket is created, to set socket options. */
 	virtual void OnOptions(int family,int type,int protocol,SOCKET) = 0;
-#ifdef ENABLE_SOCKS4
-	/** Socks4 client support internal use. \sa TcpSocket */
-	virtual void OnSocks4Connect();
-	/** Socks4 client support internal use. \sa TcpSocket */
-	virtual void OnSocks4ConnectFailed();
-	/** Socks4 client support internal use. \sa TcpSocket */
-	virtual bool OnSocks4Read();
-	/** Called when the last write caused the tcp output buffer to
-	 * become empty. */
-#endif
-//	virtual void OnWriteComplete();
-	/** SSL client/server support - internal use. \sa TcpSocket */
-	virtual void OnSSLConnect();
-	/** SSL client/server support - internal use. \sa TcpSocket */
-	virtual void OnSSLAccept();
 	/** Connection retry callback - return false to abort connection attempts */
 	virtual bool OnConnectRetry();
 #ifdef ENABLE_RECONNECT
 	/** a reconnect has been made */
 	virtual void OnReconnect();
-#endif
-	/** SSL negotiation failed for client connect. */
-	virtual void OnSSLConnectFailed();
-	/** SSL negotiation failed for server accept. */
-	virtual void OnSSLAcceptFailed();
-#ifdef ENABLE_RECONNECT
 	/** When a socket is set to reconnect, and a disconnect has been detected. */
 	virtual void OnDisconnect();
 #endif
@@ -150,10 +132,6 @@ public:
 	virtual bool CheckConnect();
 	/** Called after OnRead if socket is in line protocol mode.
 		\sa SetLineProtocol */
-//	virtual void ReadLine();
-	/** new SSL support */
-	virtual bool SSLNegotiate();
-
 	/** Enable the OnLine callback. Do not create your own OnRead
 	 * callback when using this. */
 	virtual void SetLineProtocol(bool = true);
@@ -185,9 +163,11 @@ public:
 	std::auto_ptr<SocketAddress> GetRemoteSocketAddress();
 	/** Returns address of remote end: ipv4. */
 	ipaddr_t GetRemoteIP4();
+#ifdef ENABLE_IPV6
 	/** Returns address of remote end: ipv6. */
 #ifdef IPPROTO_IPV6
 	struct in6_addr GetRemoteIP6();
+#endif
 #endif
 	/** Returns remote port number: ipv4 and ipv6. */
 	port_t GetRemotePort();
@@ -218,30 +198,13 @@ public:
 	void Touch() { m_tActive = time(NULL); }
 	time_t Inactive() { return time(NULL) - m_tActive; }
 */
-	/** Callback fires when a new socket thread has started and this
-		socket is ready for operation again.
-		\sa ResolvSocket */
-	virtual void OnDetached();
-	/** Internal use. */
-	void SetDetach(bool x = true);
-	/** Check detach flag.
-		\return true if the socket should detach to its own thread */
-	bool IsDetach();
-	/** Internal use. */
-	void SetDetached(bool x = true);
-	/** Check detached flag.
-		\return true if the socket runs in its own thread. */
-	const bool IsDetached() const;
-	/** Order this socket to start its own thread and call OnDetached
-		when ready for operation. */
-	bool Detach();
-
+#ifdef ENABLE_IPV6
 	/** Enable ipv6 for this socket. */
 	void SetIpv6(bool x = true);
 	/** Check ipv6 socket.
 		\return true if this is an ipv6 socket */
 	bool IsIpv6();
-
+#endif
 	/** Returns pointer to ListenSocket that created this instance
 	 * on an incoming connection. */
 	Socket *GetParent();
@@ -251,50 +214,16 @@ public:
 	/** Get listening port from ListenSocket<>. */
 	virtual port_t GetPort();
 
-	// pooling
-	/** Client = connecting TcpSocket. */
-	void SetIsClient();
-	/** Socket type from socket() call. */
-	void SetSocketType(int x);
-	/** Socket type from socket() call. */
-	int GetSocketType();
-	/** Protocol type from socket() call. */
-	void SetSocketProtocol(const std::string& x);
-	/** Protocol type from socket() call. */
-	const std::string& GetSocketProtocol();
-
 	/** Set address/port of last connect() call. */
 	void SetClientRemoteAddress(SocketAddress&);
 	/** Get address/port of last connect() call. */
 	std::auto_ptr<SocketAddress> GetClientRemoteAddress();
 
-#ifdef ENABLE_POOL
-	/** Instruct a client socket to stay open in the connection pool after use.
-		If you have connected to a server using tcp, you can call SetRetain
-		to leave the connection open after your socket instance has been deleted.
-		The next connection you make to the same server will reuse the already
-		opened connection, if it is still available.
-	*/
-	void SetRetain();
-	/** Check retain flag.
-		\return true if the socket should be moved to connection pool after use */
-	bool Retain();
-#endif
-	/** Connection lost - error while reading/writing from a socket - TcpSocket only. */
-	void SetLost();
-	/** Check connection lost status flag, used by TcpSocket only.
-		\return true if there was an error while r/w causing the socket to close */
-	bool Lost();
 	/** Instruct socket to call OnConnect callback next sockethandler cycle. */
 	void SetCallOnConnect(bool x = true);
 	/** Check call on connect flag.
 		\return true if OnConnect() should be called a.s.a.p */
 	bool CallOnConnect();
-
-#ifdef ENABLE_POOL
-	/** Copy connection parameters from sock. */
-	void CopyConnection(Socket *sock);
-#endif
 
 	/** Socket option SO_REUSEADDR.
 		\sa OnOptions */
@@ -303,80 +232,12 @@ public:
 		\sa OnOptions */
 	void SetKeepalive(bool x);
 
-#ifdef ENABLE_RESOLVER
-	/** Request an asynchronous dns resolution.
-		\param host hostname to be resolved
-		\param port port number passed along for the ride
-		\return Resolve ID */
-	int Resolve(const std::string& host,port_t port = 0);
-	int Resolve6(const std::string& host, port_t port = 0);
-	/** Callback returning a resolved address.
-		\param id Resolve ID from Resolve call
-		\param a resolved ip address
-		\param port port number passed to Resolve */
-	virtual void OnResolved(int id,ipaddr_t a,port_t port);
-	virtual void OnResolved(int id,in6_addr& a,port_t port);
-	/** Request asynchronous reverse dns lookup.
-		\param a in_addr to be translated */
-	int Resolve(ipaddr_t a);
-	int Resolve(in6_addr& a);
-	/** Callback returning reverse resolve results.
-		\param id Resolve ID
-		\param name Resolved hostname */
-	virtual void OnReverseResolved(int id,const std::string& name);
-	/** Callback indicating failed dns lookup.
-		\param id Resolve ID */
-	virtual void OnResolveFailed(int id);
-#endif
-
-#ifdef ENABLE_SOCKS4
-	/** socket still in socks4 negotiation mode */
-	bool Socks4();
-	/** Set flag indicating Socks4 handshaking in progress */
-	void SetSocks4(bool x = true);
-
-	/** Set socks4 server host address to use */
-	void SetSocks4Host(ipaddr_t a);
-	/** Set socks4 server hostname to use. */
-	void SetSocks4Host(const std::string& );
-	/** Socks4 server port to use. */
-	void SetSocks4Port(port_t p);
-	/** Provide a socks4 userid if required by the socks4 server. */
-	void SetSocks4Userid(const std::string& x);
-	/** Get the ip address of socks4 server to use.
-		\return socks4 server host address */
-	ipaddr_t GetSocks4Host();
-	/** Get the socks4 server port to use.
-		\return socks4 server port */
-	port_t GetSocks4Port();
-	/** Get socks4 userid.
-		\return Socks4 userid */
-	const std::string& GetSocks4Userid();
-#endif
-
 	/** Set timeout to use for connection attempt.
 		\param x Timeout in seconds */
 	void SetConnectTimeout(int x);
 	/** Return number of seconds to wait for a connection.
 		\return Connection timeout (seconds) */
 	int GetConnectTimeout();
-
-	/** Check if SSL is Enabled for this TcpSocket.
-		\return true if this is a TcpSocket with SSL enabled */
-	bool IsSSL();
-	/** Enable SSL operation for a TcpSocket. */
-	void EnableSSL(bool x = true);
-	/** Still negotiating ssl connection.
-		\return true if ssl negotiating is still in progress */
-	bool IsSSLNegotiate();
-	/** Set flag indicating ssl handshaking still in progress. */
-	void SetSSLNegotiate(bool x = true);
-	/** OnAccept called with SSL Enabled.
-		\return true if this is a TcpSocket with an incoming SSL connection */
-	bool IsSSLServer();
-	/** Set flag indicating that this is a TcpSocket with incoming SSL connection. */
-	void SetSSLServer(bool x = true);
-
 	/** Ignore read events for an output only socket. */
 	void DisableRead(bool x = true);
 	/** Check ignore read events flag.
@@ -425,9 +286,6 @@ public:
 	/** Get value of flag indicating socket is deleted by sockethandler. */
 	bool ErasedByHandler();
 
-	/** Store the slave sockethandler pointer. */
-	void SetSlaveHandler(ISocketHandler *);
-
 	/** Return number of seconds since socket was ordered to close. */
 	time_t TimeSinceClose();
 
@@ -435,14 +293,161 @@ public:
 	void SetShutdown(int);
 	/** Get shutdown status. */
 	int GetShutdown();
-
-	/** Create new thread for this socket to run detached in. */
-	void DetachSocket();
-
 	virtual uint64_t GetBytesSent(bool clear = false);
 	virtual uint64_t GetBytesReceived(bool clear = false);
 
 	unsigned long int Random();
+
+#ifdef HAVE_OPENSSL
+	/** SSL client/server support - internal use. \sa TcpSocket */
+	virtual void OnSSLConnect();
+	/** SSL client/server support - internal use. \sa TcpSocket */
+	virtual void OnSSLAccept();
+	/** SSL negotiation failed for client connect. */
+	virtual void OnSSLConnectFailed();
+	/** SSL negotiation failed for server accept. */
+	virtual void OnSSLAcceptFailed();
+	/** new SSL support */
+	virtual bool SSLNegotiate();
+	/** Check if SSL is Enabled for this TcpSocket.
+		\return true if this is a TcpSocket with SSL enabled */
+	bool IsSSL();
+	/** Enable SSL operation for a TcpSocket. */
+	void EnableSSL(bool x = true);
+	/** Still negotiating ssl connection.
+		\return true if ssl negotiating is still in progress */
+	bool IsSSLNegotiate();
+	/** Set flag indicating ssl handshaking still in progress. */
+	void SetSSLNegotiate(bool x = true);
+	/** OnAccept called with SSL Enabled.
+		\return true if this is a TcpSocket with an incoming SSL connection */
+	bool IsSSLServer();
+	/** Set flag indicating that this is a TcpSocket with incoming SSL connection. */
+	void SetSSLServer(bool x = true);
+	/** SSL; Get pointer to ssl context structure. */
+	virtual SSL_CTX *GetSslContext() { return NULL; }
+	/** SSL; Get pointer to ssl structure. */
+	virtual SSL *GetSsl() { return NULL; }
+#endif // HAVE_OPENSSL
+
+#ifdef ENABLE_POOL
+	/** Client = connecting TcpSocket. */
+	void SetIsClient();
+	/** Socket type from socket() call. */
+	void SetSocketType(int x);
+	/** Socket type from socket() call. */
+	int GetSocketType();
+	/** Protocol type from socket() call. */
+	void SetSocketProtocol(const std::string& x);
+	/** Protocol type from socket() call. */
+	const std::string& GetSocketProtocol();
+	/** Instruct a client socket to stay open in the connection pool after use.
+		If you have connected to a server using tcp, you can call SetRetain
+		to leave the connection open after your socket instance has been deleted.
+		The next connection you make to the same server will reuse the already
+		opened connection, if it is still available.
+	*/
+	void SetRetain();
+	/** Check retain flag.
+		\return true if the socket should be moved to connection pool after use */
+	bool Retain();
+	/** Connection lost - error while reading/writing from a socket - TcpSocket only. */
+	void SetLost();
+	/** Check connection lost status flag, used by TcpSocket only.
+		\return true if there was an error while r/w causing the socket to close */
+	bool Lost();
+	/** Copy connection parameters from sock. */
+	void CopyConnection(Socket *sock);
+#endif // ENABLE_POOL
+
+#ifdef ENABLE_SOCKS4
+	/** Socks4 client support internal use. \sa TcpSocket */
+	virtual void OnSocks4Connect();
+	/** Socks4 client support internal use. \sa TcpSocket */
+	virtual void OnSocks4ConnectFailed();
+	/** Socks4 client support internal use. \sa TcpSocket */
+	virtual bool OnSocks4Read();
+	/** Called when the last write caused the tcp output buffer to
+	 * become empty. */
+	/** socket still in socks4 negotiation mode */
+	bool Socks4();
+	/** Set flag indicating Socks4 handshaking in progress */
+	void SetSocks4(bool x = true);
+
+	/** Set socks4 server host address to use */
+	void SetSocks4Host(ipaddr_t a);
+	/** Set socks4 server hostname to use. */
+	void SetSocks4Host(const std::string& );
+	/** Socks4 server port to use. */
+	void SetSocks4Port(port_t p);
+	/** Provide a socks4 userid if required by the socks4 server. */
+	void SetSocks4Userid(const std::string& x);
+	/** Get the ip address of socks4 server to use.
+		\return socks4 server host address */
+	ipaddr_t GetSocks4Host();
+	/** Get the socks4 server port to use.
+		\return socks4 server port */
+	port_t GetSocks4Port();
+	/** Get socks4 userid.
+		\return Socks4 userid */
+	const std::string& GetSocks4Userid();
+#endif // ENABLE_SOCKS4
+
+#ifdef ENABLE_RESOLVER
+	/** Request an asynchronous dns resolution.
+		\param host hostname to be resolved
+		\param port port number passed along for the ride
+		\return Resolve ID */
+	int Resolve(const std::string& host,port_t port = 0);
+#ifdef ENABLE_IPV6
+	int Resolve6(const std::string& host, port_t port = 0);
+#endif
+	/** Callback returning a resolved address.
+		\param id Resolve ID from Resolve call
+		\param a resolved ip address
+		\param port port number passed to Resolve */
+	virtual void OnResolved(int id,ipaddr_t a,port_t port);
+#ifdef ENABLE_IPV6
+	virtual void OnResolved(int id,in6_addr& a,port_t port);
+#endif
+	/** Request asynchronous reverse dns lookup.
+		\param a in_addr to be translated */
+	int Resolve(ipaddr_t a);
+#ifdef ENABLE_IPV6
+	int Resolve(in6_addr& a);
+#endif
+	/** Callback returning reverse resolve results.
+		\param id Resolve ID
+		\param name Resolved hostname */
+	virtual void OnReverseResolved(int id,const std::string& name);
+	/** Callback indicating failed dns lookup.
+		\param id Resolve ID */
+	virtual void OnResolveFailed(int id);
+#endif  // ENABLE_RESOLVER
+
+#ifdef ENABLE_DETACH
+	/** Callback fires when a new socket thread has started and this
+		socket is ready for operation again.
+		\sa ResolvSocket */
+	virtual void OnDetached();
+	/** Internal use. */
+	void SetDetach(bool x = true);
+	/** Check detach flag.
+		\return true if the socket should detach to its own thread */
+	bool IsDetach();
+	/** Internal use. */
+	void SetDetached(bool x = true);
+	/** Check detached flag.
+		\return true if the socket runs in its own thread. */
+	const bool IsDetached() const;
+	/** Order this socket to start its own thread and call OnDetached
+		when ready for operation. */
+	bool Detach();
+	/** Store the slave sockethandler pointer. */
+	void SetSlaveHandler(ISocketHandler *);
+	/** Create new thread for this socket to run detached in. */
+	void DetachSocket();
+#endif // ENABLE_DETACH
 
 protected:
 	Socket(const Socket& ); ///< do not allow use of copy constructor
@@ -465,35 +470,16 @@ static	WSAInitializer m_winsock_init; ///< Winsock initialization singleton clas
 	time_t m_tConnect; ///< Time in seconds when connection was established
 	time_t m_tCreate; ///< Time in seconds when this socket was created
 	bool m_line_protocol; ///< Line protocol mode flag
-	bool m_ssl_connecting; ///< OLD ssl connection flag
 //	time_t m_tActive;
 //	time_t m_timeout;
-	bool m_detach; ///< Socket ordered to detach flag
-	bool m_detached; ///< Socket has been detached
-	SocketThread *m_pThread; ///< Detach socket thread class pointer
+#ifdef ENABLE_IPV6
 	bool m_ipv6; ///< This is an ipv6 socket if this one is true
-	Socket *m_parent; ///< Pointer to ListenSocket class, valid for incoming sockets
-	// pooling, ipv4
-	int m_socket_type; ///< Type of socket, from socket() call
-	std::string m_socket_protocol; ///< Protocol, from socket() call
-	bool m_bClient; ///< only client connections are pooled
-#ifdef ENABLE_POOL
-	bool m_bRetain; ///< keep connection on close
 #endif
-	bool m_bLost; ///< connection lost
+	Socket *m_parent; ///< Pointer to ListenSocket class, valid for incoming sockets
 	bool m_call_on_connect; ///< OnConnect will be called next ISocketHandler cycle if true
 	bool m_opt_reuse; ///< Socket option reuseaddr
 	bool m_opt_keepalive; ///< Socket option keep-alive
-#ifdef ENABLE_SOCKS4
-	bool m_bSocks4; ///< socks4 negotiation mode (TcpSocket)
-	ipaddr_t m_socks4_host; ///< socks4 server address
-	port_t m_socks4_port; ///< socks4 server port number
-	std::string m_socks4_userid; ///< socks4 server usedid
-#endif
 	int m_connect_timeout; ///< Connection timeout (seconds)
-	bool m_b_enable_ssl; ///< Enable SSL for this TcpSocket
-	bool m_b_ssl; ///< ssl negotiation mode (TcpSocket)
-	bool m_b_ssl_server; ///< True if this is an incoming ssl TcpSocket connection
 	bool m_b_disable_read; ///< Disable checking for read events
 	bool m_b_retry_connect; ///< Try another connection attempt next ISocketHandler cycle
 	bool m_connected; ///< Socket is connected (tcp/udp)
@@ -501,11 +487,39 @@ static	WSAInitializer m_winsock_init; ///< Winsock initialization singleton clas
 	int m_connection_retry; ///< Maximum connection retries (tcp)
 	int m_retries; ///< Actual number of connection retries (tcp)
 	bool m_b_erased_by_handler; ///< Set by handler before delete
-	ISocketHandler *m_slave_handler; ///< Actual sockethandler while detached
 	time_t m_tClose; ///< Time in seconds when ordered to close
 	int m_shutdown; ///< Shutdown status
 	std::auto_ptr<SocketAddress> m_client_remote_address; ///< Address of last connect()
 	std::auto_ptr<SocketAddress> m_remote_address; ///< Remote end address
+
+#ifdef HAVE_OPENSSL
+	bool m_b_enable_ssl; ///< Enable SSL for this TcpSocket
+	bool m_b_ssl; ///< ssl negotiation mode (TcpSocket)
+	bool m_b_ssl_server; ///< True if this is an incoming ssl TcpSocket connection
+#endif
+
+#ifdef ENABLE_POOL
+	int m_socket_type; ///< Type of socket, from socket() call
+	std::string m_socket_protocol; ///< Protocol, from socket() call
+	bool m_bClient; ///< only client connections are pooled
+	bool m_bRetain; ///< keep connection on close
+	bool m_bLost; ///< connection lost
+#endif
+
+#ifdef ENABLE_SOCKS4
+	bool m_bSocks4; ///< socks4 negotiation mode (TcpSocket)
+	ipaddr_t m_socks4_host; ///< socks4 server address
+	port_t m_socks4_port; ///< socks4 server port number
+	std::string m_socks4_userid; ///< socks4 server usedid
+#endif
+
+#ifdef ENABLE_DETACH
+	bool m_detach; ///< Socket ordered to detach flag
+	bool m_detached; ///< Socket has been detached
+	SocketThread *m_pThread; ///< Detach socket thread class pointer
+	ISocketHandler *m_slave_handler; ///< Actual sockethandler while detached
+#endif
+
 };
 
 #ifdef SOCKETS_NAMESPACE

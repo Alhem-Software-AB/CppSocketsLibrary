@@ -74,10 +74,12 @@ public:
 	static bool u2ip(const std::string&, ipaddr_t&);
 	static bool u2ip(const std::string&, struct sockaddr_in& sa, int ai_flags = 0);
 
-	/** Hostname to ip resolution ipv6, not asynchronous. */
+#ifdef ENABLE_IPV6
 #ifdef IPPROTO_IPV6
+	/** Hostname to ip resolution ipv6, not asynchronous. */
 	static bool u2ip(const std::string&, struct in6_addr&);
 	static bool u2ip(const std::string&, struct sockaddr_in6& sa, int ai_flags = 0);
+#endif
 #endif
 
 	/** Reverse lookup of address to hostname */
@@ -89,14 +91,14 @@ public:
 	/** Convert binary ip address to string: ipv4. */
 	static void l2ip(const ipaddr_t,std::string& );
 	static void l2ip(const in_addr&,std::string& );
+#ifdef ENABLE_IPV6
+#ifdef IPPROTO_IPV6
 	/** Convert binary ip address to string: ipv6. */
-#ifdef IPPROTO_IPV6
 	static void l2ip(const struct in6_addr&,std::string& ,bool mixed = false);
-#endif
 
-#ifdef IPPROTO_IPV6
 	/** ipv6 address compare. */
 	static int in6_addr_compare(in6_addr,in6_addr);
+#endif
 #endif
 	/** ResolveLocal (hostname) - call once before calling any GetLocal method. */
 	static void ResolveLocal();
@@ -109,6 +111,7 @@ public:
 	/** Returns local ip number as string.
 		\sa ResolveLocal */
 	static const std::string& GetLocalAddress();
+#ifdef ENABLE_IPV6
 #ifdef IPPROTO_IPV6
 	/** Returns local ipv6 ip.
 		\sa ResolveLocal */
@@ -116,6 +119,7 @@ public:
 	/** Returns local ipv6 address.
 		\sa ResolveLocal */
 	static const std::string& GetLocalAddress6();
+#endif
 #endif
 	/** Set environment variable.
 		\param var Name of variable to set
@@ -130,14 +134,18 @@ public:
 
 	static std::auto_ptr<SocketAddress> CreateAddress(struct sockaddr *,socklen_t);
 
+	static unsigned long ThreadID();
+
 private:
 	static std::string m_host; ///< local hostname
 	static ipaddr_t m_ip; ///< local ip address
 	static std::string m_addr; ///< local ip address in string format
+#ifdef ENABLE_IPV6
 #ifdef IPPROTO_IPV6
 	static struct in6_addr m_local_ip6; ///< local ipv6 address
 #endif
 	static std::string m_local_addr6; ///< local ipv6 address in string format
+#endif
 	static bool m_local_resolved; ///< ResolveLocal has been called if true
 };
 

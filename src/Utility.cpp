@@ -50,10 +50,12 @@ std::string Utility::m_host;
 bool Utility::m_local_resolved = false;
 ipaddr_t Utility::m_ip = 0;
 std::string Utility::m_addr;
+#ifdef ENABLE_IPV6
 #ifdef IPPROTO_IPV6
 struct in6_addr Utility::m_local_ip6;
-#endif
 std::string Utility::m_local_addr6;
+#endif
+#endif
 
 
 std::string Utility::base64(const std::string& str_in)
@@ -253,6 +255,7 @@ bool Utility::u2ip(const std::string& str, ipaddr_t& l)
 }
 
 
+#ifdef ENABLE_IPV6
 #ifdef IPPROTO_IPV6
 bool Utility::u2ip(const std::string& str, struct in6_addr& l)
 {
@@ -261,6 +264,7 @@ bool Utility::u2ip(const std::string& str, struct in6_addr& l)
 	l = sa.sin6_addr;
 	return r;
 }
+#endif
 #endif
 
 
@@ -284,6 +288,7 @@ void Utility::l2ip(const in_addr& ip, std::string& str)
 }
 
 
+#ifdef ENABLE_IPV6
 #ifdef IPPROTO_IPV6
 void Utility::l2ip(const struct in6_addr& ip, std::string& str,bool mixed)
 {
@@ -330,10 +335,8 @@ void Utility::l2ip(const struct in6_addr& ip, std::string& str,bool mixed)
 	}
 	str = slask;
 }
-#endif
 
 
-#ifdef IPPROTO_IPV6
 int Utility::in6_addr_compare(in6_addr a,in6_addr b)
 {
 	for (size_t i = 0; i < 16; i++)
@@ -345,6 +348,7 @@ int Utility::in6_addr_compare(in6_addr a,in6_addr b)
 	}
 	return 0;
 }
+#endif
 #endif
 
 
@@ -361,6 +365,7 @@ void Utility::ResolveLocal()
 			Utility::l2ip(m_ip, m_addr);
 		}
 	}
+#ifdef ENABLE_IPV6
 #ifdef IPPROTO_IPV6
 	memset(&m_local_ip6, 0, sizeof(m_local_ip6));
 	{
@@ -369,6 +374,7 @@ void Utility::ResolveLocal()
 			Utility::l2ip(m_local_ip6, m_local_addr6);
 		}
 	}
+#endif
 #endif
 	m_host = h;
 	m_local_resolved = true;
@@ -405,6 +411,7 @@ const std::string& Utility::GetLocalAddress()
 }
 
 
+#ifdef ENABLE_IPV6
 #ifdef IPPROTO_IPV6
 const struct in6_addr& Utility::GetLocalIP6()
 {
@@ -424,6 +431,7 @@ const std::string& Utility::GetLocalAddress6()
 	}
 	return m_local_addr6;
 }
+#endif
 #endif
 
 
@@ -453,6 +461,7 @@ void Utility::SetEnv(const std::string& var,const std::string& value)
 
 std::string Utility::Sa2String(struct sockaddr *sa)
 {
+#ifdef ENABLE_IPV6
 #ifdef IPPROTO_IPV6
 	if (sa -> sa_family == AF_INET6)
 	{
@@ -461,6 +470,7 @@ std::string Utility::Sa2String(struct sockaddr *sa)
 		Utility::l2ip(sa6 -> sin6_addr, tmp);
 		return tmp + ":" + Utility::l2string(ntohs(sa6 -> sin6_port));
 	}
+#endif
 #endif
 	if (sa -> sa_family == AF_INET)
 	{
@@ -502,6 +512,7 @@ std::auto_ptr<SocketAddress> Utility::CreateAddress(struct sockaddr *sa,socklen_
 			return std::auto_ptr<SocketAddress>(new Ipv4Address(*p));
 		}
 		break;
+#ifdef ENABLE_IPV6
 #ifdef IPPROTO_IPV6
 	case AF_INET6:
 		if (sa_len == sizeof(struct sockaddr_in6))
@@ -510,6 +521,7 @@ std::auto_ptr<SocketAddress> Utility::CreateAddress(struct sockaddr *sa,socklen_
 			return std::auto_ptr<SocketAddress>(new Ipv6Address(*p));
 		}
 		break;
+#endif
 #endif
 	}
 	return std::auto_ptr<SocketAddress>(NULL);
@@ -609,6 +621,7 @@ bool Utility::u2ip(const std::string& host, struct sockaddr_in& sa, int ai_flags
 }
 
 
+#ifdef ENABLE_IPV6
 #ifdef IPPROTO_IPV6
 bool Utility::u2ip(const std::string& host, struct sockaddr_in6& sa, int ai_flags)
 {
@@ -724,6 +737,7 @@ bool Utility::u2ip(const std::string& host, struct sockaddr_in6& sa, int ai_flag
 #endif // NO_GETADDRINFO
 }
 #endif // IPPROTO_IPV6
+#endif // ENABLE_IPV6
 
 
 bool Utility::reverse(struct sockaddr *sa, socklen_t sa_len, std::string& hostname, int flags)
@@ -770,6 +784,7 @@ bool Utility::reverse(struct sockaddr *sa, socklen_t sa_len, std::string& hostna
 			}
 		}
 		break;
+#ifdef ENABLE_IPV6
 	case AF_INET6:
 		if (flags & NI_NUMERICHOST)
 		{
@@ -817,6 +832,7 @@ bool Utility::reverse(struct sockaddr *sa, socklen_t sa_len, std::string& hostna
 			}
 		}
 		break;
+#endif
 	}
 	return false;
 #else
@@ -877,6 +893,22 @@ bool Utility::u2service(const std::string& name, int& service, int ai_flags)
 	}
 	return false;
 #endif // NO_GETADDRINFO
+}
+
+
+unsigned long Utility::ThreadID()
+{
+#ifdef LINUX
+	return pthread_self();
+#endif
+#ifdef SOLARIS
+	return thr_self();
+#endif
+#ifdef _WIN32
+	return GetCurrentThreadId();
+#endif
+
+	return 0;
 }
 
 

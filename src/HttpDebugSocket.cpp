@@ -29,9 +29,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifdef _WIN32
 #pragma warning(disable:4786)
 #endif
-#include "Utility.h"
-
 #include "HttpDebugSocket.h"
+#include "Utility.h"
+#include "ISocketHandler.h"
+
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
@@ -54,7 +55,11 @@ void HttpDebugSocket::Init()
 {
 	if (GetParent() -> GetPort() == 443)
 	{
+#ifdef HAVE_OPENSSL
 		EnableSSL();
+#else
+		Handler().LogError(this, "url_this", -1, "SSL not available", LOG_LEVEL_WARNING);
+#endif
 	}
 }
 

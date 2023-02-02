@@ -44,7 +44,9 @@ namespace SOCKETS_NAMESPACE {
 
 ISocketHandler::ISocketHandler(StdLog *log)
 : m_stdlog(log)
+#ifdef ENABLE_DETACH
 , m_slave(false)
+#endif
 , m_mutex(m_mutex)
 , m_b_use_mutex(false)
 {
@@ -53,7 +55,9 @@ ISocketHandler::ISocketHandler(StdLog *log)
 
 ISocketHandler::ISocketHandler(Mutex& mutex,StdLog *log)
 : m_stdlog(log)
+#ifdef ENABLE_DETACH
 , m_slave(false)
+#endif
 , m_mutex(mutex)
 , m_b_use_mutex(true)
 {
@@ -71,6 +75,7 @@ Mutex& ISocketHandler::GetMutex() const
 }
 
 
+#ifdef ENABLE_DETACH
 void ISocketHandler::SetSlave(bool x)
 {
 	m_slave = x;
@@ -81,6 +86,7 @@ bool ISocketHandler::IsSlave()
 {
 	return m_slave;
 }
+#endif
 
 
 void ISocketHandler::RegStdLog(StdLog *log)

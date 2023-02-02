@@ -22,6 +22,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #ifndef _IPV6ADDRESS_H
 #define _IPV6ADDRESS_H
+#include "sockets-config.h"
+#ifdef ENABLE_IPV6
 
 #include "SocketAddress.h"
 #ifdef IPPROTO_IPV6
@@ -100,4 +102,5 @@ private:
 } // namespace SOCKETS_NAMESPACE {
 #endif
 #endif // IPPROTO_IPV6
+#endif // ENABLE_IPV6
 #endif // _IPV6ADDRESS_H

@@ -30,9 +30,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifdef _WIN32
 #pragma warning(disable:4786)
 #endif
+#include "HTTPSocket.h"
 #include <stdarg.h>
 #include "Parse.h"
-#include "HTTPSocket.h"
+#include "ISocketHandler.h"
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
@@ -301,7 +302,11 @@ void HTTPSocket::url_this(const std::string& url_in,std::string& protocol,std::s
 	protocol = pa.getword(); // http
 	if (!strcasecmp(protocol.c_str(), "https:"))
 	{
+#ifdef HAVE_OPENSSL
 		EnableSSL();
+#else
+		Handler().LogError(this, "url_this", -1, "SSL not available", LOG_LEVEL_WARNING);
+#endif
 		port = 443;
 	}
 	else

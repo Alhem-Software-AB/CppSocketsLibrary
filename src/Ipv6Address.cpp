@@ -21,6 +21,8 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #include "Ipv6Address.h"
+#ifdef ENABLE_IPV6
+
 #include "Utility.h"
 #include "Parse.h"
 #ifndef _WIN32
@@ -264,3 +266,4 @@ std::string Ipv6Address::Reverse()
 } // namespace SOCKETS_NAMESPACE {
 #endif
 #endif // IPPROTO_IPV6
+#endif // ENABLE_IPV6

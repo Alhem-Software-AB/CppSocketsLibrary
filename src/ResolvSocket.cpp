@@ -53,7 +53,9 @@ ResolvSocket::ResolvSocket(ISocketHandler& h,Socket *parent)
 :TcpSocket(h)
 ,m_bServer(false)
 ,m_parent(parent)
-,m_ipv6(false)
+#ifdef ENABLE_IPV6
+,m_resolve_ipv6(false)
+#endif
 {
 	SetLineProtocol();
 }
@@ -84,13 +86,15 @@ DEB(		printf("ResolvSocket server; query=%s, data=%s\n", m_query.c_str(), m_data
 	if (key == "Failed" && m_parent)
 	{
 DEB(		printf("************ Resolve failed\n");)
-		m_parent -> OnResolveFailed(m_resolv_id);
+		if (Handler().Valid(m_parent))
+			m_parent -> OnResolveFailed(m_resolv_id);
 		m_parent = NULL;
 	}
 	else
 	if (key == "Name" && !m_resolv_host.size() && m_parent)
 	{
-		m_parent -> OnReverseResolved(m_resolv_id, value);
+		if (Handler().Valid(m_parent))
+			m_parent -> OnReverseResolved(m_resolv_id, value);
 		m_parent = NULL;
 	}
 	else
@@ -98,18 +102,22 @@ DEB(		printf("************ Resolve failed\n");)
 	{
 		ipaddr_t l;
 		Utility::u2ip(value, l); // ip2ipaddr_t
-		m_parent -> OnResolved(m_resolv_id, l, m_resolv_port);
+		if (Handler().Valid(m_parent))
+			m_parent -> OnResolved(m_resolv_id, l, m_resolv_port);
 		m_parent = NULL; // always use first ip in case there are several
 	}
+#ifdef ENABLE_IPV6
 #ifdef IPPROTO_IPV6
 	else
 	if (key == "AAAA" && m_parent)
 	{
 		in6_addr a;
 		Utility::u2ip(value, a);
-		m_parent -> OnResolved(m_resolv_id, a, m_resolv_port);
+		if (Handler().Valid(m_parent))
+			m_parent -> OnResolved(m_resolv_id, a, m_resolv_port);
 		m_parent = NULL;
 	}
+#endif
 #endif
 }
 
@@ -133,6 +141,7 @@ DEB(	printf("ResolvSocket::OnDetached(); query=%s, data=%s\n", m_query.c_str(), 
 		Send("\n");
 	}
 	else
+#ifdef ENABLE_IPV6
 #ifdef IPPROTO_IPV6
 	if (m_query == "gethostbyname2")
 	{
@@ -150,6 +159,7 @@ DEB(	printf("ResolvSocket::OnDetached(); query=%s, data=%s\n", m_query.c_str(), 
 		Send("\n");
 	}
 	else
+#endif
 #endif
 	if (m_query == "gethostbyaddr")
 	{
@@ -174,6 +184,7 @@ DEB(	printf("ResolvSocket::OnDetached(); query=%s, data=%s\n", m_query.c_str(), 
 			}
 		}
 		else
+#ifdef ENABLE_IPV6
 #ifdef IPPROTO_IPV6
 		if (Utility::isipv6( m_data ))
 		{
@@ -197,6 +208,7 @@ DEB(	printf("ResolvSocket::OnDetached(); query=%s, data=%s\n", m_query.c_str(), 
 		}
 		else
 #endif
+#endif
 		{
 			Send("Failed: malformed address\n");
 		}
@@ -216,17 +228,23 @@ void ResolvSocket::OnConnect()
 {
 	if (m_resolv_host.size())
 	{
-		std::string msg = (m_ipv6 ? "gethostbyname2 " : "gethostbyname ") + m_resolv_host + "\n";
+#ifdef ENABLE_IPV6
+		std::string msg = (m_resolve_ipv6 ? "gethostbyname2 " : "gethostbyname ") + m_resolv_host + "\n";
+#else
+		std::string msg = "gethostbyname " + m_resolv_host + "\n";
+#endif
 		Send( msg );
 		return;
 	}
-	if (m_ipv6)
+#ifdef ENABLE_IPV6
+	if (m_resolve_ipv6)
 	{
 		std::string tmp;
 		Utility::l2ip(m_resolv_address6, tmp);
 		std::string msg = "gethostbyaddr " + tmp + "\n";
 		Send( msg );
 	}
+#endif
 	std::string tmp;
 	Utility::l2ip(m_resolv_address, tmp);
 	std::string msg = "gethostbyaddr " + tmp + "\n";
@@ -238,7 +256,8 @@ void ResolvSocket::OnDelete()
 {
 	if (m_parent)
 	{
-		m_parent -> OnResolveFailed(m_resolv_id);
+		if (Handler().Valid(m_parent))
+			m_parent -> OnResolveFailed(m_resolv_id);
 		m_parent = NULL;
 	}
 }

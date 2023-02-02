@@ -55,8 +55,10 @@ UdpSocket::UdpSocket(ISocketHandler& h, int ibufsz, bool ipv6) : Socket(h)
 , m_port(0)
 , m_last_size_written(-1)
 {
+#ifdef ENABLE_IPV6
 #ifdef IPPROTO_IPV6
 	SetIpv6(ipv6);
+#endif
 #endif
 }
 
@@ -70,12 +72,14 @@ UdpSocket::~UdpSocket()
 
 int UdpSocket::Bind(port_t &port, int range)
 {
+#ifdef ENABLE_IPV6
 #ifdef IPPROTO_IPV6
 	if (IsIpv6())
 	{
 		Ipv6Address ad(port);
 		return Bind(ad, range);
 	}
+#endif
 #endif
 	Ipv4Address ad(port);
 	return Bind(ad, range);
@@ -84,6 +88,7 @@ int UdpSocket::Bind(port_t &port, int range)
 
 int UdpSocket::Bind(const std::string& intf, port_t &port, int range)
 {
+#ifdef ENABLE_IPV6
 #ifdef IPPROTO_IPV6
 	if (IsIpv6())
 	{
@@ -95,6 +100,7 @@ int UdpSocket::Bind(const std::string& intf, port_t &port, int range)
 		SetCloseAndDelete();
 		return -1;
 	}
+#endif
 #endif
 	Ipv4Address ad(intf, port);
 	if (ad.IsValid())
@@ -113,12 +119,14 @@ int UdpSocket::Bind(ipaddr_t a, port_t &port, int range)
 }
 
 
+#ifdef ENABLE_IPV6
 #ifdef IPPROTO_IPV6
 int UdpSocket::Bind(in6_addr a, port_t &port, int range)
 {
 	Ipv6Address ad(a, port);
 	return Bind(ad, range);
 }
+#endif
 #endif
 
 
@@ -162,6 +170,7 @@ bool UdpSocket::Open(ipaddr_t l, port_t port)
 
 bool UdpSocket::Open(const std::string& host, port_t port)
 {
+#ifdef ENABLE_IPV6
 #ifdef IPPROTO_IPV6
 	if (IsIpv6())
 	{
@@ -173,6 +182,7 @@ bool UdpSocket::Open(const std::string& host, port_t port)
 		return false;
 	}
 #endif
+#endif
 	Ipv4Address ad(host, port);
 	if (ad.IsValid())
 	{
@@ -182,12 +192,14 @@ bool UdpSocket::Open(const std::string& host, port_t port)
 }
 
 
+#ifdef ENABLE_IPV6
 #ifdef IPPROTO_IPV6
 bool UdpSocket::Open(struct in6_addr& a, port_t port)
 {
 	Ipv6Address ad(a, port);
 	return Open(ad);
 }
+#endif
 #endif
 
 
@@ -215,6 +227,7 @@ bool UdpSocket::Open(SocketAddress& ad)
 
 void UdpSocket::CreateConnection()
 {
+#ifdef ENABLE_IPV6
 #ifdef IPPROTO_IPV6
 	if (IsIpv6())
 	{
@@ -230,6 +243,7 @@ void UdpSocket::CreateConnection()
 		}
 		return;
 	}
+#endif
 #endif
 	if (GetSocket() == INVALID_SOCKET)
 	{
@@ -247,6 +261,7 @@ void UdpSocket::CreateConnection()
 /** send to specified address */
 void UdpSocket::SendToBuf(const std::string& h, port_t p, const char *data, int len, int flags)
 {
+#ifdef ENABLE_IPV6
 #ifdef IPPROTO_IPV6
 	if (IsIpv6())
 	{
@@ -257,6 +272,7 @@ void UdpSocket::SendToBuf(const std::string& h, port_t p, const char *data, int 
 		}
 		return;
 	}
+#endif
 #endif
 	Ipv4Address ad(h, p);
 	if (ad.IsValid())
@@ -274,12 +290,14 @@ void UdpSocket::SendToBuf(ipaddr_t a, port_t p, const char *data, int len, int f
 }
 
 
+#ifdef ENABLE_IPV6
 #ifdef IPPROTO_IPV6
 void UdpSocket::SendToBuf(in6_addr a, port_t p, const char *data, int len, int flags)
 {
 	Ipv6Address ad(a, p);
 	SendToBuf(ad, data, len, flags);
 }
+#endif
 #endif
 
 
@@ -312,11 +330,13 @@ void UdpSocket::SendTo(ipaddr_t a, port_t p, const std::string& str, int flags)
 }
 
 
+#ifdef ENABLE_IPV6
 #ifdef IPPROTO_IPV6
 void UdpSocket::SendTo(in6_addr a, port_t p, const std::string& str, int flags)
 {
 	SendToBuf(a, p, str.c_str(), (int)str.size(), flags);
 }
+#endif
 #endif
 
 
@@ -349,6 +369,7 @@ void UdpSocket::Send(const std::string& str, int flags)
 
 void UdpSocket::OnRead()
 {
+#ifdef ENABLE_IPV6
 #ifdef IPPROTO_IPV6
 	if (IsIpv6())
 	{
@@ -379,6 +400,7 @@ void UdpSocket::OnRead()
 		}
 		return;
 	}
+#endif
 #endif
 	struct sockaddr_in sa;
 	socklen_t sa_len = sizeof(sa);
@@ -487,6 +509,7 @@ void UdpSocket::SetMulticastLoop(bool x)
 	{
 		CreateConnection();
 	}
+#ifdef ENABLE_IPV6
 #ifdef IPPROTO_IPV6
 	if (IsIpv6())
 	{
@@ -497,6 +520,7 @@ void UdpSocket::SetMulticastLoop(bool x)
 		}
 		return;
 	}
+#endif
 #endif
 	int val = x ? 1 : 0;
 	if (setsockopt(GetSocket(), SOL_IP, IP_MULTICAST_LOOP, (char *)&val, sizeof(int)) == -1)
@@ -512,6 +536,7 @@ bool UdpSocket::IsMulticastLoop()
 	{
 		CreateConnection();
 	}
+#ifdef ENABLE_IPV6
 #ifdef IPPROTO_IPV6
 	if (IsIpv6())
 	{
@@ -523,6 +548,7 @@ bool UdpSocket::IsMulticastLoop()
 		}
 		return is_loop ? true : false;
 	}
+#endif
 #endif
 	int is_loop = 0;
 	socklen_t size = sizeof(int);
@@ -540,6 +566,7 @@ void UdpSocket::AddMulticastMembership(const std::string& group, const std::stri
 	{
 		CreateConnection();
 	}
+#ifdef ENABLE_IPV6
 #ifdef IPPROTO_IPV6
 	if (IsIpv6())
 	{
@@ -556,6 +583,7 @@ void UdpSocket::AddMulticastMembership(const std::string& group, const std::stri
 		}
 		return;
 	}
+#endif
 #endif
 	struct ip_mreq x; // ip_mreqn
 	ipaddr_t addr;
@@ -579,6 +607,7 @@ void UdpSocket::DropMulticastMembership(const std::string& group, const std::str
 	{
 		CreateConnection();
 	}
+#ifdef ENABLE_IPV6
 #ifdef IPPROTO_IPV6
 	if (IsIpv6())
 	{
@@ -596,6 +625,7 @@ void UdpSocket::DropMulticastMembership(const std::string& group, const std::str
 		return;
 	}
 #endif
+#endif
 	struct ip_mreq x; // ip_mreqn
 	ipaddr_t addr;
 	if (Utility::u2ip( group, addr ))
@@ -612,6 +642,7 @@ void UdpSocket::DropMulticastMembership(const std::string& group, const std::str
 }
 
 
+#ifdef ENABLE_IPV6
 #ifdef IPPROTO_IPV6
 void UdpSocket::SetMulticastHops(int hops)
 {
@@ -651,6 +682,7 @@ int UdpSocket::GetMulticastHops()
 	return hops;
 }
 #endif // IPPROTO_IPV6
+#endif
 
 
 bool UdpSocket::IsBound()

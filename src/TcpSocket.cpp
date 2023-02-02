@@ -39,6 +39,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <stdarg.h>
 #ifdef HAVE_OPENSSL
 #include <openssl/rand.h>
+#include <openssl/err.h>
 #endif
 
 #include "TcpSocket.h"
@@ -46,6 +47,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "Utility.h"
 #include "Ipv4Address.h"
 #include "Ipv6Address.h"
+#include "Mutex.h"
+#include "Uid.h"
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
@@ -60,11 +63,13 @@ namespace SOCKETS_NAMESPACE {
 
 
 // statics
-BIO *TcpSocket::bio_err = NULL;
+#ifdef HAVE_OPENSSL
+BIO *TcpSocket::m_bio_err = NULL;
 bool TcpSocket::m_b_rand_file_generated = false;
 std::string TcpSocket::m_rand_file;
 long TcpSocket::m_rand_size = 1024;
 TcpSocket::SSLInitializer TcpSocket::m_ssl_init;
+#endif
 
 
 // thanks, q
@@ -81,10 +86,14 @@ TcpSocket::TcpSocket(ISocketHandler& h) : Socket(h)
 #ifdef ENABLE_SOCKS4
 ,m_socks4_state(0)
 #endif
+#ifdef ENABLE_RESOLVER
 ,m_resolver_id(0)
+#endif
+#ifdef HAVE_OPENSSL
 ,m_ssl_ctx(NULL)
 ,m_ssl(NULL)
 ,m_sbio(NULL)
+#endif
 #ifdef ENABLE_RECONNECT
 ,m_b_reconnect(false)
 ,m_b_is_reconnect(false)
@@ -142,10 +151,14 @@ TcpSocket::TcpSocket(ISocketHandler& h,size_t isize,size_t osize) : Socket(h)
 #ifdef ENABLE_SOCKS4
 ,m_socks4_state(0)
 #endif
+#ifdef ENABLE_RESOLVER
 ,m_resolver_id(0)
+#endif
+#ifdef HAVE_OPENSSL
 ,m_ssl_ctx(NULL)
 ,m_ssl(NULL)
 ,m_sbio(NULL)
+#endif
 #ifdef ENABLE_RECONNECT
 ,m_b_reconnect(false)
 ,m_b_is_reconnect(false)
@@ -210,10 +223,13 @@ TcpSocket::~TcpSocket()
 	{
 		SSL_free(m_ssl);
 	}
+// ssl context is now global (sort of)
+/*
 	if (m_ssl_ctx)
 	{
 		SSL_CTX_free(m_ssl_ctx);
 	}
+*/
 #endif
 }
 
@@ -226,12 +242,14 @@ bool TcpSocket::Open(ipaddr_t ip,port_t port,bool skip_socks)
 }
 
 
+#ifdef ENABLE_IPV6
 #ifdef IPPROTO_IPV6
 bool TcpSocket::Open(in6_addr ip,port_t port,bool skip_socks)
 {
 	Ipv6Address ad(ip, port);
 	return Open(ad, skip_socks);
 }
+#endif
 #endif
 
 
@@ -290,7 +308,9 @@ bool TcpSocket::Open(SocketAddress& ad,SocketAddress& bind_ad,bool skip_socks)
 		closesocket(s);
 		return false;
 	}
+#ifdef ENABLE_POOL
 	SetIsClient(); // client because we connect
+#endif
 	SetClientRemoteAddress(ad);
 	int n = 0;
 	if (bind_ad.GetPort() != 0)
@@ -371,6 +391,7 @@ bool TcpSocket::Open(SocketAddress& ad,SocketAddress& bind_ad,bool skip_socks)
 
 bool TcpSocket::Open(const std::string &host,port_t port)
 {
+#ifdef ENABLE_IPV6
 #ifdef IPPROTO_IPV6
 	if (IsIpv6())
 	{
@@ -385,6 +406,7 @@ bool TcpSocket::Open(const std::string &host,port_t port)
 		Ipv6Address local;
 		return Open(ad, local);
 	}
+#endif
 #endif
 #ifdef ENABLE_RESOLVER
 	if (!Handler().ResolverEnabled() || Utility::isipv4(host) )
@@ -439,6 +461,7 @@ void TcpSocket::OnResolved(int id,ipaddr_t a,port_t port)
 }
 
 
+#ifdef ENABLE_IPV6
 void TcpSocket::OnResolved(int id,in6_addr& a,port_t port)
 {
 	if (id == m_resolver_id)
@@ -463,6 +486,7 @@ void TcpSocket::OnResolved(int id,in6_addr& a,port_t port)
 	}
 }
 #endif
+#endif
 
 
 void TcpSocket::OnRead()
@@ -473,9 +497,9 @@ void TcpSocket::OnRead()
 #else
 	char buf[TCP_BUFSIZE_READ];
 #endif
+#ifdef HAVE_OPENSSL
 	if (IsSSL())
 	{
-#ifdef HAVE_OPENSSL
 		if (!Ready())
 			return;
 		n = SSL_read(m_ssl, buf, TCP_BUFSIZE_READ);
@@ -485,18 +509,24 @@ void TcpSocket::OnRead()
 			switch (n)
 			{
 			case SSL_ERROR_NONE:
+			case SSL_ERROR_WANT_READ:
+			case SSL_ERROR_WANT_WRITE:
 				break;
 			case SSL_ERROR_ZERO_RETURN:
 DEB(				printf("SSL_read() returns zero - closing socket\n");)
 				SetCloseAndDelete(true);
 				SetFlushBeforeClose(false);
+#ifdef ENABLE_POOL
 				SetLost();
+#endif
 				break;
 			default:
 DEB(				printf("SSL read problem, errcode = %d\n",n);)
 				SetCloseAndDelete(true);
 				SetFlushBeforeClose(false);
+#ifdef ENABLE_POOL
 				SetLost();
+#endif
 			}
 			return;
 		}
@@ -506,8 +536,9 @@ DEB(				printf("SSL read problem, errcode = %d\n",n);)
 			Handler().LogError(this, "SSL_read", 0, "read returns 0", LOG_LEVEL_FATAL);
 			SetCloseAndDelete(true);
 			SetFlushBeforeClose(false);
+#ifdef ENABLE_POOL
 			SetLost();
-			//SetConnected(false); // avoid shutdown in Close()
+#endif
 			return;
 		}
 		else
@@ -525,9 +556,9 @@ DEB(				printf("SSL read problem, errcode = %d\n",n);)
 		{
 			Handler().LogError(this, "OnRead(ssl)", n, "abnormal value from SSL_read", LOG_LEVEL_ERROR);
 		}
-#endif // HAVE_OPENSSL
 	}
 	else
+#endif // HAVE_OPENSSL
 	{
 		n = recv(GetSocket(), buf, TCP_BUFSIZE_READ, MSG_NOSIGNAL);
 		if (n == -1)
@@ -535,7 +566,9 @@ DEB(				printf("SSL read problem, errcode = %d\n",n);)
 			Handler().LogError(this, "read", Errno, StrError(Errno), LOG_LEVEL_FATAL);
 			SetCloseAndDelete(true);
 			SetFlushBeforeClose(false);
+#ifdef ENABLE_POOL
 			SetLost();
+#endif
 			return;
 		}
 		else
@@ -544,8 +577,9 @@ DEB(				printf("SSL read problem, errcode = %d\n",n);)
 //			Handler().LogError(this, "read", 0, "read returns 0", LOG_LEVEL_FATAL);
 			SetCloseAndDelete(true);
 			SetFlushBeforeClose(false);
+#ifdef ENABLE_POOL
 			SetLost();
-			//SetConnected(false); // avoid shutdown in Close()
+#endif
 			return;
 		}
 		else
@@ -561,7 +595,7 @@ DEB(				printf("SSL read problem, errcode = %d\n",n);)
 		}
 		else
 		{
-			Handler().LogError(this, "OnRead(ssl)", n, "abnormal value from recv", LOG_LEVEL_ERROR);
+			Handler().LogError(this, "OnRead", n, "abnormal value from recv", LOG_LEVEL_ERROR);
 		}
 	}
 	// unbuffered
@@ -627,7 +661,7 @@ DEB(				printf("SSL read problem, errcode = %d\n",n);)
 	{
 		return;
 	}
-	// further processing: socks4 and line protocol
+	// further processing: socks4
 #ifdef ENABLE_SOCKS4
 	if (Socks4())
 	{
@@ -714,25 +748,34 @@ void TcpSocket::OnWrite()
 		OnConnectFailed();
 		return;
 	}
+#ifdef HAVE_OPENSSL
 	if (IsSSL())
 	{
-#ifdef HAVE_OPENSSL
 		int n = SSL_write(m_ssl,obuf.GetStart(),(int)obuf.GetLength());
+		int errnr = n < 1 ? SSL_get_error(m_ssl, n) : 0;
 		if (n == -1)
 		{
-			// check code
-			SetCloseAndDelete(true);
-			SetFlushBeforeClose(false);
-DEB(			perror("SSL_write() error");)
-			SetLost();
+			if ( errnr != SSL_ERROR_WANT_READ && errnr != SSL_ERROR_WANT_WRITE )
+			{
+				SetCloseAndDelete(true);
+				SetFlushBeforeClose(false);
+#ifdef ENABLE_POOL
+				SetLost();
+#endif
+				const char *errbuf = ERR_error_string(errnr, NULL);
+				Handler().LogError(this, "OnWrite/SSL_write", errnr, errbuf, LOG_LEVEL_FATAL);
+			}
 		}
 		else
 		if (!n)
 		{
 			SetCloseAndDelete(true);
 			SetFlushBeforeClose(false);
-DEB(			printf("SSL_write() returns 0\n");)
+#ifdef ENABLE_POOL
 			SetLost();
+#endif
+DEB(			const char *errbuf = ERR_error_string(errnr, NULL);
+			printf("SSL_write() returns 0: %d : %s\n",errnr, errbuf);)
 		}
 		else
 		{
@@ -769,8 +812,8 @@ DEB(			printf("SSL_write() returns 0\n");)
 				Set(br, false);
 		}
 		return;
-#endif // HAVE_OPENSSL
 	}
+#endif // HAVE_OPENSSL
 	int n = send(GetSocket(),obuf.GetStart(),(int)obuf.GetLength(),MSG_NOSIGNAL);
 /*
 When writing onto a connection-oriented socket that has been shut down (by the  local
@@ -788,10 +831,12 @@ signal is not sent when the write call specified the MSG_NOSIGNAL flag.
 		if (Errno != EWOULDBLOCK)
 #endif
 		{	
-			Handler().LogError(this, "write", Errno, StrError(Errno), LOG_LEVEL_FATAL);
+			Handler().LogError(this, "send", Errno, StrError(Errno), LOG_LEVEL_FATAL);
 			SetCloseAndDelete(true);
 			SetFlushBeforeClose(false);
+#ifdef ENABLE_POOL
 			SetLost();
+#endif
 		}
 	}
 	else
@@ -1083,9 +1128,9 @@ void TcpSocket::Sendf(const char *format, ...)
 }
 
 
+#ifdef HAVE_OPENSSL
 void TcpSocket::OnSSLConnect()
 {
-#ifdef HAVE_OPENSSL
 	SetNonblocking(true);
 	{
 		if (m_ssl_ctx)
@@ -1103,27 +1148,32 @@ DEB(			printf("SSL Context already initialized - closing socket\n");)
 		if (!m_ssl)
 		{
 DEB(			printf(" m_ssl is NULL\n");)
+			SetCloseAndDelete(true);
+			return;
 		}
+		SSL_set_mode(m_ssl, SSL_MODE_AUTO_RETRY);
 		m_sbio = BIO_new_socket((int)GetSocket(), BIO_NOCLOSE);
 		if (!m_sbio)
 		{
 DEB(			printf(" m_sbio is NULL\n");)
+			SetCloseAndDelete(true);
+			return;
 		}
 		SSL_set_bio(m_ssl, m_sbio, m_sbio);
 		if (!SSLNegotiate())
+		{
 			SetSSLNegotiate();
+		}
 	}
 	else
 	{
 		SetCloseAndDelete();
 	}
-#endif
 }
 
 
 void TcpSocket::OnSSLAccept()
 {
-#ifdef HAVE_OPENSSL
 	SetNonblocking(true);
 	{
 		if (m_ssl_ctx)
@@ -1141,23 +1191,28 @@ DEB(			printf("SSL Context already initialized - closing socket\n");)
 		if (!m_ssl)
 		{
 DEB(			printf(" m_ssl is NULL\n");)
+			SetCloseAndDelete(true);
+			return;
 		}
+		SSL_set_mode(m_ssl, SSL_MODE_AUTO_RETRY);
 		m_sbio = BIO_new_socket((int)GetSocket(), BIO_NOCLOSE);
 		if (!m_sbio)
 		{
 DEB(			printf(" m_sbio is NULL\n");)
+			SetCloseAndDelete(true);
+			return;
 		}
 		SSL_set_bio(m_ssl, m_sbio, m_sbio);
 		if (!SSLNegotiate())
+		{
 			SetSSLNegotiate();
+		}
 	}
-#endif
 }
 
 
 bool TcpSocket::SSLNegotiate()
 {
-#ifdef HAVE_OPENSSL
 	if (!IsSSLServer()) // client
 	{
 		int r = SSL_connect(m_ssl);
@@ -1185,12 +1240,13 @@ bool TcpSocket::SSLNegotiate()
 				OnConnect();
 			}
 //			OnConnect();
-			Handler().LogError(this, "SSLNegotiate", 0, "Connection established", LOG_LEVEL_INFO);
+			Handler().LogError(this, "SSLNegotiate/SSL_connect", 0, "Connection established", LOG_LEVEL_INFO);
 			return true;
 		}
 		else
 		if (!r)
 		{
+			Handler().LogError(this, "SSLNegotiate/SSL_connect", 0, "Connection failed", LOG_LEVEL_INFO);
 			SetSSLNegotiate(false);
 			SetCloseAndDelete();
 			OnSSLConnectFailed();
@@ -1200,6 +1256,7 @@ bool TcpSocket::SSLNegotiate()
 			r = SSL_get_error(m_ssl, r);
 			if (r != SSL_ERROR_WANT_READ && r != SSL_ERROR_WANT_WRITE)
 			{
+				Handler().LogError(this, "SSLNegotiate/SSL_connect", -1, "Connection failed", LOG_LEVEL_INFO);
 DEB(				printf("SSL_connect() failed - closing socket, return code: %d\n",r);)
 				SetSSLNegotiate(false);
 				SetCloseAndDelete(true);
@@ -1225,11 +1282,13 @@ DEB(				printf("SSL_connect() failed - closing socket, return code: %d\n",r);)
 				}
 			}
 			OnAccept();
+			Handler().LogError(this, "SSLNegotiate/SSL_accept", 0, "Connection established", LOG_LEVEL_INFO);
 			return true;
 		}
 		else
 		if (!r)
 		{
+			Handler().LogError(this, "SSLNegotiate/SSL_accept", 0, "Connection failed", LOG_LEVEL_INFO);
 			SetSSLNegotiate(false);
 			SetCloseAndDelete();
 			OnSSLAcceptFailed();
@@ -1239,6 +1298,7 @@ DEB(				printf("SSL_connect() failed - closing socket, return code: %d\n",r);)
 			r = SSL_get_error(m_ssl, r);
 			if (r != SSL_ERROR_WANT_READ && r != SSL_ERROR_WANT_WRITE)
 			{
+				Handler().LogError(this, "SSLNegotiate/SSL_accept", -1, "Connection failed", LOG_LEVEL_INFO);
 DEB(				printf("SSL_accept() failed - closing socket, return code: %d\n",r);)
 				SetSSLNegotiate(false);
 				SetCloseAndDelete(true);
@@ -1246,17 +1306,14 @@ DEB(				printf("SSL_accept() failed - closing socket, return code: %d\n",r);)
 			}
 		}
 	}
-#endif // HAVE_OPENSSL
 	return false;
 }
 
 
 void TcpSocket::InitSSLClient()
 {
-#ifdef HAVE_OPENSSL
 //	InitializeContext();
-	InitializeContext(SSLv23_method());
-#endif
+	InitializeContext("", SSLv23_method());
 }
 
 
@@ -1267,35 +1324,33 @@ void TcpSocket::InitSSLServer()
 }
 
 
-#ifdef HAVE_OPENSSL
-void TcpSocket::InitializeContext(SSL_METHOD *meth_in)
+void TcpSocket::InitializeContext(const std::string& context, SSL_METHOD *meth_in)
 {
-	SSL_METHOD *meth;
-
-	if (!bio_err)
+	if (!m_bio_err)
 	{
 		/* An error write context */
-		bio_err = BIO_new_fp(stderr, BIO_NOCLOSE);
+		m_bio_err = BIO_new_fp(stderr, BIO_NOCLOSE);
 
 		/* Global system initialization*/
 		SSL_library_init();
 		SSL_load_error_strings();
 		OpenSSL_add_all_algorithms();
+		CRYPTO_set_locking_callback( SSL_locking_function );
+		CRYPTO_set_id_callback( SSL_id_function );
 	}
 
 	/* Create our context*/
-	meth = meth_in ? meth_in : SSLv3_method();
-	m_ssl_ctx = SSL_CTX_new(meth);
-
-	/* Load the CAs we trust*/
-/*
-	if (!(SSL_CTX_load_verify_locations(m_ssl_ctx, CA_LIST, 0)))
+	static std::map<std::string, SSL_CTX *> client_contexts;
+	if (client_contexts.find(context) == client_contexts.end())
 	{
-DEB(		printf("Couldn't read CA list\n");)
+		SSL_METHOD *meth = meth_in ? meth_in : SSLv3_method();
+		m_ssl_ctx = client_contexts[context] = SSL_CTX_new(meth);
+		SSL_CTX_set_mode(m_ssl_ctx, SSL_MODE_AUTO_RETRY);
 	}
-	SSL_CTX_set_verify_depth(m_ssl_ctx, 1);
-	SSL_CTX_set_verify(m_ssl_ctx, SSL_VERIFY_PEER|SSL_VERIFY_FAIL_IF_NO_PEER_CERT, verify_cb);
-*/
+	else
+	{
+		m_ssl_ctx = client_contexts[context];
+	}
 
 	/* Load randomness */
 	if (!m_rand_file.size() || !RAND_load_file(m_rand_file.c_str(), m_rand_size))
@@ -1306,48 +1361,52 @@ DEB(		printf("Couldn't read CA list\n");)
 }
 
 
-void TcpSocket::InitializeContext(const std::string& keyfile,const std::string& password,SSL_METHOD *meth_in)
+void TcpSocket::InitializeContext(const std::string& context,const std::string& keyfile,const std::string& password,SSL_METHOD *meth_in)
 {
-	SSL_METHOD *meth;
-
-	if (!bio_err)
+	if (!m_bio_err)
 	{
 		/* An error write context */
-		bio_err = BIO_new_fp(stderr, BIO_NOCLOSE);
+		m_bio_err = BIO_new_fp(stderr, BIO_NOCLOSE);
 
 		/* Global system initialization*/
 		SSL_library_init();
 		SSL_load_error_strings();
 		OpenSSL_add_all_algorithms();
+		CRYPTO_set_locking_callback( SSL_locking_function );
+		CRYPTO_set_id_callback( SSL_id_function );
 	}
 
 	/* Create our context*/
-	meth = meth_in ? meth_in : SSLv3_method();
-	m_ssl_ctx = SSL_CTX_new(meth);
+	static std::map<std::string, SSL_CTX *> server_contexts;
+	if (server_contexts.find(context) == server_contexts.end())
+	{
+		SSL_METHOD *meth = meth_in ? meth_in : SSLv3_method();
+		m_ssl_ctx = server_contexts[context] = SSL_CTX_new(meth);
+		SSL_CTX_set_mode(m_ssl_ctx, SSL_MODE_AUTO_RETRY);
+		// session id
+		if (context.size())
+			SSL_CTX_set_session_id_context(m_ssl_ctx, (const unsigned char *)context.c_str(), context.size());
+		else
+			SSL_CTX_set_session_id_context(m_ssl_ctx, (const unsigned char *)"--empty--", 9);
+	}
+	else
+	{
+		m_ssl_ctx = server_contexts[context];
+	}
 
 	/* Load our keys and certificates*/
 	if (!(SSL_CTX_use_certificate_file(m_ssl_ctx, keyfile.c_str(), SSL_FILETYPE_PEM)))
 	{
-DEB(		printf("Couldn't read certificate file\n");)
+		Handler().LogError(this, "TcpSocket InitializeContext", 0, "Couldn't read certificate file " + keyfile, LOG_LEVEL_FATAL);
 	}
 
 	m_password = password;
-	SSL_CTX_set_default_passwd_cb(m_ssl_ctx, password_cb);
+	SSL_CTX_set_default_passwd_cb(m_ssl_ctx, SSL_password_cb);
 	SSL_CTX_set_default_passwd_cb_userdata(m_ssl_ctx, this);
 	if (!(SSL_CTX_use_PrivateKey_file(m_ssl_ctx, keyfile.c_str(), SSL_FILETYPE_PEM)))
 	{
-DEB(		printf("Couldn't read key file\n");)
+		Handler().LogError(this, "TcpSocket InitializeContext", 0, "Couldn't read private key file " + keyfile, LOG_LEVEL_FATAL);
 	}
-
-	/* Load the CAs we trust*/
-/*
-	if (!(SSL_CTX_load_verify_locations(m_ssl_ctx, CA_LIST, 0)))
-	{
-DEB(		printf("Couldn't read CA list\n");)
-	}
-	SSL_CTX_set_verify_depth(m_ssl_ctx, 1);
-	SSL_CTX_set_verify(m_ssl_ctx, SSL_VERIFY_PEER|SSL_VERIFY_FAIL_IF_NO_PEER_CERT, verify_cb);
-*/
 
 	/* Load randomness */
 	if (!m_rand_file.size() || !RAND_load_file(m_rand_file.c_str(), m_rand_size))
@@ -1359,7 +1418,7 @@ DEB(		printf("Couldn't read CA list\n");)
 
 
 // static
-int TcpSocket::password_cb(char *buf,int num,int rwflag,void *userdata)
+int TcpSocket::SSL_password_cb(char *buf,int num,int rwflag,void *userdata)
 {
 	Socket *p0 = static_cast<Socket *>(userdata);
 	TcpSocket *p = dynamic_cast<TcpSocket *>(p0);
@@ -1371,10 +1430,32 @@ int TcpSocket::password_cb(char *buf,int num,int rwflag,void *userdata)
 	strcpy(buf,pw.c_str());
 	return (int)pw.size();
 }
-#else
-void TcpSocket::InitializeContext(SSL_METHOD *) {}
-void TcpSocket::InitializeContext(const std::string& ,const std::string& ,SSL_METHOD *) {}
-int TcpSocket::password_cb(char *,int ,int ,void *) { return 0; }
+
+
+void TcpSocket::SSL_locking_function(int mode, int n, const char *file, int line)
+{
+static	std::map<int, Mutex *> mmap;
+	if (mmap.find(n) == mmap.end())
+	{
+		mmap[n] = new Mutex;
+	}
+	if (mode & CRYPTO_LOCK)
+	{
+		mmap[n] -> Lock();
+	}
+	else
+	{
+		mmap[n] -> Unlock();
+	}
+}
+
+
+unsigned long TcpSocket::SSL_id_function()
+{
+	return Utility::ThreadID();
+}
+
+
 #endif // HAVE_OPENSSL
 
 
@@ -1388,16 +1469,19 @@ int TcpSocket::Close()
 		SSL_free(m_ssl);
 		m_ssl = NULL;
 	}
+/*
 	if (m_ssl_ctx)
 	{
 		SSL_CTX_free(m_ssl_ctx);
 		m_ssl_ctx = NULL;
 	}
+*/
 #endif
 	return Socket::Close();
 }
 
 
+#ifdef HAVE_OPENSSL
 SSL_CTX *TcpSocket::GetSslContext()
 {
 	if (!m_ssl_ctx)
@@ -1411,6 +1495,7 @@ SSL *TcpSocket::GetSsl()
 		Handler().LogError(this, "GetSsl", 0, "SSL is NULL; check InitSSLServer/InitSSLClient", LOG_LEVEL_WARNING);
 	return m_ssl;
 }
+#endif
 
 
 #ifdef ENABLE_RECONNECT
@@ -1476,6 +1561,7 @@ bool TcpSocket::IsReconnect()
 #endif
 
 
+#ifdef HAVE_OPENSSL
 const std::string& TcpSocket::GetPassword()
 {
 	return m_password;
@@ -1510,6 +1596,7 @@ void TcpSocket::DeleteRandFile()
 		unlink(m_rand_file.c_str());
 	}
 }
+#endif
 
 
 void TcpSocket::DisableInputBuffer(bool x)

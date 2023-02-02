@@ -59,9 +59,8 @@ namespace SOCKETS_NAMESPACE {
 SocketHandler::SocketHandler(StdLog *p)
 :ISocketHandler(p)
 ,m_maxsock(0)
-#ifdef _WIN32
 ,m_preverror(-1)
-#endif
+,m_errcnt(0)
 #ifdef ENABLE_SOCKS4
 ,m_socks4_host(0)
 ,m_socks4_port(0)
@@ -84,9 +83,8 @@ SocketHandler::SocketHandler(StdLog *p)
 SocketHandler::SocketHandler(Mutex& mutex,StdLog *p)
 :ISocketHandler(mutex, p)
 ,m_maxsock(0)
-#ifdef _WIN32
 ,m_preverror(-1)
-#endif
+,m_errcnt(0)
 #ifdef ENABLE_SOCKS4
 ,m_socks4_host(0)
 ,m_socks4_port(0)
@@ -130,7 +128,11 @@ SocketHandler::~SocketHandler()
 				// only delete socket when controlled
 				// ie master sockethandler can delete non-detached sockets
 				// and a slave sockethandler can only delete a detach socket
-				if (p -> DeleteByHandler() && !(m_slave ^ p -> IsDetached()) )
+				if (p -> DeleteByHandler()
+#ifdef ENABLE_DETACH
+					&& !(m_slave ^ p -> IsDetached()) 
+#endif
+					)
 				{
 					p -> SetErasedByHandler();
 					delete p;
@@ -192,6 +194,7 @@ void SocketHandler::Get(SOCKET s,bool& r,bool& w,bool& e)
 
 void SocketHandler::Set(SOCKET s,bool bRead,bool bWrite,bool bException)
 {
+DEB(printf("Set(%d, %s, %s, %s)\n", s, bRead ? "true" : "false", bWrite ? "true" : "false", bException ? "true" : "false");)
 	if (s >= 0)
 	{
 		if (bRead)
@@ -243,7 +246,9 @@ int SocketHandler::Select(long sec,long usec)
 int SocketHandler::Select()
 {
 	if (m_fds_callonconnect.size() ||
+#ifdef ENABLE_DETACH
 		(!m_slave && m_fds_detach.size()) ||
+#endif
 		m_fds_connecting.size() ||
 		m_fds_retry.size() ||
 		m_fds_close.size() ||
@@ -267,6 +272,7 @@ int SocketHandler::Select(struct timeval *tsel)
 		socket_m::iterator it = m_add.begin();
 		SOCKET s = it -> first;
 		Socket *p = it -> second;
+DEB(printf("Trying to add fd %d\n", s);)
 		//
 		{
 			bool dup = false;
@@ -286,29 +292,37 @@ int SocketHandler::Select(struct timeval *tsel)
 				continue;
 			}
 		}
-		// call Open before Add'ing a socket...
-		if (p -> Connecting())
+		if (!p -> CloseAndDelete())
 		{
-			Set(s,false,true);
-		}
-		else
-		{
-			TcpSocket *tcp = dynamic_cast<TcpSocket *>(p);
-			bool bWrite = tcp ? tcp -> GetOutputLength() != 0 : false;
-			if (p -> IsDisableRead())
+			if (p -> Connecting()) // 'Open' called before adding socket
 			{
-				Set(s, false, bWrite);
+				Set(s,false,true);
 			}
 			else
 			{
-				Set(s, true, bWrite);
+				TcpSocket *tcp = dynamic_cast<TcpSocket *>(p);
+				bool bWrite = tcp ? tcp -> GetOutputLength() != 0 : false;
+				if (p -> IsDisableRead())
+				{
+					Set(s, false, bWrite);
+				}
+				else
+				{
+					Set(s, true, bWrite);
+				}
 			}
+			m_maxsock = (s > m_maxsock) ? s : m_maxsock;
 		}
-		m_maxsock = (s > m_maxsock) ? s : m_maxsock;
+		else
+		{
+			LogError(p, "Add", (int)p -> GetSocket(), "Trying to add socket with SetCloseAndDelete() true", LOG_LEVEL_WARNING);
+		}
 		// only add to m_fds (process fd_set events) if
 		//  slave handler and detached/detaching socket
 		//  master handler and non-detached socket
+#ifdef ENABLE_DETACH
 		if (!(m_slave ^ p -> IsDetach()))
+#endif
 		{
 			m_fds.push_back(s);
 		}
@@ -341,7 +355,12 @@ int SocketHandler::Select(struct timeval *tsel)
 	}
 	if (n == -1)
 	{
-		LogError(NULL, "select", Errno, StrError(Errno));
+		if (Errno != m_preverror || m_errcnt++ % 10000 == 0)
+		{
+			LogError(NULL, "select", Errno, StrError(Errno));
+			m_preverror = Errno;
+		}
+
 		/// \todo rebuild fd_set's from active sockets list (m_sockets) here
 #ifdef _WIN32
 DEB(
@@ -365,6 +384,11 @@ DEB(
 #endif
 	}
 	else
+	if (!n)
+	{
+		m_preverror = -1;
+	}
+	else
 	if (n > 0)
 	{
 		for (socket_v::iterator it2 = m_fds.begin(); it2 != m_fds.end() && n; it2++)
@@ -377,11 +401,13 @@ DEB(
 				{
 					Socket *p = itmp -> second;
 					// new SSL negotiate method
+#ifdef HAVE_OPENSSL
 					if (p -> IsSSLNegotiate())
 					{
 						p -> SSLNegotiate();
 					}
 					else
+#endif
 					{
 						p -> OnRead();
 					}
@@ -399,11 +425,13 @@ DEB(
 				{
 					Socket *p = itmp -> second;
 					// new SSL negotiate method
+#ifdef HAVE_OPENSSL
 					if (p -> IsSSLNegotiate())
 					{
 						p -> SSLNegotiate();
 					}
 					else
+#endif
 					{
 						p -> OnWrite();
 					}
@@ -429,6 +457,7 @@ DEB(
 				n--;
 			}
 		} // m_fds loop
+		m_preverror = -1;
 	} // if (n > 0)
 
 	// check CallOnConnect
@@ -454,9 +483,11 @@ DEB(
 				if (p -> CallOnConnect() && p -> Ready() )
 				{
 					p -> SetConnected(); // moved here from inside if (tcp) check below
+#ifdef HAVE_OPENSSL
 					if (p -> IsSSL()) // SSL Enabled socket
 						p -> OnSSLConnect();
 					else
+#endif
 #ifdef ENABLE_SOCKS4
 					if (p -> Socks4())
 						p -> OnSocks4Connect();
@@ -486,6 +517,7 @@ DEB(
 			}
 		}
 	}
+#ifdef ENABLE_DETACH
 	if (!m_slave && m_fds_detach.size())
 	{
 		for (socket_v::iterator it = m_fds_detach.begin(); it != m_fds_detach.end(); it++)
@@ -517,6 +549,7 @@ DEB(
 			}
 		}
 	}
+#endif
 	// check Connecting - connection timeout
 	if (m_fds_connecting.size())
 	{
@@ -641,6 +674,7 @@ DEB(
 	if (m_fds_close.size())
 	{
 		socket_v tmp = m_fds_close;
+DEB(printf("m_fds_close.size() == %d\n", m_fds_close.size());)
 		for (socket_v::iterator it = tmp.begin(); it != tmp.end(); it++)
 		{
 			Socket *p = NULL;
@@ -669,8 +703,13 @@ DEB(
 				{
 					TcpSocket *tcp = dynamic_cast<TcpSocket *>(p);
 					// new graceful tcp - flush and close timeout 5s
-					if (tcp && p -> IsConnected() && tcp -> GetFlushBeforeClose() && !tcp -> IsSSL() && p -> TimeSinceClose() < 5)
+					if (tcp && p -> IsConnected() && tcp -> GetFlushBeforeClose() && 
+#ifdef HAVE_OPENSSL
+						!tcp -> IsSSL() && 
+#endif
+						p -> TimeSinceClose() < 5)
 					{
+DEB(printf(" close(1)\n");)
 						if (tcp -> GetOutputLength())
 						{
 							LogError(p, "Closing", (int)tcp -> GetOutputLength(), "Sending all data before closing", LOG_LEVEL_INFO);
@@ -691,6 +730,7 @@ DEB(
 					if (tcp && p -> IsConnected() && tcp -> Reconnect())
 					{
 						SOCKET nn = *it; //(*it3).first;
+DEB(printf(" close(2) fd %d\n", nn);)
 						p -> SetCloseAndDelete(false);
 						tcp -> SetIsReconnect();
 						p -> SetConnected(false);
@@ -725,6 +765,7 @@ DEB(
 #endif
 					{
 						SOCKET nn = *it; //(*it3).first;
+DEB(printf(" close(3) fd %d GetSocket() %d\n", nn, p -> GetSocket());)
 						if (tcp && p -> IsConnected() && tcp -> GetOutputLength())
 						{
 							LogError(p, "Closing", (int)tcp -> GetOutputLength(), "Closing socket while data still left to send", LOG_LEVEL_WARNING);
@@ -762,6 +803,7 @@ DEB(
 	{
 		socket_v::iterator it = m_fds_erase.begin();
 		SOCKET nn = *it;
+#ifdef ENABLE_DETACH
 		{
 			for (socket_v::iterator it = m_fds_detach.begin(); it != m_fds_detach.end(); it++)
 			{
@@ -772,6 +814,7 @@ DEB(
 				}
 			}
 		}
+#endif
 		{
 			for (socket_v::iterator it = m_fds.begin(); it != m_fds.end(); it++)
 			{
@@ -795,7 +838,11 @@ DEB(
 					   The fix is to make sure that the master sockethandler only can delete
 					   non-detached sockets, and a slave sockethandler only can delete
 					   detach sockets. */
-					if (p -> ErasedByHandler() && !(m_slave ^ p -> IsDetached()) )
+					if (p -> ErasedByHandler()
+#ifdef ENABLE_DETACH
+						&& !(m_slave ^ p -> IsDetached()) 
+#endif
+						)
 					{
 						delete p;
 					}
@@ -824,7 +871,11 @@ DEB(
 		Socket *p = *it;
 		p -> OnDelete();
 		m_delete.erase(it);
-		if (p -> DeleteByHandler() && !(m_slave ^ p -> IsDetached()) )
+		if (p -> DeleteByHandler()
+#ifdef ENABLE_DETACH
+			&& !(m_slave ^ p -> IsDetached()) 
+#endif
+			)
 		{
 			p -> SetErasedByHandler();
 			delete p;
@@ -904,6 +955,7 @@ int SocketHandler::Resolve(Socket *p,const std::string& host,port_t port)
 }
 
 
+#ifdef ENABLE_IPV6
 int SocketHandler::Resolve6(Socket *p,const std::string& host,port_t port)
 {
 	// check cache
@@ -911,7 +963,7 @@ int SocketHandler::Resolve6(Socket *p,const std::string& host,port_t port)
 	resolv -> SetId(++m_resolv_id);
 	resolv -> SetHost(host);
 	resolv -> SetPort(port);
-	resolv -> SetIpv6();
+	resolv -> SetResolveIpv6();
 	resolv -> SetDeleteByHandler();
 	ipaddr_t local;
 	Utility::u2ip("127.0.0.1", local);
@@ -922,6 +974,7 @@ int SocketHandler::Resolve6(Socket *p,const std::string& host,port_t port)
 	Add(resolv);
 	return m_resolv_id;
 }
+#endif
 
 
 int SocketHandler::Resolve(Socket *p,ipaddr_t a)
@@ -942,6 +995,7 @@ int SocketHandler::Resolve(Socket *p,ipaddr_t a)
 }
 
 
+#ifdef ENABLE_IPV6
 int SocketHandler::Resolve(Socket *p,in6_addr& a)
 {
 	// check cache
@@ -958,6 +1012,7 @@ int SocketHandler::Resolve(Socket *p,in6_addr& a)
 	Add(resolv);
 	return m_resolv_id;
 }
+#endif
 
 
 void SocketHandler::EnableResolver(port_t port)
@@ -1100,7 +1155,9 @@ void SocketHandler::CheckSanity()
 	CheckList(m_fds, "active sockets"); // active sockets
 	CheckList(m_fds_erase, "sockets to be erased"); // should always be empty anyway
 	CheckList(m_fds_callonconnect, "checklist CallOnConnect");
+#ifdef ENABLE_DETACH
 	CheckList(m_fds_detach, "checklist Detach");
+#endif
 	CheckList(m_fds_connecting, "checklist Connecting");
 	CheckList(m_fds_retry, "checklist retry client connect");
 	CheckList(m_fds_close, "checklist close and delete");
@@ -1142,10 +1199,13 @@ void SocketHandler::AddList(SOCKET s,list_t which_one,bool add)
 	}
 	socket_v& ref =
 		(which_one == LIST_CALLONCONNECT) ? m_fds_callonconnect :
+#ifdef ENABLE_DETACH
 		(which_one == LIST_DETACH) ? m_fds_detach :
+#endif
 		(which_one == LIST_CONNECTING) ? m_fds_connecting :
 		(which_one == LIST_RETRY) ? m_fds_retry :
 		(which_one == LIST_CLOSE) ? m_fds_close : m_fds_close;
+#ifdef ENABLE_DETACH
 DEB(
 printf("%5d: %s: %s\n", s, (which_one == LIST_CALLONCONNECT) ? "CallOnConnect" :
 	(which_one == LIST_DETACH) ? "Detach" :
@@ -1154,6 +1214,15 @@ printf("%5d: %s: %s\n", s, (which_one == LIST_CALLONCONNECT) ? "CallOnConnect" :
 	(which_one == LIST_CLOSE) ? "Close" : "<undef>",
 	add ? "Add" : "Remove");
 )
+#else
+DEB(
+printf("%5d: %s: %s\n", s, (which_one == LIST_CALLONCONNECT) ? "CallOnConnect" :
+	(which_one == LIST_CONNECTING) ? "Connecting" :
+	(which_one == LIST_RETRY) ? "Retry" :
+	(which_one == LIST_CLOSE) ? "Close" : "<undef>",
+	add ? "Add" : "Remove");
+)
+#endif
 	if (add)
 	{
 		for (socket_v::iterator it = ref.begin(); it != ref.end(); it++)
