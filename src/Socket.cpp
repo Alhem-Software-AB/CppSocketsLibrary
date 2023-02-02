@@ -151,6 +151,7 @@ void Socket::OnException()
 		}
 		else
 		{
+			SetConnecting(false); // tnx snibbe
 			SetCloseAndDelete();
 			OnConnectFailed();
 		}

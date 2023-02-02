@@ -106,6 +106,26 @@ public:
 		}
 	}
 
+	/** Bind and listen to any interface, with optional protocol.
+		\param port Port (0 is random)
+		\param protocol Network protocol
+		\param depth Listen queue depth */
+	int Bind(port_t port,const std::string& protocol,int depth = 20) {
+#ifdef IPPROTO_IPV6
+		if (IsIpv6())
+		{
+			in6_addr a;
+			memset(&a, 0, sizeof(in6_addr));
+			return Bind(a, port, protocol, depth);
+		}
+		else
+#endif
+		{
+			ipaddr_t a = 0;
+			return Bind(a, port, protocol, depth);
+		}
+	}
+
 	/** Bind and listen to specific interface.
 		\param intf Interface hostname
 		\param port Port (0 is random)
@@ -135,15 +155,53 @@ public:
 		}
 	}
 
+	/** Bind and listen to specific interface.
+		\param intf Interface hostname
+		\param port Port (0 is random)
+		\param protocol Network protocol
+		\param depth Listen queue depth */
+	int Bind(const std::string& intf,port_t port,const std::string& protocol,int depth = 20) {
+#ifdef IPPROTO_IPV6
+		if (IsIpv6())
+		{
+			in6_addr a;
+			if (Utility::u2ip(intf, a))
+			{
+				return Bind(a, port, protocol, depth);
+			}
+			Handler().LogError(this, "Bind", 0, "name resolution of interface name failed", LOG_LEVEL_FATAL);
+			return -1;
+		}
+		else
+#endif
+		{
+			ipaddr_t a;
+			if (Utility::u2ip(intf, a))
+			{
+				return Bind(a, port, protocol, depth);
+			}
+			Handler().LogError(this, "Bind", 0, "name resolution of interface name failed", LOG_LEVEL_FATAL);
+			return -1;
+		}
+	}
+
 	/** Bind and listen to ipv4 interface.
 		\param a Ipv4 interface address
 		\param port Port (0 is random)
 		\param depth Listen queue depth */
 	int Bind(ipaddr_t a,port_t port,int depth = 20) {
+		return Bind(a, port, "tcp", depth);
+	}
+	/** Bind and listen to ipv4 interface.
+		\param a Ipv4 interface address
+		\param port Port (0 is random)
+		\param protocol Network protocol
+		\param depth Listen queue depth */
+	int Bind(ipaddr_t a,port_t port,const std::string& protocol,int depth) {
 		struct sockaddr_in sa;
 		SOCKET s;
 
-		if ( (s = CreateSocket(AF_INET, SOCK_STREAM)) == INVALID_SOCKET)
+		if ( (s = CreateSocket(AF_INET, SOCK_STREAM, protocol)) == INVALID_SOCKET)
 		{
 			return -1;
 		}
@@ -177,10 +235,18 @@ public:
 		\param port Port (0 is random)
 		\param depth Listen queue depth */
 	int Bind(in6_addr a,port_t port,int depth = 20) {
+		return Bind(a, port, "tcp", depth);
+	}
+	/** Bind and listen to ipv6 interface.
+		\param a Ipv6 interface address
+		\param port Port (0 is random)
+		\param protocol Network protocol
+		\param depth Listen queue depth */
+	int Bind(in6_addr a,port_t port,const std::string& protocol,int depth) {
 		struct sockaddr_in6 sa;
 		SOCKET s;
 
-		if ( (s = CreateSocket(AF_INET6, SOCK_STREAM)) == INVALID_SOCKET)
+		if ( (s = CreateSocket(AF_INET6, SOCK_STREAM, protocol)) == INVALID_SOCKET)
 		{
 			return -1;
 		}

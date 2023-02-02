@@ -157,7 +157,7 @@ void SocketHandler::Add(Socket *p)
 	{
 		if ((*it).first == p -> GetSocket())
 		{
-			LogError(p, "Add", p -> GetSocket(), "Attempt to add socket already in add queue", LOG_LEVEL_FATAL);
+			LogError(p, "Add", (int)p -> GetSocket(), "Attempt to add socket already in add queue", LOG_LEVEL_FATAL);
 			m_delete.push_back(p);
 			return;
 		}
@@ -261,7 +261,7 @@ int SocketHandler::Select(struct timeval *tsel)
 			{
 				if ((*it).first == p -> GetSocket())
 				{
-					LogError(p, "Add", p -> GetSocket(), "Attempt to add socket already in controlled queue", LOG_LEVEL_FATAL);
+					LogError(p, "Add", (int)p -> GetSocket(), "Attempt to add socket already in controlled queue", LOG_LEVEL_FATAL);
 					m_delete.push_back(p);
 					m_add.erase(it);
 					dup = true;
@@ -432,6 +432,7 @@ DEB(
 							else
 							{
 //									LogError(p, "connect failed", Errno, StrError(Errno), LOG_LEVEL_FATAL);
+								p -> SetConnecting(false);
 								p -> SetCloseAndDelete( true );
 								p -> OnConnectFailed();
 							}

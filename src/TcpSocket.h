@@ -183,7 +183,7 @@ public:
 	/** SSL; Get ssl password. */
 	const std::string& GetPassword();
 	/** SSL; Set random filename + size to be used. */
-	void SetRandFile(const std::string& file,size_t size);
+	void SetRandFile(const std::string& file,long size);
 	/** SSL; delete random file when shutting down. */
 static	void DeleteRandFile();
 
@@ -212,6 +212,9 @@ static	int password_cb(char *buf,int num,int rwflag,void *userdata);
 	CircularBuffer obuf; ///< Circular output buffer
 	std::string m_line; ///< Current line in line protocol mode
 	ucharp_v m_mes; ///< overflow protection, dynamic output buffer
+#ifdef SOCKETS_DYNAMIC_TEMP
+	char *m_buf; ///< temporary read buffer
+#endif
 
 private:
 	TcpSocket& operator=(const TcpSocket& ) { return *this; }
@@ -229,7 +232,7 @@ static	BIO *bio_err; ///< ssl bio err
 	std::string m_password; ///< ssl password
 static	bool m_b_rand_file_generated; ///< rand_file is generated once
 static	std::string m_rand_file;
-static	size_t m_rand_size;
+static	long m_rand_size;
 	// state flags
 	bool m_b_reconnect; ///< Reconnect on lost connection flag
 	bool m_b_is_reconnect; ///< Trying to reconnect

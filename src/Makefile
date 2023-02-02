@@ -1,15 +1,25 @@
-VERSION =	2.0.4a
-DIFF_VERSION =	2.0.4
+VERSION =	2.0.5
+DIFF_VERSION =	2.0.4a
 
 INCLUDE =	-I.
 PREFIX =	/usr/local
 # .h files installed to $(PREFIX)/include/Sockets
 # static lib .a files installed to $(PREFIX)/lib
 
-CFLAGS =	-Wall -g -O2 $(INCLUDE) -MD -D_VERSION='"$(VERSION)"'
+CXX =		g++
+
+CFLAGS =	-Wall -g $(INCLUDE) -MD -D_VERSION='"$(VERSION)"'
+
+# turn off optimization if compiling with gcc 2.9.x:
+#CFLAGS +=	-O0
+CFLAGS +=	-O2
+
+# Enable insane amounts of debug output to stdout/stderr:
 #CFLAGS +=	-D_DEBUG
 
-CXX =		g++
+# Define SOCKETS_DYNAMIC_TEMP to use dynamically allocated buffers
+# in read operations - helps on ECOS
+CFLAGS +=	-DSOCKETS_DYNAMIC_TEMP
 
 # The flag _THREADSAFE_SOCKETS does NOT mean that all operations in 
 # SocketHandler/Socket derivatives becomes thread safe unfortunately.
@@ -126,7 +136,7 @@ tar:		clean
 		rm -f Stdin.*
 		rm -f ListenSocketBase.*
 		tar czf Sockets-$(VERSION).tar.gz $(FILES)
-		zip -l Sockets-$(VERSION).zip $(FILES)
+#		zip -l Sockets-$(VERSION).zip $(FILES)
 		/usr/local/bin/tarfix.sh Sockets-$(VERSION)
 		cp Sockets-$(VERSION).tar.gz $(HTDOCS)/Sockets
 		cp Sockets-$(VERSION).zip $(HTDOCS)/Sockets

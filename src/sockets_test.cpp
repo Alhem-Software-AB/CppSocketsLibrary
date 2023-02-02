@@ -168,7 +168,7 @@ public:
 		else
 		if (cmd == "count")
 		{
-			Send("Socket count: " + Utility::l2string(Handler().GetCount()) + "\n");
+			Send("Socket count: " + Utility::l2string( (long)Handler().GetCount()) + "\n");
 		}
 		else
 		{

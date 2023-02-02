@@ -67,8 +67,11 @@ void HTTPSocket::OnRead()
 		if (ibuf.GetLength())
 		{
 			size_t n = ibuf.GetLength();
+#ifdef SOCKETS_DYNAMIC_TEMP
+			char *tmp = m_buf;
+#else
 			char tmp[TCP_BUFSIZE_READ];
-
+#endif
 			n = (n >= TCP_BUFSIZE_READ) ? TCP_BUFSIZE_READ : n;
 			ibuf.Read(tmp,n);
 
@@ -83,8 +86,11 @@ void HTTPSocket::ReadLine()
 	if (ibuf.GetLength())
 	{
 		size_t n = ibuf.GetLength();
+#ifdef SOCKETS_DYNAMIC_TEMP
+		char *tmp = m_buf;
+#else
 		char tmp[TCP_BUFSIZE_READ];
-
+#endif
 		n = (n >= TCP_BUFSIZE_READ) ? TCP_BUFSIZE_READ : n;
 		ibuf.Read(tmp,n);
 

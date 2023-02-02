@@ -43,7 +43,9 @@ int main()
 #ifdef _THREADSAFE_SOCKETS // obsolete
 	printf(" -D_THREADSAFE_SOCKETS");
 #endif
-
+#ifdef SOCKETS_DYNAMIC_TEMP
+	printf(" -DSOCKETS_DYNAMIC_TEMP");
+#endif
 }
 
 

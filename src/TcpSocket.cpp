@@ -68,7 +68,7 @@ namespace SOCKETS_NAMESPACE {
 BIO *TcpSocket::bio_err = NULL;
 bool TcpSocket::m_b_rand_file_generated = false;
 std::string TcpSocket::m_rand_file;
-size_t TcpSocket::m_rand_size = 1024;
+long TcpSocket::m_rand_size = 1024;
 TcpSocket::SSLInitializer TcpSocket::m_ssl_init;
 
 
@@ -80,6 +80,9 @@ TcpSocket::TcpSocket(SocketHandler& h) : Socket(h)
 ,ibuf(*this, TCP_BUFSIZE_READ)
 ,obuf(*this, 32768)
 ,m_line("")
+#ifdef SOCKETS_DYNAMIC_TEMP
+,m_buf(new char[TCP_BUFSIZE_READ + 1])
+#endif
 ,m_socks4_state(0)
 ,m_resolver_id(0)
 ,m_context(NULL)
@@ -130,6 +133,9 @@ TcpSocket::TcpSocket(SocketHandler& h,size_t isize,size_t osize) : Socket(h)
 ,ibuf(*this, isize)
 ,obuf(*this, osize)
 ,m_line("")
+#ifdef SOCKETS_DYNAMIC_TEMP
+,m_buf(new char[TCP_BUFSIZE_READ + 1])
+#endif
 ,m_socks4_state(0)
 ,m_resolver_id(0)
 ,m_context(NULL)
@@ -181,6 +187,9 @@ TcpSocket::~TcpSocket()
 		delete p;
 		m_mes.erase(it);
 	}
+#ifdef SOCKETS_DYNAMIC_TEMP
+	delete[] m_buf;
+#endif
 #ifdef HAVE_OPENSSL
 	if (m_ssl)
 	{
@@ -485,7 +494,11 @@ void TcpSocket::OnRead()
 #ifdef HAVE_OPENSSL
 		if (!Ready())
 			return;
+#ifdef SOCKETS_DYNAMIC_TEMP
+		char *buf = m_buf;
+#else
 		char buf[TCP_BUFSIZE_READ];
+#endif
 		int n = SSL_read(m_ssl, buf, TCP_BUFSIZE_READ);
 		if (n == -1)
 		{
@@ -514,6 +527,7 @@ DEB(				printf("SSL read problem, errcode = %d\n",n);)
 		}
 		else
 		{
+			OnRawData(buf,n);
 			if (!ibuf.Write(buf,n))
 			{
 				// overflow
@@ -524,7 +538,11 @@ DEB(				printf("SSL read problem, errcode = %d\n",n);)
 #endif // HAVE_OPENSSL
 	}
 	int n = (int)ibuf.Space();
+#ifdef SOCKETS_DYNAMIC_TEMP
+	char *buf = m_buf;
+#else
 	char buf[TCP_BUFSIZE_READ];
+#endif
 	n = TCP_BUFSIZE_READ; // %! patch away
 	n = recv(GetSocket(),buf,(n < TCP_BUFSIZE_READ) ? n : TCP_BUFSIZE_READ,MSG_NOSIGNAL);
 	if (n == -1)
@@ -767,8 +785,11 @@ void TcpSocket::ReadLine()
 	{
 		size_t x = 0;
 		size_t n = ibuf.GetLength();
+#ifdef SOCKETS_DYNAMIC_TEMP
+		char *tmp = m_buf;
+#else
 		char tmp[TCP_BUFSIZE_READ + 1];
-
+#endif
 		n = (n >= TCP_BUFSIZE_READ) ? TCP_BUFSIZE_READ : n;
 		ibuf.Read(tmp,n);
 		tmp[n] = 0;
@@ -835,6 +856,7 @@ void TcpSocket::OnSocks4ConnectFailed()
 	Handler().LogError(this,"OnSocks4ConnectFailed",0,"connection to socks4 server failed, trying direct connection",LOG_LEVEL_WARNING);
 	if (!Handler().Socks4TryDirect())
 	{
+		SetConnecting(false);
 		SetCloseAndDelete();
 		OnConnectFailed(); // just in case
 	}
@@ -887,6 +909,7 @@ bool TcpSocket::OnSocks4Read()
 			case 92:
 			case 93:
 				Handler().LogError(this,"OnSocks4Read",m_socks4_cd,"socks4 server reports connect failed",LOG_LEVEL_FATAL);
+				SetConnecting(false);
 				SetCloseAndDelete();
 				OnConnectFailed();
 				break;
@@ -1309,14 +1332,14 @@ const std::string& TcpSocket::GetPassword()
 }
 
 
-void TcpSocket::SetRandFile(const std::string& file,size_t size)
+void TcpSocket::SetRandFile(const std::string& file,long size)
 {
 	m_rand_file = file;
 	m_rand_size = size;
 	FILE *fil = fopen(file.c_str(), "wb");
 	if (fil)
 	{
-		for (size_t i = 0; i < size; i++)
+		for (long i = 0; i < size; i++)
 		{
 #ifdef _WIN32
 			long rnd = rand();

@@ -58,7 +58,7 @@ HttpPostSocket::HttpPostSocket(SocketHandler& h) : HttpClientSocket(h)
 HttpPostSocket::HttpPostSocket(SocketHandler& h,const std::string& url_in) : HttpClientSocket(h, url_in)
 ,m_bMultipart(false)
 {
-	std::string m_boundary = "----";
+	m_boundary = "----";
 	for (int i = 0; i < 12; i++)
 	{
 		char c = 0;
