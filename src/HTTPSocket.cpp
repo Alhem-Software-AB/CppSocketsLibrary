@@ -137,3 +137,18 @@ void HTTPSocket::OnLine(const std::string& line)
 }
 
 
+void HTTPSocket::SendResponse()
+{
+	std::string msg;
+	msg = m_method + " " + m_status + " " + m_status_text + "\n";
+	for (string_m::iterator it = m_response_header.begin(); it != m_response_header.end(); it++)
+	{
+		std::string key = (*it).first;
+		std::string val = (*it).second;
+		msg += key + ": " + val + "\n";
+	}
+	msg += "\n";
+	Send( msg );
+}
+
+

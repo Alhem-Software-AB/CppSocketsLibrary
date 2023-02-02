@@ -31,6 +31,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 class HttpsGetSocket : public HttpsSocket
 {
 public:
+	HttpsGetSocket(SocketHandler&,const std::string&,const std::string& = "");
 	HttpsGetSocket(SocketHandler&,const std::string&,port_t,const std::string&,const std::string&);
 	~HttpsGetSocket();
 
@@ -49,6 +50,8 @@ public:
 
 	size_t GetContentLength() { return m_content_length; }
 	size_t GetPos() { return m_content_ptr; }
+
+	void url_this(const std::string& url_in,std::string& host,port_t& port,std::string& url,std::string& file);
 
 private:
 	std::string m_host;

@@ -1,8 +1,8 @@
-VERSION =	1.1
+VERSION =	1.2
 
 INCLUDE =	-I/usr/devel/include -I.
-CFLAGS =	-Wall -g -O2 $(INCLUDE) -MD
-CPPFLAGS =	$(CFLAGS)
+CFLAGS =	-Wall -g -O2 $(INCLUDE) -MD -D_VERSION='"$(VERSION)"'
+CPPFLAGS =	$(CFLAGS) 
 #LIBS =		-L/usr/devel/lib -Lopenssl -L/usr/local/ssl/lib \
 #		-lssl -lcrypto 
 
@@ -20,7 +20,8 @@ OBJS =		CircularBuffer.o \
 		CTcpSocket.o \
 		Uid.o \
 		HTTPSocket.o \
-		HttpsSocket.o
+		HttpsSocket.o \
+		MinderSocket.o MinionSocket.o MinderHandler.o
 
 PROGS =		
 
@@ -44,5 +45,8 @@ tar:		clean
 		rm -f Thread.*
 		rm -f Mutex.*
 		rm -f SocketThread.*
+		rm -f MinderSocket_T.h
 		./mkdot.sh
 		tar czf /usr/local/apache/www.alhem.net/htdocs/Sockets/Sockets-$(VERSION).tar.gz *.h *.cpp Makefile Project/*.dsp
+		cp Changelog /usr/local/apache/www.alhem.net/htdocs/Sockets
+		doxygen doxygen.cfg

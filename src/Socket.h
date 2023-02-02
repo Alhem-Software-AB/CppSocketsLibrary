@@ -54,9 +54,9 @@ public:
 	virtual void OnDelete();
 	virtual void OnConnect();
 	virtual void OnAccept();
-//	virtual void OnCallback(int );
 	virtual void OnLine(const std::string& ) {}
 	virtual void OnSSLInitDone() {}
+	virtual void OnDetached() {}
 
 	virtual bool CheckConnect();
 	virtual void ReadLine() {}
@@ -96,6 +96,10 @@ public:
 	void Touch() { m_tActive = time(NULL); }
 	time_t Inactive() { return time(NULL) - m_tActive; }
 */
+	void SetDetach(bool x = true) { m_detach = x; }
+	bool IsDetach() { return m_detach; }
+	void SetDetached(bool x = true) { m_detached = x; }
+	bool IsDetached() { return m_detached; }
 
 protected:
 	struct sockaddr m_sa; // remote, from accept
@@ -112,6 +116,8 @@ private:
 	bool m_ssl_connecting;
 //	time_t m_tActive;
 //	time_t m_timeout;
+	bool m_detach;
+	bool m_detached;
 };
 
 

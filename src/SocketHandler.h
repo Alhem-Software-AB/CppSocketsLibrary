@@ -48,6 +48,7 @@ public:
 	int Select(long sec,long usec);
 	void StatLoop(long s,long us);
 	bool Valid(Socket *);
+	virtual bool OkToAccept() { return true; }
 
 	const std::string& GetLocalHostname();
 	ipaddr_t GetLocalIP();

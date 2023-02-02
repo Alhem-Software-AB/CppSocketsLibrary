@@ -20,6 +20,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
+#include <stdio.h>
 #ifdef _WIN32
 #pragma warning(disable:4786)
 #endif
@@ -185,7 +186,7 @@ DEB(
 		{
 			SOCKET i = (*it2).first;
 			Socket *p = (*it2).second;
-			if (p)
+			if (p && !p -> IsDetached() )
 			{
 				if (p -> SSLConnecting())
 				{
@@ -234,28 +235,34 @@ DEB(								printf("calling OnConnect\n");)
 	for (socket_m::iterator it3 = m_sockets.begin(); it3 != m_sockets.end(); it3++)
 	{
 		Socket *p = (*it3).second;
+		if (p && !p -> IsDetached())
+		{
 /*
-		if (p && p -> Timeout() && p -> Inactive() > p -> Timeout())
-		{
-			p -> SetCloseAndDelete();
-		}
-*/
-		if (p && p -> Connecting() && p -> GetConnectTime() > 5)
-		{
-//			fprintf(stderr,"Connect timeout - removing socket\n");
-			p -> SetCloseAndDelete(true);
-		}
-		if (p && p -> CloseAndDelete() )
-		{
-			Set(p -> GetSocket(),false,false,false);
-			p -> Close();
-			p -> OnDelete();
-			if (p -> DeleteByHandler())
+			if (p && p -> Timeout() && p -> Inactive() > p -> Timeout())
 			{
-				delete p;
+				p -> SetCloseAndDelete();
 			}
-			m_sockets.erase(it3);
-			break;
+*/
+			if (p && p -> Connecting() && p -> GetConnectTime() > 5)
+			{
+//				fprintf(stderr,"Connect timeout - removing socket\n");
+				p -> SetCloseAndDelete(true);
+			}
+			if (p && p -> CloseAndDelete() )
+			{
+				Set(p -> GetSocket(),false,false,false);
+				p -> Close();
+				p -> OnDelete();
+				if (p -> DeleteByHandler())
+				{
+					delete p;
+				}
+				m_sockets.erase(it3);
+				break;
+			}
+			if (p -> IsDetach())
+			{
+			}
 		}
 	}
 	return n;

@@ -167,28 +167,30 @@ DEB(	printf("Connecting to: %s:%d\n",ipstr.c_str(),port);)
 }
 
 
-#define BUFSIZE_READ 1640
+#define BUFSIZE_READ 16400
 void TcpSocket::OnRead()
 {
 	int n = ibuf.Space();
 	char buf[BUFSIZE_READ];
-	if (!n)
-		return; // bad
+//	if (!n)
+//		return; // bad
+	n = BUFSIZE_READ; // %! patch away
 	n = readsocket(GetSocket(),buf,(n < BUFSIZE_READ) ? n : BUFSIZE_READ);
 	if (n == -1)
 	{
 		SetCloseAndDelete(true); // %!
-DEB(		perror("read() error");)
+DEB(		perror(" * read() error");)
 	}
 	else
 	if (!n)
 	{
 		SetCloseAndDelete(true);
-DEB(		printf("read() returns 0\n");)
+DEB(		printf(" * read() returns 0\n");)
 	}
 	else
 	{
 DEB(		printf("read %d bytes\n",n);)
+		OnRawData(buf,n);
 		if (!ibuf.Write(buf,n))
 		{
 			// overflow
@@ -229,7 +231,7 @@ DEB(	printf("OnWrite: %d bytes sent\n",n);)
 DEB(	printf("write() error, errcode = %d\n",x);)
 #endif
 		SetCloseAndDelete(true); // %!
-DEB(		perror("write() error");)
+DEB(		perror(" * write() error");)
 	}
 	else
 	if (!n)

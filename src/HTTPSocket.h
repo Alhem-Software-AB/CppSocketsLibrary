@@ -23,11 +23,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef _HTTPSOCKET_H
 #define _HTTPSOCKET_H
 
+#include <map>
+#include <string>
 #include "TcpSocket.h"
 
 
 class HTTPSocket : public TcpSocket
 {
+	typedef std::map<std::string,std::string> string_m;
 public:
 	HTTPSocket(SocketHandler& );
 	~HTTPSocket();
@@ -49,6 +52,12 @@ public:
 	bool IsRequest() { return m_request; }
 	bool IsResponse() { return m_response; }
 
+	void SetMethod(const std::string& x) { m_method = x; }
+	void SetStatus(const std::string& x) { m_status = x; }
+	void SetStatusText(const std::string& x) { m_status_text = x; }
+	void AddResponseHeader(const std::string& x,const std::string& y) { m_response_header[x] = y; }
+	void SendResponse();
+
 private:
 	bool m_first;
 	bool m_header;
@@ -60,6 +69,7 @@ private:
 	std::string m_status_text;
 	bool m_request;
 	bool m_response;
+	string_m m_response_header;
 };
 
 

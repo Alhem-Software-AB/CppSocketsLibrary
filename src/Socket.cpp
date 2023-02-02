@@ -52,6 +52,8 @@ Socket::Socket(SocketHandler& h)
 ,m_ssl_connecting(false)
 //,m_tActive(time(NULL))
 //,m_timeout(0)
+,m_detach(false)
+,m_detached(false)
 {
 }
 

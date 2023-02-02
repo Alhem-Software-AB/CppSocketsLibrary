@@ -37,6 +37,32 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define DEB(x)
 
 
+HttpGetSocket::HttpGetSocket(SocketHandler& h,const std::string& url_in,const std::string& filename)
+:HTTPSocket(h)
+,m_fil(NULL)
+,m_bComplete(false)
+,m_content_length(0)
+,m_content_ptr(0)
+{
+	url_this(url_in,m_host,m_port,m_url,m_to_file);
+	if (filename.size())
+	{
+		m_to_file = filename;
+	}
+	SetLineProtocol();
+
+	if (!Open(m_host,m_port))
+	{
+		if (!Connecting())
+		{
+			fprintf(stderr,"connect() failed\n");
+DEB(			fprintf(fil,"connect() failed\n");)
+			SetCloseAndDelete();
+		}
+	}
+}
+
+
 HttpGetSocket::HttpGetSocket(SocketHandler& h,const std::string& host,port_t port,const std::string& url,const std::string& to_file)
 :HTTPSocket(h)
 ,m_host(host)
@@ -77,6 +103,11 @@ void HttpGetSocket::OnConnect()
 		"Accept-Language: en-us,en;q=0.5\n"
 		"Accept-Encoding: gzip,deflate\n"
 		"Accept-Charset: ISO-8859-1,utf-8;q=0.7,*;q=0.7\n"
+#ifdef _VERSION
+		"User-agent: C++Sockets/" _VERSION "\n"
+#else
+		"User-agent: C++Sockets/1.1\n"
+#endif
 		"Host: " + m_host + ":" + Utility::l2string(m_port) + "\n"
 		"\n";
 DEB(		fprintf(fil,"%s\n",str.c_str());)
@@ -109,6 +140,7 @@ void HttpGetSocket::OnDelete()
 
 void HttpGetSocket::OnFirst()
 {
+/*
 	printf("IsRequest: %s\n",IsRequest() ? "YES" : "NO");
 	if (IsRequest())
 	{
@@ -124,7 +156,7 @@ void HttpGetSocket::OnFirst()
 		printf(" Status: %s\n",GetStatus().c_str());
 		printf(" Status text: %s\n",GetStatusText().c_str());
 	}
-
+*/
 	if (!IsResponse())
 	{
 		SetCloseAndDelete();
@@ -174,5 +206,33 @@ void HttpGetSocket::OnData(const char *buf,size_t len)
 		OnContent();
 	}
 }
+
+
+void HttpGetSocket::url_this(const std::string& url_in,std::string& host,port_t& port,std::string& url,std::string& file)
+{
+	Parse pa(url_in,"/");
+	pa.getword(); // http
+	host = pa.getword();
+	if (strstr(host.c_str(),":"))
+	{
+		Parse pa(host,":");
+		pa.getword(host);
+		port = pa.getvalue();
+	}
+	else
+	{
+		port = 80;
+	}
+	url = "/" + pa.getrest();
+	{
+		Parse pa(url,"/");
+		std::string tmp = pa.getword();
+		while (tmp.size())
+		{
+			file = tmp;
+			tmp = pa.getword();
+		}
+	}
+} // url_this
 
 

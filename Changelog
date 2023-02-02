@@ -45,3 +45,13 @@ Version 1.1
 > Uid.cpp
 > Uid.h
 
+Version 1.2
+--------------------------
+17a18,23
+> MinderHandler.cpp
+> MinderHandler.h
+> MinderSocket.cpp
+> MinderSocket.h
+> MinionSocket.cpp
+> MinionSocket.h
+

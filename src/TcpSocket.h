@@ -20,8 +20,8 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
-#ifndef _TCPSTREAM_H
-#define _TCPSTREAM_H
+#ifndef _TCPSOCKET_H
+#define _TCPSOCKET_H
 
 #include <vector>
 #include "Socket.h"
@@ -55,6 +55,7 @@ public:
 	bool Open(const std::string &host,port_t port);
 	void Send(const std::string &);
 	virtual void SendBuf(const char *,size_t);
+	virtual void OnRawData(const char *,size_t) {}
 
 	int GetInputLength() { return ibuf.GetLength(); }
 	int GetOutputLength() { return obuf.GetLength(); }
@@ -76,4 +77,4 @@ protected:
 };
 
 
-#endif // _TCPSTREAM_H
+#endif // _TCPSOCKET_H

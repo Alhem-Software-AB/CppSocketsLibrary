@@ -51,7 +51,7 @@ public:
 
 		memset(&sa,0,sizeof(sa));
 		sa.sin_family = AF_INET; // hp -> h_addrtype;
-		sa.sin_port = htons( port );
+		sa.sin_port = (int)htons( port );
 		memcpy(&sa.sin_addr,&l,4);
 
 		if (bind(s, (struct sockaddr *)&sa, sizeof(sa)) == -1)
@@ -93,7 +93,7 @@ public:
 
 		memset(&sa,0,sizeof(sa));
 		sa.sin_family = AF_INET; // hp -> h_addrtype;
-		sa.sin_port = htons( port );
+		sa.sin_port = (int)htons( port );
 		memcpy(&sa.sin_addr,&l,4);
 
 		if (bind(s, (struct sockaddr *)&sa, sizeof(sa)) == -1)
@@ -144,7 +144,14 @@ public:
 			tmp -> SetRemoteAddress( (struct sockaddr *)saptr,len);
 			Handler().Add(tmp);
 			tmp -> SetDeleteByHandler(true);
-			tmp -> OnAccept();
+			if (Handler().OkToAccept())
+			{
+				tmp -> OnAccept();
+			}
+			else
+			{
+				tmp -> SetCloseAndDelete();
+			}
 		}
 	}
 

@@ -37,6 +37,31 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define DEB(x) x
 
 
+HttpsGetSocket::HttpsGetSocket(SocketHandler& h,const std::string& url_in,const std::string& filename)
+:HttpsSocket(h)
+,m_fil(NULL)
+,m_bComplete(false)
+,m_content_length(0)
+,m_content_ptr(0)
+{
+	url_this(url_in,m_host,m_port,m_url,m_to_file);
+	if (filename.size())
+	{
+		m_to_file = filename;
+	}
+	if (!Open(m_host,m_port))
+	{
+		if (!Connecting())
+		{
+			fprintf(stderr,"connect() failed\n");
+DEB(			printf("connect() failed\n");)
+			SetCloseAndDelete();
+		}
+	}
+	SetLineProtocol();
+}
+
+
 HttpsGetSocket::HttpsGetSocket(SocketHandler& h,const std::string& host,port_t port,const std::string& url,const std::string& to_file)
 :HttpsSocket(h)
 ,m_host(host)
@@ -76,6 +101,11 @@ void HttpsGetSocket::OnSSLInitDone()
 		"Accept-Language: en-us,en;q=0.5\n"
 		"Accept-Encoding: gzip,deflate\n"
 		"Accept-Charset: ISO-8859-1,utf-8;q=0.7,*;q=0.7\n"
+#ifdef _VERSION
+		"User-agent: C++Sockets/" _VERSION "\n"
+#else
+		"User-agent: C++Sockets/1.1\n"
+#endif
 		"Host: " + m_host + ":" + Utility::l2string(m_port) + "\n"
 		"\n";
 DEB(		printf("%s\n",str.c_str());)
@@ -258,5 +288,33 @@ void HttpsGetSocket::InitAsClient()
 {
 	InitializeContext(SSLv23_method());
 }
+
+
+void HttpsGetSocket::url_this(const std::string& url_in,std::string& host,port_t& port,std::string& url,std::string& file)
+{
+	Parse pa(url_in,"/");
+	pa.getword(); // http
+	host = pa.getword();
+	if (strstr(host.c_str(),":"))
+	{
+		Parse pa(host,":");
+		pa.getword(host);
+		port = pa.getvalue();
+	}
+	else
+	{
+		port = 80;
+	}
+	url = "/" + pa.getrest();
+	{
+		Parse pa(url,"/");
+		std::string tmp = pa.getword();
+		while (tmp.size())
+		{
+			file = tmp;
+			tmp = pa.getword();
+		}
+	}
+} // url_this
 
 

@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define _UTILITY_H
 
 #include <string>
+#include <stdint.h>
 #include "Base64.h"
 
 
@@ -51,7 +52,31 @@ namespace Utility
 		str = tmp;
 		return str;
 	}
-
+	inline std::string bigint2string(uint64_t l)
+	{
+		std::string str;
+		uint64_t tmp = l;
+		while (tmp)
+		{
+			uint64_t a = tmp % 10;
+			str = (char)(a + 48) + str;
+			tmp /= 10;
+		}
+		if (!str.size())
+		{
+			str = "0";
+		}
+		return str;
+	}
+	inline uint64_t atoi64(const std::string& str) 
+	{
+		uint64_t l = 0;
+		for (size_t i = 0; i < str.size(); i++)
+		{
+			l = l * 10 + str[i] - 48;
+		}
+		return l;
+	}
 }
 
 //using Utility::l2string;
