@@ -1,4 +1,4 @@
-VERSION =	1.0.1
+VERSION =	1.1
 
 INCLUDE =	-I/usr/devel/include -I.
 CFLAGS =	-Wall -g -O2 $(INCLUDE) -MD
@@ -17,7 +17,10 @@ OBJS =		CircularBuffer.o \
 		HttpGetSocket.o \
 		SSLSocket.o \
 		HttpsGetSocket.o \
-		CTcpSocket.o 
+		CTcpSocket.o \
+		Uid.o \
+		HTTPSocket.o \
+		HttpsSocket.o
 
 PROGS =		
 
@@ -42,4 +45,4 @@ tar:		clean
 		rm -f Mutex.*
 		rm -f SocketThread.*
 		./mkdot.sh
-		tar czf /usr/local/apache/www.alhem.net/htdocs/Sockets/Sockets-$(VERSION).tar.gz *.h *.cpp Makefile
+		tar czf /usr/local/apache/www.alhem.net/htdocs/Sockets/Sockets-$(VERSION).tar.gz *.h *.cpp Makefile Project/*.dsp

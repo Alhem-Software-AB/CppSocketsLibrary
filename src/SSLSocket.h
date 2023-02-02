@@ -54,8 +54,8 @@ public:
 	int Close();
 
 protected:
-	void InitializeContext();
-	void InitializeContext(const std::string& keyfile,const std::string& password);
+	void InitializeContext(SSL_METHOD * = NULL);
+	void InitializeContext(const std::string& keyfile,const std::string& password,SSL_METHOD * = NULL);
 
 private:
 	bool CheckCertificateChain(const std::string& );

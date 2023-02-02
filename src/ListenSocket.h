@@ -38,8 +38,8 @@ public:
 	}
 
 	int Bind(port_t port,int depth = 3) {
-		struct sockaddr_in sa;
 		ipaddr_t l = 0;
+		struct sockaddr_in sa;
 		SOCKET s;
 
 		s = CreateSocket(SOCK_STREAM);
@@ -52,7 +52,49 @@ public:
 		memset(&sa,0,sizeof(sa));
 		sa.sin_family = AF_INET; // hp -> h_addrtype;
 		sa.sin_port = htons( port );
-		memmove(&sa.sin_addr,&l,4);
+		memcpy(&sa.sin_addr,&l,4);
+
+		if (bind(s, (struct sockaddr *)&sa, sizeof(sa)) == -1)
+		{
+			perror("bind() failed");
+			closesocket(s);
+			return -1;
+		}
+
+		if (listen(s, depth) == -1)
+		{
+			perror("listen() failed");
+			closesocket(s);
+			return -1;
+		}
+
+		m_port = port;
+		m_depth = depth;
+
+		Attach(s);
+		return 0;
+	}
+	int Bind(const std::string& adapter,port_t port,int depth = 3) {
+		ipaddr_t l = 0;
+		ipaddr_t tmp;
+		if (u2ip(adapter,tmp))
+		{
+			l = tmp;
+		}
+		struct sockaddr_in sa;
+		SOCKET s;
+
+		s = CreateSocket(SOCK_STREAM);
+		if (s == -1)
+		{
+			perror("CreateSocket() failed");
+			return -1;
+		}
+
+		memset(&sa,0,sizeof(sa));
+		sa.sin_family = AF_INET; // hp -> h_addrtype;
+		sa.sin_port = htons( port );
+		memcpy(&sa.sin_addr,&l,4);
 
 		if (bind(s, (struct sockaddr *)&sa, sizeof(sa)) == -1)
 		{

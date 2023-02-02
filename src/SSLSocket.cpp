@@ -316,7 +316,7 @@ DEB(		printf(" %d bytes written\n",n);)
 }
 
 
-void SSLSocket::InitializeContext()
+void SSLSocket::InitializeContext(SSL_METHOD *meth_in)
 {
 	SSL_METHOD *meth;
 
@@ -332,7 +332,7 @@ void SSLSocket::InitializeContext()
 	}
 
 	/* Create our context*/
-	meth = SSLv3_method();
+	meth = meth_in ? meth_in : SSLv3_method();
 	m_context = SSL_CTX_new(meth);
 
 	/* Load the CAs we trust*/
@@ -354,7 +354,7 @@ DEB(		printf("Couldn't load randomness\n");)
 }
 
 
-void SSLSocket::InitializeContext(const std::string& keyfile,const std::string& password)
+void SSLSocket::InitializeContext(const std::string& keyfile,const std::string& password,SSL_METHOD *meth_in)
 {
 	SSL_METHOD *meth;
 
@@ -370,7 +370,7 @@ void SSLSocket::InitializeContext(const std::string& keyfile,const std::string& 
 	}
 
 	/* Create our context*/
-	meth = SSLv3_method();
+	meth = meth_in ? meth_in : SSLv3_method();
 	m_context = SSL_CTX_new(meth);
 
 	/* Load our keys and certificates*/

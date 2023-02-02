@@ -24,22 +24,24 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define _HTTPGETSOCKET_H
 
 #include <string>
-#include "TcpSocket.h"
+#include "HTTPSocket.h"
 #include "Utility.h"
 
 
-class HttpGetSocket : public TcpSocket
+class HttpGetSocket : public HTTPSocket
 {
 public:
 	HttpGetSocket(SocketHandler&,const std::string&,port_t,const std::string&,const std::string&);
 	~HttpGetSocket();
 
 	void OnConnect();
-	void OnLine(const std::string&);
 	void OnContent();
 	void OnDelete();
 
-	void ReadLine();
+	void OnFirst();
+	void OnHeader(const std::string& ,const std::string& );
+	void OnHeaderComplete();
+	void OnData(const char *,size_t);
 
 	bool Complete() { return m_bComplete; }
 
@@ -51,10 +53,10 @@ private:
 	port_t m_port;
 	std::string m_url;
 	std::string m_to_file;
+	//
 	FILE *m_fil;
 	bool m_bComplete;
 	//
-	bool m_bHeader; // reading header
 	size_t m_content_length;
 	std::string m_content_type;
 	size_t m_content_ptr;

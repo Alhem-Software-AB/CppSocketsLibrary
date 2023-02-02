@@ -34,32 +34,17 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "Parse.h"
 #include "HttpsGetSocket.h"
 
-/*
-#ifdef _DEBUG
-#define DEB(x) x
-#else
-#define DEB(x)
-#endif
-*/
-/*
-#define DEB(x) { \
-	FILE *fil = fopen("C:\\deb.log","at"); \
-	x; \
-	fclose(fil); \
-}
-*/
 #define DEB(x) x
 
 
 HttpsGetSocket::HttpsGetSocket(SocketHandler& h,const std::string& host,port_t port,const std::string& url,const std::string& to_file)
-:SSLSocket(h)
+:HttpsSocket(h)
 ,m_host(host)
 ,m_port(port)
 ,m_url(url)
 ,m_to_file(to_file)
 ,m_fil(NULL)
 ,m_bComplete(false)
-,m_bHeader(true)
 ,m_content_length(0)
 ,m_content_ptr(0)
 {
@@ -68,7 +53,7 @@ HttpsGetSocket::HttpsGetSocket(SocketHandler& h,const std::string& host,port_t p
 		if (!Connecting())
 		{
 			fprintf(stderr,"connect() failed\n");
-DEB(		printf("connect() failed\n");)
+DEB(			printf("connect() failed\n");)
 			SetCloseAndDelete();
 		}
 	}
@@ -83,31 +68,6 @@ HttpsGetSocket::~HttpsGetSocket()
 }
 
 
-#ifdef HEADERERQWR
-
-/*
-GET /mimi.html HTTP/1.0
-User-Agent: Mozilla/5.0 (Windows; U; Win98; en-US; rv:1.4) Gecko/20030529
-Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,video/x-mng,image/png,image/jpeg,image/gif;q=0.2,*/*;q=0.1
-Accept-Language: en-us,en;q=0.5
-Accept-Encoding: gzip,deflate
-Accept-Charset: ISO-8859-1,utf-8;q=0.7,*;q=0.7
-Keep-Alive: 300
-Via: 1.1 g2.alhem.net:3128 (squid/2.5.STABLE2)
-X-Forwarded-For: 192.168.8.4
-Host: 192.168.7.3:8080
-Cache-Control: max-age=259200
-Connection: keep-alive
-*/
-
-#endif
-
-void HttpsGetSocket::OnConnect()
-{
-	SSLSocket::OnConnect();
-}
-
-
 void HttpsGetSocket::OnSSLInitDone()
 {
 	std::string str =
@@ -118,11 +78,12 @@ void HttpsGetSocket::OnSSLInitDone()
 		"Accept-Charset: ISO-8859-1,utf-8;q=0.7,*;q=0.7\n"
 		"Host: " + m_host + ":" + Utility::l2string(m_port) + "\n"
 		"\n";
-DEB(	printf("%s\n",str.c_str());)
+DEB(		printf("%s\n",str.c_str());)
 	Send(str);
 }
 
 
+/*
 #define BUFSIZE 5000
 void HttpsGetSocket::ReadLine()
 {
@@ -213,6 +174,7 @@ DEB(			printf("couldn't open '%s' for writing\n",m_to_file.c_str());)
 		}
 	}
 }
+*/
 
 
 void HttpsGetSocket::OnContent()
@@ -236,6 +198,65 @@ DEB(	printf("OnDelete()\n");)
 	{
 		OnContent();
 	}
+}
+
+
+void HttpsGetSocket::OnFirst()
+{
+	if (!IsResponse())
+	{
+		SetCloseAndDelete();
+	}
+	if (GetStatus() != "200")
+	{
+		printf("Failed (status %s): %s\n",GetStatus().c_str(),GetStatusText().c_str());
+		SetCloseAndDelete();
+	}
+}
+
+
+void HttpsGetSocket::OnHeader(const std::string& key,const std::string& value)
+{
+	if (!strcasecmp(key.c_str(),"content-type"))
+	{
+		m_content_type = value;
+	}
+	else
+	if (!strcasecmp(key.c_str(),"content-length"))
+	{
+		m_content_length = atol(value.c_str());
+	}
+}
+
+
+void HttpsGetSocket::OnHeaderComplete()
+{
+	m_fil = fopen(m_to_file.c_str(),"wb");
+	if (!m_fil)
+	{
+DEB(		fprintf(stderr,"couldn't open '%s' for writing\n",m_to_file.c_str());)
+		SetCloseAndDelete();
+	}
+}
+
+
+void HttpsGetSocket::OnData(const char *buf,size_t len)
+{
+	if (m_fil)
+	{
+		fwrite(buf,1,len,m_fil);
+	}
+	m_content_ptr += len;
+	if (m_content_length > 0 && m_content_ptr == m_content_length)
+	{
+		OnContent();
+	}
+}
+
+
+void HttpsGetSocket::InitAsClient()
+{
+	InitializeContext(SSLv23_method());
 }
 
 

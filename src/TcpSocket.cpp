@@ -167,13 +167,14 @@ DEB(	printf("Connecting to: %s:%d\n",ipstr.c_str(),port);)
 }
 
 
+#define BUFSIZE_READ 1640
 void TcpSocket::OnRead()
 {
 	int n = ibuf.Space();
-	char buf[1024];
+	char buf[BUFSIZE_READ];
 	if (!n)
 		return; // bad
-	n = readsocket(GetSocket(),buf,(n < 1024) ? n : 1024);
+	n = readsocket(GetSocket(),buf,(n < BUFSIZE_READ) ? n : BUFSIZE_READ);
 	if (n == -1)
 	{
 		SetCloseAndDelete(true); // %!

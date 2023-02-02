@@ -34,3 +34,14 @@ Version 1.0
 Version 1.0.1
 --------------------------
 
+Version 1.1
+--------------------------
+10a11,14
+> HTTPSocket.cpp
+> HTTPSocket.h
+> HttpsSocket.cpp
+> HttpsSocket.h
+28a33,34
+> Uid.cpp
+> Uid.h
+
