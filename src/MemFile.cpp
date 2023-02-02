@@ -49,6 +49,7 @@ MemFile::MemFile()
 ,m_base(new block_t)
 ,m_current_read(m_base)
 ,m_current_write(m_base)
+,m_current_write_nr(0)
 ,m_read_ptr(0)
 ,m_write_ptr(0)
 ,m_b_read_caused_eof(false)
@@ -62,6 +63,7 @@ MemFile::MemFile(const std::string& path)
 ,m_base(m_files[path])
 ,m_current_read(NULL)
 ,m_current_write(NULL)
+,m_current_write_nr(0)
 ,m_read_ptr(0)
 ,m_write_ptr(0)
 ,m_b_read_caused_eof(false)
@@ -98,7 +100,6 @@ void MemFile::fclose()
 }
 
 
-/// \todo: fix for reads much larger than BLOCKSIZE
 size_t MemFile::fread(char *ptr, size_t size, size_t nmemb) const
 {
 	size_t p = m_read_ptr % BLOCKSIZE;
@@ -124,6 +125,21 @@ size_t MemFile::fread(char *ptr, size_t size, size_t nmemb) const
 		size_t sz2 = sz - sz1;
 		memcpy(ptr, m_current_read -> data + p, sz1);
 		m_read_ptr += sz1;
+		while (sz2 > BLOCKSIZE)
+		{
+			if (m_current_read -> next)
+			{
+				m_current_read = m_current_read -> next;
+				memcpy(ptr + sz1, m_current_read -> data, BLOCKSIZE);
+				m_read_ptr += BLOCKSIZE;
+				sz1 += BLOCKSIZE;
+				sz2 -= BLOCKSIZE;
+			}
+			else
+			{
+				return sz1;
+			}
+		}
 		if (m_current_read -> next)
 		{
 			m_current_read = m_current_read -> next;
@@ -139,11 +155,18 @@ size_t MemFile::fread(char *ptr, size_t size, size_t nmemb) const
 }
 
 
-/// \todo: fix for writes that are much larger than BLOCKSIZE
 size_t MemFile::fwrite(const char *ptr, size_t size, size_t nmemb)
 {
 	size_t p = m_write_ptr % BLOCKSIZE;
+	int nr = m_write_ptr / BLOCKSIZE;
 	size_t sz = size * nmemb;
+	if (m_current_write_nr < nr)
+	{
+		block_t *next = new block_t;
+		m_current_write -> next = next;
+		m_current_write = next;
+		m_current_write_nr++;
+	}
 	if (p + sz <= BLOCKSIZE)
 	{
 		memcpy(m_current_write -> data + p, ptr, sz);
@@ -154,18 +177,40 @@ size_t MemFile::fwrite(const char *ptr, size_t size, size_t nmemb)
 		size_t sz1 = BLOCKSIZE - p; // size left
 		size_t sz2 = sz - sz1;
 		memcpy(m_current_write -> data + p, ptr, sz1);
+		m_write_ptr += sz1;
+		while (sz2 > BLOCKSIZE)
+		{
+			if (m_current_write -> next)
+			{
+				m_current_write = m_current_write -> next;
+				m_current_write_nr++;
+			}
+			else
+			{
+				block_t *next = new block_t;
+				m_current_write -> next = next;
+				m_current_write = next;
+				m_current_write_nr++;
+			}
+			memcpy(m_current_write -> data, ptr + sz1, BLOCKSIZE);
+			m_write_ptr += BLOCKSIZE;
+			sz1 += BLOCKSIZE;
+			sz2 -= BLOCKSIZE;
+		}
 		if (m_current_write -> next)
 		{
 			m_current_write = m_current_write -> next;
+			m_current_write_nr++;
 		}
 		else
 		{
 			block_t *next = new block_t;
 			m_current_write -> next = next;
 			m_current_write = next;
+			m_current_write_nr++;
 		}
 		memcpy(m_current_write -> data, ptr + sz1, sz2);
-		m_write_ptr += sz;
+		m_write_ptr += sz2;
 	}
 	return sz;
 }
@@ -232,10 +277,12 @@ void MemFile::reset_write()
 {
 	m_write_ptr = 0;
 	m_current_write = m_base;
+	m_current_write_nr = 0;
 }
 
 
 #ifdef SOCKETS_NAMESPACE
 }
 #endif
+
 

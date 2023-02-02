@@ -34,7 +34,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <map>
 #include "IFile.h"
 
-#define BLOCKSIZE 60000
+#define BLOCKSIZE 32768
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
@@ -83,6 +83,7 @@ static	std::map<std::string,block_t *> m_files;
 	block_t *m_base;
 	mutable block_t *m_current_read;
 	block_t *m_current_write;
+	int m_current_write_nr;
 	mutable size_t m_read_ptr;
 	size_t m_write_ptr;
 	mutable bool m_b_read_caused_eof;
@@ -96,3 +97,4 @@ static	std::map<std::string,block_t *> m_files;
 #endif
 
 #endif // _SOCKETS_MemFile_H
+

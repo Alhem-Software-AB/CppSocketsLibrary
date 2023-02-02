@@ -103,3 +103,4 @@ private:
 
 #endif // ENABLE_RESOLVER
 #endif // _SOCKETS_ResolvSocket_H
+

@@ -54,6 +54,7 @@ protected:
 	//
 	HttpRequest m_req;
 	HttpResponse m_res;
+	void Reset();
 
 private:
 	HttpBaseSocket& operator=(const HttpBaseSocket& ) { return *this; } // assignment operator
@@ -69,3 +70,4 @@ private:
 #endif
 
 #endif // _HttpBaseSocket_H
+

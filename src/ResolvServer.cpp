@@ -94,3 +94,4 @@ bool ResolvServer::Ready()
 #endif
 
 #endif // ENABLE_RESOLVER
+

@@ -107,7 +107,8 @@ void HttpBaseSocket::OnData(const char *buf,size_t sz)
 void HttpBaseSocket::Respond()
 {
 	m_res.SetHeader("connection", "close");
-	SetHttpVersion( m_req.HttpVersion() );
+
+	SetHttpVersion( m_res.HttpVersion() );
 	SetStatus( Utility::l2string(m_res.HttpStatusCode()) );
 	SetStatusText( m_res.HttpStatusMsg() );
 
@@ -144,6 +145,10 @@ void HttpBaseSocket::Respond()
 			{
 				SetCloseAndDelete();
 			}
+			else
+			{
+				Reset();
+			}
 		}
 	}
 }
@@ -173,12 +178,26 @@ void HttpBaseSocket::OnTransferLimit()
 			{
 				SetCloseAndDelete();
 			}
+			else
+			{
+				Reset();
+			}
 		}
 	}
+}
+
+
+void HttpBaseSocket::Reset()
+{
+	HTTPSocket::Reset();
+	m_req.Reset();
+	m_res.Reset();
+	m_body_size_left = 0;
 }
 
 
 #ifdef SOCKETS_NAMESPACE
 } // namespace SOCKETS_NAMESPACE {
 #endif
+
 

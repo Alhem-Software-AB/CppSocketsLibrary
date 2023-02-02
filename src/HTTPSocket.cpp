@@ -123,7 +123,7 @@ void HTTPSocket::OnLine(const std::string& line)
 				m_query_string = "";
 			}
 			m_http_version = pa.getword();
-			m_b_http_1_1 = m_http_version.substr(4) == "/1.1";
+			m_b_http_1_1 = m_http_version.size() > 4 && m_http_version.substr(4) == "/1.1";
 			m_b_keepalive = m_b_http_1_1;
 			m_request = true;
 		}
@@ -237,6 +237,11 @@ void HTTPSocket::Reset()
         {
                 string_m::iterator it = m_response_header.begin();
                 m_response_header.erase(it);
+        }
+        while (m_response_header_append.size())
+        {
+                std::list<std::pair<std::string, std::string> >::iterator it = m_response_header_append.begin();
+                m_response_header_append.erase(it);
         }
 
 }
@@ -384,4 +389,5 @@ void HTTPSocket::url_this(const std::string& url_in,std::string& protocol,std::s
 #ifdef SOCKETS_NAMESPACE
 }
 #endif
+
 

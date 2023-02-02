@@ -77,6 +77,8 @@ public:
 
 	const std::map<std::string, std::string>& Headers() const;
 
+	virtual void Reset();
+
 private:
 	HttpTransaction(const HttpTransaction&);
 	HttpTransaction& operator=(const HttpTransaction&);
@@ -92,3 +94,4 @@ private:
 #endif
 
 #endif // _SOCKETS_HttpTransaction_H
+

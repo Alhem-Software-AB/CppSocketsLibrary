@@ -269,7 +269,23 @@ const std::string& HttpdCookies::expiredatetime() const
 }
 
 
+void HttpdCookies::Reset()
+{
+	for (cookie_v::iterator it = m_cookies.begin(); it != m_cookies.end(); it++)
+	{
+		COOKIE *p = *it;
+		delete p;
+	}
+	while (!m_cookies.empty())
+	{
+		m_cookies.erase(m_cookies.begin());
+	}
+	m_date = "";
+}
+
+
 #ifdef SOCKETS_NAMESPACE
 }
 #endif
+
 

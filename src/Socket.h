@@ -735,3 +735,4 @@ static	WSAInitializer m_winsock_init; ///< Winsock initialization singleton clas
 
 
 #endif // _SOCKETS_Socket_H
+

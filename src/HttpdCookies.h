@@ -80,6 +80,8 @@ public:
 
 	cookie_v& GetHttpdCookies() { return m_cookies; }
 
+	void Reset();
+
 private:
 	cookie_v m_cookies;
 	mutable std::string m_date;
@@ -91,3 +93,4 @@ private:
 #endif
 
 #endif // _SOCKETS_HttpdCookies_H
+

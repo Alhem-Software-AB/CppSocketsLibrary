@@ -231,3 +231,4 @@ void SmtpdSocket::OnLine(const std::string& line)
 #ifdef SOCKETS_NAMESPACE
 } // namespace SOCKETS_NAMESPACE {
 #endif
+

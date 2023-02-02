@@ -82,3 +82,4 @@ IEventOwner *Event::GetFrom()
 #ifdef SOCKETS_NAMESPACE
 }
 #endif
+

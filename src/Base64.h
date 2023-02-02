@@ -74,3 +74,4 @@ static	const char rstr[128];
 #endif
 
 #endif // _SOCKETS_Base64_H
+

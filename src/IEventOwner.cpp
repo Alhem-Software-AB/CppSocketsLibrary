@@ -76,3 +76,4 @@ void IEventOwner::RemoveEvent(long eid)
 #ifdef SOCKETS_NAMESPACE
 }
 #endif
+

@@ -302,7 +302,42 @@ const HttpdCookies& HttpRequest::Cookies() const
 }
 
 
+// --------------------------------------------------------------------------------------
+void HttpRequest::Reset()
+{
+	HttpTransaction::Reset();
+	m_method = "";
+	m_protocol = "";
+	m_req_uri = "";
+	m_remote_addr = "";
+	m_remote_host = "";
+	m_server_name = "";
+	m_server_port = 0;
+	m_is_ssl = false;
+	while (!m_attribute.empty())
+	{
+		m_attribute.erase(m_attribute.begin());
+	}
+	if (m_body_file)
+	{
+		delete m_body_file;
+		m_body_file = NULL;
+	}
+	if (m_form)
+	{
+		delete m_form;
+		m_form = NULL;
+	}
+	m_cookies.Reset();
+	while (!m_cookie.empty())
+	{
+		m_cookie.erase(m_cookie.begin());
+	}
+}
+
+
 #ifdef SOCKETS_NAMESPACE
 } // namespace SOCKETS_NAMESPACE {
 #endif
+
 

@@ -45,3 +45,4 @@ const std::string Exception::ToString() const
 #ifdef SOCKETS_NAMESPACE
 } // namespace SOCKETS_NAMESPACE {
 #endif
+

@@ -93,6 +93,8 @@ public:
 
 	const IFile *BodyFile() const { return m_body_file; }
 
+	void Reset();
+
 private:
 	HttpRequest(const HttpRequest&);
 	HttpRequest& operator=(const HttpRequest&);
@@ -120,3 +122,4 @@ private:
 #endif
 
 #endif // _SOCKETS_HttpRequest_H
+

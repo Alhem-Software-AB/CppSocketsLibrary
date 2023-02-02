@@ -49,7 +49,7 @@ clean:
 HTDOCS =	/usr/local/apache/www.alhem.net/htdocs
 
 diff:
-		diff -C 3 /usr/src/Sockets-$(DIFF_VERSION) . | \
+		diff -b -B -C 3 /usr/src/Sockets-$(DIFF_VERSION) . | \
 			/usr/local/bin/d2html > \
 			$(HTDOCS)/Sockets/latest_diff.html
 

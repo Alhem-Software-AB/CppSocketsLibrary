@@ -47,6 +47,7 @@ namespace SOCKETS_NAMESPACE {
 // --------------------------------------------------------------------------------------
 HttpResponse::HttpResponse(HttpRequest& req) : HttpTransaction()
 , m_req(req)
+, m_http_version( req.HttpVersion() )
 , m_http_status_code(0)
 , m_file( new MemFile )
 {
@@ -65,6 +66,21 @@ const HttpRequest& HttpResponse::Request() const
 {
 	return m_req;
 }
+
+
+// --------------------------------------------------------------------------------------
+void HttpResponse::SetHttpVersion(const std::string& value)
+{
+	m_http_version = value;
+}
+
+
+// --------------------------------------------------------------------------------------
+const std::string& HttpResponse::HttpVersion() const
+{
+	return m_http_version;
+}
+
 
 
 // --------------------------------------------------------------------------------------
@@ -168,6 +184,27 @@ void HttpResponse::SetFile( const std::string& path )
 }
 
 
+// --------------------------------------------------------------------------------------
+void HttpResponse::Reset()
+{
+	HttpTransaction::Reset();
+	m_req.Reset();
+	m_http_version = "";
+	m_http_status_code = 0;
+	m_http_status_msg = "";
+	while (!m_cookie.empty())
+	{
+		m_cookie.erase(m_cookie.begin());
+	}
+	if (m_file)
+	{
+		delete m_file;
+		m_file = new MemFile;
+	}
+}
+
+
 #ifdef SOCKETS_NAMESPACE
 } // namespace SOCKETS_NAMESPACE {
 #endif
+

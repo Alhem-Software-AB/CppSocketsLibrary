@@ -240,7 +240,18 @@ const std::map<std::string, std::string>& HttpTransaction::Headers() const
 }
 
 
+// --------------------------------------------------------------------------------------
+void HttpTransaction::Reset()
+{
+	while (!m_header.empty())
+	{
+		m_header.erase(m_header.begin());
+	}
+}
+
+
 #ifdef SOCKETS_NAMESPACE
 } // namespace SOCKETS_NAMESPACE {
 #endif
+
 

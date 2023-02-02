@@ -1419,3 +1419,4 @@ void SocketHandler::Trigger(int id, Socket::TriggerData& data, bool erase)
 #ifdef SOCKETS_NAMESPACE
 }
 #endif
+

@@ -42,6 +42,10 @@ public:
 
 	const HttpRequest& Request() const;
 
+	/** HTTP/1.x */
+	void SetHttpVersion(const std::string& value);
+	const std::string& HttpVersion() const;
+
 	void SetHttpStatusCode(int value);
 	int HttpStatusCode() const;
 
@@ -61,8 +65,11 @@ public:
 	/** Replace memfile with file on disk, opened for read. */
 	void SetFile( const std::string& path );
 
+	void Reset();
+
 private:
 	HttpRequest& m_req;
+	std::string m_http_version;
 	int m_http_status_code;
 	std::string m_http_status_msg;
 	std::map<std::string, std::string> m_cookie;
@@ -76,3 +83,4 @@ private:
 #endif
 
 #endif // _SOCKETS_HttpResponse_H
+
