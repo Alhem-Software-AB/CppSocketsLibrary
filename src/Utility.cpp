@@ -255,7 +255,7 @@ bool Utility::u2ip(const std::string& str, ipaddr_t& l)
 	}
 	else
 	{
-#ifdef _WIN32
+#if defined( _WIN32) || defined(MACOSX)
 		struct hostent *he = gethostbyname( str.c_str() );
 		if (!he)
 		{
