@@ -3,6 +3,7 @@
  **	\author grymse@alhem.net
 **/
 /*
+Copyright (C) 2015-2023  Alhem Software AB
 Copyright (C) 2010-2011  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL, with
@@ -113,7 +114,11 @@ void SocketHandlerEp::ISocketHandler_Add(Socket *p,bool bRead,bool bWrite)
 	struct epoll_event stat;
 	SOCKET s = p -> GetSocket();
 	stat.data.ptr = p;
-	stat.events = (bRead ? EPOLLIN : 0) | (bWrite ? EPOLLOUT : 0);
+	stat.events = 0;
+	if (bRead)
+		stat.events |= EPOLLIN;
+	if (bWrite)
+		stat.events |= EPOLLOUT;
 	if (epoll_ctl(m_epoll, EPOLL_CTL_ADD, s, &stat) == -1)
 	{
 		LogError(NULL, "epoll_ctl: EPOLL_CTL_ADD", Errno, StrError(Errno));
@@ -126,7 +131,11 @@ void SocketHandlerEp::ISocketHandler_Mod(Socket *p,bool r,bool w)
 	struct epoll_event stat;
 	SOCKET s = p -> GetSocket();
 	stat.data.ptr = p;
-	stat.events = (r ? EPOLLIN : 0) | (w ? EPOLLOUT : 0);
+	stat.events = 0;
+	if (r)
+		stat.events |= EPOLLIN;
+	if (w)
+		stat.events |= EPOLLOUT;
 	if (epoll_ctl(m_epoll, EPOLL_CTL_MOD, s, &stat) == -1)
 	{
 //		LogError(NULL, "epoll_ctl: EPOLL_CTL_MOD", Errno, StrError(Errno));
@@ -151,9 +160,9 @@ int SocketHandlerEp::ISocketHandler_Select(struct timeval *tsel)
 	int n;
 	if (m_b_use_mutex)
 	{
-		m_mutex.Unlock();
+		GetMutex().Unlock();
 		n = epoll_wait(m_epoll, m_events, MAX_EVENTS_EP_WAIT, tsel ? tsel -> tv_sec * 1000 + tsel -> tv_usec / 1000 : -1);
-		m_mutex.Lock();
+		GetMutex().Lock();
 	}
 	else
 	{

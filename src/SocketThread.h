@@ -4,6 +4,7 @@
  **	\author grymse@alhem.net
 **/
 /*
+Copyright (C) 2015-2023  Alhem Software AB
 Copyright (C) 2011  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL.
@@ -54,7 +55,7 @@ public:
 	void Run();
 
 private:
-	SocketThread(const SocketThread& s) : m_socket(s.m_socket) {}
+	SocketThread(const SocketThread& s) : Thread(s), m_socket(s.m_socket) {}
 	SocketThread& operator=(const SocketThread& ) { return *this; }
 
 	SocketHandler m_h;

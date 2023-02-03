@@ -4,6 +4,7 @@
  **	\author grymse@alhem.net
 **/
 /*
+Copyright (C) 2015-2023  Alhem Software AB
 Copyright (C) 2007-2011  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL, with
@@ -36,6 +37,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "HttpTransaction.h"
 #include "HttpdCookies.h"
 #include "IFile.h"
+#include "sockets_stdptr.h"
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
@@ -124,8 +126,8 @@ private:
 	bool m_is_ssl;
 	Utility::ncmap<std::string> m_attribute;
 	std::string m_null;
-	mutable std::auto_ptr<IFile> m_body_file;
-	mutable std::auto_ptr<HttpdForm> m_form;
+	mutable USING_AUTOPTR_AS<IFile> m_body_file;
+	mutable USING_AUTOPTR_AS<HttpdForm> m_form;
 	HttpdCookies m_cookies;
 	Utility::ncmap<std::string> m_cookie;
 

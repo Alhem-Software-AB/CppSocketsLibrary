@@ -3,6 +3,7 @@
  **	\author grymse@alhem.net
 **/
 /*
+Copyright (C) 2015-2023  Alhem Software AB
 Copyright (C) 2004-2011  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL, with
@@ -39,6 +40,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <map>
 #include <string>
 #include <cstring>
+#include "sockets_stdptr.h"
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
@@ -201,7 +203,7 @@ public:
 	/** Get current time in sec/microseconds. */
 	static void GetTime(struct timeval *);
 
-	static std::auto_ptr<SocketAddress> CreateAddress(struct sockaddr *,socklen_t);
+	static USING_AUTOPTR_AS<SocketAddress> CreateAddress(struct sockaddr *,socklen_t);
 
 	static unsigned long ThreadID();
 

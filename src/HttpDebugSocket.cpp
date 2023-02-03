@@ -2,6 +2,7 @@
  **	\date  2004-10-08
 **/
 /*
+Copyright (C) 2015-2023  Alhem Software AB
 Copyright (C) 2004-2011  Anders Hedstrom (grymse@alhem.net)
 
 This library is made available under the terms of the GNU GPL, with

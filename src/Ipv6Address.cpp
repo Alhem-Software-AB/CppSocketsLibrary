@@ -4,6 +4,7 @@
  **	\author grymse@alhem.net
 **/
 /*
+Copyright (C) 2015-2023  Alhem Software AB
 Copyright (C) 2007-2011  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL, with
@@ -264,9 +265,9 @@ bool Ipv6Address::operator==(SocketAddress& a)
 }
 
 
-std::auto_ptr<SocketAddress> Ipv6Address::GetCopy()
+USING_AUTOPTR_AS<SocketAddress> Ipv6Address::GetCopy()
 {
-	return std::auto_ptr<SocketAddress>(new Ipv6Address(m_addr));
+	return USING_AUTOPTR_AS<SocketAddress>(new Ipv6Address(m_addr));
 }
 
 

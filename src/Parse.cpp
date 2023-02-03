@@ -4,6 +4,7 @@
  **/
 
 /*
+Copyright (C) 2015-2023  Alhem Software AB
 Copyright (C) 1999-2011  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL, with

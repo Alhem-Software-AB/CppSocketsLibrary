@@ -3,6 +3,7 @@
  **	\author grymse@alhem.net
 **/
 /*
+Copyright (C) 2015-2023  Alhem Software AB
 Copyright (C) 2004-2011  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL, with
@@ -49,7 +50,7 @@ namespace SOCKETS_NAMESPACE {
 
 
 MemFile::MemFile()
-:m_src(m_src)
+:m_src(NULL)
 ,m_src_valid(false)
 ,m_base(new block_t)
 ,m_current_read(m_base)
@@ -65,7 +66,7 @@ MemFile::MemFile()
 
 
 MemFile::MemFile(MemFile& s)
-:m_src(s)
+:m_src(&s)
 ,m_src_valid(true)
 ,m_base(s.m_base)
 ,m_current_read(m_base)
@@ -78,12 +79,12 @@ MemFile::MemFile(MemFile& s)
 ,m_ref_decreased(false)
 ,m_path(s.m_path)
 {
-	m_src.Increase();
+	m_src -> Increase();
 }
 
 
 MemFile::MemFile(File& f)
-:m_src(m_src)
+:m_src(NULL)
 ,m_src_valid(false)
 ,m_base(new block_t)
 ,m_current_read(NULL)
@@ -119,7 +120,7 @@ MemFile::~MemFile()
 	}
 	if (m_src_valid && !m_ref_decreased)
 	{
-		m_src.Decrease();
+		m_src -> Decrease();
 		m_ref_decreased = true;
 	}
 }
@@ -135,7 +136,7 @@ void MemFile::fclose() const
 {
 	if (m_src_valid && !m_ref_decreased)
 	{
-		m_src.Decrease();
+		m_src -> Decrease();
 		m_ref_decreased = true;
 	}
 }

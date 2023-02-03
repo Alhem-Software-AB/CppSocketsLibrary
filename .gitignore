@@ -34,3 +34,12 @@
 #
 tmp/
 *~
+Sockets-config
+*.pc
+libSockets.so.*
+Sockets-*.tar.gz
+Makefile.apt
+slask*
+fel
+fil
+

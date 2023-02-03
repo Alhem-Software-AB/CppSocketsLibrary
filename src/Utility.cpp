@@ -3,6 +3,7 @@
  **	\author grymse@alhem.net
 **/
 /*
+Copyright (C) 2015-2023  Alhem Software AB
 Copyright (C) 2004-2011  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL, with
@@ -674,7 +675,7 @@ void Utility::GetTime(struct timeval *p)
 }
 
 
-std::auto_ptr<SocketAddress> Utility::CreateAddress(struct sockaddr *sa,socklen_t sa_len)
+USING_AUTOPTR_AS<SocketAddress> Utility::CreateAddress(struct sockaddr *sa,socklen_t sa_len)
 {
 	switch (sa -> sa_family)
 	{
@@ -682,7 +683,7 @@ std::auto_ptr<SocketAddress> Utility::CreateAddress(struct sockaddr *sa,socklen_
 		if (sa_len == sizeof(struct sockaddr_in))
 		{
 			struct sockaddr_in *p = (struct sockaddr_in *)sa;
-			return std::auto_ptr<SocketAddress>(new Ipv4Address(*p));
+			return USING_AUTOPTR_AS<SocketAddress>(new Ipv4Address(*p));
 		}
 		break;
 #ifdef ENABLE_IPV6
@@ -691,13 +692,13 @@ std::auto_ptr<SocketAddress> Utility::CreateAddress(struct sockaddr *sa,socklen_
 		if (sa_len == sizeof(struct sockaddr_in6))
 		{
 			struct sockaddr_in6 *p = (struct sockaddr_in6 *)sa;
-			return std::auto_ptr<SocketAddress>(new Ipv6Address(*p));
+			return USING_AUTOPTR_AS<SocketAddress>(new Ipv6Address(*p));
 		}
 		break;
 #endif
 #endif
 	}
-	return std::auto_ptr<SocketAddress>(NULL);
+	return USING_AUTOPTR_AS<SocketAddress>();
 }
 
 

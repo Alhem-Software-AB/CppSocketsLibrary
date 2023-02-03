@@ -5,6 +5,7 @@ else
 endif
 
 CFLAGS +=	-Wall -g $(INCLUDE) -MD -D_VERSION='"$(VERSION)"'
+CFLAGS +=	-Wextra
 
 # turn off optimization if compiling with gcc 2.9.x:
 #CFLAGS +=	-O0

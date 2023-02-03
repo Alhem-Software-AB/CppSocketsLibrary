@@ -4,6 +4,7 @@
  **	\author grymse@alhem.net
 **/
 /*
+Copyright (C) 2015-2023  Alhem Software AB
 Copyright (C) 2007-2011  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL, with
@@ -59,8 +60,6 @@ namespace SOCKETS_NAMESPACE {
 HttpRequest::HttpRequest() : HttpTransaction()
 , m_server_port(0)
 , m_is_ssl(false)
-, m_body_file(NULL)
-, m_form(NULL)
 {
 }
 
@@ -70,8 +69,6 @@ HttpRequest::HttpRequest() : HttpTransaction()
 HttpRequest::HttpRequest(FILE *fil) : HttpTransaction()
 , m_server_port(0)
 , m_is_ssl(false)
-, m_body_file(NULL)
-, m_form(NULL)
 {
 	int i = 0;
 DEB(	std::cout << "Initialize HttpRequest from cgi...\n";)
@@ -118,7 +115,7 @@ DEB(			std::cout << " http header '" << key << "' == '" << value << "\n";)
 		++i;
 	}
 DEB(	std::cout << " setup http form\n";)
-	m_form = std::auto_ptr<HttpdForm>(new HttpdForm(fil));
+	m_form = USING_AUTOPTR_AS<HttpdForm>(new HttpdForm(fil));
 }
 #endif
 
@@ -135,8 +132,13 @@ HttpRequest::HttpRequest(const HttpRequest& src) : HttpTransaction(src)
 , m_is_ssl(src.m_is_ssl)
 , m_attribute(src.m_attribute)
 , m_null(src.m_null)
+#ifdef HAVE_CPP11
+, m_body_file(std::move(src.m_body_file))
+, m_form(std::move(src.m_form))
+#else
 , m_body_file(src.m_body_file)
 , m_form(src.m_form)
+#endif
 , m_cookies(src.m_cookies)
 , m_cookie(src.m_cookie)
 {
@@ -162,8 +164,13 @@ HttpRequest& HttpRequest::operator=(const HttpRequest& src)
 	m_is_ssl = src.m_is_ssl;
 	m_attribute = src.m_attribute;
 	m_null = src.m_null;
+#ifdef HAVE_CPP11
+	m_body_file = std::move(src.m_body_file);
+	m_form = std::move(src.m_form);
+#else
 	m_body_file = src.m_body_file;
 	m_form = src.m_form;
+#endif
 	m_cookies = src.m_cookies;
 	m_cookie = src.m_cookie;
 
@@ -335,7 +342,7 @@ DEB(fprintf(stderr, " *** AddCookie '%s' = '%s'\n", name.c_str(), lstr.c_str());
 void HttpRequest::InitBody( size_t sz )
 {
 	if (!m_body_file.get())
-		m_body_file = std::auto_ptr<IFile>(new MemFile);
+		m_body_file = USING_AUTOPTR_AS<IFile>(new MemFile);
 DEB(	else
 		fprintf(stderr, "Body data file already opened\n");)
 }
@@ -368,17 +375,17 @@ void HttpRequest::ParseBody()
 	if ( (it = m_attribute.find("query_string")) != m_attribute.end())
 	{
 		std::string qs = it -> second;
-		m_form = std::auto_ptr<HttpdForm>(new HttpdForm( qs, qs.size() ));
+		m_form = USING_AUTOPTR_AS<HttpdForm>(new HttpdForm( qs, qs.size() ));
 	}
 	else
 	if (m_body_file.get())
 	{
-		m_form = std::auto_ptr<HttpdForm>(new HttpdForm( m_body_file.get(), ContentType(), ContentLength() ));
+		m_form = USING_AUTOPTR_AS<HttpdForm>(new HttpdForm( m_body_file.get(), ContentType(), ContentLength() ));
 	}
 	else
 	{
 		// dummy
-		m_form = std::auto_ptr<HttpdForm>(new HttpdForm( "", 0 ));
+		m_form = USING_AUTOPTR_AS<HttpdForm>(new HttpdForm( "", 0 ));
 	}
 }
 
@@ -415,8 +422,8 @@ void HttpRequest::Reset()
 	{
 		m_attribute.erase(m_attribute.begin());
 	}
-	m_body_file = std::auto_ptr<IFile>(NULL);
-	m_form = std::auto_ptr<HttpdForm>(NULL);
+	m_body_file.reset();
+	m_form.reset();
 	m_cookies.Reset();
 	while (!m_cookie.empty())
 	{

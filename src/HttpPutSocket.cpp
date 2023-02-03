@@ -3,6 +3,7 @@
  **	\author grymse@alhem.net
 **/
 /*
+Copyright (C) 2015-2023  Alhem Software AB
 Copyright (C) 2004-2011  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL, with
@@ -42,6 +43,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "File.h"
 
 #include "HttpPutSocket.h"
+#include "sockets_stdptr.h"
 
 
 #ifdef SOCKETS_NAMESPACE
@@ -104,7 +106,7 @@ void HttpPutSocket::OnConnect()
 	AddResponseHeader( "User-agent", MyUseragent() );
 	SendRequest();
 
-	std::auto_ptr<IFile> fil = std::auto_ptr<IFile>(new File);
+	USING_AUTOPTR_AS<IFile> fil = USING_AUTOPTR_AS<IFile>(new File);
 	if (fil -> fopen(m_filename, "rb"))
 	{
 		size_t n;
