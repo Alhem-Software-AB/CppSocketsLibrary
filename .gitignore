@@ -45,3 +45,4 @@ fil
 demo/simple_http_server
 demo/output.html
 
+demo/tests/http_server_test
