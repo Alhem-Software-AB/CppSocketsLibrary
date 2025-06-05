@@ -57,7 +57,7 @@ Ajp13Socket::Ajp13Socket(ISocketHandler& h) : AjpBaseSocket(h)
 
 
 // --------------------------------------------------------------------------------------
-void Ajp13Socket::OnHeader( short id, short len )
+void Ajp13Socket::OnHeader( short id, short /*len*/ )
 {
 	if (id != 0x1234)
 	{
@@ -119,7 +119,7 @@ DEB(		fprintf(stderr, "More body data received than expected\n");)
 
 
 // --------------------------------------------------------------------------------------
-void Ajp13Socket::ReceiveForwardRequest( const char *buf, size_t sz )
+void Ajp13Socket::ReceiveForwardRequest( const char *buf, size_t /*sz*/ )
 {
 	//
 	int ptr = 0;
@@ -230,19 +230,19 @@ DEB(					fprintf(stderr, "Unknown attribute key: 0x%02x\n", buf[ptr]);)
 
 
 // --------------------------------------------------------------------------------------
-void Ajp13Socket::ReceiveShutdown( const char *buf, size_t sz )
+void Ajp13Socket::ReceiveShutdown( const char * /*buf*/, size_t /*sz*/ )
 {
 }
 
 
 // --------------------------------------------------------------------------------------
-void Ajp13Socket::ReceivePing( const char *buf, size_t sz )
+void Ajp13Socket::ReceivePing( const char * /*buf*/, size_t /*sz*/ )
 {
 }
 
 
 // --------------------------------------------------------------------------------------
-void Ajp13Socket::ReceiveCPing( const char *buf, size_t sz )
+void Ajp13Socket::ReceiveCPing( const char * /*buf*/, size_t /*sz*/ )
 {
        char msg[5]; 
        msg[0] = 'A';

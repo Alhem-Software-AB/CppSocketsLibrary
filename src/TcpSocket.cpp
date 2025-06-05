@@ -125,7 +125,7 @@ TcpSocket::TcpSocket(ISocketHandler& h) : StreamSocket(h)
 #ifdef _MSC_VER
 #pragma warning(disable:4355)
 #endif
-TcpSocket::TcpSocket(ISocketHandler& h,size_t isize,size_t osize) : StreamSocket(h)
+TcpSocket::TcpSocket(ISocketHandler& h,size_t isize,size_t /*osize*/) : StreamSocket(h)
 ,ibuf(isize)
 ,m_b_input_buffer_disabled(false)
 ,m_bytes_sent(0)
@@ -212,6 +212,9 @@ bool TcpSocket::Open(SocketAddress& ad,bool skip_socks)
 
 bool TcpSocket::Open(SocketAddress& ad,SocketAddress& bind_ad,bool skip_socks)
 {
+#ifndef ENABLE_SOCKS4
+       (void)skip_socks;
+#endif
 	if (!ad.IsValid())
 	{
 		Handler().LogError(this, "Open", 0, "Invalid SocketAddress", LOG_LEVEL_FATAL);
@@ -1380,7 +1383,7 @@ void TcpSocket::UseCertificateChainFile(const std::string& filename)
 }
 
 
-int TcpSocket::SSL_password_cb(char *buf,int num,int rwflag,void *userdata)
+int TcpSocket::SSL_password_cb(char *buf,int num,int /*rwflag*/,void *userdata)
 {
 	Socket *p0 = static_cast<Socket *>(userdata);
 	TcpSocket *p = dynamic_cast<TcpSocket *>(p0);
@@ -1463,7 +1466,7 @@ void TcpSocket::SetReconnect(bool x)
 #endif
 
 
-void TcpSocket::OnRawData(const char *buf_in,size_t len)
+void TcpSocket::OnRawData(const char * /*buf_in*/,size_t /*len*/)
 {
 }
 
@@ -1540,7 +1543,7 @@ void TcpSocket::DisableInputBuffer(bool x)
 }
 
 
-void TcpSocket::OnOptions(int family,int type,int protocol,SOCKET s)
+void TcpSocket::OnOptions(int /*family*/,int /*type*/,int /*protocol*/,SOCKET /*s*/)
 {
 DEB(	fprintf(stderr, "Socket::OnOptions()\n");)
 #ifdef SO_NOSIGPIPE

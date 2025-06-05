@@ -920,6 +920,9 @@ bool Utility::reverse(struct sockaddr *sa, socklen_t sa_len, std::string& hostna
 
 bool Utility::reverse(struct sockaddr *sa, socklen_t sa_len, std::string& hostname, std::string& service, int flags)
 {
+#ifdef NO_GETADDRINFO
+       (void)sa_len;
+#endif
 	hostname = "";
 	service = "";
 #ifdef NO_GETADDRINFO
@@ -1047,8 +1050,11 @@ bool Utility::reverse(struct sockaddr *sa, socklen_t sa_len, std::string& hostna
 bool Utility::u2service(const std::string& name, int& service, int ai_flags)
 {
 #ifdef NO_GETADDRINFO
-	// %!
-	return false;
+       (void)name;
+       (void)service;
+       (void)ai_flags;
+       // %!
+       return false;
 #else
 	struct addrinfo hints;
 	service = 0;

@@ -126,7 +126,7 @@ MemFile::~MemFile()
 }
 
 
-bool MemFile::fopen(const std::string& path, const std::string& mode)
+bool MemFile::fopen(const std::string& /*path*/, const std::string& /*mode*/)
 {
 	return true;
 }

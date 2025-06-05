@@ -56,7 +56,7 @@ namespace SOCKETS_NAMESPACE {
 #endif
 
 
-UdpSocket::UdpSocket(ISocketHandler& h, int ibufsz, bool ipv6, int retries) : Socket(h)
+UdpSocket::UdpSocket(ISocketHandler& h, int ibufsz, bool /*ipv6*/, int retries) : Socket(h)
 , m_ibuf(new char[ibufsz])
 , m_ibufsz(ibufsz)
 , m_bind_ok(false)
@@ -709,6 +709,9 @@ bool UdpSocket::IsMulticastLoop()
 
 void UdpSocket::AddMulticastMembership(const std::string& group, const std::string& local_if, int if_index)
 {
+#if !defined(ENABLE_IPV6) || !defined(IPPROTO_IPV6)
+       (void)if_index;
+#endif
 	if (GetSocket() == INVALID_SOCKET)
 	{
 		CreateConnection();
@@ -750,6 +753,9 @@ void UdpSocket::AddMulticastMembership(const std::string& group, const std::stri
 
 void UdpSocket::DropMulticastMembership(const std::string& group, const std::string& local_if, int if_index)
 {
+#if !defined(ENABLE_IPV6) || !defined(IPPROTO_IPV6)
+       (void)if_index;
+#endif
 	if (GetSocket() == INVALID_SOCKET)
 	{
 		CreateConnection();
@@ -838,12 +844,12 @@ bool UdpSocket::IsBound()
 }
 
 
-void UdpSocket::OnRawData(const char *buf, size_t len, struct sockaddr *sa, socklen_t sa_len)
+void UdpSocket::OnRawData(const char * /*buf*/, size_t /*len*/, struct sockaddr * /*sa*/, socklen_t /*sa_len*/)
 {
 }
 
 
-void UdpSocket::OnRawData(const char *buf, size_t len, struct sockaddr *sa, socklen_t sa_len, struct timeval *ts)
+void UdpSocket::OnRawData(const char * /*buf*/, size_t /*len*/, struct sockaddr * /*sa*/, socklen_t /*sa_len*/, struct timeval * /*ts*/)
 {
 }
 
@@ -866,7 +872,7 @@ void UdpSocket::SetTimestamp(bool x)
 }
 
 
-void UdpSocket::SetMulticastDefaultInterface(ipaddr_t a, int if_index)
+void UdpSocket::SetMulticastDefaultInterface(ipaddr_t a, int /*if_index*/)
 {
 	struct in_addr x;
 	memcpy(&x.s_addr, &a, sizeof(x.s_addr));
@@ -879,7 +885,7 @@ void UdpSocket::SetMulticastDefaultInterface(ipaddr_t a, int if_index)
 
 #ifdef ENABLE_IPV6
 #ifdef IPPROTO_IPV6
-void UdpSocket::SetMulticastDefaultInterface(in6_addr a, int if_index)
+void UdpSocket::SetMulticastDefaultInterface(in6_addr a, int /*if_index*/)
 {
 	if (setsockopt(GetSocket(), IPPROTO_IPV6, IPV6_MULTICAST_IF, &if_index, sizeof(if_index)) == -1)
 	{

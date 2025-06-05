@@ -131,7 +131,7 @@ void SSLInitializer::DeleteRandFile()
 }
 
 
-void SSLInitializer::SSL_locking_function(int mode, int n, const char *file, int line)
+void SSLInitializer::SSL_locking_function(int mode, int n, const char * /*file*/, int /*line*/)
 {
 	IMutex *mutex = NULL;
 	{

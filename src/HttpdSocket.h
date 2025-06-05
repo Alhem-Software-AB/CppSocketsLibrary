@@ -88,7 +88,7 @@ protected:
 	std::string m_if_modified_since;
 
 private:
-	HttpdSocket& operator=(const HttpdSocket& s) { return *this; }
+        HttpdSocket& operator=(const HttpdSocket& /*s*/) { return *this; }
 static	int m_request_count;
 static	std::string m_start;
 	size_t m_content_length;
