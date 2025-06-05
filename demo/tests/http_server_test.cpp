@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include <cstdlib>
 #include <string>
+#include <filesystem>
 
 class HttpServerTest : public CppUnit::TestFixture {
     CPPUNIT_TEST_SUITE(HttpServerTest);
@@ -22,6 +23,7 @@ public:
     {
         pid = fork();
         if (pid == 0) {
+            chdir("..");
             execl("./simple_http_server", "./simple_http_server", nullptr);
             std::exit(1);
         }
@@ -36,13 +38,13 @@ public:
 
     void testIndexHtml()
     {
-        system("make -C ../src -j2 >/dev/null");
-        system("make >/dev/null");
+        system("make -C ../../src -j2 >/dev/null");
+        system("make -C .. >/dev/null");
         pid_t pid;
         startServer(pid);
         system("curl -s http://127.0.0.1:8080/ > output.html");
         stopServer(pid);
-        std::ifstream expected("index.html", std::ios::binary);
+        std::ifstream expected("../index.html", std::ios::binary);
         std::string exp((std::istreambuf_iterator<char>(expected)), {});
         std::ifstream actual("output.html", std::ios::binary);
         std::string act((std::istreambuf_iterator<char>(actual)), {});
@@ -52,9 +54,9 @@ public:
 
     void testMissingIndexHtml()
     {
-        std::rename("index.html", "index.html.bak");
-        system("make -C ../src -j2 >/dev/null");
-        system("make >/dev/null");
+        std::rename("../index.html", "../index.html.bak");
+        system("make -C ../../src -j2 >/dev/null");
+        system("make -C .. >/dev/null");
         pid_t pid;
         startServer(pid);
         system("curl -s http://127.0.0.1:8080/ > output.html");
@@ -62,15 +64,18 @@ public:
         std::ifstream actual("output.html", std::ios::binary);
         std::string act((std::istreambuf_iterator<char>(actual)), {});
         std::remove("output.html");
-        std::rename("index.html.bak", "index.html");
+        std::rename("../index.html.bak", "../index.html");
         CPPUNIT_ASSERT(act.find("index.html not found") != std::string::npos);
     }
 };
 
 CPPUNIT_TEST_SUITE_REGISTRATION(HttpServerTest);
 
-int main()
+int main(int argc, char* argv[])
 {
+    std::filesystem::path exe_path = argv[0];
+    std::filesystem::current_path(exe_path.parent_path());
+
     CppUnit::TextUi::TestRunner runner;
     runner.addTest(CppUnit::TestFactoryRegistry::getRegistry().makeTest());
     return runner.run() ? 0 : 1;
