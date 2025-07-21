@@ -77,7 +77,7 @@ ResolvSocket::ResolvSocket(ISocketHandler& h)
 }
 
 
-ResolvSocket::ResolvSocket(ISocketHandler& h, Socket *parent, const std::string& host, port_t port, bool ipv6)
+ResolvSocket::ResolvSocket(ISocketHandler& h, Socket *parent, const std::string& host, port_t port, bool /*ipv6*/)
 :TcpSocket(h)
 ,m_bServer(false)
 ,m_parent(parent)

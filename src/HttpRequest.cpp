@@ -339,7 +339,7 @@ DEB(fprintf(stderr, " *** AddCookie '%s' = '%s'\n", name.c_str(), lstr.c_str());
 
 
 // --------------------------------------------------------------------------------------
-void HttpRequest::InitBody( size_t sz )
+void HttpRequest::InitBody( size_t /*sz*/ )
 {
 	if (!m_body_file.get())
 		m_body_file = USING_AUTOPTR_AS<IFile>(new MemFile);
