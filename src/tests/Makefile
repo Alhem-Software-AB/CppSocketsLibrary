@@ -109,3 +109,6 @@ clean:
 		rm -f *.o *~ slask *.d $(PROGS)
 
 -include	*.d
+
+setup:
+		@./setup-build.sh
