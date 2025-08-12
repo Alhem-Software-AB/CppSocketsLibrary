@@ -46,3 +46,29 @@ demo/simple_http_server
 demo/output.html
 
 demo/tests/http_server_test
+
+# more binaries
+src/tests/Sockets
+src/tests/base64
+src/tests/chunked
+src/tests/copy
+src/tests/crlf
+src/tests/echoserver
+src/tests/events
+src/tests/http
+src/tests/http_post
+src/tests/httpd
+src/tests/httpd_test
+src/tests/https
+src/tests/listener
+src/tests/resolve
+src/tests/resume
+src/tests/retry
+src/tests/scanr
+src/tests/semtest
+src/tests/sloppy_http
+src/tests/sockets_test
+src/tests/stressclient
+src/tests/threadstress
+src/tests/x
+
