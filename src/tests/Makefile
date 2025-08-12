@@ -5,6 +5,8 @@ LIBS =
 
 CFLAGS =	`Sockets-config`
 
+CFLAGS +=	-I.
+
 include		$(SOCKETS)/Makefile.version
 include		$(SOCKETS)/Makefile.Defines.$(PLATFORM)
 
