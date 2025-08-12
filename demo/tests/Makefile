@@ -9,3 +9,6 @@ http_server_test: http_server_test.o
 
 clean:
 	rm -f http_server_test.o http_server_test
+
+setup:
+	@./setup-build.sh

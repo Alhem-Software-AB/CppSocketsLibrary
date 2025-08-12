@@ -71,4 +71,8 @@ src/tests/sockets_test
 src/tests/stressclient
 src/tests/threadstress
 src/tests/x
-
+src/tests/bind_address
+src/tests/detach
+src/tests/httpget
+src/tests/json
+src/tests/udp

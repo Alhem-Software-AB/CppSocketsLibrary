@@ -21,7 +21,5 @@ jobs:
 
       - name: Run tests
         run: |
-          src/tests/setup-build.sh
-          PATH=$PWD/src:$PATH make -C src/tests
-          demo/tests/setup-build.sh
-          PATH=$PWD/src:$PATH make -C demo/tests
+          PATH=$PWD/src:$PATH make -C src/tests setup all
+          PATH=$PWD/src:$PATH make -C demo/tests setup all
