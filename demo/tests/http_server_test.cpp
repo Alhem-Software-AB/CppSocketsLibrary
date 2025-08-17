@@ -1,5 +1,9 @@
 #include <cppunit/extensions/HelperMacros.h>
-#include <cppunit/ui/text/TestRunner.h>
+#include <cppunit/BriefTestProgressListener.h>
+#include <cppunit/TestRunner.h>
+#include <cppunit/TestResult.h>
+#include <cppunit/TestResultCollector.h>
+#include <cppunit/TestFailure.h>
 #include <fstream>
 #include <iterator>
 #include <signal.h>
@@ -8,6 +12,7 @@
 #include <cstdlib>
 #include <string>
 #include <filesystem>
+#include <map>
 
 class HttpServerTest : public CppUnit::TestFixture {
     CPPUNIT_TEST_SUITE(HttpServerTest);
@@ -76,7 +81,66 @@ int main(int argc, char* argv[])
     std::filesystem::path exe_path = argv[0];
     std::filesystem::current_path(exe_path.parent_path());
 
-    CppUnit::TextUi::TestRunner runner;
+    CppUnit::TestResult controller;
+    CppUnit::TestResultCollector result;
+    controller.addListener(&result);
+    CppUnit::BriefTestProgressListener progress;
+    controller.addListener(&progress);
+
+    CppUnit::TestRunner runner;
     runner.addTest(CppUnit::TestFactoryRegistry::getRegistry().makeTest());
-    return runner.run() ? 0 : 1;
+    runner.run(controller);
+
+    auto xmlEscape = [](const std::string& data) {
+        std::string out;
+        out.reserve(data.size());
+        for (char c : data) {
+            switch (c) {
+                case '&': out += "&amp;"; break;
+                case '<': out += "&lt;"; break;
+                case '>': out += "&gt;"; break;
+                case '"': out += "&quot;"; break;
+                case '\'': out += "&apos;"; break;
+                default: out += c; break;
+            }
+        }
+        return out;
+    };
+
+    std::map<std::string, const CppUnit::TestFailure*> failures;
+    for (const auto& failure : result.failures()) {
+        failures[failure->failedTestName()] = failure;
+    }
+
+    std::ofstream xml("cppunit-report.xml");
+    xml << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
+    xml << "<testsuite name=\"CppUnit\" tests=\"" << result.runTests()
+        << "\" failures=\"" << result.testFailures()
+        << "\" errors=\"" << result.testErrors() << "\">\n";
+
+    for (const auto& test : result.tests()) {
+        std::string full = test->getName();
+        auto pos = full.find("::");
+        std::string classname = pos == std::string::npos ? "" : full.substr(0, pos);
+        std::string name = pos == std::string::npos ? full : full.substr(pos + 2);
+        xml << "  <testcase classname=\"" << classname << "\" name=\"" << name << "\"";
+        auto it = failures.find(full);
+        if (it == failures.end()) {
+            xml << "/>\n";
+        } else {
+            const auto* f = it->second;
+            std::string msg = f->thrownException()->what();
+            xml << ">";
+            if (f->isError()) {
+                xml << "<error message=\"" << xmlEscape(msg) << "\"/>";
+            } else {
+                xml << "<failure message=\"" << xmlEscape(msg) << "\"/>";
+            }
+            xml << "</testcase>\n";
+        }
+    }
+
+    xml << "</testsuite>\n";
+
+    return result.wasSuccessful() ? 0 : 1;
 }
