@@ -40,4 +40,4 @@ jobs:
         with:
           name: CppUnit Tests
           path: demo/tests/cppunit-report.xml
-          reporter: junit
+          reporter: jest-junit
