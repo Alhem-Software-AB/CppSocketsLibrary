@@ -1,7 +1,6 @@
 name: CI
 
 on:
-  push:
   pull_request:
 
 jobs:
@@ -19,7 +18,26 @@ jobs:
       - name: Build library
         run: make -C src
 
-      - name: Run tests
+      - name: Build tests
         run: |
           PATH=$PWD/src:$PATH make -C src/tests setup all
           PATH=$PWD/src:$PATH make -C demo/tests setup all
+
+      - name: Run tests
+        working-directory: demo/tests
+        run: ./http_server_test
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cppunit-report
+          path: demo/tests/cppunit-report.xml
+
+      - name: Test Report
+        if: always()
+        uses: dorny/test-reporter@v1
+        with:
+          name: CppUnit Tests
+          path: demo/tests/cppunit-report.xml
+          reporter: cppunit
