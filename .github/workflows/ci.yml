@@ -23,3 +23,5 @@ jobs:
         run: |
           PATH=$PWD/src:$PATH make -C src/tests setup all
           PATH=$PWD/src:$PATH make -C demo/tests setup all
+          make -C tests clean all
+          ./tests/json_tests
