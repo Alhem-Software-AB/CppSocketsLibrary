@@ -30,35 +30,40 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
-#ifdef _WIN32
-#ifdef _MSC_VER
-#pragma warning(disable:4786)
-#endif
-#include <stdlib.h>
-#else
-#include <errno.h>
-#endif
-#include "ISocketHandler.h"
-#include <fcntl.h>
-#include <assert.h>
-#include <stdarg.h>
-#ifdef HAVE_OPENSSL
-#include <openssl/rand.h>
-#include <openssl/err.h>
-#endif
-#include <map>
-#include <stdio.h>
-#ifndef _WIN32
-#include <netinet/tcp.h>
-#endif
-
 #include "TcpSocket.h"
+
 #include "Utility.h"
 #include "Ipv4Address.h"
 #include "Ipv6Address.h"
 #include "IFile.h"
 #include "Lock.h"
+#include "ISocketHandler.h"
+
 #include "sockets_stdptr.h"
+
+#ifdef HAVE_OPENSSL
+#include <openssl/rand.h>
+#include <openssl/err.h>
+#endif
+
+#ifndef _WIN32
+#include <netinet/tcp.h>
+#endif
+
+#include <map>
+
+#ifdef _WIN32
+#ifdef _MSC_VER
+#pragma warning(disable:4786)
+#endif
+#include <cstdlib>
+#else
+#include <errno.h>
+#endif
+
+#include <fcntl.h>
+#include <assert.h>
+#include <cstdarg>
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {

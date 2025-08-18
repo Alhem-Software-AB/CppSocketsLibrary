@@ -31,11 +31,15 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #include "Utility.h"
+
 #include "Parse.h"
 #include "Ipv4Address.h"
 #include "Ipv6Address.h"
 #include "Base64.h"
+
 #include <vector>
+#include <map>
+
 #ifdef _WIN32
 #include <time.h>
 #else
@@ -44,6 +48,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <sys/types.h>
 #include <sys/stat.h>
 #endif
+
 // --- stack
 #ifdef LINUX
 #include <cxxabi.h>
@@ -51,7 +56,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <dlfcn.h>
 #endif
 // ---
-#include <map>
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {

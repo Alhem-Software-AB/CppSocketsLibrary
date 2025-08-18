@@ -36,6 +36,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define _SOCKETS_Parse_H
 
 #include "sockets-config.h"
+
 #ifdef _MSC_VER
 #pragma warning(disable:4514)
 #endif

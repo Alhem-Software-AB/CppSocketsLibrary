@@ -32,13 +32,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #ifndef _SOCKETS_ListenSocket_H
 #define _SOCKETS_ListenSocket_H
-#include "sockets-config.h"
 
-#ifdef _WIN32
-#include <stdlib.h>
-#else
-#include <errno.h>
-#endif
+#include "sockets-config.h"
 
 #include "ISocketHandler.h"
 #include "Socket.h"
@@ -50,6 +45,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "Exception.h"
 #endif
 #include "Lock.h"
+
+#ifdef _WIN32
+#include <stdlib.h>
+#else
+#include <errno.h>
+#endif
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {

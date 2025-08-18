@@ -35,6 +35,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define _SOCKETS_Semaphore_H
 
 #include "sockets-config.h"
+
 #ifdef _WIN32
 #include "socket_include.h"
 #include <windows.h>
@@ -46,7 +47,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <semaphore.h>
 #endif
 #endif
-
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {

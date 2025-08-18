@@ -34,10 +34,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define _SOCKETHANDLEREP_H
 
 #include "SocketHandler.h"
+
 #ifdef LINUX
+
 #include <sys/epoll.h>
 
 #define MAX_EVENTS_EP_WAIT 100
+
 #endif // LINUX
 
 #ifdef SOCKETS_NAMESPACE

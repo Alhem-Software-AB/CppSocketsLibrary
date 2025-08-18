@@ -35,9 +35,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define _SOCKETS_AjpBaseSocket_H
 
 #include "TcpSocket.h"
-#include <map>
 #include "Utility.h"
 
+#include <map>
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {

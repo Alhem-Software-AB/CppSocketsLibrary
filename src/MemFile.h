@@ -34,9 +34,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define _SOCKETS_MemFile_H
 
 #include "sockets-config.h"
-#include <map>
+
 #include "File.h"
 #include "Mutex.h"
+
+#include <map>
 
 #define BLOCKSIZE 32768
 

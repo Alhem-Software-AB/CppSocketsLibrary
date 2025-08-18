@@ -32,21 +32,25 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #ifndef _SOCKETS_Socket_H
 #define _SOCKETS_Socket_H
+
 #include "sockets-config.h"
 
-#include <string>
-#include <vector>
-#include <list>
 #include "socket_include.h"
+
+#include "SocketAddress.h"
+#include "Thread.h"
+
+#include "sockets_stdptr.h"
+
 #ifdef HAVE_OPENSSL
 #include <openssl/ssl.h>
 #endif
 
-#include <time.h>
-#include "SocketAddress.h"
-#include "Thread.h"
-#include "sockets_stdptr.h"
+#include <string>
+#include <vector>
+#include <list>
 
+#include <time.h>
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {

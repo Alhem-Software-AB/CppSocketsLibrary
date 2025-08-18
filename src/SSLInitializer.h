@@ -33,17 +33,21 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #ifndef __SOCKETS_SSLInitializer_H
 #define __SOCKETS_SSLInitializer_H
+
 #include "sockets-config.h"
+
 #ifdef HAVE_OPENSSL
 
 #ifdef _WIN32
 #include <winsock2.h>
 #endif
-#include <openssl/ssl.h>
-#include <string>
-#include <map>
+
 #include "Mutex.h"
 
+#include <openssl/ssl.h>
+
+#include <string>
+#include <map>
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {

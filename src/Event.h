@@ -34,11 +34,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define _SOCKETS_Event_H
 
 #include "sockets-config.h"
+
+#include "EventTime.h"
+
 #ifdef _WIN32
 #else
 #include <sys/select.h>
 #endif
-#include "EventTime.h"
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {

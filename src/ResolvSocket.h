@@ -32,9 +32,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #ifndef _SOCKETS_ResolvSocket_H
 #define _SOCKETS_ResolvSocket_H
+
 #include "sockets-config.h"
+
 #ifdef ENABLE_RESOLVER
+
 #include "TcpSocket.h"
+
 #include <map>
 
 #ifdef SOCKETS_NAMESPACE

@@ -33,16 +33,17 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifdef _MSC_VER
 #pragma warning(disable:4786)
 #endif
-#include <stdio.h>
-#include <stdarg.h>
-#include <cstring>
-#include <iostream>
 
 #include "MemFile.h"
+
 #include "Exception.h"
 #include "Lock.h"
 #include "Utility.h"
 
+#include <iostream>
+
+#include <cstdarg>
+#include <cstring>
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {

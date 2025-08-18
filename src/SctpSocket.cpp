@@ -32,15 +32,18 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #include "SctpSocket.h"
+
 #ifdef USE_SCTP
+
 #include "Utility.h"
 #include "ISocketHandler.h"
-#include <errno.h>
 #include "Ipv4Address.h"
 #include "Ipv6Address.h"
 #ifdef ENABLE_EXCEPTIONS
 #include "Exception.h"
 #endif
+
+#include <errno.h>
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE
