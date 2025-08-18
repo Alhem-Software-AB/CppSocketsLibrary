@@ -34,13 +34,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define _SOCKETS_Mutex_H
 
 #include "sockets-config.h"
+
+#include "IMutex.h"
+
 #ifndef _WIN32
 #include <pthread.h>
 #else
 #include "socket_include.h"
 #include <windows.h>
 #endif
-#include "IMutex.h"
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {

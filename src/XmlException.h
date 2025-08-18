@@ -35,7 +35,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define _XmlException_H
 
 #include "sockets-config.h"
+
 #ifdef ENABLE_XML
+
 #include "Exception.h"
 
 #ifdef SOCKETS_NAMESPACE

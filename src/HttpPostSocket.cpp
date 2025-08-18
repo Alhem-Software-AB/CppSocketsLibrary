@@ -30,6 +30,14 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
+#include "HttpPostSocket.h"
+
+#include "ISocketHandler.h"
+#include "Lock.h"
+#include "File.h"
+
+#include "sockets_stdptr.h"
+
 #ifdef _WIN32
 #ifdef _MSC_VER
 #pragma warning(disable:4786)
@@ -39,15 +47,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <errno.h>
 #include <ctype.h>
 #endif
-#include "ISocketHandler.h"
+
 #include <sys/types.h>
 #include <sys/stat.h>
-#include "Lock.h"
-#include "File.h"
-
-#include "HttpPostSocket.h"
-#include "sockets_stdptr.h"
-
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {

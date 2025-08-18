@@ -31,18 +31,23 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
+#include "SSLInitializer.h"
+
+#ifdef HAVE_OPENSSL
+
+#include "Utility.h"
+#include "Lock.h"
+
+#include <openssl/rand.h>
+
+#include <map>
+
 #ifdef _WIN32
 #ifdef _MSC_VER
 #pragma warning(disable:4786)
 #endif
 #include <io.h>
 #endif
-#include "SSLInitializer.h"
-#ifdef HAVE_OPENSSL
-#include <map>
-#include "Utility.h"
-#include <openssl/rand.h>
-#include "Lock.h"
 
 #ifdef _DEBUG
 #define DEB(x) x

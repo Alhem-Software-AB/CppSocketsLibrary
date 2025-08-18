@@ -33,11 +33,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #ifndef _SOCKETS_Ipv6Address_H
 #define _SOCKETS_Ipv6Address_H
+
 #include "sockets-config.h"
+
 #ifdef ENABLE_IPV6
 
 #include "SocketAddress.h"
+
 #ifdef IPPROTO_IPV6
+
 #if defined( _WIN32) && !defined(__CYGWIN__)
 typedef unsigned __int32 uint32_t;
 #endif

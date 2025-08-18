@@ -34,14 +34,19 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifdef _MSC_VER
 #pragma warning(disable:4786)
 #endif
+
+#include "HttpdForm.h"
+
 #include "socket_include.h"
+
 #include "Parse.h"
 #include "IFile.h"
-#include "HttpdForm.h"
 #include "IFileUpload.h"
 #include "IStream.h"
 #include "File.h"
+
 #include "sockets_stdptr.h"
+
 #include <memory>
 
 #ifdef SOCKETS_NAMESPACE

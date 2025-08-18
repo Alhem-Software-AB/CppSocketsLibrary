@@ -34,11 +34,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define _SOCKETS_SocketHandler_H
 
 #include "sockets-config.h"
-#include <map>
-#include <list>
 
 #include "socket_include.h"
+
 #include "ISocketHandler.h"
+
+#include <map>
+#include <list>
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {

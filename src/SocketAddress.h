@@ -35,7 +35,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define _SOCKETS_SocketAddress_H
 
 #include "sockets-config.h"
+
 #include "socket_include.h"
+
 #include "sockets_stdptr.h"
 
 #include <string>

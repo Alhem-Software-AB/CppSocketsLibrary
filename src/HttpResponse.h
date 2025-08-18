@@ -35,7 +35,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define _SOCKETS_HttpResponse_H
 
 #include "HttpTransaction.h"
+
 #include "sockets_stdptr.h"
+
 #include <list>
 
 #ifdef SOCKETS_NAMESPACE

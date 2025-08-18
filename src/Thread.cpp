@@ -30,17 +30,16 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
-#include <stdio.h>
+#include "Thread.h"
+
+#include "Utility.h"
+
 #ifdef _WIN32
 #include <process.h>
 #include "socket_include.h"
 #else
 #include <unistd.h>
 #endif
-
-#include "Thread.h"
-#include "Utility.h"
-
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {

@@ -34,7 +34,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifdef _MSC_VER
 #pragma warning(disable:4786)
 #endif
+
 #include "Exception.h"
+
 #include "Utility.h"
 
 #ifdef SOCKETS_NAMESPACE

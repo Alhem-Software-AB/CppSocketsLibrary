@@ -32,15 +32,19 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #ifndef _SOCKETS_TcpSocket_H
 #define _SOCKETS_TcpSocket_H
+
 #include "sockets-config.h"
+
 #include "StreamSocket.h"
+
 #ifdef HAVE_OPENSSL
 #include <openssl/ssl.h>
 #include "SSLInitializer.h"
 #endif
-#include "Mutex.h"
-#include <map>
 
+#include "Mutex.h"
+
+#include <map>
 
 #define TCP_BUFSIZE_READ 16400
 #define TCP_OUTPUT_CAPACITY 1024000

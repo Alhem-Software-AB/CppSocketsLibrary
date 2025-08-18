@@ -31,30 +31,30 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #include "Socket.h"
+
+#include "Utility.h"
+#include "SocketAddress.h"
+#include "SocketHandler.h"
+#include "Ipv4Address.h"
+#include "SocketThread.h"
+#ifdef ENABLE_IPV6
+#include "Ipv6Address.h"
+#endif
+#ifdef ENABLE_EXCEPTIONS
+#include "Exception.h"
+#endif
+
 #ifdef _WIN32
 #ifdef _MSC_VER
 #pragma warning(disable:4786)
 #endif
-#include <stdlib.h>
+#include <cstdlib>
 #else
 #include <errno.h>
 #include <netdb.h>
 #endif
 #include <ctype.h>
 #include <fcntl.h>
-
-#include "Utility.h"
-
-#include "SocketAddress.h"
-#include "SocketHandler.h"
-#ifdef ENABLE_EXCEPTIONS
-#include "Exception.h"
-#endif
-#include "Ipv4Address.h"
-#ifdef ENABLE_IPV6
-#include "Ipv6Address.h"
-#endif
-#include "SocketThread.h"
 
 #ifdef _DEBUG
 #define DEB(x) x; fflush(stderr);

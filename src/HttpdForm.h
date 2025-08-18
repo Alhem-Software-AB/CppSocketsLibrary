@@ -36,11 +36,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define _SOCKETS_HttpdForm_H
 
 #include "sockets-config.h"
+
 #include <string>
 #include <list>
-#include <cstdio>
-#include <cstring>
 #include <vector>
+
+#include <cstring>
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {

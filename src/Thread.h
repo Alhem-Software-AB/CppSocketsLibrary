@@ -34,10 +34,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define _SOCKETS_Thread_H
 
 #include "sockets-config.h"
+
 #ifdef _WIN32
 #else
 #include <pthread.h>
 #endif
+
 #include "Semaphore.h"
 
 #ifdef SOCKETS_NAMESPACE

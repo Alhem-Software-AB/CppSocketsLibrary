@@ -35,11 +35,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #pragma warning(disable:4786)
 #endif
 #endif
-#include <stdlib.h>
-#include <errno.h>
-#include <stdio.h>
 
 #include "SocketHandler.h"
+
 #include "UdpSocket.h"
 #include "ResolvSocket.h"
 #include "ResolvServer.h"
@@ -50,7 +48,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "Exception.h"
 #include "SocketHandlerThread.h"
 #include "Lock.h"
+
 #include "sockets_stdptr.h"
+
+#include <cstdlib>
+#include <errno.h>
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
