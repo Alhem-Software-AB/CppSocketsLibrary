@@ -1,9 +1,12 @@
 #include "HttpdSocket.h"
 #include "SocketHandler.h"
+#include "SocketHandlerEp.h"
 #include "ListenSocket.h"
 #include "StdoutLog.h"
 #include "Utility.h"
 #include <fstream>
+#include <cstring>
+#include <memory>
 
 #ifdef SOCKETS_NAMESPACE
 using namespace SOCKETS_NAMESPACE;
@@ -53,18 +56,41 @@ private:
 
 int main(int argc, char* argv[])
 {
+    bool use_epoll = false;
+    for (int i = 1; i < argc; ++i)
+    {
+        if (!std::strcmp(argv[i], "-epoll"))
+        {
+            use_epoll = true;
+        }
+        else if (!std::strcmp(argv[i], "-h"))
+        {
+            printf("Usage: %s [-epoll]\n", argv[0]);
+            return 0;
+        }
+    }
+
     StdoutLog log;
-    SocketHandler h(&log);
-    ListenSocket<IndexSocket> server(h);
+    std::unique_ptr<ISocketHandler> handler;
+    if (use_epoll)
+    {
+        handler = std::make_unique<SocketHandlerEp>(&log);
+    }
+    else
+    {
+        handler = std::make_unique<SocketHandler>(&log);
+    }
+
+    ListenSocket<IndexSocket> server(*handler);
     if (server.Bind(8080))
     {
         fprintf(stderr, "Failed to bind port 8080\n");
         return 1;
     }
-    h.Add(&server);
-    while (h.GetCount())
+    handler->Add(&server);
+    while (handler->GetCount())
     {
-        h.Select(1, 0);
+        handler->Select(1, 0);
     }
     return 0;
 }
