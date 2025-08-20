@@ -214,3 +214,6 @@ deb:
 publish:
 		@$(MAKE) -C debian publish
 		@$(MAKE) -C debian-lib-dev publish
+
+dist:
+		@./create-dist.sh

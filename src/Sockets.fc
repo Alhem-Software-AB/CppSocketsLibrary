@@ -1,0 +1,11 @@
+#
+dist/include/
+dist/include/:=*.h
+
+#
+dist/lib/
+dist/lib/=*.a
+
+#
+dist/bin/
+dist/bin/=Sockets-config
