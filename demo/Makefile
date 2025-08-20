@@ -1,7 +1,9 @@
+SOCKETS =	../dist
+
 CXX=g++
-CXXFLAGS=`../src/Sockets-config` -I../src -Wall
+CXXFLAGS=`$(SOCKETS)/bin/Sockets-config` -I$(SOCKETS)/include -Wall
 LDFLAGS=
-LIBS=../src/libSockets.a -lssl -lcrypto -lpthread
+LIBS=$(SOCKETS)/lib/libSockets.a -lssl -lcrypto -lpthread
 
 all: simple_http_server
 

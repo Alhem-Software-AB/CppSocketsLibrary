@@ -1,7 +1,9 @@
+SOCKETS =	../dist
+
 CXX=g++
-CXXFLAGS=-I../src -std=c++11 `pkg-config --cflags cppunit`
+CXXFLAGS=-I$(SOCKETS)/include -std=c++11 `pkg-config --cflags cppunit`
 LIBS_CPPUNIT=`pkg-config --libs cppunit`
-LIBS_SOCKETS=$(LIBS_CPPUNIT) -L../src -lSockets -lssl -lcrypto -lxml2 -lpthread
+LIBS_SOCKETS=$(LIBS_CPPUNIT) -L$(SOCKETS)/lib -lSockets -lssl -lcrypto -lxml2 -lpthread
 
 all: json_tests socket_handler_ep_tests
 

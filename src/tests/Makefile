@@ -1,6 +1,7 @@
-SOCKETS =	..
+SOCKETS =	../../dist
 PLATFORM =	linux-x86-32
-LIBS =		
+INCLUDE =	-I$(SOCKETS)/include
+LIBS =		-L$(SOCKETS)/lib -lSockets
 #-L$(SOCKETS) -lSockets 
 
 CFLAGS =	`Sockets-config`

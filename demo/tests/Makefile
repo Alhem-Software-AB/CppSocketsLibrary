@@ -1,6 +1,8 @@
+SOCKETS =	../../dist
+
 CXX=g++
-CXXFLAGS=`../../src/Sockets-config` -I../../src `pkg-config --cflags cppunit` -Wall
-LIBS=../../src/libSockets.a `pkg-config --libs cppunit` -lssl -lcrypto -lpthread
+CXXFLAGS=`$(SOCKETS)/bin/Sockets-config` -I$(SOCKETS)/include `pkg-config --cflags cppunit` -Wall
+LIBS=$(SOCKETS)/lib/libSockets.a `pkg-config --libs cppunit` -lssl -lcrypto -lpthread
 
 all: http_server_test
 
@@ -11,4 +13,4 @@ clean:
 	rm -f http_server_test.o http_server_test
 
 setup:
-	@./setup-build.sh
+	@echo No longer necessary

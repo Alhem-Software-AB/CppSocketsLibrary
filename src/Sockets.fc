@@ -9,3 +9,6 @@ dist/lib/=*.a
 #
 dist/bin/
 dist/bin/=Sockets-config
+
+#
+dist/=Makefile.*
