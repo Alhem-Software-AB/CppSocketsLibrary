@@ -76,3 +76,7 @@ src/tests/detach
 src/tests/httpget
 src/tests/json
 src/tests/udp
+tests/json_tests
+
+# ignore dist folder content
+dist/
