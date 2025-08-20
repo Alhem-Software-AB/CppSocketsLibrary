@@ -53,6 +53,10 @@ Unix (and Cygwin/Mingw on windows)
 7.  If all builds ok, you'll find the static library file 'libSockets.a'
     in the build directory.
 
+8.  Run `make dist` to assemble a redistributable package. The command
+    populates a top-level `dist/` directory with `bin`, `lib`, and `include`
+    folders containing the compiled tools, libraries, and headers.
+
 
 When compiling the application, any flags used when compiling the library
 also needs to be present when including the library .h files. All flags
