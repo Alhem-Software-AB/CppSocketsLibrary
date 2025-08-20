@@ -1,5 +1,6 @@
 #!/bin/sh
 set -e
+ulimit -c unlimited
 cd "$(dirname "$0")"
 # Build library and demo
 make -C ../src -j2 >/dev/null

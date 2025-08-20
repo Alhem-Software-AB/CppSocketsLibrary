@@ -1,15 +1,13 @@
-SOCKETS =	../dist
+SOCKETS=../src
 
 CXX=g++
-CXXFLAGS=`$(SOCKETS)/bin/Sockets-config` -I$(SOCKETS)/include -Wall
+CXXFLAGS=`$(SOCKETS)/Sockets-config` -I$(SOCKETS) -Wall -std=c++17
 LDFLAGS=
-LIBS=$(SOCKETS)/lib/libSockets.a -lssl -lcrypto -lpthread
+LIBS=$(SOCKETS)/libSockets.a -lssl -lcrypto -lpthread
 
 all: simple_http_server
 
-simple_http_server: simple_http_server.o
-	$(CXX) -o $@ $^ $(LIBS) $(LDFLAGS)
+simple_http_server: simple_http_server.o ; $(CXX) -o $@ $^ $(LIBS) $(LDFLAGS)
 
-clean:
-	rm -f simple_http_server.o simple_http_server
+clean: ; rm -f simple_http_server.o simple_http_server
 

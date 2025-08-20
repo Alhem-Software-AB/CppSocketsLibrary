@@ -100,9 +100,11 @@ public:
 
 CPPUNIT_TEST_SUITE_REGISTRATION(JsonConstructorAssignmentTest);
 
+#ifndef COMBINED_TESTS
 int main() {
     CppUnit::TextUi::TestRunner runner;
     runner.addTest(CppUnit::TestFactoryRegistry::getRegistry().makeTest());
     return runner.run() ? 0 : 1;
 }
+#endif
 
