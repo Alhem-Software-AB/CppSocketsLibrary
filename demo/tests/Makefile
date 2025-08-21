@@ -1,8 +1,8 @@
-SOCKETS=../../src
+SOCKETS=../../dist
 
 CXX=g++
-CXXFLAGS=`$(SOCKETS)/Sockets-config` -I$(SOCKETS) `pkg-config --cflags cppunit` -Wall -std=c++17
-LIBS=$(SOCKETS)/libSockets.a `pkg-config --libs cppunit` -lssl -lcrypto -lpthread
+CXXFLAGS=`$(SOCKETS)/bin/Sockets-config` -I$(SOCKETS)/include `pkg-config --cflags cppunit` -Wall -std=c++17
+LIBS=-L$(SOCKETS)/lib -lSockets `pkg-config --libs cppunit` -lssl -lcrypto -lpthread
 
 all: http_server_test
 
