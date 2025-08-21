@@ -30,7 +30,7 @@ jobs:
           ./tests/json_tests
 
       - name: Upload dist artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: cpp-sockets-dist
           path: dist/
