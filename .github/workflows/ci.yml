@@ -19,9 +19,18 @@ jobs:
       - name: Build library
         run: make -C src
 
+      - name: Create distribution
+        run: make -C src dist
+
       - name: Run tests
         run: |
           PATH=$PWD/src:$PATH make -C src/tests setup all
           PATH=$PWD/src:$PATH make -C demo/tests setup all
           make -C tests clean all
           ./tests/json_tests
+
+      - name: Upload dist artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cpp-sockets-dist
+          path: dist/
