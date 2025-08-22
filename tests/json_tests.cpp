@@ -17,7 +17,15 @@ class JsonConstructorAssignmentTest : public CppUnit::TestFixture {
     CPPUNIT_TEST(testArrayConstructor);
     CPPUNIT_TEST(testObjectConstructor);
     CPPUNIT_TEST(testCopyConstructor);
-    CPPUNIT_TEST(testCopyAssignment);
+    CPPUNIT_TEST(testCharAssignment);
+    CPPUNIT_TEST(testShortAssignment);
+    CPPUNIT_TEST(testLongAssignment);
+    CPPUNIT_TEST(testDoubleAssignment);
+    CPPUNIT_TEST(testConstCharAssignment);
+    CPPUNIT_TEST(testStringAssignment);
+    CPPUNIT_TEST(testBoolAssignment);
+    CPPUNIT_TEST(testArrayAssignment);
+    CPPUNIT_TEST(testObjectAssignment);
     CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -89,12 +97,94 @@ public:
         CPPUNIT_ASSERT_EQUAL(string("copy"), (string)copy);
     }
 
-    void testCopyAssignment() {
+    void testCharAssignment() {
+        Json src('b');
+        Json dest;
+        dest = src;
+        CPPUNIT_ASSERT_EQUAL(Json::TYPE_INTEGER, dest.Type());
+        CPPUNIT_ASSERT_EQUAL('b', (char)dest);
+    }
+
+    void testShortAssignment() {
+        short v = 321;
+        Json src(v);
+        Json dest;
+        dest = src;
+        CPPUNIT_ASSERT_EQUAL(Json::TYPE_INTEGER, dest.Type());
+        CPPUNIT_ASSERT_EQUAL(v, (short)dest);
+    }
+
+    void testLongAssignment() {
         Json src(42L);
         Json dest;
         dest = src;
         CPPUNIT_ASSERT_EQUAL(Json::TYPE_INTEGER, dest.Type());
         CPPUNIT_ASSERT_EQUAL(42L, (long)dest);
+    }
+
+    void testDoubleAssignment() {
+        double v = 2.718;
+        Json src(v);
+        Json dest;
+        dest = src;
+        CPPUNIT_ASSERT_EQUAL(Json::TYPE_REAL, dest.Type());
+        CPPUNIT_ASSERT_DOUBLES_EQUAL(v, (double)dest, 1e-9);
+    }
+
+    void testConstCharAssignment() {
+        Json src("assign");
+        Json dest;
+        dest = src;
+        CPPUNIT_ASSERT_EQUAL(Json::TYPE_STRING, dest.Type());
+        CPPUNIT_ASSERT_EQUAL(string("assign"), (string)dest);
+    }
+
+    void testStringAssignment() {
+        string v = "strings";
+        Json src(v);
+        Json dest;
+        dest = src;
+        CPPUNIT_ASSERT_EQUAL(Json::TYPE_STRING, dest.Type());
+        CPPUNIT_ASSERT_EQUAL(v, (string)dest);
+    }
+
+    void testBoolAssignment() {
+        Json src(false);
+        Json dest;
+        dest = src;
+        CPPUNIT_ASSERT_EQUAL(Json::TYPE_BOOLEAN, dest.Type());
+        CPPUNIT_ASSERT_EQUAL(false, (bool)dest);
+    }
+
+    void testArrayAssignment() {
+        Json src(Json::TYPE_ARRAY);
+        src.Add(Json(1L));
+        src.Add(Json("two"));
+        Json dest;
+        dest = src;
+        CPPUNIT_ASSERT_EQUAL(Json::TYPE_ARRAY, dest.Type());
+        CPPUNIT_ASSERT_EQUAL(static_cast<size_t>(2), dest.GetArray().size());
+        Json::json_list_t::const_iterator it = dest.GetArray().begin();
+        CPPUNIT_ASSERT_EQUAL(1L, (long)(*it));
+        ++it;
+        CPPUNIT_ASSERT_EQUAL(string("two"), (string)(*it));
+        dest.Add(Json(3L));
+        CPPUNIT_ASSERT_EQUAL(static_cast<size_t>(2), src.GetArray().size());
+        CPPUNIT_ASSERT_EQUAL(static_cast<size_t>(3), dest.GetArray().size());
+    }
+
+    void testObjectAssignment() {
+        Json src(Json::TYPE_OBJECT);
+        src["one"] = Json(1L);
+        src["two"] = Json("second");
+        Json dest;
+        dest = src;
+        CPPUNIT_ASSERT_EQUAL(Json::TYPE_OBJECT, dest.Type());
+        CPPUNIT_ASSERT_EQUAL(static_cast<size_t>(2), dest.GetObject().size());
+        CPPUNIT_ASSERT_EQUAL(1L, (long)dest["one"]);
+        CPPUNIT_ASSERT_EQUAL(string("second"), (string)dest["two"]);
+        dest["one"] = Json(99L);
+        CPPUNIT_ASSERT_EQUAL(1L, (long)src["one"]);
     }
 };
 
