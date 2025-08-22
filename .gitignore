@@ -83,3 +83,4 @@ tests/socket_handler_ep_tests
 
 # ignore dist folder content
 dist/
+examples/artifact-demo/dist/

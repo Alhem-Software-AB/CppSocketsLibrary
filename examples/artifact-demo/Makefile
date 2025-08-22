@@ -1,4 +1,5 @@
-SOCKETS =	../dist
+SOCKETS =	dist
+PLATFORM =	linux-x86-64
 
 CXX =		g++
 
@@ -12,13 +13,15 @@ LDFLAGS =	-rdynamic
 
 LIBS =		-L$(SOCKETS)/lib -lSockets -lssl -lcrypto -lpthread
 
-all:		simple_http_server
+include 	$(SOCKETS)/Makefile.version
+include 	$(SOCKETS)/Makefile.Defines.$(PLATFORM)
 
-simple_http_server: \
-		simple_http_server.o
+all:		chat_server
+
+chat_server:	chat_server.o
 		$(CXX) -o $@ $^ $(LIBS) $(LDFLAGS)
 
 clean:
-		rm -f simple_http_server.o simple_http_server
+		rm -f chat_server.o chat_server
 
 -include	*.d

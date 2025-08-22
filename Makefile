@@ -1,9 +1,16 @@
 
 all:
-		@$(MAKE) -s -C src all dist
+		@$(MAKE)  -C src all dist
 
 tests:		all
-		@$(MAKE) -s -C ./src/tests
-		@$(MAKE) -s -C ./demo/tests
-		@$(MAKE) -s -C ./demo
-		@$(MAKE) -s -C ./tests
+		@$(MAKE)  -C ./src/tests
+		@$(MAKE)  -C ./demo/tests
+		@$(MAKE)  -C ./demo
+		@$(MAKE)  -C ./tests
+
+clean:
+		@$(MAKE)  -C ./src clean
+		@$(MAKE)  -C ./src/tests clean
+		@$(MAKE)  -C ./demo clean
+		@$(MAKE)  -C ./demo/tests clean
+		@$(MAKE)  -C ./tests clean
