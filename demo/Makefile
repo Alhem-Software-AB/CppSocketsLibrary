@@ -7,7 +7,8 @@ LIBS =		-L$(SOCKETS)/lib -lSockets -lssl -lcrypto -lpthread
 
 all:		simple_http_server
 
-simple_http_server: simple_http_server.o
+simple_http_server: \
+		simple_http_server.o
 		$(CXX) -o $@ $^ $(LIBS) $(LDFLAGS)
 
 clean:

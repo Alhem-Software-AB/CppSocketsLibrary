@@ -6,7 +6,8 @@ LIBS =		-L$(SOCKETS)/lib -lSockets `pkg-config --libs cppunit` -lssl -lcrypto -l
 
 all:		http_server_test
 
-http_server_test: http_server_test.o
+http_server_test: \
+		http_server_test.o
 		$(CXX) -o $@ $^ $(LIBS)
 
 clean:
