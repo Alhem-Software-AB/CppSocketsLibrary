@@ -113,4 +113,4 @@ clean:
 -include	*.d
 
 setup:
-		@./setup-build.sh
+		@echo No longer necessary
