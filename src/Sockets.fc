@@ -1,6 +1,6 @@
 #
-dist/include/
-dist/include/:=*.h
+dist/include/Sockets/
+dist/include/Sockets/:=*.h
 
 #
 dist/lib/

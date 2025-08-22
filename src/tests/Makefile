@@ -7,6 +7,7 @@ LIBS =		-L$(SOCKETS)/lib -lSockets
 CFLAGS =	`$(SOCKETS)/bin/Sockets-config`
 
 CFLAGS +=	-I.
+CFLAGS +=	-MD
 
 include		$(SOCKETS)/Makefile.version
 include		$(SOCKETS)/Makefile.Defines.$(PLATFORM)
