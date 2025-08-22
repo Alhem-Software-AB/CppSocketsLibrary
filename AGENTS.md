@@ -9,7 +9,7 @@
 
 ## Makefile formatting
 - Any Makefile other than the one in the src/ folder should follow the format used by src/Makefile.
-- Values and dependencies must start at the second tab stop (column 17 with tab size 8).
+- Values and dependencies must start at the second tab stop (column 17 with tab size 8), include the with of the prefix.
 - If the prefix exceeds two tab stops, end the line with a backslash and continue the value on the next line indented with two tabs.
 - Any lines continued with backslash should be respected, and line break preserved.
 - Surround assignment operators (`=`) with a single space on each side.

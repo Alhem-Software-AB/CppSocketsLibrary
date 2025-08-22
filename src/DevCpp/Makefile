@@ -1,7 +1,7 @@
-INCLUDE =		-I..
+INCLUDE =	-I..
 
-CFLAGS =		-Wall -g -O2 $(INCLUDE) -MD
-CPPFLAGS =		$(CFLAGS)
+CFLAGS =	-Wall -g -O2 $(INCLUDE) -MD
+CPPFLAGS =	$(CFLAGS)
 
 PROGS =		util
 
