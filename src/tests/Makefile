@@ -4,7 +4,7 @@ INCLUDE =	-I$(SOCKETS)/include
 LIBS =		-L$(SOCKETS)/lib -lSockets
 #-L$(SOCKETS) -lSockets 
 
-CFLAGS =	`Sockets-config`
+CFLAGS =        `$(SOCKETS)/bin/Sockets-config`
 
 CFLAGS +=	-I.
 
