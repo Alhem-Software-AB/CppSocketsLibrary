@@ -19,3 +19,23 @@ make dist PLATFORM=linux-x86-64
 After the `dist` target completes, the top-level `dist/` folder will contain
 `bin`, `lib`, and `include` directories with the compiled utilities, static
 libraries, and header files required to use the library.
+
+## Building the Tests
+
+The test programs in the top-level `tests/` directory depend on the headers,
+libraries, and build recipes produced by the commands above. Attempting to run
+`make` in `tests/` before both building the library and creating the
+distribution will fail because the required `dist/` files are missing. A
+typical flow for building the tests is:
+
+```bash
+cd src
+make PLATFORM=linux-x86-64
+make dist PLATFORM=linux-x86-64
+cd ..
+make -C tests PLATFORM=linux-x86-64
+```
+
+Running `make dist` ensures that the `tests/` Makefile can include
+`dist/Makefile.version` and `dist/Makefile.Defines.<platform>` and link against
+the produced binaries.
