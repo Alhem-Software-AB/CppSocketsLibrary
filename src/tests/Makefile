@@ -1,21 +1,21 @@
-SOCKETS =	../../dist
-PLATFORM =	linux-x86-32
-INCLUDE =	-I$(SOCKETS)/include
+SOCKETS =		../../dist
+PLATFORM =		linux-x86-32
+INCLUDE =		-I$(SOCKETS)/include
 LIBS =		-L$(SOCKETS)/lib -lSockets
 #-L$(SOCKETS) -lSockets 
 
-CFLAGS =        `$(SOCKETS)/bin/Sockets-config`
+CFLAGS =		`$(SOCKETS)/bin/Sockets-config`
 
-CFLAGS +=	-I.
+CFLAGS +=		-I.
 
 include		$(SOCKETS)/Makefile.version
 include		$(SOCKETS)/Makefile.Defines.$(PLATFORM)
 
-CPPFLAGS =	$(CFLAGS)
+CPPFLAGS =		$(CFLAGS)
 
 #LIBS +=		-lsctp
 
-LDFLAGS +=	-rdynamic
+LDFLAGS +=		-rdynamic
 
 PROGS =		events resolve sockets_test base64 semtest \
 		echoserver stressclient http httpd retry resume \
@@ -28,22 +28,22 @@ all:		$(PROGS)
 events:		events.o ../libSockets.a 
 		$(CXX) -o $@ $^ $(LIBS) $(LDFLAGS)
 
-resolve:	resolve.o ../libSockets.a 
+resolve:		resolve.o ../libSockets.a 
 		$(CXX) -o $@ $^ $(LIBS) $(LDFLAGS)
 
-sockets_test:	sockets_test.o ../libSockets.a 
+sockets_test:		sockets_test.o ../libSockets.a 
 		$(CXX) -o $@ $^ $(LIBS) $(LDFLAGS)
 
 base64:		base64.o ../libSockets.a 
 		$(CXX) -o $@ $^ $(LIBS) $(LDFLAGS)
 
-semtest:	semtest.o ../libSockets.a 
+semtest:		semtest.o ../libSockets.a 
 		$(CXX) -o $@ $^ $(LIBS) $(LDFLAGS)
 
-echoserver:	echoserver.o ../libSockets.a 
+echoserver:		echoserver.o ../libSockets.a 
 		$(CXX) -o $@ $^ $(LIBS) $(LDFLAGS)
 
-stressclient:	stressclient.o ../libSockets.a 
+stressclient:		stressclient.o ../libSockets.a 
 		$(CXX) -o $@ $^ $(LIBS) $(LDFLAGS)
 
 http:		http.o ../libSockets.a 
@@ -58,7 +58,7 @@ retry:		retry.o ../libSockets.a
 resume:		resume.o ../libSockets.a 
 		$(CXX) -o $@ $^ $(LIBS) $(LDFLAGS)
 
-http_post:	http_post.o ../libSockets.a 
+http_post:		http_post.o ../libSockets.a 
 		$(CXX) -o $@ $^ $(LIBS) $(LDFLAGS)
 
 x:		x.o ../libSockets.a 
@@ -73,22 +73,22 @@ crlf:		crlf.o ../libSockets.a
 https:		https.o ../libSockets.a
 		$(CXX) -o $@ $^ $(LIBS) $(LDFLAGS)
 
-sloppy_http:	sloppy_http.o ../libSockets.a
+sloppy_http:		sloppy_http.o ../libSockets.a
 		$(CXX) -o $@ $^ $(LIBS) $(LDFLAGS)
 
-chunked:	chunked.o ../libSockets.a
+chunked:		chunked.o ../libSockets.a
 		$(CXX) -o $@ $^ $(LIBS) $(LDFLAGS)
 
-threadstress:	threadstress.o ../libSockets.a
+threadstress:		threadstress.o ../libSockets.a
 		$(CXX) -o $@ $^ $(LIBS) $(LDFLAGS)
 
-listener:	listener.o ../libSockets.a
+listener:		listener.o ../libSockets.a
 		$(CXX) -o $@ $^ $(LIBS) $(LDFLAGS)
 
 scanr:		scanr.o ../libSockets.a
 		$(CXX) -o $@ $^ $(LIBS) $(LDFLAGS)
 
-httpd_test:	httpd_test.o ../libSockets.a
+httpd_test:		httpd_test.o ../libSockets.a
 		$(CXX) -o $@ $^ $(LIBS) $(LDFLAGS)
 
 json:		json.o ../libSockets.a
@@ -97,10 +97,10 @@ json:		json.o ../libSockets.a
 detach:		detach.o ../libSockets.a
 		$(CXX) -o $@ $^ $(LIBS) $(LDFLAGS)
 
-bind_address:	bind_address.o ../libSockets.a
+bind_address:		bind_address.o ../libSockets.a
 		$(CXX) -o $@ $^ $(LIBS) $(LDFLAGS)
 
-httpget:	httpget.o ../libSockets.a
+httpget:		httpget.o ../libSockets.a
 		$(CXX) -o $@ $^ $(LIBS) $(LDFLAGS)
 
 udp:		udp.o ../libSockets.a
