@@ -3,7 +3,7 @@ set -e
 ulimit -c unlimited
 cd "$(dirname "$0")"
 # Build library and demo
-make -C ../src -j2 >/dev/null
+make -C ../../src -j2 >/dev/null
 make >/dev/null
 # Start server in background
 ./simple_http_server &
