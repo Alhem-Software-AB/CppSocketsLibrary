@@ -14,7 +14,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential pkg-config libcppunit-dev
+          sudo apt-get install -y build-essential pkg-config libcppunit-dev curl
 
       - name: Build library
         run: make -C src
@@ -26,6 +26,8 @@ jobs:
         run: |
           make -C tests clean all
           ./tests/json_tests
+          ./tests/socket_handler_ep_tests
+          ./tests/http_server_test
 
       - name: Upload dist artifact
         uses: actions/upload-artifact@v4
