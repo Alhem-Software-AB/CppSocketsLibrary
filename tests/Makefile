@@ -8,7 +8,8 @@ CFLAGS =	-I$(SOCKETS)/include \
 
 LIBS_CPPUNIT =	`pkg-config --libs cppunit`
 
-LIBS =		$(LIBS_CPPUNIT) -L$(SOCKETS)/lib -lSockets -lssl -lcrypto -lxml2 -lpthread
+LIBS =		$(LIBS_CPPUNIT) -L$(SOCKETS)/lib -lSockets -lssl -lcrypto \
+		-lxml2 -lpthread
 
 include		$(SOCKETS)/Makefile.version
 include		$(SOCKETS)/Makefile.Defines.$(PLATFORM)
