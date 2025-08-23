@@ -2,7 +2,7 @@
 
 #include "json_tests.cpp"
 #include "socket_handler_ep_tests.cpp"
-#include "../demo/tests/http_server_test.cpp"
+#include "http_server_test.cpp"
 
 int main(int argc, char* argv[])
 {
