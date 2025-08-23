@@ -33,8 +33,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef _SOCKETS_IFile_H
 #define _SOCKETS_IFile_H
 
-#include "sockets-config.h"
-
 #include <string>
 
 #ifdef SOCKETS_NAMESPACE

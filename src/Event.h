@@ -33,12 +33,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef _SOCKETS_Event_H
 #define _SOCKETS_Event_H
 
-#include "sockets-config.h"
-
 #include "EventTime.h"
 
-#ifdef _WIN32
-#else
+#ifndef _WIN32
 #include <sys/select.h>
 #endif
 

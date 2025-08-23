@@ -38,7 +38,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "socket_include.h"
 
 #include "Socket.h"
-#include "StdLog.h"
+#include "StdLog.h" // using defines from this
 
 #include <list>
 #include <map>
@@ -49,7 +49,6 @@ namespace SOCKETS_NAMESPACE {
 
 class SocketAddress;
 class IMutex;
-
 
 /** Socket container class, event generator. 
 	\ingroup basic */

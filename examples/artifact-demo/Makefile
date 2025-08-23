@@ -1,8 +1,6 @@
 SOCKETS =	dist
 PLATFORM =	linux-x86-64
 
-CXX =		g++
-
 CFLAGS =	`$(SOCKETS)/bin/Sockets-config` \
 		-I$(SOCKETS)/include \
 		-Wall \
@@ -19,8 +17,7 @@ include 	$(SOCKETS)/Makefile.Defines.$(PLATFORM)
 all:		chat_server
 
 chat_server:	chat_server.o
-		@echo [$(MAKE)] Linking $@
-		@$(CXX) -o $@ $^ $(LIBS) $(LDFLAGS)
+		$(link-target)
 
 clean:
 		rm -f chat_server.o chat_server

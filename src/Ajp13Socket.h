@@ -44,8 +44,6 @@ namespace SOCKETS_NAMESPACE {
 #endif
 
 
-class HttpResponse;
-
 class Ajp13Socket : public AjpBaseSocket, public IHttpServer
 {
 public:

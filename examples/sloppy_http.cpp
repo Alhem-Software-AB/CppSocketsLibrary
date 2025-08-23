@@ -52,7 +52,7 @@ std::string get_http(const char *host, int port, const char *request)
 }
 
 
-int main(int argc, char *argv[])
+int main(int , char *[])
 {
 	std::string zz = get_http("www.alhem.net", 80, "GET /index.html HTTP/1.0\r\n"
 		"Host: www.alhem.net\r\n"

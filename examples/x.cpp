@@ -233,7 +233,7 @@ private:
 };
 
 
-int main(int argc, char *argv[])
+int main(int , char *[])
 {
 #ifndef _WIN32
 	signal(SIGHUP, sighandler);

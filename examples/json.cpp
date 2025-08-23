@@ -1,4 +1,6 @@
 #include <Sockets/Json.h>
+#include <Sockets/Exception.h>
+
 #include <iostream>
 
 
@@ -17,7 +19,7 @@ void test(const std::string& str)
 }
 
 
-int main(int argc, char *argv[])
+int main(int , char *[])
 {
 	try
 	{

@@ -5,7 +5,7 @@
 #  solaris9-sparc-64
 #  macosx
 #  solaris8
-PLATFORM =	linux-x86-32
+PLATFORM =	linux-x86-64
 
 # 'Makefile.version' defines the $(VERSION) of the library, and also
 # setup the OBJS variable - stuff to be compiled.
@@ -51,6 +51,9 @@ include		Makefile.Defines.$(PLATFORM)
 # Enable insane amounts of debug output to stdout/stderr:
 #CFLAGS +=	-D_DEBUG
 
+# _VERSION
+CFLAGS +=	-D_VERSION='"$(VERSION)"'
+
 CPPFLAGS =	$(CFLAGS) 
 
 PROGS =		$(CONFNAME)
@@ -71,6 +74,7 @@ $(SHAREDLIBNAME): $(OBJS)
 $(CONFNAME):	Sockets-config.o
 		@echo Creating $@
 		@$(CXX) $(LDFLAGS) -o $@ $^
+		 -D_VERSION='"$(VERSION)"'
 
 pc:
 		@cat pkgconfig/libsockets2.pc.IN | \

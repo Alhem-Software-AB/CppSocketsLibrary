@@ -1,8 +1,7 @@
 SOCKETS =	../../dist
+PLATFORM =	linux-x86-64
 
-CXX =		g++
-
-CXXFLAGS =	`$(SOCKETS)/bin/Sockets-config` \
+CFLAGS =	`$(SOCKETS)/bin/Sockets-config` \
 		-I$(SOCKETS)/include \
 		-Wall \
 		-std=c++17 \
@@ -12,13 +11,21 @@ LDFLAGS =	-rdynamic
 
 LIBS =		-L$(SOCKETS)/lib -lSockets -lssl -lcrypto -lpthread
 
-all:		simple_http_server
+include		$(SOCKETS)/Makefile.version
+include		$(SOCKETS)/Makefile.Defines.$(PLATFORM)
+
+PROGS =		simple_http_server
+
+all:		$(PROGS)
+
+SRC =		simple_http_server.cpp
+OBJ =		$(patsubst %.cpp, %.o, $(SRC))
 
 simple_http_server: \
-		simple_http_server.o
-		$(CXX) -o $@ $^ $(LIBS) $(LDFLAGS)
+		$(OBJ)
+		$(link-target)
 
 clean:
-		rm -f simple_http_server.o simple_http_server
+		rm -f $(OBJ) $(PROGS)
 
 -include	*.d

@@ -34,8 +34,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef _SOCKETS_Semaphore_H
 #define _SOCKETS_Semaphore_H
 
-#include "sockets-config.h"
-
 #ifdef _WIN32
 #include "socket_include.h"
 #include <windows.h>

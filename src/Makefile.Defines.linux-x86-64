@@ -4,7 +4,9 @@ else
 	CXX =	g++
 endif
 
-CFLAGS +=	-Wall -g $(INCLUDE) -MD -D_VERSION='"$(VERSION)"'
+CFLAGS +=	-Wall -g $(INCLUDE) -MD
+# -D_VERSION='"$(VERSION)"'
+
 CFLAGS +=	-Wextra
 
 # turn off optimization if compiling with gcc 2.9.x:
@@ -31,6 +33,15 @@ LDFLAGSSO =	-shared \
 		-Wl,-call_shared
 
 .cpp.o:
-		@echo [$(CXX)] Compiling $<
+		@echo [$(CXX)] Compiling `pwd`/$<  \ \(`cat $<|wc -l` lines\)
 		@$(CXX) $(CFLAGS) -o $@ -c $<
 
+define link-target
+		@echo [$(MAKE)] Linking $@
+		@$(CXX) -o $@ $^ $(LIBS) $(LDFLAGS)
+endef
+
+define create-directory
+		@echo [$(MAKE)] Create folder: $@
+		@mkdir -p $@
+endef

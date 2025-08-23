@@ -125,7 +125,7 @@ exit(-1);
 };
 
 
-int main(int argc, char *argv[])
+int main(int , char *[])
 {
 	SocketHandler h;
 	ListenSocket<IOSocket> l(h);

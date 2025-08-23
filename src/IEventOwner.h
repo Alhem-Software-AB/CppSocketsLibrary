@@ -33,14 +33,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef _SOCKETS_IEventOwner_H
 #define _SOCKETS_IEventOwner_H
 
-#include "sockets-config.h"
-
-#include "IEventHandler.h"
-
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
 #endif
 
+class IEventHandler;
 
 /** Any class that wants to use timer events inherits this.
 	\ingroup timer */

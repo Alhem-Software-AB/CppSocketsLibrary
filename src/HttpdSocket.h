@@ -31,19 +31,16 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef _SOCKETS_HttpdSocket_H
 #define _SOCKETS_HttpdSocket_H
 
-#include "sockets-config.h"
-
 #include "HTTPSocket.h"
-#include "ISocketHandler.h"
 
 #ifdef SOCKETS_NAMESPACE
 namespace SOCKETS_NAMESPACE {
 #endif
 
-
 class HttpdCookies;
 class HttpdForm;
 class IFile;
+class ISocketHandler;
 
 /** \defgroup webserver Webserver framework */
 /** Web server socket framework. 

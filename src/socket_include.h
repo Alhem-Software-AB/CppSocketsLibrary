@@ -35,10 +35,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "sockets-config.h"
 
-#ifdef _MSC_VER
-#pragma warning(disable:4514)
-#endif
-
 // common defines affecting library and applications using library
 
 /* Define SOCKETS_DYNAMIC_TEMP to use dynamically allocated buffers
