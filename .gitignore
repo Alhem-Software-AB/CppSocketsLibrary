@@ -42,10 +42,10 @@ Makefile.apt
 slask*
 fel
 fil
-demo/simple_http_server
-demo/output.html
+examples/simple-http-server-demo/simple_http_server
+examples/simple-http-server-demo/output.html
 
-demo/tests/http_server_test
+examples/simple-http-server-demo/tests/http_server_test
 
 # more binaries
 src/tests/Sockets

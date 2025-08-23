@@ -21,7 +21,7 @@ static std::filesystem::path repoRoot()
         auto p = std::filesystem::current_path();
         while (!p.empty())
         {
-            if (std::filesystem::exists(p / "demo") && std::filesystem::exists(p / "src"))
+            if (std::filesystem::exists(p / "examples" / "simple-http-server-demo") && std::filesystem::exists(p / "src"))
             {
                 root = p;
                 break;
@@ -36,7 +36,7 @@ static std::filesystem::path repoRoot()
 
 static std::filesystem::path demoDir()
 {
-    return repoRoot() / "demo";
+    return repoRoot() / "examples" / "simple-http-server-demo";
 }
 
 class HttpServerTest : public CppUnit::TestFixture {

@@ -1,4 +1,4 @@
-SOCKETS =	../dist
+SOCKETS =	../../dist
 
 CXX =		g++
 
