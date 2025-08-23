@@ -9,7 +9,8 @@ CFLAGS =	`$(SOCKETS)/bin/Sockets-config` \
 
 LDFLAGS =	-rdynamic
 
-LIBS =		-L$(SOCKETS)/lib -lSockets -lssl -lcrypto -lpthread
+LIBS =		-L$(SOCKETS)/lib -lSockets -lssl -lcrypto \
+		-lpthread
 
 include 	$(SOCKETS)/Makefile.version
 include 	$(SOCKETS)/Makefile.Defines.$(PLATFORM)
