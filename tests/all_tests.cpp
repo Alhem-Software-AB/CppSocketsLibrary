@@ -1,10 +1,10 @@
 #define COMBINED_TESTS
 
-#include "json_tests.cpp"
-#include "socket_handler_ep_tests.cpp"
-#include "http_server_test.cpp"
+#include "json_tests.h"
+#include "socket_handler_ep_tests.h"
+#include "http_server_test.h"
 
-int main(int argc, char* argv[])
+int main(int , char* argv[])
 {
     std::filesystem::path exe_path = argv[0];
     std::filesystem::current_path(exe_path.parent_path());

@@ -25,9 +25,7 @@ jobs:
       - name: Run tests
         run: |
           make -C tests clean all
-          ./tests/json_tests
-          ./tests/socket_handler_ep_tests
-          ./tests/http_server_test
+          ./tests/all_tests
 
       - name: Upload dist artifact
         uses: actions/upload-artifact@v4
