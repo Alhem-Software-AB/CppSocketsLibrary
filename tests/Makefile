@@ -21,9 +21,11 @@ all:		$(PROGS)
 SRC4 =		all_tests.cpp \
 		../src/Json.cpp \
 		../src/Exception.cpp \
-		json_tests.cpp \
-		socket_handler_ep_tests.cpp \
-		http_server_test.cpp \
+                json_tests.cpp \
+                socket_handler_ep_tests.cpp \
+                http_server_test.cpp \
+                base64_tests.cpp \
+                utility_tests.cpp \
 
 OBJ4 =		$(patsubst %.cpp, %.o, $(SRC4))
 

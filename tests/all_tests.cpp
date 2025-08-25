@@ -3,6 +3,8 @@
 #include "json_tests.h"
 #include "socket_handler_ep_tests.h"
 #include "http_server_test.h"
+#include "base64_tests.h"
+#include "utility_tests.h"
 
 int main(int , char* argv[])
 {
