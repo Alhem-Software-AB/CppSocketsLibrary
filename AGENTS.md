@@ -5,8 +5,8 @@
 - Use `$(SOCKETS)/bin/` for helper binaries such as `Sockets-config`.
 - Include headers from `$(SOCKETS)/include/`.
 - Link against libraries in `$(SOCKETS)/lib/`.
-- Set `PLATFORM` to the target platform (for example, `linux-x86-64`).
-- Define `INCLUDE`, `LIBS`, and `CFLAGS` before including `$(SOCKETS)/Makefile.version` and `$(SOCKETS)/Makefile.Defines.$(PLATFORM)` to reuse library-provided variables and recipes instead of defining them locally.
+- Set `PLATFORM` to the target platform (for example, `linux-x86-64`). Planned targets include `win32`, `win64`, `linux-x64-64`, `linux-x86-32`, and `raspberry-pi` (ARM).
+- Define `INCLUDE`, `LIBS`, and `CFLAGS` before including `$(SOCKETS)/Makefile.version` and `$(SOCKETS)/Makefile.Defines.$(PLATFORM)` to reuse library-provided variables and recipes. These files append library-specific flags and copy `CFLAGS` to `CPPFLAGS` for C++ builds.
 
 ```make
 SOCKETS =      ../dist
