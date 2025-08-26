@@ -5,7 +5,20 @@
 - Use `$(SOCKETS)/bin/` for helper binaries such as `Sockets-config`.
 - Include headers from `$(SOCKETS)/include/`.
 - Link against libraries in `$(SOCKETS)/lib/`.
-- Set `PLATFORM` to the target platform (for example, `linux-x86-64`) and include both `$(SOCKETS)/Makefile.version` and `$(SOCKETS)/Makefile.Defines.$(PLATFORM)` to reuse library-provided variables and recipes instead of defining them locally.
+- Set `PLATFORM` to the target platform (for example, `linux-x86-64`).
+- Define `INCLUDE`, `LIBS`, and `CFLAGS` before including `$(SOCKETS)/Makefile.version` and `$(SOCKETS)/Makefile.Defines.$(PLATFORM)` to reuse library-provided variables and recipes instead of defining them locally.
+
+```make
+SOCKETS =      ../dist
+PLATFORM =     linux-x86-64
+
+INCLUDE +=     -I$(SOCKETS)/include
+LIBS +=        -L$(SOCKETS)/lib -lSockets
+CFLAGS +=      $(INCLUDE)
+
+include        $(SOCKETS)/Makefile.version
+include        $(SOCKETS)/Makefile.Defines.$(PLATFORM)
+```
 
 ## Makefile formatting
 - Any Makefile other than the one in the src/ folder should follow the format used by src/Makefile.
