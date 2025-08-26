@@ -40,3 +40,9 @@ include        $(SOCKETS)/Makefile.Defines.$(PLATFORM)
 - Surround assignment operators (`=`) with a single space on each side.
 - Start recipe commands on a new line rather than using semicolons and indent them with exactly two tabs (the first being make's command prefix).
 
+## C++ formatting
+- Indent C++ code using a single tab character per level.
+- Treat each tab character as eight spaces when determining alignment.
+- Use Microsoft brace style: place opening braces on a new line and align closing braces with the start of the block.
+- Preserve existing source file formatting unless explicitly requested to change it.
+
