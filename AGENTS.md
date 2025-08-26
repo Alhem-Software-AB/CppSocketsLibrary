@@ -75,3 +75,17 @@ make tests
 - Use Microsoft brace style: place opening braces on a new line and align closing braces with the start of the block.
 - Preserve existing source file formatting unless explicitly requested to change it.
 
+Example:
+
+```cpp
+int main()
+{
+	if (should_run)
+	{
+		run();
+	}
+
+	return 0;
+}
+```
+
