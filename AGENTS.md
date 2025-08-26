@@ -5,8 +5,7 @@
 - Use `$(SOCKETS)/bin/` for helper binaries such as `Sockets-config`.
 - Include headers from `$(SOCKETS)/include/`.
 - Link against libraries in `$(SOCKETS)/lib/`.
-- Set `PLATFORM` to the target platform (for example, `linux-x86-64`). Planned targets include `win32`, `win64`, `linux-x64-64`,
-  `linux-x86-32`, and `raspberry-pi` (ARM).
+- Set `PLATFORM` to the target platform (for example, `linux-x86-64`).
 
   Supported values include:
   - `linux-x86-64`
@@ -16,7 +15,12 @@
   - `win64`
   - `raspberry-pi`
 
-  To derive a value, combine the lower-cased output of `uname -s` with `uname -m` (for example, `$(uname -s | tr '[:upper:]' '[:lower:]')-$(uname -m)`).
+  To derive a value, combine the lower-cased output of `uname -s` with `uname -m`:
+
+  ```sh
+  echo "$(uname -s | tr '[:upper:]' '[:lower:]')-$(uname -m)"
+  ```
+
   The `Sockets-config` utility in `$(SOCKETS)/bin/` automatically prints the current platform and flags, and can be used to verify the selected `PLATFORM`.
 - Define `INCLUDE`, `LIBS`, and `CFLAGS` before including `$(SOCKETS)/Makefile.version` and `$(SOCKETS)/Makefile.Defines.$(PLATFORM)` to reuse library-provided variables and recipes. These files append library-specific flags and copy `CFLAGS` to `CPPFLAGS` for C++ builds.
 
