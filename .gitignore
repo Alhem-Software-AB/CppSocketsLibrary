@@ -83,3 +83,6 @@ tests/all_tests
 # ignore dist folder content
 dist/
 examples/artifact-demo/dist/
+
+# Python cache
+__pycache__/
