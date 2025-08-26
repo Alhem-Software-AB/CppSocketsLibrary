@@ -52,3 +52,9 @@ demo:           $(OBJ)
 		$(link-target)   # two tabs before command
 ```
 
+## C++ formatting
+- Indent C++ code using a single tab character per level.
+- Treat each tab character as eight spaces when determining alignment.
+- Use Microsoft brace style: place opening braces on a new line and align closing braces with the start of the block.
+- Preserve existing source file formatting unless explicitly requested to change it.
+
