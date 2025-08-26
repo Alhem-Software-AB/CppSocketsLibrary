@@ -4,6 +4,19 @@ The C++ class library is a versatile and user-friendly tool for network programm
 
 The library was designed to simplify the complexities of network programming and provide a single-threaded approach to managing multiple sockets. Instead of using the traditional C API, it provides a convenient Socket class that handles address translations and owns the file descriptor. The library also features callback methods such as OnRead(), OnWrite(), OnConnect(), and OnAccept(), to report events and handle logic related to the sockets. The sockets are monitored and managed using the Select() method in a SocketHandler class. The library has been tested on Linux, Windows 2000, and to some extent on Solaris and Mac OS X.
 
+## Determining the PLATFORM Value
+
+The Makefiles in this repository use a `PLATFORM` variable to select
+platform-specific build settings. The `detect_platform.py` helper can be
+used to print the appropriate value for the current machine:
+
+```bash
+python detect_platform.py
+```
+
+The script outputs strings such as `linux-x86-64`, `win64`, or
+`raspberry-pi`.
+
 ## Building and Creating a Distribution
 
 The source code for the library lives in the `src/` directory. To build the
