@@ -39,4 +39,16 @@ include        $(SOCKETS)/Makefile.Defines.$(PLATFORM)
 - Any lines continued with backslash should be respected, and line break preserved.
 - Surround assignment operators (`=`) with a single space on each side.
 - Start recipe commands on a new line rather than using semicolons and indent them with exactly two tabs (the first being make's command prefix).
+- Convert source files into objects with `OBJ = $(patsubst %.cpp, %.o, $(SOURCE))`.
+- Use `$(link-target)` from `Makefile.Defines.$(PLATFORM)` to link binaries instead of hard-coding the `$(CXX)` command.
+Example:
+
+```make
+SOURCE =        src/main.cpp \
+		src/util.cpp    # two-tab indent + backslash continuation
+OBJ =           $(patsubst %.cpp, %.o, $(SOURCE))
+
+demo:           $(OBJ)
+		$(link-target)   # two tabs before command
+```
 
