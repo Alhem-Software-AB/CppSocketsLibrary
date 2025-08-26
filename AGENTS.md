@@ -52,6 +52,19 @@ demo:           $(OBJ)
 		$(link-target)   # two tabs before command
 ```
 
+## Testing
+- Build the library, examples, and test binaries:
+
+```bash
+make tests
+```
+- Run the full unit test suite:
+
+```bash
+./tests/all_tests
+```
+- After building, sample programs in `examples/` can be executed directly (for example, `./examples/simple-http-server-demo/simple_http_server_demo`).
+
 ## C++ formatting
 - Indent C++ code using a single tab character per level.
 - Treat each tab character as eight spaces when determining alignment.
