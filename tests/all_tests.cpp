@@ -5,6 +5,10 @@
 #include "http_server_test.h"
 #include "base64_tests.h"
 #include "utility_tests.h"
+#include "tcp_socket_tests.h"
+#include "udp_socket_tests.h"
+#include "socket_handler_tests.h"
+#include "ssl_initializer_tests.h"
 #include <cppunit/TestListener.h>
 #include <cppunit/Test.h>
 #include <cppunit/TestResult.h>

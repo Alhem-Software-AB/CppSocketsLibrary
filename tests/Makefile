@@ -21,11 +21,15 @@ all:		$(PROGS)
 SRC4 =		all_tests.cpp \
 		../src/Json.cpp \
 		../src/Exception.cpp \
-                json_tests.cpp \
-                socket_handler_ep_tests.cpp \
-                http_server_test.cpp \
-                base64_tests.cpp \
-                utility_tests.cpp \
+		json_tests.cpp \
+		socket_handler_ep_tests.cpp \
+		http_server_test.cpp \
+		base64_tests.cpp \
+		utility_tests.cpp \
+		tcp_socket_tests.cpp \
+		udp_socket_tests.cpp \
+		socket_handler_tests.cpp \
+		ssl_initializer_tests.cpp \
 
 OBJ4 =		$(patsubst %.cpp, %.o, $(SRC4))
 
