@@ -30,6 +30,7 @@ SRC4 =		all_tests.cpp \
 		udp_socket_tests.cpp \
 		socket_handler_tests.cpp \
 		ssl_initializer_tests.cpp \
+		http_client_socket_vuln_tests.cpp \
 
 OBJ4 =		$(patsubst %.cpp, %.o, $(SRC4))
 

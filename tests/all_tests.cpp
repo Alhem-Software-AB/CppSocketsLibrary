@@ -9,6 +9,7 @@
 #include "udp_socket_tests.h"
 #include "socket_handler_tests.h"
 #include "ssl_initializer_tests.h"
+#include "http_client_socket_vuln_tests.h"
 #include <cppunit/TestListener.h>
 #include <cppunit/Test.h>
 #include <cppunit/TestResult.h>
